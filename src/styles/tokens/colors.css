@@ -1,0 +1,209 @@
+/* Ported verbatim from the Firehouse design system:
+   _ds/the-firehouse-design-system-a05f43c6.../tokens/colors.css
+   Do not hand-edit values here — change them in the design system and re-sync. */
+:root {
+  --navy-50: #f3f6fa;
+  --navy-100: #e3e9f2;
+  --navy-200: #c5d1e4;
+  --navy-300: #9caece;
+  --navy-400: #6e85af;
+  --navy-500: #4a628f;
+  --navy-600: #0a4595;
+  --navy-700: #263f78;
+  --navy-800: #1b2e56;
+  --navy-900: #101b36;
+  --navy-950: #0a1020;
+
+  --slate-50: #f7f8fa;
+  --slate-100: #eef0f3;
+  --slate-200: #dce0e6;
+  --slate-300: #c0c6d0;
+  --slate-400: #98a0af;
+  --slate-500: #717a8a;
+  --slate-600: #545c6c;
+  --slate-700: #3d4351;
+  --slate-800: #282c36;
+  --slate-900: #181b21;
+  --slate-950: #0d0f13;
+
+  --ember-50: #fff4ee;
+  --ember-100: #ffe3d2;
+  --ember-200: #ffc7a3;
+  --ember-300: #ff9e63;
+  --ember-400: #f2762e;
+  --ember-500: #c21500;
+  --ember-600: #a11200;
+  --ember-700: #7e0e00;
+  --ember-800: #5c0a00;
+  --ember-900: #3d0700;
+
+  --amber-400: #ffc500;
+  --amber-500: #ff9000;
+  --amber-600: #e67e00;
+
+  --sky-50: #f0f9ff;
+  --sky-100: #ddf0ff;
+  --sky-200: #b3e1ff;
+  --sky-400: #0284c7;
+  --sky-500: #0077b6;
+  --sky-600: #0369a1;
+  --sky-700: #065785;
+
+  --teal-50: #effcfa;
+  --teal-100: #ccfbf1;
+  --teal-200: #96f1e3;
+  --teal-400: #0d9488;
+  --teal-500: #0f766e;
+  --teal-600: #0b5d56;
+  --teal-700: #084b45;
+
+  --plum-50: #f5f0fa;
+  --plum-100: #ede4f7;
+  --plum-200: #d6c2ed;
+  --plum-400: #8b5fc0;
+  --plum-500: #7654a6;
+  --plum-600: #5b3e82;
+  --plum-700: #472f67;
+
+  --green-50: #ecfdf3;
+  --green-600: #15803d;
+  --green-700: #0f6430;
+
+  --red-50: #fef3f2;
+  --red-600: #b42318;
+  --red-700: #8e1b12;
+
+  --gold-50: #fffbeb;
+  --gold-600: #b45309;
+  --gold-700: #8a3f07;
+
+  --color-bg-page: var(--slate-50);
+  --color-bg-surface: #ffffff;
+  --color-bg-surface-raised: #ffffff;
+  --color-bg-sunken: var(--navy-50);
+
+  --color-border: var(--slate-200);
+  --color-border-strong: var(--slate-300);
+  --color-focus-ring: var(--sky-400);
+
+  --color-text-primary: var(--navy-950);
+  --color-text-secondary: var(--slate-600);
+  --color-text-tertiary: var(--slate-500);
+  --color-text-on-dark: #ffffff;
+  --color-text-on-accent: #ffffff;
+
+  --color-link: var(--navy-600);
+  --color-link-hover: var(--navy-700);
+
+  --color-brand-primary: var(--navy-700);
+  --color-brand-primary-hover: var(--navy-800);
+
+  --color-accent: var(--ember-500);
+  --color-accent-hover: var(--ember-600);
+  --color-accent-tint: var(--ember-50);
+  --color-accent-border: var(--ember-200);
+
+  --color-success-bg: var(--green-50);
+  --color-success-text: var(--green-700);
+  --color-success-border: #a6e3c1;
+
+  --color-error-bg: var(--red-50);
+  --color-error-text: var(--red-700);
+  --color-error-border: #f3b4ad;
+
+  --color-warning-bg: var(--gold-50);
+  --color-warning-text: var(--gold-700);
+  --color-warning-border: #f5cd8a;
+
+  --color-info-bg: var(--sky-50);
+  --color-info-text: var(--sky-700);
+  --color-info-border: var(--sky-200);
+
+  --topic-observe-text: var(--sky-600);
+  --topic-observe-fill: var(--sky-500);
+  --topic-observe-tint: var(--sky-50);
+  --topic-observe-border: var(--sky-200);
+
+  --topic-forecast-text: var(--teal-600);
+  --topic-forecast-fill: var(--teal-500);
+  --topic-forecast-tint: var(--teal-50);
+  --topic-forecast-border: var(--teal-200);
+
+  --topic-warning-text: var(--ember-600);
+  --topic-warning-fill: var(--ember-500);
+  --topic-warning-tint: var(--ember-50);
+  --topic-warning-border: var(--ember-200);
+
+  --topic-governance-text: var(--plum-600);
+  --topic-governance-fill: var(--plum-500);
+  --topic-governance-tint: var(--plum-50);
+  --topic-governance-border: var(--plum-200);
+
+  --shadow-color: 38 63 120;
+}
+
+[data-theme='dark'] {
+  --color-bg-page: var(--navy-950);
+  --color-bg-surface: var(--navy-900);
+  --color-bg-surface-raised: var(--navy-800);
+  --color-bg-sunken: #070b16;
+
+  --color-border: var(--navy-700);
+  --color-border-strong: var(--slate-600);
+  --color-focus-ring: var(--sky-400);
+
+  --color-text-primary: #f5f7fb;
+  --color-text-secondary: var(--slate-300);
+  --color-text-tertiary: var(--slate-400);
+  --color-text-on-dark: #ffffff;
+  --color-text-on-accent: #ffffff;
+
+  --color-link: var(--sky-200);
+  --color-link-hover: #ffffff;
+
+  --color-brand-primary: var(--sky-200);
+  --color-brand-primary-hover: #ffffff;
+
+  --color-accent: var(--ember-400);
+  --color-accent-hover: var(--ember-300);
+  --color-accent-tint: rgba(242, 118, 46, 0.14);
+  --color-accent-border: var(--ember-700);
+
+  --color-success-bg: rgba(21, 128, 61, 0.16);
+  --color-success-text: #5fd68c;
+  --color-success-border: rgba(95, 214, 140, 0.35);
+
+  --color-error-bg: rgba(180, 35, 24, 0.18);
+  --color-error-text: #ff9c8f;
+  --color-error-border: rgba(255, 156, 143, 0.35);
+
+  --color-warning-bg: rgba(180, 83, 9, 0.18);
+  --color-warning-text: #ffc15c;
+  --color-warning-border: rgba(255, 193, 92, 0.35);
+
+  --color-info-bg: rgba(3, 105, 161, 0.18);
+  --color-info-text: #7fcbfa;
+  --color-info-border: rgba(127, 203, 250, 0.35);
+
+  --topic-observe-text: #7fcbfa;
+  --topic-observe-fill: var(--sky-400);
+  --topic-observe-tint: rgba(2, 132, 199, 0.15);
+  --topic-observe-border: rgba(2, 132, 199, 0.4);
+
+  --topic-forecast-text: #5eead4;
+  --topic-forecast-fill: var(--teal-400);
+  --topic-forecast-tint: rgba(13, 148, 136, 0.16);
+  --topic-forecast-border: rgba(13, 148, 136, 0.4);
+
+  --topic-warning-text: #ff9e63;
+  --topic-warning-fill: var(--ember-400);
+  --topic-warning-tint: rgba(242, 118, 46, 0.16);
+  --topic-warning-border: rgba(242, 118, 46, 0.4);
+
+  --topic-governance-text: #d6c2ed;
+  --topic-governance-fill: var(--plum-400);
+  --topic-governance-tint: rgba(139, 95, 192, 0.18);
+  --topic-governance-border: rgba(139, 95, 192, 0.4);
+
+  --shadow-color: 0 0 0;
+}

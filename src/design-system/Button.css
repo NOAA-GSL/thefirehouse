@@ -1,0 +1,124 @@
+/* Design system Button.
+   Hover/focus were inline JS state in the source component; here they're real CSS
+   pseudo-classes so they also work for touch, forced-colors and print. */
+
+.fh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+  border: 1px solid transparent;
+  font-family: var(--font-body);
+}
+
+/* ---- sizes ---- */
+.fh-btn--sm {
+  padding: 6px 12px;
+  font: var(--text-body-sm);
+  gap: 6px;
+}
+.fh-btn--md {
+  padding: 10px 18px;
+  font: 600 15px/1.3 var(--font-body);
+  gap: 8px;
+}
+.fh-btn--lg {
+  padding: 14px 24px;
+  font: 600 16px/1.3 var(--font-body);
+  gap: 10px;
+}
+
+/* ---- variants ---- */
+.fh-btn--primary {
+  background: var(--color-brand-primary);
+  color: #fff;
+  border-color: var(--color-brand-primary);
+}
+.fh-btn--primary:hover:not(:disabled):not([aria-disabled='true']) {
+  background: var(--color-brand-primary-hover);
+  border-color: var(--color-brand-primary-hover);
+}
+
+.fh-btn--accent {
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
+  border-color: var(--color-accent);
+}
+.fh-btn--accent:hover:not(:disabled):not([aria-disabled='true']) {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+
+.fh-btn--secondary {
+  background: var(--color-bg-surface);
+  color: var(--color-brand-primary);
+  border-color: var(--color-border-strong);
+}
+.fh-btn--secondary:hover:not(:disabled):not([aria-disabled='true']) {
+  background: var(--color-bg-sunken);
+}
+
+.fh-btn--ghost {
+  background: transparent;
+  color: var(--color-brand-primary);
+  border-color: transparent;
+}
+.fh-btn--ghost:hover:not(:disabled):not([aria-disabled='true']) {
+  background: var(--color-bg-sunken);
+}
+
+.fh-btn--link {
+  background: transparent;
+  color: var(--color-link);
+  border: none;
+  padding: 0;
+  border-radius: 0;
+  text-decoration: underline;
+}
+.fh-btn--link:hover:not(:disabled):not([aria-disabled='true']) {
+  color: var(--color-link-hover);
+}
+
+/* ---- on-dark modifier ----
+   Used for the secondary hero CTA, which sits on the photographic scrim rather
+   than on a surface. Mirrors the `heroSecondaryStyle` override in the source
+   landing page, but as a named modifier instead of a loose style object. */
+.fh-btn--on-dark.fh-btn--secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.55);
+}
+.fh-btn--on-dark.fh-btn--secondary:hover:not(:disabled):not([aria-disabled='true']) {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: #fff;
+}
+
+/* ---- disabled ---- */
+.fh-btn:disabled,
+.fh-btn[aria-disabled='true'] {
+  cursor: not-allowed;
+  background: var(--color-border);
+  color: var(--color-text-tertiary);
+  border-color: var(--color-border);
+}
+.fh-btn--secondary:disabled,
+.fh-btn--ghost:disabled,
+.fh-btn--link:disabled,
+.fh-btn--secondary[aria-disabled='true'],
+.fh-btn--ghost[aria-disabled='true'],
+.fh-btn--link[aria-disabled='true'] {
+  background: transparent;
+  color: var(--color-text-tertiary);
+  border-color: var(--color-border);
+}
+
+/* Buttons that stretch on small screens (hero + CTA band) */
+@media (max-width: 480px) {
+  .fh-btn--block-mobile {
+    width: 100%;
+  }
+}

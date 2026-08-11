@@ -1,0 +1,34 @@
+[
+  {
+    "topic": "observe",
+    "updatedAt": "2026-07-23",
+    "topNeeds": [
+      "Higher-resolution surface observations in wildland-urban interface areas",
+      "Standardized data-sharing agreements between agencies"
+    ]
+  },
+  {
+    "topic": "forecast",
+    "updatedAt": "2026-07-23",
+    "topNeeds": [
+      "Longer-lead outlooks for planning windows beyond 72 hours",
+      "Model guidance tailored to local fuel and terrain conditions"
+    ]
+  },
+  {
+    "topic": "warning",
+    "updatedAt": "2026-07-23",
+    "topNeeds": [
+      "Clearer thresholds for red flag warning issuance across offices",
+      "Faster hand-off of forecaster guidance to incident command"
+    ]
+  },
+  {
+    "topic": "governance",
+    "updatedAt": "2026-07-23",
+    "topNeeds": [
+      "Shared frameworks for evaluating fire weather program impact",
+      "Clearer roles between forecast offices and land management agencies"
+    ]
+  }
+]

@@ -1,0 +1,52 @@
+{
+  "siteName": "The Firehouse",
+  "nav": [
+    { "label": "Home", "to": "/" },
+    { "label": "Explore Projects", "to": "/projects" },
+    { "label": "Topic Areas", "to": "/#topic-areas" },
+    { "label": "Submit a Finding", "href": "https://forms.gle/REPLACE-WITH-REAL-FORM-ID" }
+  ],
+  "submitLabel": "Submit a Finding",
+  "submitFormUrl": "https://forms.gle/REPLACE-WITH-REAL-FORM-ID",
+  "footerBlurb": "A project of NOAA's Global Systems Laboratory (GSL), Earth Prediction Innovation Center. Part of the National Oceanic and Atmospheric Administration.",
+  "footerGroups": [
+    {
+      "heading": "Explore",
+      "links": [
+        { "label": "All projects", "to": "/projects" },
+        { "label": "Topic areas", "to": "/#topic-areas" },
+        {
+          "label": "Submit a finding",
+          "href": "https://forms.gle/REPLACE-WITH-REAL-FORM-ID"
+        }
+      ]
+    },
+    {
+      "heading": "About GSL",
+      "links": [
+        { "label": "gsl.noaa.gov", "href": "https://gsl.noaa.gov" },
+        { "label": "Research programs", "href": "https://gsl.noaa.gov/research" },
+        { "label": "Contact GSL", "href": "https://gsl.noaa.gov/contact" },
+        { "label": "Careers", "href": "https://gsl.noaa.gov/careers" }
+      ]
+    },
+    {
+      "heading": "Federal resources",
+      "links": [
+        { "label": "NOAA.gov", "href": "https://www.noaa.gov" },
+        { "label": "Department of Commerce", "href": "https://www.commerce.gov" },
+        { "label": "USA.gov", "href": "https://www.usa.gov" },
+        { "label": "No FEAR Act", "href": "https://www.noaa.gov/organization/no-fear-act" },
+        { "label": "Privacy policy", "href": "https://www.noaa.gov/protecting-your-privacy" },
+        { "label": "Accessibility", "href": "https://www.noaa.gov/accessibility" },
+        { "label": "FOIA", "href": "https://www.noaa.gov/information-technology/foia" },
+        {
+          "label": "Information quality",
+          "href": "https://www.noaa.gov/organization/information-technology/information-quality"
+        }
+      ]
+    }
+  ],
+  "agencyLine": "U.S. Department of Commerce | National Oceanic and Atmospheric Administration",
+  "usaGovUrl": "https://www.usa.gov"
+}

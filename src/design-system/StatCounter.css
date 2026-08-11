@@ -1,0 +1,31 @@
+.fh-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fh-stat__value {
+  font: var(--text-stat);
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.fh-stat__value--accent {
+  color: var(--color-accent);
+}
+
+.fh-stat__label {
+  font: 600 14px/1.3 var(--font-body);
+  color: var(--color-text-primary);
+}
+
+.fh-stat__caption {
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+@media (max-width: 767px) {
+  .fh-stat__value {
+    font-size: 36px;
+  }
+}

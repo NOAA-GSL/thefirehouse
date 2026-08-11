@@ -1,0 +1,49 @@
+/* ============================================================
+   Accessibility overrides on the design system tokens
+   ============================================================
+
+   The creative brief (§9.2) makes WCAG 2.1 AA / Section 508 a hard requirement.
+   Two token values in the design system don't meet it. They're corrected here
+   rather than in `tokens/`, so that:
+     - the ported token files stay byte-faithful to the design system and can be
+       re-synced without losing these fixes, and
+     - the delta is visible in one place and can be pushed back upstream.
+
+   Both should be fixed in the design system itself; delete this file when they are.
+
+   Measurements below are WCAG 2.x contrast ratios; AA needs 4.5:1 for normal text
+   and 3:1 for large text (>=18.66px bold or >=24px).
+   ------------------------------------------------------------------------- */
+
+:root {
+  /* --- 1. Tertiary text is below AA in light mode ---
+     Design system value: --slate-500 (#717A8A)
+       vs page background #F7F8FA … 4.07:1   FAIL
+       vs surface        #FFFFFF … 4.33:1   FAIL
+     This colour carries 12px caption text — stat captions, the footer blurb, the
+     "Last reviewed" line, the explorer result count — so it is normal-size text
+     and needs 4.5:1, not 3:1.
+
+     Darkened to the smallest value that clears AA on both backgrounds while
+     staying visibly lighter than --color-text-secondary (--slate-600), so the
+     three-step text hierarchy the design relies on survives.
+       #616A7A vs #F7F8FA … 5.13:1   PASS
+       #616A7A vs #FFFFFF … 5.45:1   PASS */
+  --color-text-tertiary: #616a7a;
+}
+
+[data-theme='dark'] {
+  /* --- 2. Accent buttons are below AA in dark mode ---
+     In dark mode the accent lightens to --ember-400 (#F2762E) — correct for ember
+     *as text on a dark surface*, which is what the design system's dark-mode note
+     is about. But --color-text-on-accent stays #FFFFFF, and white on #F2762E is
+       1.05 / 0.370 … 2.84:1   FAIL
+     for the 16px semibold label on the primary "Submit a Finding" CTA — the single
+     most important control on the site.
+
+     Flipping the label to the darkest navy instead of lightening the fill keeps the
+     ember exactly as designed:
+       #0A1020 on #F2762E … 6.71:1   PASS
+     Light mode is untouched: white on --ember-500 (#C21500) is already 6.20:1. */
+  --color-text-on-accent: var(--navy-950);
+}

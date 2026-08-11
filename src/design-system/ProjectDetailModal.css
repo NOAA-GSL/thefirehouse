@@ -1,0 +1,141 @@
+.fh-modal__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(10, 16, 32, 0.55);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--space-lg);
+  overflow-y: auto;
+}
+
+.fh-modal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  width: 640px;
+  max-width: 100%;
+  margin: auto;
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-2xl);
+}
+
+.fh-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.fh-modal__identity {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fh-modal__title {
+  margin: 0;
+  font: var(--text-h1);
+  color: var(--color-text-primary);
+}
+
+.fh-modal__byline {
+  font: var(--text-body-sm);
+  color: var(--color-text-secondary);
+}
+
+.fh-modal__close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+.fh-modal__close:hover {
+  background: var(--color-bg-sunken);
+  color: var(--color-text-primary);
+}
+
+.fh-modal__section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fh-modal__section-title {
+  margin: 0;
+  font: var(--text-label);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.fh-modal__list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font: var(--text-body);
+  color: var(--color-text-primary);
+}
+
+.fh-modal__papers {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.fh-modal__paper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: var(--text-body-sm);
+  color: var(--color-link);
+  text-decoration: none;
+}
+
+.fh-modal__paper--static {
+  color: var(--color-text-secondary);
+  cursor: default;
+}
+
+.fh-modal__paper span {
+  text-decoration: underline;
+}
+
+.fh-modal__paper--static span {
+  text-decoration: none;
+}
+
+.fh-modal__footer {
+  display: flex;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border);
+}
+
+@media (max-width: 640px) {
+  .fh-modal {
+    padding: var(--space-lg);
+  }
+  .fh-modal__title {
+    font: var(--text-h2);
+  }
+  .fh-modal__overlay {
+    padding: 0;
+  }
+}

@@ -1,0 +1,29 @@
+.fh-not-found {
+  padding-block: var(--space-4xl);
+  max-width: 640px;
+}
+
+.fh-not-found__heading {
+  margin: var(--space-xs) 0 0;
+  font: var(--text-h1);
+  color: var(--color-text-primary);
+}
+
+.fh-not-found__body {
+  margin: var(--space-xs) 0 var(--space-lg);
+  font: var(--text-body);
+  color: var(--color-text-secondary);
+}
+
+.fh-not-found__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+@media (max-width: 480px) {
+  .fh-not-found__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

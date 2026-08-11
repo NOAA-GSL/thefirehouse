@@ -1,0 +1,70 @@
+[
+  {
+    "key": "observe",
+    "label": "Observations and Monitoring",
+    "short": "Observations",
+    "description": "What forecasters and land managers can actually see, measure, and share about fire weather conditions as they develop.",
+    "intro": [
+      "Every fire weather decision starts with what someone can observe. This area collects research on the instruments, networks, and reporting practices that put conditions in front of a forecaster or an incident team — and on the places where that picture thins out or arrives too late to act on.",
+      "The projects here consistently point at the same two pressures: coverage that does not match where people and fuels actually meet, and observations that exist somewhere in another agency's system but never reach the person who needs them."
+    ],
+    "covers": [
+      "Surface observation networks, mesonets, and sensor coverage",
+      "Remote sensing and satellite products used operationally",
+      "Field reports from incident personnel and land managers",
+      "Data sharing, formats, and access between agencies"
+    ],
+    "order": 1
+  },
+  {
+    "key": "forecast",
+    "label": "Forecasts and Modeling",
+    "short": "Forecasts",
+    "description": "How fire weather guidance is produced, how far ahead it reaches, and how well it matches local fuel and terrain conditions.",
+    "intro": [
+      "This area covers the guidance itself: the models behind it, the lead times it offers, and the translation work forecasters do before it is usable on a specific landscape. It is where research on model skill meets research on what decision-makers do with the output.",
+      "A recurring theme across these projects is the gap between the planning horizon people work to and the horizon guidance is trusted at — along with the manual, uncredited effort forecasters spend adapting national products to local fuels and terrain."
+    ],
+    "covers": [
+      "Model guidance, ensembles, and forecast skill for fire weather",
+      "Lead times and how they line up with planning windows",
+      "Downscaling and local adaptation of national products",
+      "Uncertainty, probability, and how guidance is communicated"
+    ],
+    "order": 2
+  },
+  {
+    "key": "warning",
+    "label": "Warnings and Immediate Response",
+    "short": "Warnings",
+    "description": "How warnings are issued, interpreted, and handed off during active fire weather events.",
+    "intro": [
+      "When conditions turn, the question stops being what the forecast says and becomes who acts on it, how fast, and on whose authority. This area holds the research on issuance criteria, message design, and the hand-off between forecast offices and the people running an incident.",
+      "The findings here concentrate on consistency and speed: thresholds that are read differently from one office to the next, and guidance that is sound but reaches incident command later than the decision it was meant to inform."
+    ],
+    "covers": [
+      "Red flag warning criteria and issuance thresholds",
+      "How warnings are worded, received, and interpreted",
+      "Hand-off between forecast offices and incident command",
+      "Evacuation, public messaging, and protective action decisions"
+    ],
+    "order": 3
+  },
+  {
+    "key": "governance",
+    "label": "Strategic Adaptation and Institutional Governance",
+    "short": "Governance",
+    "description": "How agencies coordinate, evaluate, and adapt fire weather programs over the long term.",
+    "intro": [
+      "Beyond any single event sits the slower work: who owns which responsibility, how programs are funded and measured, and how an organization changes what it does in response to what it learned. This area collects research on those arrangements.",
+      "Projects here tend to surface structural rather than technical needs — shared ways to evaluate whether a fire weather program is working, and clearer boundaries between forecast offices and the land management agencies they support."
+    ],
+    "covers": [
+      "Interagency roles, responsibilities, and coordination",
+      "Program evaluation and measures of impact",
+      "Workforce capacity, training, and institutional knowledge",
+      "Policy, funding, and long-term adaptation planning"
+    ],
+    "order": 4
+  }
+]

@@ -1,0 +1,278 @@
+/* ============================================================
+   Hero
+   ============================================================ */
+
+.fh-hero {
+  position: relative;
+  min-height: clamp(420px, 62vw, 560px);
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+.fh-hero__media {
+  position: absolute;
+  inset: 0;
+  /* Stand-in for the design system's fire-weather photo while that binary asset is
+     missing — see src/assets/imagery/README.md. Ember over smoke over navy, in the
+     palette's own values, so the scrim above it lands the same way it will on the
+     real photo. Once the image is added it covers this entirely. */
+  background:
+    radial-gradient(120% 90% at 78% 88%, rgba(255, 144, 0, 0.5) 0%, rgba(255, 144, 0, 0) 55%),
+    radial-gradient(90% 70% at 22% 100%, rgba(194, 21, 0, 0.55) 0%, rgba(194, 21, 0, 0) 60%),
+    radial-gradient(140% 120% at 50% 0%, rgba(110, 133, 175, 0.35) 0%, rgba(16, 27, 54, 0) 55%),
+    linear-gradient(180deg, var(--navy-800) 0%, var(--navy-950) 100%);
+}
+
+.fh-hero__image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fh-hero__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(10, 16, 32, 0.15) 0%,
+    rgba(10, 16, 32, 0.55) 55%,
+    rgba(10, 16, 32, 0.92) 100%
+  );
+}
+
+.fh-hero__content {
+  position: relative;
+  padding-top: clamp(32px, 6vw, 64px);
+  padding-bottom: clamp(40px, 7vw, 72px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  color: #fff;
+}
+
+.fh-hero__eyebrow {
+  font: var(--text-label);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+  color: var(--ember-200);
+  /* Pull eyebrow tighter to the display heading than the section gap. */
+  margin-bottom: calc(var(--space-xs) * -1);
+}
+
+.fh-hero__heading {
+  margin: 0;
+  font: 800 clamp(32px, 5vw, 56px) / 1.08 var(--font-display);
+  max-width: 820px;
+  color: #fff;
+  text-wrap: balance;
+}
+
+.fh-hero__body {
+  margin: 0;
+  font: var(--text-body-lg);
+  max-width: 640px;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.fh-hero__actions {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  margin-top: var(--space-xs);
+}
+
+@media (max-width: 480px) {
+  .fh-hero__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* ============================================================
+   Live stats
+   ============================================================ */
+
+.fh-stats {
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-surface);
+}
+
+.fh-stats__row {
+  padding-block: var(--space-xl);
+  display: flex;
+  gap: clamp(32px, 6vw, 80px);
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+/* ============================================================
+   Topic summary cards
+   ============================================================ */
+
+.fh-topics {
+  padding-block: var(--space-3xl);
+  scroll-margin-top: var(--space-lg);
+}
+
+.fh-topics__intro {
+  max-width: 640px;
+  margin-bottom: var(--space-xl);
+}
+
+.fh-topics__heading {
+  margin: var(--space-xs) 0 0;
+  font: var(--text-h1);
+  color: var(--color-text-primary);
+}
+
+.fh-topics__body {
+  margin: var(--space-xs) 0 0;
+  font: var(--text-body);
+  color: var(--color-text-secondary);
+}
+
+.fh-topics__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-lg);
+}
+
+.fh-topic-card {
+  position: relative;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  transition: box-shadow 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+
+.fh-topic-card:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.fh-topic-card__title {
+  margin: 0;
+  font: var(--text-h3);
+  color: var(--color-text-primary);
+}
+
+/* Stretches the title link over the whole card, so the click target is the card
+   while the link's accessible name stays "Observations and Monitoring". */
+.fh-topic-card__link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.fh-topic-card__link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.fh-topic-card:hover .fh-topic-card__link {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* The stretched ::after has no size of its own to ring, so the focus indicator is
+   drawn on the card. The global :focus-visible rule still covers the inline text
+   if :has is unavailable. */
+.fh-topic-card:has(.fh-topic-card__link:focus-visible) {
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.fh-topic-card__needs {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font: var(--text-body-sm);
+  color: var(--color-text-secondary);
+}
+
+.fh-topic-card__foot {
+  margin: auto 0 0;
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.fh-topic-card__updated {
+  margin: 0;
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.fh-topic-card__cue {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: var(--text-label);
+  color: var(--color-brand-primary);
+  transition: gap 150ms ease;
+}
+
+.fh-topic-card:hover .fh-topic-card__cue {
+  gap: 9px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fh-topic-card,
+  .fh-topic-card:hover {
+    transform: none;
+  }
+
+  .fh-topic-card:hover .fh-topic-card__cue {
+    gap: 5px;
+  }
+}
+
+/* ============================================================
+   Submit CTA band
+   ============================================================ */
+
+.fh-cta-band {
+  background: var(--color-bg-sunken);
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.fh-cta-band__inner {
+  padding-block: var(--space-2xl);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.fh-cta-band__copy {
+  max-width: 560px;
+}
+
+.fh-cta-band__heading {
+  margin: 0 0 8px;
+  font: var(--text-h2);
+  color: var(--color-text-primary);
+}
+
+.fh-cta-band__body {
+  margin: 0;
+  font: var(--text-body);
+  color: var(--color-text-secondary);
+}

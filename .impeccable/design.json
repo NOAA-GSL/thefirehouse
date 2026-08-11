@@ -1,0 +1,262 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-11T16:39:00.000Z",
+  "title": "Design System: The Firehouse",
+  "extensions": {
+    "colorMeta": {
+      "brand-primary": {
+        "role": "primary",
+        "displayName": "brand-primary",
+        "canonical": "#263f78",
+        "tonalRamp": ["#0a1020", "#101b36", "#1b2e56", "#263f78", "#4a628f", "#6e85af", "#c5d1e4", "#f3f6fa"]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "accent",
+        "canonical": "#c21500",
+        "tonalRamp": ["#3d0700", "#7e0e00", "#a11200", "#c21500", "#f2762e", "#ff9e63", "#ffc7a3", "#fff4ee"]
+      },
+      "bg-page": {
+        "role": "neutral",
+        "displayName": "bg-page",
+        "canonical": "#f7f8fa",
+        "tonalRamp": ["#0d0f13", "#181b21", "#282c36", "#545c6c", "#98a0af", "#c0c6d0", "#eef0f3", "#f7f8fa"]
+      },
+      "bg-surface": {
+        "role": "neutral",
+        "displayName": "bg-surface",
+        "canonical": "#ffffff",
+        "tonalRamp": ["#181b21", "#282c36", "#545c6c", "#98a0af", "#c0c6d0", "#dce0e6", "#eef0f3", "#ffffff"]
+      },
+      "bg-sunken": {
+        "role": "neutral",
+        "displayName": "bg-sunken",
+        "canonical": "#f3f6fa",
+        "tonalRamp": ["#0a1020", "#1b2e56", "#263f78", "#4a628f", "#6e85af", "#9caece", "#e3e9f2", "#f3f6fa"]
+      },
+      "text-primary": {
+        "role": "neutral",
+        "displayName": "text-primary",
+        "canonical": "#101b36",
+        "tonalRamp": ["#0a1020", "#101b36", "#1b2e56", "#263f78", "#4a628f", "#6e85af", "#c5d1e4", "#f3f6fa"]
+      },
+      "text-secondary": {
+        "role": "neutral",
+        "displayName": "text-secondary",
+        "canonical": "#545c6c",
+        "tonalRamp": ["#0d0f13", "#181b21", "#282c36", "#3d4351", "#545c6c", "#98a0af", "#c0c6d0", "#eef0f3"]
+      },
+      "text-tertiary": {
+        "role": "neutral",
+        "displayName": "text-tertiary",
+        "canonical": "#616a7a",
+        "tonalRamp": ["#0d0f13", "#181b21", "#282c36", "#3d4351", "#616a7a", "#98a0af", "#c0c6d0", "#eef0f3"]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "border",
+        "canonical": "#dce0e6",
+        "tonalRamp": ["#181b21", "#282c36", "#545c6c", "#98a0af", "#c0c6d0", "#dce0e6", "#eef0f3", "#f7f8fa"]
+      },
+      "focus-ring": {
+        "role": "secondary",
+        "displayName": "focus-ring",
+        "canonical": "#0284c7",
+        "tonalRamp": ["#065785", "#0369a1", "#0077b6", "#0284c7", "#b3e1ff", "#ddf0ff", "#f0f9ff", "#ffffff"]
+      },
+      "link": {
+        "role": "secondary",
+        "displayName": "link",
+        "canonical": "#0a4595",
+        "tonalRamp": ["#0a1020", "#101b36", "#1b2e56", "#0a4595", "#263f78", "#4a628f", "#9caece", "#e3e9f2"]
+      },
+      "topic-observe": {
+        "role": "secondary",
+        "displayName": "topic-observe",
+        "canonical": "#0369a1",
+        "tonalRamp": ["#065785", "#0369a1", "#0077b6", "#0284c7", "#b3e1ff", "#ddf0ff", "#f0f9ff", "#ffffff"]
+      },
+      "topic-forecast": {
+        "role": "secondary",
+        "displayName": "topic-forecast",
+        "canonical": "#0b5d56",
+        "tonalRamp": ["#084b45", "#0b5d56", "#0f766e", "#0d9488", "#96f1e3", "#ccfbf1", "#effcfa", "#ffffff"]
+      },
+      "topic-warning": {
+        "role": "secondary",
+        "displayName": "topic-warning",
+        "canonical": "#a11200",
+        "tonalRamp": ["#3d0700", "#7e0e00", "#a11200", "#c21500", "#f2762e", "#ffc7a3", "#ffe3d2", "#fff4ee"]
+      },
+      "topic-governance": {
+        "role": "secondary",
+        "displayName": "topic-governance",
+        "canonical": "#5b3e82",
+        "tonalRamp": ["#472f67", "#5b3e82", "#7654a6", "#8b5fc0", "#d6c2ed", "#ede4f7", "#f5f0fa", "#ffffff"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero headlines only (Archivo 800)." },
+      "headline": { "displayName": "Headline", "purpose": "Section titles (Archivo 700 / 32px)." },
+      "title": { "displayName": "Title", "purpose": "Card and band headings (Archivo 600)." },
+      "body": { "displayName": "Body", "purpose": "Default Public Sans prose." },
+      "label": { "displayName": "Label", "purpose": "Uppercase eyebrows, chips, field labels." },
+      "stat": { "displayName": "Stat", "purpose": "Live counters in Archivo Expanded." }
+    },
+    "shadows": [
+      {
+        "name": "shadow-sm",
+        "value": "0 1px 2px rgba(38, 63, 120, 0.08)",
+        "purpose": "Resting lift on interactive project tiles."
+      },
+      {
+        "name": "shadow-md",
+        "value": "0 4px 10px rgba(38, 63, 120, 0.1), 0 1px 2px rgba(38, 63, 120, 0.08)",
+        "purpose": "Hover elevation for interactive tiles."
+      },
+      {
+        "name": "shadow-lg",
+        "value": "0 12px 28px rgba(38, 63, 120, 0.14), 0 2px 6px rgba(38, 63, 120, 0.08)",
+        "purpose": "Modals and strong overlays."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-color",
+        "value": "120ms ease",
+        "purpose": "Button background/border/color transitions."
+      },
+      {
+        "name": "ease-tile",
+        "value": "150ms ease",
+        "purpose": "Project tile shadow, border, and translateY hover."
+      }
+    ],
+    "breakpoints": [
+      { "name": "mobile-cta", "value": "480px" },
+      { "name": "tablet", "value": "768px" },
+      { "name": "header-drawer", "value": "1024px" },
+      { "name": "desktop", "value": "1200px" },
+      { "name": "wide", "value": "1440px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Structural navy CTA for brand-primary actions.",
+      "html": "<button class=\"ds-btn-primary\" type=\"button\">Explore Projects</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 18px; border-radius: 8px; border: 1px solid #263f78; background: #263f78; color: #ffffff; font-family: \"Public Sans\", ui-sans-serif, system-ui, sans-serif; font-size: 15px; font-weight: 600; line-height: 1.3; cursor: pointer; transition: background-color 120ms ease, border-color 120ms ease; } .ds-btn-primary:hover { background: #1b2e56; border-color: #1b2e56; } .ds-btn-primary:focus-visible { outline: 3px solid #0284c7; outline-offset: 2px; }"
+    },
+    {
+      "name": "Accent Button",
+      "kind": "button",
+      "refersTo": "button-accent",
+      "description": "Ember high-intent CTA — Submit a Finding.",
+      "html": "<button class=\"ds-btn-accent\" type=\"button\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" aria-hidden=\"true\"><path d=\"M12 5v14M5 12h14\"/></svg>Submit a Finding</button>",
+      "css": ".ds-btn-accent { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 24px; border-radius: 8px; border: 1px solid #c21500; background: #c21500; color: #ffffff; font-family: \"Public Sans\", ui-sans-serif, system-ui, sans-serif; font-size: 16px; font-weight: 600; line-height: 1.3; cursor: pointer; transition: background-color 120ms ease, border-color 120ms ease; } .ds-btn-accent:hover { background: #a11200; border-color: #a11200; } .ds-btn-accent:focus-visible { outline: 3px solid #0284c7; outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Soft bordered secondary on light surfaces.",
+      "html": "<button class=\"ds-btn-secondary\" type=\"button\">Secondary</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 18px; border-radius: 8px; border: 1px solid #c0c6d0; background: #ffffff; color: #263f78; font-family: \"Public Sans\", ui-sans-serif, system-ui, sans-serif; font-size: 15px; font-weight: 600; line-height: 1.3; cursor: pointer; transition: background-color 120ms ease; } .ds-btn-secondary:hover { background: #f3f6fa; } .ds-btn-secondary:focus-visible { outline: 3px solid #0284c7; outline-offset: 2px; }"
+    },
+    {
+      "name": "On-Dark Secondary",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Hero secondary CTA on photographic/navy scrim.",
+      "html": "<button class=\"ds-btn-on-dark\" type=\"button\">Explore Projects <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"M5 12h14M13 5l7 7-7 7\"/></svg></button>",
+      "css": ".ds-btn-on-dark { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 24px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.55); background: rgba(255,255,255,0.1); color: #ffffff; font-family: \"Public Sans\", ui-sans-serif, system-ui, sans-serif; font-size: 16px; font-weight: 600; line-height: 1.3; cursor: pointer; transition: background-color 120ms ease, border-color 120ms ease; } .ds-btn-on-dark:hover { background: rgba(255,255,255,0.2); border-color: #ffffff; } .ds-btn-on-dark:focus-visible { outline: 3px solid #0284c7; outline-offset: 2px; }"
+    },
+    {
+      "name": "Topic Tag",
+      "kind": "chip",
+      "refersTo": "topic-tag",
+      "description": "Categorical topic pill — observe example; swap topic tokens per area.",
+      "html": "<span class=\"ds-topic-tag\">Observations</span>",
+      "css": ".ds-topic-tag { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; border: 1px solid #b3e1ff; background: #f0f9ff; color: #0369a1; font-family: \"Public Sans\", ui-sans-serif, system-ui, sans-serif; font-size: 13px; font-weight: 600; line-height: 1.4; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Labeled control with sky focus ring.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field__label\">Finding title</span><input class=\"ds-field__control\" type=\"text\" placeholder=\"Short title\" /></label>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 360px; } .ds-field__label { font-family: \"Public Sans\", ui-sans-serif, system-ui, sans-serif; font-size: 13px; font-weight: 600; line-height: 1.3; letter-spacing: 0.06em; color: #101b36; } .ds-field__control { font-family: \"Public Sans\", ui-sans-serif, system-ui, sans-serif; font-size: 16px; line-height: 1.6; padding: 10px 14px; border-radius: 8px; border: 1px solid #c0c6d0; background: #ffffff; color: #101b36; } .ds-field__control:focus { outline: none; border-color: #263f78; box-shadow: 0 0 0 3px #0284c7; }"
+    },
+    {
+      "name": "Project Tile",
+      "kind": "card",
+      "refersTo": "project-tile",
+      "description": "Interactive explorer card — border-first with hover lift.",
+      "html": "<button class=\"ds-tile\" type=\"button\"><span class=\"ds-topic-tag\">Forecasts</span><span class=\"ds-tile__title\">Local fuel-aware model guidance</span><span class=\"ds-tile__summary\">How offices adapt national products to terrain and fuels before briefing incident teams.</span><span class=\"ds-tile__meta\">DESI research team · 2024</span></button>",
+      "css": ".ds-tile { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; text-align: left; width: 100%; max-width: 320px; padding: 24px; border-radius: 10px; border: 1px solid #dce0e6; background: #ffffff; box-shadow: 0 1px 2px rgba(38, 63, 120, 0.08); cursor: pointer; font-family: \"Public Sans\", ui-sans-serif, system-ui, sans-serif; transition: box-shadow 150ms ease, border-color 150ms ease, transform 150ms ease; } .ds-tile:hover { box-shadow: 0 4px 10px rgba(38, 63, 120, 0.1), 0 1px 2px rgba(38, 63, 120, 0.08); border-color: #c0c6d0; transform: translateY(-2px); } .ds-tile:focus-visible { outline: 3px solid #0284c7; outline-offset: 2px; } .ds-tile .ds-topic-tag { display: inline-flex; padding: 3px 10px; border-radius: 999px; border: 1px solid #96f1e3; background: #effcfa; color: #0b5d56; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; } .ds-tile__title { font-family: Archivo, ui-sans-serif, system-ui, sans-serif; font-size: 20px; font-weight: 600; line-height: 1.32; color: #101b36; } .ds-tile__summary { font-size: 14px; line-height: 1.55; color: #545c6c; } .ds-tile__meta { margin-top: auto; padding-top: 4px; font-size: 12px; font-weight: 500; color: #616a7a; }"
+    },
+    {
+      "name": "Topic Card",
+      "kind": "card",
+      "refersTo": "card-topic",
+      "description": "Landing topic summary — flat bordered surface, no ambient shadow.",
+      "html": "<article class=\"ds-topic-card\"><span class=\"ds-topic-tag\">Observations</span><h3 class=\"ds-topic-card__title\">Observations and Monitoring</h3><ul class=\"ds-topic-card__needs\"><li>Higher-resolution surface observations in wildland-urban interface areas</li><li>Standardized data-sharing agreements between agencies</li></ul><p class=\"ds-topic-card__updated\">Last reviewed July 23, 2026</p></article>",
+      "css": ".ds-topic-card { display: flex; flex-direction: column; gap: 12px; max-width: 320px; padding: 24px; border-radius: 10px; border: 1px solid #dce0e6; background: #ffffff; } .ds-topic-card .ds-topic-tag { display: inline-flex; width: fit-content; padding: 5px 12px; border-radius: 999px; border: 1px solid #b3e1ff; background: #f0f9ff; color: #0369a1; font-family: \"Public Sans\", ui-sans-serif, system-ui, sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; } .ds-topic-card__title { margin: 0; font-family: Archivo, ui-sans-serif, system-ui, sans-serif; font-size: 20px; font-weight: 600; line-height: 1.32; color: #101b36; } .ds-topic-card__needs { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-family: \"Public Sans\", ui-sans-serif, system-ui, sans-serif; font-size: 14px; line-height: 1.55; color: #545c6c; } .ds-topic-card__updated { margin: 0; padding-top: 8px; font-family: \"Public Sans\", ui-sans-serif, system-ui, sans-serif; font-size: 12px; font-weight: 500; color: #616a7a; }"
+    },
+    {
+      "name": "Header Nav Link",
+      "kind": "nav",
+      "refersTo": "button-ghost",
+      "description": "Site header link with ember underline when active.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Primary\"><a class=\"ds-nav__link ds-nav__link--active\" href=\"#\">Home</a><a class=\"ds-nav__link\" href=\"#\">Explore Projects</a><a class=\"ds-nav__link\" href=\"#\">Topic Areas</a></nav>",
+      "css": ".ds-nav { display: flex; gap: 24px; align-items: center; background: #ffffff; padding: 14px 24px; } .ds-nav__link { font-family: \"Public Sans\", ui-sans-serif, system-ui, sans-serif; font-size: 15px; font-weight: 500; line-height: 1.3; color: #545c6c; text-decoration: none; padding-bottom: 4px; border-bottom: 2px solid transparent; } .ds-nav__link:hover { color: #101b36; } .ds-nav__link--active { font-weight: 600; color: #263f78; border-bottom-color: #c21500; } .ds-nav__link:focus-visible { outline: 3px solid #0284c7; outline-offset: 2px; }"
+    },
+    {
+      "name": "Stat Counter",
+      "kind": "custom",
+      "refersTo": "button-accent",
+      "description": "Live hub statistic — Expanded numeral; accent variant for Open.",
+      "html": "<div class=\"ds-stat\"><div class=\"ds-stat__value ds-stat__value--accent\">Open</div><div class=\"ds-stat__label\">For submissions</div><div class=\"ds-stat__caption\">Researchers can contribute findings any time</div></div>",
+      "css": ".ds-stat { display: flex; flex-direction: column; gap: 4px; min-width: 180px; } .ds-stat__value { font-family: \"Archivo Expanded\", Archivo, ui-sans-serif, system-ui, sans-serif; font-size: 44px; font-weight: 800; line-height: 1; color: #101b36; font-variant-numeric: tabular-nums; } .ds-stat__value--accent { color: #c21500; } .ds-stat__label { font-family: \"Public Sans\", ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 600; line-height: 1.3; color: #101b36; } .ds-stat__caption { font-family: \"Public Sans\", ui-sans-serif, system-ui, sans-serif; font-size: 12px; font-weight: 500; line-height: 1.4; color: #616a7a; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Watchtower",
+    "overview": "The Firehouse UI is a maritime-institutional watchtower: cool paper grounds, deep navy brand structure, and ember reserved for the actions that matter. It reads as NOAA/GSL federal chrome first — gov banner, agency lockups, quiet footer — then as a research hub that is approachable through soft tint washes (topic chips, sunken CTA bands) rather than marketing spectacle.\n\nDensity is deliberate and readable: generous section padding (`--space-3xl` on topic blocks), a 1280px content column, and type that separates display (Archivo) from working prose (Public Sans). Depth is mostly tonal and bordered; shadows appear when something is interactive, not as ambient decoration.\n\nThis document records the ported Firehouse design system already in `src/styles/tokens/` and `src/design-system/`. New screens should compose from those tokens and components — not invent a parallel palette or type stack.",
+    "keyCharacteristics": [
+      "Cool paper page (bg-page) with white surfaces and navy-tinted sunken bands",
+      "Dual signal: brand-primary (navy) for structure; accent (ember) for primary CTAs",
+      "Archivo display + Public Sans body; Archivo Expanded for live stats",
+      "Border-first cards; soft shadow + 2px lift only on interactive tiles",
+      "Topic identity via tinted pill chips (sky / teal / ember / plum)",
+      "3px sky focus-ring on :focus-visible — never removed",
+      "Light and dark themes via [data-theme]; AA overrides live in a11y-overrides.css"
+    ],
+    "rules": [
+      { "name": "The Ember Budget Rule", "body": "Ember (accent) is for decisive actions and topic-warning identity. Do not sprinkle solid ember across chrome, icons, or decorative rules — rarity is the point.", "section": "colors" },
+      { "name": "The Token Names Rule", "body": "Prefer CSS token names (brand-primary, accent, bg-sunken) in specs and PRs over poetic aliases so agents and editors stay synced with tokens/colors.css.", "section": "colors" },
+      { "name": "The AA Override Rule", "body": "Never “fix” tertiary text or dark-mode accent labels back to upstream token values without re-checking contrast; see src/styles/a11y-overrides.css.", "section": "colors" },
+      { "name": "The Expanded Reserve Rule", "body": "Archivo Expanded appears on stats and the Firehouse wordmark — not on body copy or buttons.", "section": "typography" },
+      { "name": "The Uppercase Label Rule", "body": "Uppercase + letter-spacing-label is for metadata (eyebrows, chips, field labels), never for long sentences.", "section": "typography" },
+      { "name": "The Container Rule", "body": "Page content lives in .fh-container; do not invent ad-hoc max-widths that fight 1280px unless a component already defines a tighter measure.", "section": "layout" },
+      { "name": "The Flat-By-Default Rule", "body": "Surfaces are flat at rest. Shadows appear as a response to interactivity or modal layering — not as permanent decoration under every card.", "section": "elevation" },
+      { "name": "The Soft Corner Rule", "body": "Prefer --radius-md / --radius-lg over sharp rectangles or oversized app pill radii on containers. Full radius is for chips and tags only.", "section": "shapes" }
+    ],
+    "dos": [
+      "Do compose new UI from src/design-system and CSS variables in src/styles/tokens/ — never hard-code one-off hex when a token exists.",
+      "Do keep ember rare and intentional (primary CTAs + warning topic identity).",
+      "Do keep the 3px sky :focus-visible ring; honor prefers-reduced-motion.",
+      "Do use topic tint chips for categorical identity and sunken bands for quiet sectioning.",
+      "Do preserve AA overrides for tertiary text (#616a7a) and dark-mode accent labels."
+    ],
+    "donts": [
+      "Don't invent a second brand accent (gradients, purple, neon) alongside ember.",
+      "Don't put Archivo Expanded on paragraphs or buttons.",
+      "Don't ambient-shadow every card; reserve lift for interactive tiles/modals.",
+      "Don't remove NOAA/GSL lockups, gov banner, or federal footer patterns from public chrome.",
+      "Don't ship placeholder project citations or decorative imagery that contradicts PRODUCT.md evidence rules."
+    ]
+  }
+}

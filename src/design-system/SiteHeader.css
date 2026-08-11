@@ -1,0 +1,148 @@
+.fh-header {
+  background: var(--color-bg-surface);
+  border-bottom: 1px solid var(--color-border);
+  position: relative;
+}
+
+.fh-header__bar {
+  padding-block: 14px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xl);
+}
+
+.fh-header__lockup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.fh-header__logo-noaa {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.fh-header__logo-gsl {
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.fh-header__divider {
+  width: 1px;
+  height: 20px;
+  background: var(--color-border-strong);
+}
+
+.fh-header__wordmark {
+  font: 800 20px/1 var(--font-display-expanded);
+  color: var(--color-text-primary);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.fh-header__nav {
+  display: flex;
+  gap: var(--space-lg);
+  flex: 1;
+}
+
+.fh-header__link {
+  font: 500 15px/1.3 var(--font-body);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+  padding-bottom: 4px;
+  border-bottom: 2px solid transparent;
+}
+
+.fh-header__link:hover {
+  color: var(--color-text-primary);
+}
+
+.fh-header__link--active {
+  font-weight: 600;
+  color: var(--color-brand-primary);
+  border-bottom-color: var(--color-accent);
+}
+
+.fh-header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-left: auto;
+}
+
+.fh-header__icon-btn {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.fh-header__icon-btn:hover {
+  background: var(--color-bg-sunken);
+  color: var(--color-text-primary);
+}
+
+/* The hamburger only exists below the breakpoint. */
+.fh-header__menu-btn {
+  display: none;
+}
+
+.fh-header__drawer {
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg-surface);
+}
+
+.fh-header__drawer-nav {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-md);
+  padding-block: var(--space-lg);
+}
+
+.fh-header__drawer-nav .fh-header__link {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 16px;
+}
+
+.fh-header__drawer-nav .fh-header__link--active {
+  border-bottom-color: var(--color-accent);
+}
+
+/* Below the desktop breakpoint the inline nav and header CTA collapse into the
+   drawer; the identity lockup and theme toggle stay visible. */
+@media (max-width: 1023px) {
+  .fh-header__nav,
+  .fh-header__cta {
+    display: none;
+  }
+  .fh-header__menu-btn {
+    display: flex;
+  }
+  .fh-header__bar {
+    gap: var(--space-md);
+  }
+}
+
+@media (max-width: 420px) {
+  .fh-header__logo-gsl,
+  .fh-header__divider {
+    display: none;
+  }
+  .fh-header__wordmark {
+    font-size: 17px;
+  }
+}

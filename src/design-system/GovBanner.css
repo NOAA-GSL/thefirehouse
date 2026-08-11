@@ -1,0 +1,60 @@
+.fh-gov {
+  background: var(--color-bg-sunken);
+  border-bottom: 1px solid var(--color-border);
+  font: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+
+.fh-gov__bar {
+  padding-block: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.fh-gov__toggle {
+  background: none;
+  border: none;
+  color: var(--color-link);
+  font: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 4px;
+}
+
+.fh-gov__toggle:hover {
+  color: var(--color-link-hover);
+  text-decoration: underline;
+}
+
+.fh-gov__panel {
+  border-top: 1px solid var(--color-border);
+}
+
+.fh-gov__panel-inner {
+  padding-block: var(--space-lg);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-lg);
+}
+
+.fh-gov__fact {
+  display: flex;
+  gap: 10px;
+}
+
+.fh-gov__fact strong {
+  font: var(--text-body-sm);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.fh-gov__fact span {
+  font: var(--text-caption);
+}

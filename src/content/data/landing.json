@@ -1,0 +1,43 @@
+{
+  "hero": {
+    "eyebrow": "NOAA / Global Systems Laboratory",
+    "heading": "A shared home for fire weather social science",
+    "body": "The Firehouse centralizes the needs and recommendations learned across completed fire weather research, so forecasters, researchers, and decision-makers can find what's already known — and add to it.",
+    "primaryCta": { "label": "Submit a Finding", "href": "" },
+    "secondaryCta": { "label": "Explore Projects", "to": "/projects" },
+    "imageAlt": ""
+  },
+  "stats": [
+    {
+      "id": "projects",
+      "source": "publishedProjectCount",
+      "label": "Projects analyzed",
+      "caption": "Completed DESI and testbed research"
+    },
+    {
+      "id": "topics",
+      "source": "topicCount",
+      "label": "Topic areas",
+      "caption": "Observations, forecasts, warnings, governance"
+    },
+    {
+      "id": "submissions",
+      "source": "static",
+      "value": "Open",
+      "label": "For submissions",
+      "caption": "Researchers can contribute findings any time",
+      "accent": true
+    }
+  ],
+  "topicSection": {
+    "eyebrow": "Synthesized from nine research projects",
+    "heading": "Top needs, by topic area",
+    "body": "Each area updates automatically as new findings are reviewed and folded in."
+  },
+  "needsPerCard": 2,
+  "submitBand": {
+    "heading": "Have a finding to share?",
+    "body": "Describe what you learned in your own words. Submissions are reviewed and folded into the four topic areas above.",
+    "cta": { "label": "Submit a Finding", "href": "" }
+  }
+}

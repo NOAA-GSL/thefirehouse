@@ -1,0 +1,23 @@
+.fh-topic-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+  color: var(--tag-text);
+  background: var(--tag-tint);
+  border: 1px solid var(--tag-border);
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+  width: fit-content;
+}
+
+.fh-topic-tag--sm {
+  padding: 3px 10px;
+  font: 600 12px/1.4 var(--font-body);
+}
+
+.fh-topic-tag--md {
+  padding: 5px 12px;
+  font: 600 13px/1.4 var(--font-body);
+}
