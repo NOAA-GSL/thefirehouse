@@ -47,6 +47,7 @@ Thumbs.db
 
 # Agents / AI tooling (local state & configs)
 .claude/
+.impeccable/
 .agents/
 .agent/
 .cursor/
