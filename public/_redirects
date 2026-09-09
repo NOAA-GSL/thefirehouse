@@ -1,0 +1,7 @@
+# Netlify / Cloudflare Pages SPA fallback.
+#
+# The Firehouse is client-routed: /projects and /topics/observe have no file behind
+# them, so without this a direct hit or a refresh 404s. The 200 keeps the real status
+# code correct (unlike a 404.html fallback), so search engines and link unfurlers see
+# a normal page.
+/*    /index.html    200

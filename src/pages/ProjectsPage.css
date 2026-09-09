@@ -46,12 +46,12 @@
 .fh-chip--active {
   background: var(--color-brand-primary);
   border-color: var(--color-brand-primary);
-  color: #fff;
+  color: var(--color-text-on-brand);
 }
 
 .fh-chip--active:hover {
   background: var(--color-brand-primary-hover);
-  color: #fff;
+  color: var(--color-text-on-brand);
 }
 
 .fh-explorer__count {

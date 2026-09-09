@@ -20,7 +20,7 @@ npm run preview  # serve the production build
 | `/`                | **Landing page** — the implemented design. Hero, live stats, four topic-area summary cards, submit CTA band. |
 | `/projects`        | **Project explorer** — first pass at brief §5.2. Topic-filtered grid, detail modal. |
 | `/topics/:topicKey` | **Topic area page** — introduction, current top needs, and every project in that area. One per `TopicKey`. |
-| `*`                | 404.                                                                          |
+| `*`                | **Custom 404** — echoes the requested address, and offers the explorer plus all four topic areas rather than dead-ending. Also rendered by `/topics/:topicKey` for a key that isn't one of the four, with wording tailored to that case. |
 
 The landing page is a faithful implementation of `Firehouse Landing Page.dc.html`
 from the Claude Design project. Every deviation is listed under
@@ -38,6 +38,9 @@ src/
   pages/            LandingPage, ProjectsPage, NotFoundPage
   components/       Layout, ThemeProvider
   assets/           NOAA + GSL logos; hero imagery (see caveat)
+
+public/             Served verbatim at the site root: icons, the link-preview card,
+                    robots.txt, and the two host-level SPA fallbacks (see Hosting)
 ```
 
 ### The design system
@@ -105,7 +108,11 @@ Everything below is an addition or correction, with the reason. Nothing was drop
 - **Real dialog semantics on `ProjectDetailModal`** — `aria-modal`, focus moved in
   and restored, Escape to close, focus loop. The source was a presentational panel.
 - **Focus management on route change.** Client-side routing swaps the DOM without
-  moving focus. `RouteFocusManager` moves it to `<main>`.
+  moving focus. `RouteFocusManager` moves it to `<main>` — but only on an actual
+  navigation, never on the initial page load. A cold load already starts focus at the
+  top of the document, and pulling it into `<main>` there would leave the skip link,
+  the gov banner toggle and the entire header *behind* the focus position: the first
+  Tab would land inside the content and the skip link could never be reached at all.
 - **Skip link**, `aria-current` on the active nav item, `<label htmlFor>` +
   `aria-describedby` + `aria-invalid` wiring on the form fields, `prefers-reduced-motion`.
 
@@ -161,6 +168,13 @@ overrides are isolated so a re-sync doesn't lose them.
       written from the four topic definitions and the needs already on file, not
       from the FireHouse 1.0 report, and it is the first thing a reader arriving at
       `/topics/…` will read. Stephanie or Emily should own the wording.
+- [ ] **Set `VITE_SITE_URL`** once hosting is settled, so `canonical`, `og:url` and
+      `og:image` are emitted. Until then shared links preview without the image card.
+- [ ] **Confirm the SPA fallback with Matt** — which of `.htaccess` / `_redirects` /
+      `404.html` actually applies on GSL's host, and drop the two that don't.
+- [ ] **Add a `Sitemap:` line to `public/robots.txt`** and generate `sitemap.xml`;
+      both need the final URL. If the build goes on a staging URL before launch, flip
+      `robots.txt` to `Disallow: /` so the preview isn't indexed.
 - [ ] **Decide on self-hosted fonts.** Archivo and Public Sans load from Google
       Fonts. Some agencies prohibit third-party CDN calls; swapping the `@import` in
       `tokens/typography.css` for local `@font-face` is the only change needed.
@@ -188,5 +202,34 @@ Named so it's clear these are gaps, not oversights:
 
 Placement is still open (brief §8). The build is fully static and needs no server.
 If it lands on a sub-path, set `VITE_BASE_PATH=/firehouse/` — Vite's `base` and the
-router's `basename` are already wired to it. Client-side routing needs the host to
-rewrite unknown paths to `index.html`.
+router's `basename` are already wired to it, and the icon links in `index.html` use
+`%BASE_URL%` so they resolve there too.
+
+**Client routing needs the host to serve the app shell for unknown paths.** `/projects`
+and `/topics/observe` have no file behind them, so without this a direct hit, a refresh,
+or a link shared off a conference slide returns 404. Three options ship, so whichever
+host GSL lands on is already covered:
+
+| File | Host |
+| ---- | ---- |
+| `public/.htaccess` | Apache. Needs `AllowOverride FileInfo`; also sets cache headers. Uncomment `RewriteBase` for a sub-path. |
+| `public/_redirects` | Netlify / Cloudflare Pages. Rewrites with a **200**, so the status code stays correct. |
+| `dist/404.html` | Bucket-style hosts with no rewrite lever at all — S3, GitHub Pages, Azure Static Web Apps. Emitted at build time by the `firehouse-spa-fallback` plugin in `vite.config.ts` as a byte copy of `index.html`. Returns a 404 status, so prefer one of the above where possible. |
+
+nginx has no drop-in file; ask for `try_files $uri $uri/ /index.html;` in the location
+block.
+
+### Link previews
+
+`index.html` carries the Open Graph and Twitter tags that don't depend on the domain.
+The three that must be absolute URLs — `canonical`, `og:url`, `og:image` — are injected
+at build time by the `firehouse-site-meta` plugin from **`VITE_SITE_URL`**, and are
+omitted entirely when it isn't set. That's deliberate: a shared link still previews with
+its title and description, whereas a guessed domain would point at a URL that may never
+exist. Set it once Matt confirms placement and the card at `public/og-image.png` starts
+appearing in Slack, email and social unfurls.
+
+The card is a flat 1200×630 export (Archivo over the navy/ember palette) and the icons
+are generated from the same flame geometry, with `public/favicon.svg` as the editable
+vector source. All of it is static — re-export by hand if the wordmark or tagline
+changes.

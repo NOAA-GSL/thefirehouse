@@ -3,13 +3,13 @@
    ============================================================
 
    The creative brief (§9.2) makes WCAG 2.1 AA / Section 508 a hard requirement.
-   Two token values in the design system don't meet it. They're corrected here
+   Token values in the design system that don't meet it are corrected here
    rather than in `tokens/`, so that:
      - the ported token files stay byte-faithful to the design system and can be
        re-synced without losing these fixes, and
      - the delta is visible in one place and can be pushed back upstream.
 
-   Both should be fixed in the design system itself; delete this file when they are.
+   These should be fixed in the design system itself; delete this file when they are.
 
    Measurements below are WCAG 2.x contrast ratios; AA needs 4.5:1 for normal text
    and 3:1 for large text (>=18.66px bold or >=24px).
@@ -30,6 +30,10 @@
        #616A7A vs #F7F8FA … 5.13:1   PASS
        #616A7A vs #FFFFFF … 5.45:1   PASS */
   --color-text-tertiary: #616a7a;
+
+  /* Label colour for text sitting *on* --color-brand-primary. Light-mode
+     brand fill is navy-700; white is 10.17:1. */
+  --color-text-on-brand: #ffffff;
 }
 
 [data-theme='dark'] {
@@ -46,4 +50,16 @@
        #0A1020 on #F2762E … 6.71:1   PASS
      Light mode is untouched: white on --ember-500 (#C21500) is already 6.20:1. */
   --color-text-on-accent: var(--navy-950);
+
+  /* --- 3. Text on brand-primary fill is below AA in dark mode ---
+     Dark mode lightens brand-primary to --sky-200 (#B3E1FF) so the fill reads
+     on a navy page. Explorer chips had hardcoded white labels:
+       #FFFFFF on #B3E1FF … 1.39:1   FAIL
+     Hover lightens the fill further to white — white on white is 1:1.
+
+     Same flip as --color-text-on-accent: keep the designed fill, put navy-950
+     on it. Chip labels are 13px semibold, so they need 4.5:1, not 3:1.
+       #0A1020 on #B3E1FF … 13.66:1   PASS
+       #0A1020 on #FFFFFF (hover) … 18.96:1   PASS */
+  --color-text-on-brand: var(--navy-950);
 }

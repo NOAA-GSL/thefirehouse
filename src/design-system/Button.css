@@ -35,7 +35,10 @@
 /* ---- variants ---- */
 .fh-btn--primary {
   background: var(--color-brand-primary);
-  color: #fff;
+  /* Token, not a hardcoded #fff: dark mode lightens the brand fill to --sky-200, and
+     white on it is 1.39:1. Resolves to #fff in light mode, so nothing changes there.
+     See a11y-overrides.css note 3. */
+  color: var(--color-text-on-brand);
   border-color: var(--color-brand-primary);
 }
 .fh-btn--primary:hover:not(:disabled):not([aria-disabled='true']) {

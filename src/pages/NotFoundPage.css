@@ -1,6 +1,14 @@
 .fh-not-found {
   padding-block: var(--space-4xl);
-  max-width: 640px;
+}
+
+/* The measure goes on an inner wrapper, not on `.fh-not-found` itself. `.fh-container`
+   already sets `max-width` with the same specificity, so a competing rule on the
+   container ties and loses on source order — and even when forced to win it centres the
+   block, leaving this the only page whose heading doesn't align to the left gutter with
+   the header and every other page. Constraining a child keeps both. */
+.fh-not-found__inner {
+  max-width: 720px;
 }
 
 .fh-not-found__heading {
@@ -13,12 +21,117 @@
   margin: var(--space-xs) 0 var(--space-lg);
   font: var(--text-body);
   color: var(--color-text-secondary);
+  max-width: 60ch;
+}
+
+/* The echoed address. Quiet by design — it's diagnostic, not the message. */
+.fh-not-found__requested {
+  margin: 0 0 var(--space-xl);
+  font: var(--text-body-sm);
+  color: var(--color-text-tertiary);
+}
+
+.fh-not-found__path {
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+  padding: 3px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-sunken);
+  color: var(--color-text-secondary);
+  /* A long path must wrap rather than push the page sideways on a phone. */
+  overflow-wrap: anywhere;
 }
 
 .fh-not-found__actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-md);
+}
+
+/* ---- Topic area recovery links ---- */
+
+.fh-not-found__topics {
+  margin-top: var(--space-3xl);
+  padding-top: var(--space-xl);
+  border-top: 1px solid var(--color-border);
+}
+
+.fh-not-found__subheading {
+  margin: 0 0 var(--space-lg);
+  font: var(--text-h3);
+  color: var(--color-text-primary);
+}
+
+.fh-not-found__topic-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.fh-not-found__topic-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+  box-shadow: var(--shadow-sm);
+  color: var(--color-text-primary);
+  text-decoration: none;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+
+/* Interactive tile: shadow-sm at rest, shadow-md + 2px lift on hover — the same
+   vocabulary as ProjectTile, per the design system's elevation rules. */
+.fh-not-found__topic-link:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.fh-not-found__topic-label {
+  flex: 1;
+  font: var(--text-h4);
+  color: var(--color-text-primary);
+}
+
+/* Child combinator: the topic pill contains an icon of its own, which sets its colour
+   from the topic token and must not be caught by this rule. */
+.fh-not-found__topic-link > svg {
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fh-not-found__topic-link:hover {
+    transform: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .fh-not-found__topic-link {
+    /* The full topic name plus a pill won't sit on one line on a phone. */
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .fh-not-found__topic-label {
+    flex-basis: 100%;
+    order: 3;
+  }
+
+  /* With the label on its own line, the arrow would otherwise sit tucked against the
+     pill. Push it to the far edge so the row still reads as one tappable target. */
+  .fh-not-found__topic-link > svg {
+    margin-left: auto;
+  }
 }
 
 @media (max-width: 480px) {

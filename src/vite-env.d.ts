@@ -10,6 +10,13 @@ interface ImportMetaEnv {
 
   readonly VITE_STRAPI_URL?: string;
   readonly VITE_STRAPI_TOKEN?: string;
+
+  /**
+   * Absolute public origin, e.g. https://sites.gsl.noaa.gov. Read at *build* time by
+   * the firehouse-site-meta plugin to emit canonical / og:url / og:image, which have
+   * to be absolute. Unset until hosting placement is settled (creative brief §8).
+   */
+  readonly VITE_SITE_URL?: string;
 }
 
 interface ImportMeta {

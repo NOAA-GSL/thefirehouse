@@ -8,6 +8,40 @@
       name="description"
       content="The Firehouse centralizes end-user needs and recommendations from completed NOAA/GSL fire weather social science research, and accepts new findings from outside researchers."
     />
+
+    <!-- Icons. %BASE_URL% rather than a bare "/" so these still resolve when the site
+         is served from a sub-path such as sites.gsl/firehouse (creative brief §8). -->
+    <link rel="icon" href="%BASE_URL%favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="%BASE_URL%favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="%BASE_URL%apple-touch-icon.png" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a1020" media="(prefers-color-scheme: dark)" />
+
+    <!-- Link previews. Everything that doesn't need to know the final domain lives
+         here; og:url, og:image and the canonical link are injected at build time from
+         VITE_SITE_URL, because they have to be absolute and hosting is still open.
+         See the firehouse-site-meta plugin in vite.config.ts. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="The Firehouse" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:title" content="The Firehouse — Fire Weather Social Science Hub" />
+    <meta
+      property="og:description"
+      content="A shared home for the needs and recommendations learned across completed NOAA/GSL fire weather social science research."
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="The Firehouse — fire weather social science needs and findings, NOAA Global Systems Laboratory."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="The Firehouse — Fire Weather Social Science Hub" />
+    <meta
+      name="twitter:description"
+      content="A shared home for the needs and recommendations learned across completed NOAA/GSL fire weather social science research."
+    />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   </head>

@@ -1,0 +1,32 @@
+# Apache SPA fallback — the most likely shape of GSL-managed hosting (creative brief §8).
+#
+# The Firehouse is client-routed: /projects and /topics/observe have no file behind
+# them. Without this, a direct hit, a refresh, or a link shared off a conference slide
+# returns 404. Requires AllowOverride FileInfo (or higher) on the serving directory;
+# if the host won't enable .htaccess, ask for the equivalent in the vhost instead.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Serving from a sub-path (e.g. sites.gsl/firehouse) needs this uncommented and
+  # matched to VITE_BASE_PATH:
+  # RewriteBase /firehouse/
+
+  # Real files and directories — hashed assets, favicon, robots.txt — are served as-is.
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Everything else is a client route: hand back the app shell.
+  RewriteRule . index.html [L]
+</IfModule>
+
+# Content-hashed assets are immutable; index.html must never be cached, or visitors
+# keep booting an old build after a content update.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(js|css|svg|png|jpg|jpeg|webp|avif|woff2?)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "^(index|404)\.html$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>

@@ -1,0 +1,8 @@
+# The Firehouse — public NOAA/GSL research hub, intended to be discoverable.
+User-agent: *
+Allow: /
+
+# NOTE: if this build is put on a staging or preview URL before the January 2027
+# launch, swap the line above for "Disallow: /" so the preview isn't indexed.
+#
+# A Sitemap: line belongs here once hosting placement is settled (creative brief §8).

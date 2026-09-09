@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { ContentProvider, useContentState } from './content/ContentProvider';
@@ -45,13 +45,30 @@ function ContentGate({ children }: { children: ReactNode }) {
  * Client-side routing swaps the DOM without moving focus, which leaves screen reader
  * and keyboard users stranded at the old position. Required for the WCAG 2.1 AA
  * commitment in the brief (§9.2).
+ *
+ * It deliberately does *not* fire on the initial page load. A cold load already starts
+ * focus at the top of the document; pulling it into `<main>` there would leave the skip
+ * link, the gov banner toggle and the whole header behind the focus position, so the
+ * visitor's first Tab would land inside the content and the skip link — which exists
+ * for exactly this moment — could never be reached at all.
  */
 function RouteFocusManager() {
   const { pathname, hash } = useLocation();
 
+  // The route this last acted on, seeded with the one the app loaded at. Comparing
+  // against it (rather than flipping a "first run" flag) is what makes the initial-load
+  // case correct in development too: StrictMode invokes mount effects twice, and a flag
+  // would already be spent on the second pass.
+  const handledRoute = useRef(pathname + hash);
+
   useEffect(() => {
-    // Client-side routing doesn't scroll to a `#hash` the way a full page load does,
-    // so in-page anchors ("/#topic-areas") are handled here.
+    const route = pathname + hash;
+    const isNavigation = route !== handledRoute.current;
+    handledRoute.current = route;
+
+    // In-page anchors ("/#topic-areas"). Client-side routing doesn't scroll to a `#hash`
+    // the way a full page load does — and on a cold load the browser can't either,
+    // because the target doesn't exist yet when the document is parsed.
     if (hash) {
       const target = document.querySelector(hash);
       if (target) {
@@ -59,6 +76,9 @@ function RouteFocusManager() {
         return;
       }
     }
+
+    if (!isNavigation) return;
+
     const main = document.getElementById('main');
     if (main) main.focus({ preventScroll: true });
     window.scrollTo(0, 0);

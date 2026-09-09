@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="The Firehouse">
+  <rect width="64" height="64" rx="13" fill="#101B36"/>
+  <g transform="translate(3.840 3.840) scale(0.88)">
+    <path d="M33 4 C41 12 48 21 49 30 C51 41 44 56 32 56 C20 56 12 47 12 36 C12 29 16 24 21 18 C22 26 26 29 28 24 C30 18 30 11 33 4 Z" fill="#F2762E"/>
+    <path d="M32 28 C36 33 40 37 40 42 C40 47 36 51 32 51 C28 51 24 47 24 42 C24 37 28 33 32 28 Z" fill="#FFC7A3"/>
+  </g>
+</svg>
