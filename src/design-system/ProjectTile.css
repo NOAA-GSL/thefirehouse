@@ -1,4 +1,5 @@
 .fh-tile {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -7,19 +8,190 @@
   width: 100%;
   height: 100%;
   padding: var(--space-lg);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
+  /* A control, so its edge owes a real 3:1 (WCAG 1.4.11) rather than the
+     decorative sheen the non-interactive panels use. */
   border: 1px solid var(--color-border);
-  background: var(--color-bg-surface);
-  cursor: pointer;
-  box-shadow: var(--shadow-sm);
+  background: var(--glass-panel);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  overflow: hidden;
+  box-shadow: var(--glass-shadow);
   transition: box-shadow 150ms ease, border-color 150ms ease, transform 150ms ease;
   font-family: var(--font-body);
 }
 
-.fh-tile:hover {
-  box-shadow: var(--shadow-md);
-  border-color: var(--color-border-strong);
-  transform: translateY(-2px);
+/* ---- Stretched link ----
+   The <a> is on the title; this pseudo-element grows it to cover the tile, so the
+   whole card is clickable while the link's accessible name stays the title. */
+.fh-tile__link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.fh-tile__link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  /* Below the quick-look button, which lifts itself above this. */
+  z-index: 0;
+}
+
+.fh-tile:hover .fh-tile__link {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* The stretched ::after has no box of its own to ring, so the focus indicator is
+   drawn on the tile. The global :focus-visible rule still covers the inline text
+   where :has is unsupported. */
+.fh-tile:has(.fh-tile__link:focus-visible) {
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* An ember bloom that rises out of the bottom-left corner on hover — the same
+   light source as the hero, so hovering a card reads as leaning toward the fire. */
+.fh-tile__glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(80% 60% at 0% 100%, var(--color-accent-tint), transparent 70%);
+  transition: opacity 200ms ease;
+}
+
+.fh-tile:hover,
+.fh-tile:has(.fh-tile__link:focus-visible) {
+  box-shadow: var(--glass-shadow-lift);
+  border-color: var(--glass-control-border);
+  transform: translateY(-3px);
+}
+
+.fh-tile:hover .fh-tile__glow,
+.fh-tile:has(.fh-tile__link:focus-visible) .fh-tile__glow {
+  opacity: 1;
+}
+
+.fh-tile__body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+}
+
+/* Fire-cycle phases, bottom of the tile. Sits below the byline rule because it is
+   filter metadata — useful when scanning a filtered grid, noise when reading one
+   card — so it should be findable without competing with the title. */
+/* Footer row: phases on the left, quick-look on the right. */
+.fh-tile__foot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xs);
+  width: 100%;
+}
+
+.fh-tile__phases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+/* ---- Quick look ----
+   Lifted above the stretched link, or the link would swallow its clicks — the
+   classic failure mode of the stretched-link pattern. `position: relative` alone
+   is not enough once the link's ::after is also positioned. */
+.fh-tile__peek {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  border: var(--border-width) solid var(--color-border);
+  background: var(--color-bg-surface);
+  color: var(--color-text-secondary);
+  font: var(--text-caption);
+  letter-spacing: var(--letter-spacing-caption);
+  cursor: pointer;
+  /* Hidden until the tile is engaged — see the reveal rules below. */
+  opacity: 0;
+  transition: opacity 150ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.fh-tile:hover .fh-tile__peek,
+.fh-tile:focus-within .fh-tile__peek,
+.fh-tile__peek:focus-visible {
+  opacity: 1;
+}
+
+/* Touch has no hover, so on a coarse pointer the control is simply always visible —
+   otherwise it would be unreachable on a phone, which is where a lot of this will
+   be read at a conference. */
+@media (hover: none), (pointer: coarse) {
+  .fh-tile__peek {
+    opacity: 1;
+  }
+}
+
+/* Same for anyone who has asked for less motion: fade-in-on-hover is exactly the
+   kind of thing that setting is about, and a permanently visible control is the
+   accessible default rather than a downgrade. */
+@media (prefers-reduced-motion: reduce) {
+  .fh-tile__peek {
+    opacity: 1;
+    transition: none;
+  }
+}
+
+.fh-tile__peek:hover {
+  border-color: var(--glass-control-border);
+  color: var(--color-text-primary);
+}
+
+.fh-tile__phase {
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: var(--glass-sunken);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-tertiary);
+  font: var(--text-caption);
+  letter-spacing: var(--letter-spacing-caption);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .fh-tile {
+    background: var(--color-bg-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .fh-tile__glow {
+    display: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .fh-tile {
+    background: var(--color-bg-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-color: var(--color-text-secondary);
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .fh-tile {
+    background: var(--color-bg-surface);
+  }
 }
 
 .fh-tile__title {
@@ -40,6 +212,7 @@
 }
 
 .fh-tile__meta {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -63,4 +236,13 @@
   .fh-tile:hover {
     transform: none;
   }
+}
+
+/* The tag row is the tile's first line and every title below it aligns to its
+   height, so it is held to a single row: two tags that wrapped would push this
+   tile's title a line lower than its neighbours' in the same grid row. */
+.fh-tile .fh-tag-row {
+  flex-wrap: nowrap;
+  overflow: hidden;
+  min-height: 22px;
 }

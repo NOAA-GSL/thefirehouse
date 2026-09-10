@@ -1,0 +1,22 @@
+.fh-tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2xs);
+}
+
+/* Sized and weighted to match TopicTag--sm so the counter reads as a peer of the
+   tags rather than as body text that wandered into the row. */
+.fh-tag-row__more {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding-inline: 8px;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-bg-sunken);
+  color: var(--color-text-secondary);
+  font: var(--text-caption);
+  letter-spacing: var(--letter-spacing-caption);
+  white-space: nowrap;
+}

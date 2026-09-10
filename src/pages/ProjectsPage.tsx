@@ -3,7 +3,9 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { ProjectDetailModal, ProjectTile } from '../design-system';
 import { isTopicKey, type TopicKey } from '../design-system/topics';
 import { useContent } from '../content/ContentProvider';
-import { publishedProjects } from '../content/derive';
+import { byRecency, publishedProjects } from '../content/derive';
+import { formatByline } from '../content/format';
+import { FIRE_PHASES, PUBLICATION_STATUSES } from '../design-system/taxonomy';
 import './ProjectsPage.css';
 
 /**
@@ -35,8 +37,8 @@ export function ProjectsPage() {
   }, [activeTopic]);
 
   const projects = useMemo(() => {
-    const published = publishedProjects(content);
-    return activeTopic ? published.filter((p) => p.topic === activeTopic) : published;
+    const published = publishedProjects(content).sort(byRecency);
+    return activeTopic ? published.filter((p) => p.topics.includes(activeTopic)) : published;
   }, [content, activeTopic]);
 
   const openProject = projects.find((p) => p.slug === openSlug) ?? null;
@@ -98,12 +100,14 @@ export function ProjectsPage() {
           {projects.map((project) => (
             <ProjectTile
               key={project.id}
-              topic={project.topic}
+              topics={project.topics}
               title={project.title}
               summary={project.summary}
-              author={project.author}
-              year={project.year}
-              onClick={() => setOpenSlug(project.slug)}
+              byline={formatByline(project.authors)}
+              year={project.completionYear}
+              phases={project.firePhases.map((phase) => FIRE_PHASES[phase].short)}
+              to={`/projects/${project.slug}`}
+              onPreview={() => setOpenSlug(project.slug)}
             />
           ))}
         </div>
@@ -128,16 +132,19 @@ export function ProjectsPage() {
 
       {openProject && (
         <ProjectDetailModal
-          topic={openProject.topic}
+          topics={openProject.topics}
           title={openProject.title}
-          author={openProject.author}
+          byline={formatByline(openProject.authors, 0)}
           org={openProject.org}
-          year={openProject.year}
+          year={openProject.completionYear}
+          phases={openProject.firePhases.map((phase) => FIRE_PHASES[phase].label)}
+          statusLabel={PUBLICATION_STATUSES[openProject.publicationStatus].label}
+          abstract={openProject.abstract}
           takeaways={openProject.takeaways}
           needs={openProject.needs}
           recommendations={openProject.recommendations}
           papers={openProject.papers}
-          fullRecordUrl={openProject.fullRecordUrl}
+          pageUrl={`/projects/${openProject.slug}`}
           onClose={() => setOpenSlug(null)}
         />
       )}

@@ -1,0 +1,441 @@
+/* ============================================================
+   Project X-ray page
+   ============================================================ */
+
+.fh-project {
+  display: block;
+}
+
+/* ---- Header ---- */
+
+.fh-project__head {
+  position: relative;
+  padding-block: var(--space-xl) var(--space-2xl);
+  /* A wash of heat behind the title block, fading out before the body copy starts.
+     Gives the page a masthead without a hard-edged coloured band. */
+  background: var(--heat-gradient-soft);
+}
+
+.fh-project__head-inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.fh-project__head-rule {
+  position: absolute;
+  inset: auto 0 0;
+  height: 1px;
+  background: var(--heat-line);
+  opacity: 0.6;
+}
+
+.fh-project__crumbs {
+  margin-bottom: var(--space-2xs);
+}
+
+.fh-project__crumbs a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-secondary);
+  font: var(--text-label);
+  text-decoration: none;
+}
+
+.fh-project__crumbs a:hover {
+  color: var(--color-text-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.fh-project__title {
+  margin: 0;
+  font: 800 clamp(28px, 4vw, 44px) / 1.12 var(--font-display);
+  color: var(--color-text-primary);
+  max-width: 22ch;
+  /* Long research titles otherwise break with one orphaned word on the last line. */
+  text-wrap: balance;
+}
+
+@media (min-width: 900px) {
+  .fh-project__title {
+    max-width: 30ch;
+  }
+}
+
+.fh-project__byline {
+  margin: 0;
+  font: var(--text-body);
+  color: var(--color-text-secondary);
+}
+
+.fh-project__org::before {
+  content: '·';
+  margin-inline: 8px;
+  color: var(--color-text-tertiary);
+}
+
+.fh-project__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+  margin-top: var(--space-2xs);
+}
+
+/* Status tones. `neutral` is intentionally the same as the default pill: an
+   unpublished project is a normal state in this dataset, not a fault, and a red
+   badge would editorialise about someone's research. */
+.fh-meta-pill--positive {
+  border-color: var(--color-success-border);
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+}
+
+.fh-meta-pill--info {
+  border-color: var(--color-info-border);
+  background: var(--color-info-bg);
+  color: var(--color-info-text);
+}
+
+/* ---- Layout ---- */
+
+.fh-project__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2xl);
+  padding-block: var(--space-2xl);
+}
+
+@media (min-width: 960px) {
+  .fh-project__layout {
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: var(--space-3xl);
+    align-items: start;
+  }
+}
+
+.fh-project__main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xl);
+  /* Measure. Research prose at full container width is genuinely hard to read, and
+     this page is the one people actually sit and read. */
+  max-width: 68ch;
+}
+
+/* ---- Sections ---- */
+
+.fh-project__section-title {
+  margin: 0 0 var(--space-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font: var(--text-h3);
+  color: var(--color-text-primary);
+}
+
+/* Count badge — lets a reader see "3 needs" before reading them, which is the
+   question people actually arrive with when scanning several projects. */
+.fh-project__section-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding-inline: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-sunken);
+  border: var(--border-width) solid var(--color-border);
+  color: var(--color-text-tertiary);
+  font: var(--text-caption);
+}
+
+.fh-project__prose {
+  margin: 0;
+  font: var(--text-body-lg);
+  color: var(--color-text-secondary);
+}
+
+.fh-project__list {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.fh-project__list li {
+  position: relative;
+  padding-left: var(--space-lg);
+  font: var(--text-body);
+  color: var(--color-text-secondary);
+}
+
+/* Ember bullet. `list-style: none` above removes the marker from the accessibility
+   tree in Safari, so the <ul>/<li> structure still carries the semantics and this
+   is purely decorative. */
+.fh-project__list li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 0.62em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--heat-gradient);
+}
+
+/* ---- Papers ---- */
+
+.fh-project__papers {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.fh-project__paper {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-lg);
+  border: var(--border-width) solid var(--color-border);
+  background: var(--glass-sunken);
+  color: var(--color-link);
+  font: var(--text-body-sm);
+  text-decoration: none;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+a.fh-project__paper:hover {
+  border-color: var(--glass-control-border);
+  background: var(--color-bg-surface);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.fh-project__paper--static {
+  color: var(--color-text-secondary);
+}
+
+.fh-project__paper > span {
+  flex: 1;
+}
+
+/* DOI on its own line: it is an identifier to copy, not part of the title, and
+   inline it makes the title hard to scan. */
+.fh-project__doi {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  overflow-wrap: anywhere;
+}
+
+/* ---- Sidebar ---- */
+
+.fh-project__aside {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+@media (min-width: 960px) {
+  .fh-project__aside {
+    position: sticky;
+    top: calc(var(--space-lg) + 64px);
+  }
+}
+
+.fh-project__panel {
+  border-radius: var(--radius-xl);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.fh-project__panel-title {
+  margin: 0;
+  font: var(--text-label);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.fh-project__facts {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.fh-project__fact {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fh-project__fact-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: var(--text-caption);
+  letter-spacing: var(--letter-spacing-caption);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.fh-project__fact-value {
+  margin: 0;
+  font: var(--text-body-sm);
+  color: var(--color-text-primary);
+}
+
+.fh-project__fact-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+}
+
+.fh-project__fact-tag {
+  text-decoration: none;
+  border-radius: var(--radius-full);
+}
+
+.fh-project__regions {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.fh-project__region {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+/* The GACC acronym is an abbreviation with a title, so it gets the dotted-underline
+   affordance browsers give <abbr> — removed here because the default is illegible
+   on a translucent panel, and replaced with a legible tertiary chip. */
+.fh-project__region abbr {
+  text-decoration: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0 4px;
+  cursor: help;
+}
+
+.fh-project__region-note {
+  display: block;
+  margin-top: 4px;
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.fh-project__verbatim {
+  display: flex;
+  gap: var(--space-xs);
+  margin: 0;
+  padding: var(--space-md);
+  border-radius: var(--radius-lg);
+  border: var(--border-width) solid var(--color-accent-border);
+  background: var(--color-accent-tint);
+  font: var(--text-caption);
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+}
+
+.fh-project__verbatim svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.fh-project__verbatim a {
+  color: var(--color-link);
+}
+
+/* ---- Prev / next ---- */
+
+.fh-project__pager {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-md);
+  padding-block: var(--space-xl) var(--space-3xl);
+}
+
+@media (min-width: 720px) {
+  .fh-project__pager {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.fh-project__pager-link {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-xl);
+  border: var(--border-width) solid var(--color-border);
+  background: var(--glass-panel);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  text-decoration: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+.fh-project__pager-link:hover {
+  border-color: var(--glass-control-border);
+  box-shadow: var(--glass-shadow-lift);
+  transform: translateY(-2px);
+}
+
+.fh-project__pager-link--next {
+  text-align: right;
+  align-items: flex-end;
+}
+
+.fh-project__pager-dir {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: var(--text-caption);
+  letter-spacing: var(--letter-spacing-caption);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.fh-project__pager-title {
+  font: var(--text-h4);
+  color: var(--color-text-primary);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .fh-project__pager-link {
+    background: var(--color-bg-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fh-project__pager-link,
+  .fh-project__pager-link:hover {
+    transform: none;
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .fh-project__pager-link {
+    background: var(--color-bg-surface);
+  }
+}

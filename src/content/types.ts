@@ -1,3 +1,8 @@
+import type {
+  FirePhase,
+  PublicationStatus,
+  RegionKey,
+} from '../design-system/taxonomy';
 import type { TopicKey } from '../design-system/topics';
 
 /**
@@ -14,7 +19,7 @@ import type { TopicKey } from '../design-system/topics';
  *     (the four topic keys, the route table) is code. See `design-system/topics.ts`.
  */
 
-export type { TopicKey };
+export type { FirePhase, PublicationStatus, RegionKey, TopicKey };
 
 /** A destination: either an in-app route (`to`) or an absolute URL (`href`). */
 export interface LinkRef {
@@ -59,32 +64,130 @@ export interface TopicSummary {
   topNeeds: string[];
   /** ISO date of the last review pass; surfaced so readers know how fresh this is. */
   updatedAt?: string;
+  /**
+   * How many submissions were folded into this summary. Rendered next to the card,
+   * because "top needs" carries very different weight at 4 submissions and at 40.
+   */
+  sourceCount?: number;
+  /**
+   * Model that produced the synthesis, e.g. "gemini-2.5-pro". Presence of this field
+   * is what flips the card's "AI-synthesized" label on.
+   *
+   * This is not decoration. The landing page is the one surface where the site
+   * paraphrases researchers instead of quoting them (project pages stay verbatim),
+   * and a federal site presenting model-derived synthesis needs to say that it is.
+   */
+  model?: string;
+  /** Who signed off on the synthesis pass. The human review step is not optional. */
+  reviewedBy?: string;
 }
 
 export interface Paper {
   title: string;
   url?: string;
+  /**
+   * Bare DOI (`10.1175/WCAS-D-21-0042.1`), not a URL — the `https://doi.org/`
+   * prefix is added at render time. Storing it bare keeps one canonical form, so
+   * the same value can be a link, a citation field, and a dedupe key.
+   */
+  doi?: string;
 }
 
-/** One completed research project in the explorer (brief §5.2). */
+/**
+ * One credited researcher.
+ *
+ * `name` is the only guaranteed field: the survey may capture a free-text byline
+ * ("DESI research team") rather than structured names. When `family` is present the
+ * citation builder can render a proper APA author string; when it isn't, it falls
+ * back to `name` verbatim rather than guessing where a surname ends.
+ * See PLAN.md, open question 3.
+ */
+export interface Author {
+  name: string;
+  family?: string;
+  given?: string;
+  org?: string;
+}
+
+/**
+ * Where a project's fieldwork or subject matter sits — survey Q1, export column
+ * `GACC_REGION` (see FirehouseFormAdditions.pdf).
+ *
+ * `regions` rather than `gaccs`, because it holds more than the ten GACCs: the four
+ * non-GACC answers (PACIFIC, NATIONAL, INTL, UNKNOWN) are equally valid responses
+ * and equally have to be counted. Naming the field after only the mappable subset
+ * is how the other four quietly get dropped from a total.
+ */
+export interface ProjectGeo {
+  regions: RegionKey[];
+  /** Optional free-text refinement shown on the X-ray page, e.g. "Front Range". */
+  note?: string;
+  /** Survey Q2, export column `STATES` — two-letter postal codes. Optional backstop. */
+  states?: string[];
+}
+
+/**
+ * One completed research project — the record behind an "X-ray" page (brief §5.2).
+ *
+ * Field origins are noted because most of this arrives from one Qualtrics survey and
+ * the mapping is the thing most likely to be misremembered later. Anything marked
+ * *survey* is written by `scripts/import-survey.mjs` and should not be hand-edited
+ * in `projects.json` — the next import would overwrite it.
+ *
+ * Two fields that look like they belong here and deliberately don't:
+ *  - **Q10 (how results were communicated)** is internal-use-only. It is dropped by
+ *    the import script and has no field here, because a field that merely isn't
+ *    rendered still ships in the JSON bundle for anyone to read.
+ *  - **IRB approval** is a survey field, but records without it are filtered out in
+ *    `normalize.ts` rather than carried and hidden — see `irbApproved` below.
+ */
 export interface Project {
   id: string;
   slug: string;
   title: string;
-  topic: TopicKey;
-  /** One- or two-line summary shown on the grid tile. */
+  /**
+   * Topic areas this project speaks to, in display order — a project can span
+   * several ("Observations + Warnings"), which is why this is a list and why the
+   * project explorer is no longer grouped by topic.
+   *
+   * Guaranteed non-empty by `normalize.ts`.
+   */
+  topics: TopicKey[];
+  /** One- or two-line summary shown on the grid tile. Editorial, not from the survey. */
   summary: string;
-  author: string;
+  /** *Survey.* The researcher's own abstract, shown verbatim and searched fuzzily. */
+  abstract?: string;
+  authors: Author[];
   org?: string;
-  year: number;
+  /** *Survey.* Year the project was completed — a primary filter and a citation field. */
+  completionYear: number;
+  /** *Survey.* Where in the fire cycle the work sits. A primary filter. */
+  firePhases: FirePhase[];
+  /** *Survey.* Publication state of the underlying research. */
+  publicationStatus: PublicationStatus;
+  /**
+   * *Survey.* IRB approval. Records where this is false never reach the UI —
+   * `normalize.ts` drops them at the boundary, implementing the survey's own skip
+   * logic in the one place it cannot be forgotten by a future page.
+   */
+  irbApproved: boolean;
+  /** *Survey.* Geography, for the landing-page GACC map. */
+  geo?: ProjectGeo;
+  /** *Survey.* Major takeaways, in the researcher's own words. */
   takeaways: string[];
+  /** *Survey (Q17).* Needs, verbatim. Also the input to the landing-page synthesis. */
   needs: string[];
+  /** *Survey (Q17).* Recommendations, verbatim. */
   recommendations: string[];
   papers: Paper[];
   fullRecordUrl?: string;
   /**
    * Counted in the "projects analyzed" stat only when true. Lets editors stage a
    * project in the CMS before it should affect the public count.
+   *
+   * Note this is *editorial* visibility on this site — distinct from
+   * `publicationStatus`, which describes the underlying research in the literature.
+   * A project can be published here while its paper is still in review.
    */
   published: boolean;
 }

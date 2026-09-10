@@ -1,6 +1,7 @@
 @import './tokens/colors.css';
 @import './tokens/typography.css';
 @import './tokens/spacing.css';
+@import './tokens/glass.css';
 /* Must come after tokens — corrects two AA contrast failures. See the file. */
 @import './a11y-overrides.css';
 
@@ -16,11 +17,36 @@ html {
 
 body {
   margin: 0;
-  background: var(--color-bg-page);
+  background: var(--atmos-base);
   color: var(--color-text-primary);
   font: var(--text-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* The atmosphere is painted by ::before below; this keeps it behind content
+     without needing a z-index on every section. */
+  position: relative;
+  min-height: 100vh;
+}
+
+/* ---- The atmosphere ----
+   Fire weather as a background: cool smoke-grey air with heat blooming into one
+   corner. Two fixed radial glows and nothing else — the glass panels are only
+   accessible because the backdrop behind them is *bounded*, so the composite is
+   computable. Adding a third glow means re-running scripts/check-contrast.mjs.
+
+   `fixed` so the glow stays put while content scrolls past it: the page reads as
+   weather the site sits inside, rather than a gradient stuck to the top of a
+   document. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 80% at 88% -10%, var(--atmos-glow-1), transparent 60%),
+    radial-gradient(90% 70% at 8% 108%, var(--atmos-glow-2), transparent 62%),
+    var(--atmos-base);
 }
 
 img,
@@ -35,6 +61,12 @@ svg {
 :focus-visible {
   outline: var(--focus-ring-width) solid var(--color-focus-ring);
   outline-offset: 2px;
+  /* Glass panels sit on a warm gradient, so a ring can find itself over amber as
+     easily as over grey. The white halo guarantees a boundary on both, and costs
+     nothing on an opaque surface. Verified: the ring clears 3:1 against every
+     glass composite (scripts/check-contrast.mjs). */
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9);
+  border-radius: 3px;
 }
 
 /* Reduced motion: the design system only uses 120–150ms functional transitions,
@@ -96,4 +128,45 @@ svg {
   letter-spacing: var(--letter-spacing-label);
   text-transform: uppercase;
   color: var(--color-text-tertiary);
+}
+
+/* ---- Section rhythm ----
+   Sections used to butt against each other with only a background change to
+   separate them. On a translucent layout there is no background change to rely on,
+   so spacing carries the whole job and has to be explicit. */
+
+.fh-section {
+  padding-block: var(--space-4xl);
+}
+
+@media (max-width: 768px) {
+  .fh-section {
+    padding-block: var(--space-2xl);
+  }
+}
+
+/* A hairline that fades at both ends, in the heat ramp. Used to close sections
+   without drawing a full-width border across the atmosphere. */
+.fh-heat-rule {
+  height: 1px;
+  border: 0;
+  margin: 0;
+  background: var(--heat-line);
+  opacity: 0.7;
+}
+
+/* Small-caps metadata pill: fire phase, publication status, region. Sits on glass,
+   so it takes the control border rather than the decorative sheen. */
+.fh-meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3xs);
+  padding: 2px 9px;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--glass-sunken);
+  color: var(--color-text-secondary);
+  font: var(--text-caption);
+  letter-spacing: var(--letter-spacing-caption);
+  white-space: nowrap;
 }

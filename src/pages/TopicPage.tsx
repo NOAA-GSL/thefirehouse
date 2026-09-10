@@ -4,7 +4,8 @@ import { Button, Icon, ProjectDetailModal, ProjectTile, TopicTag } from '../desi
 import { TOPICS, isTopicKey } from '../design-system/topics';
 import { useContent } from '../content/ContentProvider';
 import { findTopic, findTopicSummary, projectsInTopic } from '../content/derive';
-import { formatReviewDate } from '../content/format';
+import { formatByline, formatReviewDate } from '../content/format';
+import { FIRE_PHASES, PUBLICATION_STATUSES } from '../design-system/taxonomy';
 import { NotFoundPage } from './NotFoundPage';
 import './TopicPage.css';
 
@@ -162,12 +163,18 @@ export function TopicPage() {
             {projects.map((project) => (
               <ProjectTile
                 key={project.id}
-                topic={project.topic}
+                // Every project on this page carries the current topic, so leading
+                // with it would repeat the same tag down the whole grid. Sinking it
+                // to the end means the two-tag cap surfaces what a reader doesn't
+                // already know: the *other* areas this project also speaks to.
+                topics={[...project.topics.filter((t) => t !== key), key]}
                 title={project.title}
                 summary={project.summary}
-                author={project.author}
-                year={project.year}
-                onClick={() => setOpenSlug(project.slug)}
+                byline={formatByline(project.authors)}
+                year={project.completionYear}
+                phases={project.firePhases.map((phase) => FIRE_PHASES[phase].short)}
+                to={`/projects/${project.slug}`}
+                onPreview={() => setOpenSlug(project.slug)}
               />
             ))}
           </div>
@@ -201,16 +208,19 @@ export function TopicPage() {
 
       {openProject && (
         <ProjectDetailModal
-          topic={openProject.topic}
+          topics={openProject.topics}
           title={openProject.title}
-          author={openProject.author}
+          byline={formatByline(openProject.authors, 0)}
           org={openProject.org}
-          year={openProject.year}
+          year={openProject.completionYear}
+          phases={openProject.firePhases.map((phase) => FIRE_PHASES[phase].label)}
+          statusLabel={PUBLICATION_STATUSES[openProject.publicationStatus].label}
+          abstract={openProject.abstract}
           takeaways={openProject.takeaways}
           needs={openProject.needs}
           recommendations={openProject.recommendations}
           papers={openProject.papers}
-          fullRecordUrl={openProject.fullRecordUrl}
+          pageUrl={`/projects/${openProject.slug}`}
           onClose={() => setOpenSlug(null)}
         />
       )}

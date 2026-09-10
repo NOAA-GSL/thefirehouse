@@ -47,6 +47,19 @@ function topicKeyOf(relation: unknown): string {
   return String(relation);
 }
 
+/**
+ * A many-to-many relation, flattened to plain keys.
+ *
+ * Topics went from one-per-project to many, so what arrives here is an array of
+ * relation objects rather than a single one. Tolerates a bare value too, so a
+ * single-topic Strapi record authored before the schema change still loads.
+ */
+function topicKeysOf(relation: unknown): string[] {
+  if (Array.isArray(relation)) return relation.map(topicKeyOf);
+  if (relation == null) return [];
+  return [topicKeyOf(relation)];
+}
+
 export function createStrapiAdapter(): ContentAdapter {
   return {
     name: 'strapi',
@@ -55,7 +68,10 @@ export function createStrapiAdapter(): ContentAdapter {
         get<Record<string, unknown>>('site-setting?populate=deep'),
         get<Record<string, unknown>[]>('topics?sort=order:asc'),
         get<Record<string, unknown>[]>('topic-summaries?populate=topic'),
-        get<Record<string, unknown>[]>('projects?populate=topic&populate=papers&sort=year:desc'),
+        get<Record<string, unknown>[]>(
+          'projects?populate=topics&populate=papers&populate=authors&populate=geo' +
+            '&sort=completionYear:desc',
+        ),
         get<Record<string, unknown>>('landing-page?populate=deep'),
       ]);
 
@@ -63,7 +79,7 @@ export function createStrapiAdapter(): ContentAdapter {
         settings,
         topics,
         topicSummaries: summaries.map((s) => ({ ...s, topic: topicKeyOf(s.topic) })),
-        projects: projects.map((p) => ({ ...p, topic: topicKeyOf(p.topic) })),
+        projects: projects.map((p) => ({ ...p, topics: topicKeysOf(p.topics) })),
         landing,
       });
     },

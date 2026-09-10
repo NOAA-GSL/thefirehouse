@@ -34,16 +34,23 @@ const QUERY = /* groq */ `{
     "key": key.current, label, short, description, intro, covers, order
   },
   "topicSummaries": *[_type == "topicSummary"]{
-    "topic": topic->key.current, topNeeds, updatedAt
+    "topic": topic->key.current, topNeeds, updatedAt,
+    sourceCount, model, reviewedBy
   },
-  "projects": *[_type == "project"]|order(year desc, title asc){
+  "projects": *[_type == "project"]|order(completionYear desc, title asc){
     "id": _id,
     "slug": slug.current,
     title,
-    "topic": topic->key.current,
-    summary, author, org, year,
+    "topics": topics[]->key.current,
+    summary, abstract, org,
+    authors[]{name, family, given, org},
+    completionYear,
+    firePhases,
+    publicationStatus,
+    irbApproved,
+    geo{gaccs, note},
     takeaways, needs, recommendations,
-    papers[]{title, url},
+    papers[]{title, url, doi},
     fullRecordUrl,
     published
   },

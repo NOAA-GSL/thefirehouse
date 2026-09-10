@@ -3,6 +3,11 @@
   inset: 0;
   z-index: 50;
   background: rgba(10, 16, 32, 0.55);
+  /* Blurring the page behind the dialog is the one place the effect is doing more
+     than decoration: it pushes the inert content out of focus, which matches what
+     `aria-modal` already tells assistive technology. */
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -17,11 +22,73 @@
   width: 640px;
   max-width: 100%;
   margin: auto;
-  background: var(--color-bg-surface);
+  /* The dialog itself stays opaque. Long-form reading is the one thing translucency
+     is genuinely bad at — the panel holds an abstract and three bulleted lists, and
+     text over moving colour is harder to read even when it passes a contrast check. */
+  background: var(--color-bg-surface-raised);
   border-radius: var(--radius-xl);
   border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--glass-shadow-lift);
   padding: var(--space-2xl);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Heat filament along the top edge, tying the dialog to the rest of the surface
+   language without tinting anything behind the text. */
+.fh-modal::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--heat-gradient);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .fh-modal__overlay {
+    background: rgba(10, 16, 32, 0.85);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Metadata row: fire cycle phase and publication status. */
+.fh-modal__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.fh-modal__meta-item {
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-sunken);
+  color: var(--color-text-secondary);
+  font: var(--text-caption);
+  letter-spacing: var(--letter-spacing-caption);
+}
+
+.fh-modal__meta-item--status {
+  border-color: var(--color-accent-border);
+  background: var(--color-accent-tint);
+}
+
+.fh-modal__prose {
+  margin: 0;
+  font: var(--text-body);
+  color: var(--color-text-secondary);
+}
+
+/* DOI on its own line under the paper title: it is an identifier to copy, not part
+   of the sentence, and running it inline makes the title hard to scan. */
+.fh-modal__doi {
+  display: block;
+  margin-top: 2px;
+  font: var(--text-caption);
+  font-family: var(--font-mono);
+  color: var(--color-text-tertiary);
 }
 
 .fh-modal__header {
@@ -138,4 +205,46 @@
   .fh-modal__overlay {
     padding: 0;
   }
+}
+
+/* ---- Preview-specific ----
+   The dialog is a quick look now, not the full record. */
+
+/* An abstract can run several hundred words; the preview shows the opening of it
+   and the page carries the rest. Clamped by lines rather than characters so the
+   dialog keeps a predictable height whatever the content length. */
+.fh-modal__prose--clamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.fh-modal__more {
+  margin: var(--space-xs) 0 0;
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.fh-modal__rest {
+  margin: 0;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-lg);
+  border: var(--border-width) solid var(--color-border);
+  background: var(--color-bg-sunken);
+  font: var(--text-body-sm);
+  color: var(--color-text-secondary);
+}
+
+.fh-modal__footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.fh-modal__footer-note {
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
 }

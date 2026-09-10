@@ -15,7 +15,22 @@
    and 3:1 for large text (>=18.66px bold or >=24px).
    ------------------------------------------------------------------------- */
 
-:root {
+/* Scoped to light mode, and scoped *deliberately*.
+
+   Written as a bare `:root`, this block had a bug: `:root` and `[data-theme='dark']`
+   have identical specificity (0,1,0), and this file is imported after `colors.css`,
+   so the light-mode fix silently won in dark mode too. Dark-mode tertiary text was
+   being painted #616A7A — a dark grey on a dark navy page:
+     #616A7A on the dark stat pane … 2.65:1   FAIL
+     #616A7A on a dark topic card  … 2.76:1   FAIL
+   It affected every caption on the site in dark mode: stat captions, the topic-card
+   "reviewed" lines, section eyebrows, the footer blurb.
+
+   `:root:not([data-theme='dark'])` fixes it by specificity (0,2,0) rather than by
+   file order, so it cannot come back if these imports are ever reordered. Dark mode
+   now keeps the --slate-400 (#98A0AF) that colors.css always intended:
+     #98A0AF on the dark stat pane … 5.40:1   PASS */
+:root:not([data-theme='dark']) {
   /* --- 1. Tertiary text is below AA in light mode ---
      Design system value: --slate-500 (#717A8A)
        vs page background #F7F8FA … 4.07:1   FAIL

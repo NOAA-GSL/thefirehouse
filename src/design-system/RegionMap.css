@@ -1,0 +1,367 @@
+/* ============================================================
+   Coverage map
+   ============================================================
+   Laid out as: map stage across the top, region list beside it on wide screens,
+   selected-region results underneath. */
+
+.fh-map {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-md);
+}
+
+@media (min-width: 900px) {
+  .fh-map {
+    grid-template-columns: minmax(0, 1fr) 236px;
+    grid-template-areas:
+      'stage side'
+      'credit side'
+      'results side';
+    align-content: start;
+  }
+
+  .fh-map__stage {
+    grid-area: stage;
+  }
+  .fh-map__credit {
+    grid-area: credit;
+  }
+  .fh-map__side {
+    grid-area: side;
+  }
+  .fh-map__results {
+    grid-area: results;
+  }
+}
+
+/* ---- Stage ---- */
+
+.fh-map__stage {
+  position: relative;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  border: var(--border-width) solid var(--glass-edge);
+  box-shadow: var(--glass-shadow);
+  background: var(--color-bg-sunken);
+}
+
+.fh-map__canvas {
+  width: 100%;
+  height: clamp(320px, 46vh, 480px);
+  background: transparent;
+}
+
+/* Leaflet paints its own light background; let the page's own surface show instead
+   so the map sits in the design rather than on top of it. */
+.fh-map__canvas .leaflet-container {
+  background: transparent;
+  font-family: var(--font-body);
+  outline: none;
+}
+
+/* ---- The "futuristic" layer ----
+   A scanline sweep and a soft vignette over the tiles. Deliberately restrained:
+   the map has to read as a data instrument, and this is a federal site, so the
+   treatment sits at the level of "lit console" rather than sci-fi HUD.
+
+   pointer-events: none is essential — the overlay covers the whole map and would
+   otherwise eat every click meant for a region. */
+.fh-map__scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 50% 50%, transparent 55%, rgba(10, 16, 32, 0.35) 100%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.028) 0px,
+      rgba(255, 255, 255, 0.028) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+  mix-blend-mode: overlay;
+}
+
+/* The sweep. One slow pass, low contrast. */
+.fh-map__scan::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 42%,
+    rgba(255, 197, 0, 0.1) 50%,
+    transparent 58%
+  );
+  transform: translateX(-100%);
+  animation: fh-map-sweep 9s ease-in-out infinite;
+}
+
+@keyframes fh-map-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  55%,
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* A continuously animating background is exactly what this preference is for. */
+@media (prefers-reduced-motion: reduce) {
+  .fh-map__scan::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+.fh-map__offline {
+  position: absolute;
+  left: var(--space-sm);
+  bottom: var(--space-sm);
+  z-index: 500;
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-surface);
+  border: var(--border-width) solid var(--color-border);
+  font: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+
+.fh-map__credit {
+  margin: 0;
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+/* Leaflet tooltip, restyled to the design system. */
+.fh-map__tip.leaflet-tooltip {
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  border: var(--border-width) solid var(--color-border);
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  font: var(--text-caption);
+  box-shadow: var(--glass-shadow);
+}
+
+.fh-map__tip.leaflet-tooltip::before {
+  border-top-color: var(--color-border);
+}
+
+.fh-map__canvas .leaflet-control-zoom a {
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+}
+
+.fh-map__canvas .leaflet-control-zoom a:hover {
+  background: var(--color-bg-sunken);
+}
+
+/* ---- Region list ---- */
+
+.fh-map__side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+.fh-map__side-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-xs);
+}
+
+.fh-map__side-title {
+  margin: 0;
+  font: var(--text-label);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.fh-map__side-total {
+  margin: 0;
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.fh-map__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fh-map__region {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  width: 100%;
+  padding: 6px 8px;
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: var(--text-body-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.fh-map__region:hover {
+  background: var(--glass-sunken);
+  color: var(--color-text-primary);
+}
+
+.fh-map__region--on {
+  /* Selection is carried by aria-pressed as well as by this treatment — colour is
+     never the only signal. */
+  border-color: var(--color-accent-border);
+  background: var(--color-accent-tint);
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.fh-map__region--sm {
+  font: var(--text-caption);
+}
+
+.fh-map__swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  border: var(--border-width) solid var(--color-border);
+}
+
+.fh-map__region-name {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.fh-map__region-code {
+  font-family: var(--font-mono);
+  /* 11px, not 10: this is a real word people read (the code they will see in the
+     survey export), not a decorative tick. */
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+}
+
+/* On the selected row the accent tint lifts the background, which drops tertiary
+   text to exactly 4.50:1 — AA to two decimal places and under it to three. Moving
+   the selected state to secondary clears it outright rather than sitting on the
+   line. Measured with scripts/audit-contrast-live.js. */
+.fh-map__region--on .fh-map__region-code {
+  color: var(--color-text-secondary);
+}
+
+.fh-map__region-count {
+  flex-shrink: 0;
+  min-width: 20px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.fh-map__offmap {
+  margin-top: var(--space-xs);
+  padding-top: var(--space-xs);
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+.fh-map__offmap-title {
+  margin: 0 0 4px;
+  font: var(--text-caption);
+  letter-spacing: var(--letter-spacing-caption);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+/* ---- Results ---- */
+
+.fh-map__results {
+  min-height: 64px;
+}
+
+.fh-map__results-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 var(--space-xs);
+  font: var(--text-body-sm);
+  color: var(--color-text-secondary);
+}
+
+.fh-map__clear {
+  margin-left: auto;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  border: var(--border-width) solid var(--glass-control-border);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: var(--text-caption);
+  cursor: pointer;
+}
+
+.fh-map__clear:hover {
+  color: var(--color-text-primary);
+  background: var(--glass-sunken);
+}
+
+.fh-map__projects {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 4px;
+}
+
+.fh-map__project {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  border: var(--border-width) solid var(--color-border);
+  background: var(--glass-sunken);
+  color: var(--color-text-primary);
+  font: var(--text-body-sm);
+  text-decoration: none;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.fh-map__project:hover {
+  border-color: var(--glass-control-border);
+  background: var(--color-bg-surface);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.fh-map__project > span:first-child {
+  flex: 1;
+}
+
+.fh-map__project-year {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-tertiary);
+  font-size: 12px;
+}
+
+.fh-map__hint,
+.fh-map__empty {
+  margin: 0;
+  font: var(--text-body-sm);
+  color: var(--color-text-tertiary);
+}

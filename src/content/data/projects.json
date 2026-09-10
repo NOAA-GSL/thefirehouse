@@ -3,17 +3,41 @@
     "id": "p-01",
     "slug": "wui-observation-gaps",
     "title": "Observation gaps in the wildland-urban interface",
-    "topic": "observe",
+    "topics": [
+      "observe"
+    ],
     "summary": "Placeholder record. Where forecasters and land managers reported thin or missing surface observations during recent fire weather events.",
-    "author": "DESI research team",
+    "abstract": "Placeholder abstract — replace with the researcher's own text from the survey. Examines where forecasters and land managers reported thin or missing surface observations during recent fire weather events in the wildland-urban interface, and what those gaps cost operationally.",
+    "authors": [
+      {
+        "name": "DESI research team"
+      }
+    ],
     "org": "NOAA/GSL",
-    "year": 2024,
+    "completionYear": 2024,
+    "firePhases": [
+      "preparedness",
+      "detection"
+    ],
+    "publicationStatus": "published",
+    "irbApproved": true,
+    "geo": {
+      "regions": [
+        "OSCC",
+        "ONCC",
+        "GBCC"
+      ]
+    },
     "takeaways": [
       "Placeholder takeaway — replace from the FireHouse 1.0 report.",
       "Placeholder takeaway — replace from the FireHouse 1.0 report."
     ],
-    "needs": ["Higher-resolution surface observations in wildland-urban interface areas"],
-    "recommendations": ["Placeholder recommendation — replace from the FireHouse 1.0 report."],
+    "needs": [
+      "Higher-resolution surface observations in wildland-urban interface areas"
+    ],
+    "recommendations": [
+      "Placeholder recommendation — replace from the FireHouse 1.0 report."
+    ],
     "papers": [],
     "published": true
   },
@@ -21,14 +45,41 @@
     "id": "p-02",
     "slug": "interagency-data-sharing",
     "title": "Interagency data sharing for fire weather observations",
-    "topic": "observe",
+    "topics": [
+      "observe",
+      "governance"
+    ],
     "summary": "Placeholder record. How observation data moves — or fails to move — between forecast offices and land management agencies.",
-    "author": "DESI research team",
+    "abstract": "Placeholder abstract — replace with the researcher's own text from the survey. Traces how observation data moves, or fails to move, between forecast offices and land management agencies, and the agreements that govern it.",
+    "authors": [
+      {
+        "name": "DESI research team"
+      }
+    ],
     "org": "NOAA/GSL",
-    "year": 2024,
-    "takeaways": ["Placeholder takeaway — replace from the FireHouse 1.0 report."],
-    "needs": ["Standardized data-sharing agreements between agencies"],
-    "recommendations": ["Placeholder recommendation — replace from the FireHouse 1.0 report."],
+    "completionYear": 2024,
+    "firePhases": [
+      "preparedness"
+    ],
+    "publicationStatus": "published",
+    "irbApproved": true,
+    "geo": {
+      "regions": [
+        "NWCC",
+        "NRCC",
+        "RMCC",
+        "UNKNOWN"
+      ]
+    },
+    "takeaways": [
+      "Placeholder takeaway — replace from the FireHouse 1.0 report."
+    ],
+    "needs": [
+      "Standardized data-sharing agreements between agencies"
+    ],
+    "recommendations": [
+      "Placeholder recommendation — replace from the FireHouse 1.0 report."
+    ],
     "papers": [],
     "published": true
   },
@@ -36,14 +87,40 @@
     "id": "p-03",
     "slug": "extended-lead-outlooks",
     "title": "Extended-lead fire weather outlooks and planning windows",
-    "topic": "forecast",
+    "topics": [
+      "forecast"
+    ],
     "summary": "Placeholder record. What decision-makers do with guidance beyond 72 hours, and where current lead times fall short of planning needs.",
-    "author": "Fire Weather Testbed team",
+    "abstract": "Placeholder abstract — replace with the researcher's own text from the survey. Examines what decision-makers do with fire weather guidance beyond 72 hours, and where current lead times fall short of the planning windows partners actually work to.",
+    "authors": [
+      {
+        "name": "Fire Weather Testbed team"
+      }
+    ],
     "org": "NOAA/GSL",
-    "year": 2025,
-    "takeaways": ["Placeholder takeaway — replace from the FireHouse 1.0 report."],
-    "needs": ["Longer-lead outlooks for planning windows beyond 72 hours"],
-    "recommendations": ["Placeholder recommendation — replace from the FireHouse 1.0 report."],
+    "completionYear": 2025,
+    "firePhases": [
+      "preparedness",
+      "prevention"
+    ],
+    "publicationStatus": "in-review",
+    "irbApproved": true,
+    "geo": {
+      "regions": [
+        "GBCC",
+        "SWCC",
+        "RMCC"
+      ]
+    },
+    "takeaways": [
+      "Placeholder takeaway — replace from the FireHouse 1.0 report."
+    ],
+    "needs": [
+      "Longer-lead outlooks for planning windows beyond 72 hours"
+    ],
+    "recommendations": [
+      "Placeholder recommendation — replace from the FireHouse 1.0 report."
+    ],
     "papers": [],
     "published": true
   },
@@ -51,14 +128,40 @@
     "id": "p-04",
     "slug": "local-fuel-terrain-guidance",
     "title": "Tailoring model guidance to local fuel and terrain",
-    "topic": "forecast",
+    "topics": [
+      "forecast",
+      "observe"
+    ],
     "summary": "Placeholder record. How forecasters adjust national model output for local conditions, and what that manual work costs them.",
-    "author": "Fire Weather Testbed team",
+    "abstract": "Placeholder abstract — replace with the researcher's own text from the survey. Documents how forecasters adjust national model output for local fuel and terrain conditions, and what that manual reconciliation work costs in time and confidence.",
+    "authors": [
+      {
+        "name": "Fire Weather Testbed team"
+      }
+    ],
     "org": "NOAA/GSL",
-    "year": 2025,
-    "takeaways": ["Placeholder takeaway — replace from the FireHouse 1.0 report."],
-    "needs": ["Model guidance tailored to local fuel and terrain conditions"],
-    "recommendations": ["Placeholder recommendation — replace from the FireHouse 1.0 report."],
+    "completionYear": 2025,
+    "firePhases": [
+      "response"
+    ],
+    "publicationStatus": "published",
+    "irbApproved": true,
+    "geo": {
+      "regions": [
+        "ONCC",
+        "OSCC",
+        "NWCC"
+      ]
+    },
+    "takeaways": [
+      "Placeholder takeaway — replace from the FireHouse 1.0 report."
+    ],
+    "needs": [
+      "Model guidance tailored to local fuel and terrain conditions"
+    ],
+    "recommendations": [
+      "Placeholder recommendation — replace from the FireHouse 1.0 report."
+    ],
     "papers": [],
     "published": true
   },
@@ -66,14 +169,41 @@
     "id": "p-05",
     "slug": "red-flag-threshold-consistency",
     "title": "Red flag warning thresholds across forecast offices",
-    "topic": "warning",
+    "topics": [
+      "warning"
+    ],
     "summary": "Placeholder record. Variation in issuance criteria between offices and how partners interpret warnings that cross office boundaries.",
-    "author": "DESI research team",
+    "abstract": "Placeholder abstract — replace with the researcher's own text from the survey. Compares red flag warning issuance criteria between forecast offices and asks how partners interpret warnings that cross office boundaries.",
+    "authors": [
+      {
+        "name": "DESI research team"
+      }
+    ],
     "org": "NOAA/GSL",
-    "year": 2024,
-    "takeaways": ["Placeholder takeaway — replace from the FireHouse 1.0 report."],
-    "needs": ["Clearer thresholds for red flag warning issuance across offices"],
-    "recommendations": ["Placeholder recommendation — replace from the FireHouse 1.0 report."],
+    "completionYear": 2024,
+    "firePhases": [
+      "detection",
+      "response"
+    ],
+    "publicationStatus": "published",
+    "irbApproved": true,
+    "geo": {
+      "regions": [
+        "GBCC",
+        "SWCC",
+        "NRCC",
+        "RMCC"
+      ]
+    },
+    "takeaways": [
+      "Placeholder takeaway — replace from the FireHouse 1.0 report."
+    ],
+    "needs": [
+      "Clearer thresholds for red flag warning issuance across offices"
+    ],
+    "recommendations": [
+      "Placeholder recommendation — replace from the FireHouse 1.0 report."
+    ],
     "papers": [],
     "published": true
   },
@@ -81,14 +211,40 @@
     "id": "p-06",
     "slug": "guidance-handoff-incident-command",
     "title": "Hand-off of forecaster guidance to incident command",
-    "topic": "warning",
+    "topics": [
+      "warning",
+      "observe"
+    ],
     "summary": "Placeholder record. What happens to forecast information at the moment it reaches an active incident, and where it stalls.",
-    "author": "DESI research team",
+    "abstract": "Placeholder abstract — replace with the researcher's own text from the survey. Follows forecaster guidance through the hand-off to incident command, and identifies where latency and format mismatches degrade it in transit.",
+    "authors": [
+      {
+        "name": "DESI research team"
+      }
+    ],
     "org": "NOAA/GSL",
-    "year": 2025,
-    "takeaways": ["Placeholder takeaway — replace from the FireHouse 1.0 report."],
-    "needs": ["Faster hand-off of forecaster guidance to incident command"],
-    "recommendations": ["Placeholder recommendation — replace from the FireHouse 1.0 report."],
+    "completionYear": 2025,
+    "firePhases": [
+      "response"
+    ],
+    "publicationStatus": "in-preparation",
+    "irbApproved": true,
+    "geo": {
+      "regions": [
+        "ONCC",
+        "NWCC",
+        "NRCC"
+      ]
+    },
+    "takeaways": [
+      "Placeholder takeaway — replace from the FireHouse 1.0 report."
+    ],
+    "needs": [
+      "Faster hand-off of forecaster guidance to incident command"
+    ],
+    "recommendations": [
+      "Placeholder recommendation — replace from the FireHouse 1.0 report."
+    ],
     "papers": [],
     "published": true
   },
@@ -96,14 +252,42 @@
     "id": "p-07",
     "slug": "evacuation-messaging-comprehension",
     "title": "Public comprehension of fire weather warning messaging",
-    "topic": "warning",
+    "topics": [
+      "warning",
+      "governance"
+    ],
     "summary": "Placeholder record. How non-specialist audiences read red flag and fire weather watch language under time pressure.",
-    "author": "DESI research team",
+    "abstract": "Placeholder abstract — replace with the researcher's own text from the survey. Tests public comprehension of fire weather warning and evacuation messaging, including how wording and channel affect the action people take.",
+    "authors": [
+      {
+        "name": "DESI research team"
+      }
+    ],
     "org": "NOAA/GSL",
-    "year": 2023,
-    "takeaways": ["Placeholder takeaway — replace from the FireHouse 1.0 report."],
-    "needs": ["Placeholder need — replace from the FireHouse 1.0 report."],
-    "recommendations": ["Placeholder recommendation — replace from the FireHouse 1.0 report."],
+    "completionYear": 2023,
+    "firePhases": [
+      "response",
+      "recovery"
+    ],
+    "publicationStatus": "published",
+    "irbApproved": true,
+    "geo": {
+      "regions": [
+        "OSCC",
+        "SACC",
+        "EACC",
+        "PACIFIC"
+      ]
+    },
+    "takeaways": [
+      "Placeholder takeaway — replace from the FireHouse 1.0 report."
+    ],
+    "needs": [
+      "Placeholder need — replace from the FireHouse 1.0 report."
+    ],
+    "recommendations": [
+      "Placeholder recommendation — replace from the FireHouse 1.0 report."
+    ],
     "papers": [],
     "published": true
   },
@@ -111,14 +295,38 @@
     "id": "p-08",
     "slug": "program-impact-evaluation",
     "title": "Evaluating the impact of fire weather programs",
-    "topic": "governance",
+    "topics": [
+      "governance"
+    ],
     "summary": "Placeholder record. What agencies currently count as evidence of program value, and why those measures are hard to compare.",
-    "author": "DESI research team",
+    "abstract": "Placeholder abstract — replace with the researcher's own text from the survey. Reviews how fire weather programs are evaluated across agencies and proposes shared frameworks for assessing impact.",
+    "authors": [
+      {
+        "name": "DESI research team"
+      }
+    ],
     "org": "NOAA/GSL",
-    "year": 2025,
-    "takeaways": ["Placeholder takeaway — replace from the FireHouse 1.0 report."],
-    "needs": ["Shared frameworks for evaluating fire weather program impact"],
-    "recommendations": ["Placeholder recommendation — replace from the FireHouse 1.0 report."],
+    "completionYear": 2025,
+    "firePhases": [
+      "recovery",
+      "preparedness"
+    ],
+    "publicationStatus": "in-review",
+    "irbApproved": true,
+    "geo": {
+      "regions": [
+        "NATIONAL"
+      ]
+    },
+    "takeaways": [
+      "Placeholder takeaway — replace from the FireHouse 1.0 report."
+    ],
+    "needs": [
+      "Shared frameworks for evaluating fire weather program impact"
+    ],
+    "recommendations": [
+      "Placeholder recommendation — replace from the FireHouse 1.0 report."
+    ],
     "papers": [],
     "published": true
   },
@@ -126,14 +334,42 @@
     "id": "p-09",
     "slug": "roles-forecast-offices-land-management",
     "title": "Role clarity between forecast offices and land management agencies",
-    "topic": "governance",
+    "topics": [
+      "governance",
+      "warning"
+    ],
     "summary": "Placeholder record. Where responsibility for fire weather decision support is ambiguous, and what that ambiguity costs during events.",
-    "author": "DESI research team",
+    "abstract": "Placeholder abstract — replace with the researcher's own text from the survey. Maps role and responsibility boundaries between forecast offices and land management agencies, and the coordination failures that follow when they are unclear.",
+    "authors": [
+      {
+        "name": "DESI research team"
+      }
+    ],
     "org": "NOAA/GSL",
-    "year": 2024,
-    "takeaways": ["Placeholder takeaway — replace from the FireHouse 1.0 report."],
-    "needs": ["Clearer roles between forecast offices and land management agencies"],
-    "recommendations": ["Placeholder recommendation — replace from the FireHouse 1.0 report."],
+    "completionYear": 2024,
+    "firePhases": [
+      "preparedness",
+      "response"
+    ],
+    "publicationStatus": "published",
+    "irbApproved": true,
+    "geo": {
+      "regions": [
+        "NRCC",
+        "RMCC",
+        "GBCC",
+        "NWCC"
+      ]
+    },
+    "takeaways": [
+      "Placeholder takeaway — replace from the FireHouse 1.0 report."
+    ],
+    "needs": [
+      "Clearer roles between forecast offices and land management agencies"
+    ],
+    "recommendations": [
+      "Placeholder recommendation — replace from the FireHouse 1.0 report."
+    ],
     "papers": [],
     "published": true
   }

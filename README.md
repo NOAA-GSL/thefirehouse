@@ -192,11 +192,105 @@ Named so it's clear these are gaps, not oversights:
 - **Submission pipeline.** The Google Form is an outbound link. Nothing yet moves a
   processed submission into `topicSummaries.json` — brief §9.1 allows this to be
   manual at first, and the brief's own risk list recommends a human review step.
-- **Per-project URLs.** Explorer detail is a modal; projects aren't linkable
-  individually. The content model already carries `slug` for when they should be.
-- **Explorer search and sort**, an About page.
+- **Explorer search and sort** (Phase 1 in `PLAN.md`), an About page.
+- **Build-time link previews for project pages.** Each project has its own URL and
+  sets its own `<title>` and description at runtime, so deep links work and index
+  correctly — but a *shared* link still previews with the site-level card. Fixing it
+  means emitting a per-project HTML shell at build time (`PLAN.md` §2.2).
 - **Tests.** None. Worth adding around `normalize.ts` and `derive.ts` first — they're
   pure functions and they're what stands between a bad CMS edit and a broken page.
+
+## The coverage map
+
+The landing-page hero carries a map of where research comes from, built to
+`FirehouseFormAdditions.pdf`.
+
+- **Regions are the survey's recode values** — `ONCC`, not `Northern California
+  (ONCC)`. Display text gets reworded over time; codes must not, or the map breaks
+  quietly. Defined in `src/design-system/taxonomy.ts`.
+- **Fourteen values, not ten.** The ten GACCs have boundaries. `PACIFIC`,
+  `NATIONAL`, `INTL` and `UNKNOWN` do not, and are listed beside the map rather than
+  dropped — a total that excludes them under-reports what was submitted. `PACIFIC`
+  exists specifically because the NIFC boundary file folds the Pacific islands into
+  Northern California, so Hawaii research would otherwise be filed under ONCC.
+- **Boundaries are committed, not fetched.** `src/content/data/gaccBoundaries.json`
+  is NIFC's `National_GACC_Boundaries`, simplified to ~33 kB. The map draws on a
+  hostile network; only the basemap tiles are live.
+- **Selection lives in `?region=`**, so a filtered view of the map is a link someone
+  can paste into an email.
+
+**The one runtime third-party dependency on the whole site is the basemap tiles**
+(`server.arcgisonline.com`, Esri — attribution is rendered under the map and is
+required by their terms). If a federal review objects to the external call, the map
+degrades to boundaries on a blank canvas rather than failing, and the `BASEMAPS`
+constant in `src/design-system/RegionMap.tsx` is the only thing to change.
+
+Accessibility: the region list beside the map is not a fallback. It is the operable
+surface — real buttons, real counts, driving the same state the polygons do — and
+the Leaflet canvas is `aria-hidden` so assistive technology is sent there rather
+than into unlabelled SVG paths. Colour is never the only channel; every region
+carries its count as a number.
+
+## Survey import
+
+`scripts/import-survey.mjs` turns a Qualtrics CSV export into
+`src/content/data/projects.json`:
+
+```bash
+node scripts/import-survey.mjs ~/Downloads/firehouse-survey.csv --dry
+```
+
+`--dry` parses and reports without writing — use it first. The script is the seam
+where survey data becomes site content, and it is plain dependency-free Node so it
+can be read and re-hosted by whoever takes it over: a live integration replaces the
+CSV read with an API call and writes the same file. Nothing downstream changes.
+
+Two rules it enforces that the UI cannot:
+
+- **Q10 (how results were communicated) never enters the JSON.** It is internal-use
+  only, and a field that is merely not rendered still ships in the bundle.
+- **Rows without IRB approval are reported, not silently dropped** — a silent drop
+  looks exactly like a parsing bug. `normalize.ts` filters them again at runtime as
+  a backstop.
+
+Imported records stage as `published: false`, so running the script can never put
+unreviewed research on a live site as a side effect.
+
+`QUESTION_MAP` at the top of the script is keyed to *guessed* Qualtrics column
+names, pending the mapped question list from Emily and Steph. It is the only thing
+that should need editing when that arrives.
+
+## Accessibility
+
+WCAG 2.1 AA / Section 508 is a hard requirement (creative brief §9.2), and the
+translucent surface treatment is exactly where that usually goes wrong. The rule
+the design holds to is **glass provides depth, never contrast**: the page backdrop
+is deliberately bounded, and every panel alpha is chosen so text clears AA against
+the worst-case composite rather than against the panel colour. Blur is decoration
+on top of a surface that already passes.
+
+Three fallbacks drop to fully opaque surfaces — `prefers-reduced-transparency`,
+`prefers-contrast: more`, and `@supports not (backdrop-filter)`.
+
+Two audits, complementary:
+
+```bash
+node scripts/check-contrast.mjs      # the token system, incl. UI contrast (1.4.11)
+```
+
+```js
+// scripts/audit-contrast-live.js — paste into the browser console
+fhAudit();                 // current theme
+await fhAuditBothThemes(); // light and dark
+```
+
+The static script proves the palette is sound and runs without a browser. The live
+walk reads computed styles off real DOM nodes and catches what a token audit cannot
+— cascade bugs, hardcoded component colours, unaccounted translucent ancestors. Run
+both; they have caught different things.
+
+Current state: 0 AA text-contrast failures across all routes in both themes, and in
+both fallback states.
 
 ## Hosting
 

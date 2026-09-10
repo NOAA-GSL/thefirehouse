@@ -5,6 +5,7 @@ import { ContentProvider, useContentState } from './content/ContentProvider';
 import { ThemeProvider } from './components/ThemeProvider';
 import { LandingPage } from './pages/LandingPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { ProjectPage } from './pages/ProjectPage';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { TopicPage } from './pages/TopicPage';
 
@@ -97,6 +98,9 @@ export function App() {
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/projects" element={<ProjectsPage />} />
+              {/* Per-project "X-ray" pages. The slug is the citable identifier, so
+                  it is the one field an editor must not rename after publishing. */}
+              <Route path="/projects/:slug" element={<ProjectPage />} />
               <Route path="/topics/:topicKey" element={<TopicPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>

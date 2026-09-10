@@ -1,7 +1,55 @@
+/* Sticky glass. The header is the one surface that is *always* over content, so
+   it is where the blur does the most work — you can see the page moving underneath
+   it, which is what sells the material.
+
+   `sticky` rather than `fixed` keeps it in flow, so nothing needs a compensating
+   top padding and the skip link still lands correctly. */
 .fh-header {
-  background: var(--color-bg-surface);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--glass-raised);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   border-bottom: 1px solid var(--color-border);
-  position: relative;
+}
+
+/* A heat filament along the bottom edge, in place of a flat border. */
+.fh-header::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 -1px;
+  height: 1px;
+  background: var(--heat-line);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .fh-header {
+    background: var(--color-bg-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .fh-header {
+    background: var(--color-bg-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-bottom-color: var(--color-text-secondary);
+  }
+
+  .fh-header::after {
+    display: none;
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .fh-header {
+    background: var(--color-bg-surface);
+  }
 }
 
 .fh-header__bar {

@@ -1,0 +1,193 @@
+/* ============================================================
+   Atmosphere and glass
+   ============================================================
+
+   The fire-weather surface treatment: a bounded atmospheric backdrop, and a set of
+   translucent panels that sit on it.
+
+   This is a *new* layer, not a re-sync of the design system — which is why it lives
+   in its own file. `colors.css` stays byte-faithful to the upstream design system so
+   it can be re-synced; everything here composes on top of it.
+
+   ------------------------------------------------------------
+   The rule that keeps translucency accessible
+   ------------------------------------------------------------
+   Glass provides DEPTH, never CONTRAST.
+
+   Translucent UI usually fails WCAG for one reason: contrast gets checked against
+   the panel colour, but what the eye receives is the panel composited over whatever
+   happens to be behind it. If the backdrop is arbitrary, the delivered contrast is
+   unknowable.
+
+   So the backdrop here is deliberately bounded — a fixed gradient with known
+   extremes — and every panel alpha is chosen so that text clears AA against the
+   WORST-CASE composite (the most saturated point of the gradient), not against the
+   panel token. `scripts/check-contrast.mjs` computes all of it; run it after
+   changing any value in this file.
+
+   The blur is decoration on top of an already-passing surface. If the browser drops
+   it, or the user turns transparency off, nothing about legibility changes.
+   ------------------------------------------------------------------------- */
+
+:root {
+  /* --- Atmosphere -------------------------------------------------------- */
+  /* Fire weather, abstracted: cool smoke-grey air with heat blooming into it.
+     These two glows are the *only* things that tint the page, which is what makes
+     the worst-case composite computable. Adding a third means re-running the audit. */
+  --atmos-base: var(--slate-50);
+  --atmos-glow-1: rgba(255, 197, 0, 0.1); /* amber, high and right — daylight haze */
+  --atmos-glow-2: rgba(242, 118, 46, 0.08); /* ember, low and left — the fire line */
+  --atmos-grain: rgba(38, 63, 120, 0.025);
+
+  /* --- Glass panels ------------------------------------------------------ */
+  /* Verified against #f8e9d3, the hottest point of the light backdrop:
+       panel  -> #fdfaf5   primary 18.21:1  secondary 6.46:1  tertiary 5.24:1
+       raised -> #fefdfb   primary 18.65:1  secondary 6.61:1  tertiary 5.36:1
+       sunken -> #fcf5eb   primary 17.51:1  secondary 6.21:1  tertiary 5.04:1 */
+  --glass-panel: rgba(255, 255, 255, 0.78);
+  --glass-raised: rgba(255, 255, 255, 0.9);
+  --glass-sunken: rgba(255, 255, 255, 0.55);
+
+  --glass-blur: 18px;
+  --glass-saturate: 140%;
+
+  /* Decorative sheen. Carries no contrast obligation — the panel is identified by
+     its background shift, not by this edge. See scripts/check-contrast.mjs. */
+  --glass-edge: rgba(255, 255, 255, 0.75);
+  --glass-edge-top: rgba(255, 255, 255, 0.95);
+
+  /* The boundary of a *control* — chip, button, field. Owes a real 3:1 (WCAG
+     1.4.11) because it is what tells you the control exists.
+       #717a8a on #fdfaf5 … 4.16:1 */
+  --glass-control-border: #717a8a;
+
+  --glass-shadow: 0 2px 6px rgba(38, 63, 120, 0.06), 0 12px 32px rgba(38, 63, 120, 0.1);
+  --glass-shadow-lift: 0 4px 10px rgba(38, 63, 120, 0.08), 0 22px 48px rgba(38, 63, 120, 0.16);
+
+  /* --- Fire-weather accents ---------------------------------------------- */
+  /* Heat ramp, used for rules, glows and the stat numerals. Never for text on its
+     own — as a *fill* under white it is fine, as text it is not. */
+  --heat-gradient: linear-gradient(100deg, var(--ember-500) 0%, var(--ember-400) 45%, var(--amber-500) 100%);
+  --heat-gradient-soft: linear-gradient(
+    100deg,
+    rgba(194, 21, 0, 0.14) 0%,
+    rgba(242, 118, 46, 0.12) 45%,
+    rgba(255, 144, 0, 0.1) 100%
+  );
+  --heat-line: linear-gradient(90deg, transparent, var(--ember-400), var(--amber-400), transparent);
+}
+
+[data-theme='dark'] {
+  --atmos-base: var(--navy-950);
+  --atmos-glow-1: rgba(194, 21, 0, 0.18); /* ember core, low — the fire itself */
+  --atmos-glow-2: rgba(255, 144, 0, 0.08); /* amber lift into the smoke column */
+  --atmos-grain: rgba(255, 255, 255, 0.02);
+
+  /* Verified against #3c1b18, the hottest point of the dark backdrop:
+       panel  -> #242945   primary 13.25:1  secondary 8.27:1  tertiary 5.40:1
+       raised -> #212b4b   primary 12.95:1  secondary 8.09:1  tertiary 5.28:1
+       sunken -> #21151c   primary 16.47:1  secondary 10.29:1 tertiary 6.72:1
+
+     `raised` is navy-800 at a *higher* alpha rather than navy-700 at a lower one:
+     the lighter panel lifted the composite until tertiary text fell to 4.31:1.
+     Darkening the panel fixed it without flattening the text hierarchy. */
+  --glass-panel: rgba(27, 46, 86, 0.72);
+  --glass-raised: rgba(27, 46, 86, 0.82);
+  --glass-sunken: rgba(10, 16, 32, 0.55);
+
+  --glass-edge: rgba(255, 255, 255, 0.08);
+  --glass-edge-top: rgba(255, 255, 255, 0.16);
+
+  /* #6e85af on #242945 … 3.81:1 */
+  --glass-control-border: #6e85af;
+
+  --glass-shadow: 0 2px 6px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.45);
+  --glass-shadow-lift: 0 4px 10px rgba(0, 0, 0, 0.45), 0 22px 48px rgba(0, 0, 0, 0.55);
+
+  --heat-gradient: linear-gradient(100deg, var(--ember-400) 0%, var(--amber-500) 55%, var(--amber-400) 100%);
+}
+
+/* ============================================================
+   The glass primitive
+   ============================================================
+   One class, applied by every panel. Modifiers change the tint, not the mechanics,
+   so the accessibility fallbacks below only have to be written once. */
+
+.fh-glass {
+  position: relative;
+  background: var(--glass-panel);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: var(--border-width) solid var(--glass-edge);
+  box-shadow: var(--glass-shadow);
+}
+
+.fh-glass--raised {
+  background: var(--glass-raised);
+}
+
+.fh-glass--sunken {
+  background: var(--glass-sunken);
+}
+
+/* The lit top edge. A single hairline is what separates "translucent box" from
+   "pane of glass catching light" — and being a pseudo-element it costs no markup
+   and is invisible to assistive technology by default. */
+.fh-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--glass-edge-top) 25%, var(--glass-edge-top) 75%, transparent);
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* ---- Accessibility fallbacks ---------------------------------------------
+
+   Three separate escape hatches, because they answer three different needs and a
+   user can want any one of them without the others. In every case the panel goes
+   fully opaque — which is safe precisely because the opaque colour is the same one
+   the contrast audit already treats as the floor. */
+
+/* 1. The user has asked for less transparency (macOS "Reduce transparency",
+      Windows equivalent). Honour it literally: no translucency, no blur. */
+@media (prefers-reduced-transparency: reduce) {
+  .fh-glass,
+  .fh-glass--raised,
+  .fh-glass--sunken {
+    background: var(--color-bg-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-color: var(--color-border);
+  }
+
+  .fh-glass::before {
+    display: none;
+  }
+}
+
+/* 2. The user has asked for more contrast. Opaque, and the decorative sheen is
+      promoted to a real border — at this setting an edge people can actually see
+      matters more than the glass effect. */
+@media (prefers-contrast: more) {
+  .fh-glass,
+  .fh-glass--raised,
+  .fh-glass--sunken {
+    background: var(--color-bg-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-color: var(--color-text-secondary);
+  }
+}
+
+/* 3. The browser cannot blur. Without this the panel is merely a flat translucent
+      wash over a busy gradient — the one state where the composite is legible but
+      ugly, and text sits directly over moving colour. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .fh-glass,
+  .fh-glass--raised,
+  .fh-glass--sunken {
+    background: var(--color-bg-surface);
+  }
+}

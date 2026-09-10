@@ -30,12 +30,30 @@
   min-height: 36px;
   padding: 8px 16px;
   border-radius: var(--radius-full);
-  border: 1px solid var(--color-border-strong);
-  background: var(--color-bg-surface);
+  /* A control, so the edge owes a real 3:1 (WCAG 1.4.11) — this is the token that
+     was measured against the glass composite, not the decorative sheen. */
+  border: 1px solid var(--glass-control-border);
+  background: var(--glass-panel);
+  -webkit-backdrop-filter: blur(12px) saturate(var(--glass-saturate));
+  backdrop-filter: blur(12px) saturate(var(--glass-saturate));
   color: var(--color-text-secondary);
   font: 600 13px/1.4 var(--font-body);
   cursor: pointer;
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .fh-chip {
+    background: var(--color-bg-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .fh-chip {
+    background: var(--color-bg-surface);
+  }
 }
 
 .fh-chip:hover {

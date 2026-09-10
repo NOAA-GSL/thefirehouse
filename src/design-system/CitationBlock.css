@@ -1,0 +1,111 @@
+.fh-cite {
+  border-radius: var(--radius-xl);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.fh-cite__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.fh-cite__heading {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: var(--text-h4);
+  color: var(--color-text-primary);
+}
+
+.fh-cite__tabs {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius-full);
+  border: var(--border-width) solid var(--color-border);
+  background: var(--glass-sunken);
+}
+
+.fh-cite__tab {
+  padding: 5px 12px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: var(--text-label);
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.fh-cite__tab:hover {
+  color: var(--color-text-primary);
+}
+
+.fh-cite__tab--active {
+  background: var(--color-brand-primary);
+  /* Not #fff — in dark mode the brand fill lightens to sky-200, where white label
+     text drops to 1.39:1. This token flips to navy-950 there. See a11y-overrides. */
+  color: var(--color-text-on-brand);
+}
+
+.fh-cite__body {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+}
+
+.fh-cite__text {
+  flex: 1;
+  margin: 0;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  border: var(--border-width) solid var(--color-border);
+  background: var(--color-bg-sunken);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--color-text-secondary);
+  /* BibTeX is pre-formatted across several lines; APA and Chicago are one long
+     line that must still wrap. `pre-wrap` is the only value that does both. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.fh-cite__copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: var(--radius-md);
+  /* A control, so its edge owes 3:1 (WCAG 1.4.11). */
+  border: var(--border-width) solid var(--glass-control-border);
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  font: var(--text-label);
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.fh-cite__copy:hover {
+  background: var(--color-bg-sunken);
+  border-color: var(--color-text-secondary);
+}
+
+@media (max-width: 640px) {
+  .fh-cite__body {
+    flex-direction: column;
+  }
+
+  .fh-cite__copy {
+    align-self: stretch;
+    justify-content: center;
+  }
+}

@@ -2,17 +2,32 @@
    Hero
    ============================================================ */
 
+/* The hero now carries the coverage map alongside the copy, so it is sized by its
+   content rather than pinned to a viewport-height band. */
 .fh-hero {
   position: relative;
-  min-height: clamp(420px, 62vw, 560px);
   display: flex;
-  align-items: flex-end;
+  align-items: stretch;
+  /* `clip`, not `hidden`. An element with `overflow: hidden` is still a scroll
+     container — invisible scrollbars, but the browser will happily scroll it to
+     bring a focused child into view. The drifting smoke layer overflows this box by
+     design, which made the hero 230px wider than its own frame, and the first click
+     on a map region scrolled the entire hero sideways.
+
+     `clip` produces the same visual result and creates no scroll container, so
+     nothing can scroll it. `hidden` stays as the fallback for older Safari, where
+     the smoke is separately clipped by .fh-hero__media below. */
   overflow: hidden;
+  overflow: clip;
 }
 
 .fh-hero__media {
   position: absolute;
   inset: 0;
+  /* Clips the oversized smoke layer here rather than letting it reach the hero's
+     own box — belt and braces with `overflow: clip` above, and the actual fix on
+     browsers without `clip`. */
+  overflow: hidden;
   /* Stand-in for the design system's fire-weather photo while that binary asset is
      missing — see src/assets/imagery/README.md. Ember over smoke over navy, in the
      palette's own values, so the scrim above it lands the same way it will on the
@@ -22,6 +37,36 @@
     radial-gradient(90% 70% at 22% 100%, rgba(194, 21, 0, 0.55) 0%, rgba(194, 21, 0, 0) 60%),
     radial-gradient(140% 120% at 50% 0%, rgba(110, 133, 175, 0.35) 0%, rgba(16, 27, 54, 0) 55%),
     linear-gradient(180deg, var(--navy-800) 0%, var(--navy-950) 100%);
+}
+
+/* Smoke: two slow, very low-contrast drifts across the fire glow. The hero is
+   otherwise a still gradient, and fire weather is the opposite of still.
+
+   Held to opacity ~0.05 and a 40s cycle so it reads as atmosphere rather than
+   animation — and switched off entirely under prefers-reduced-motion below, where
+   a continuously moving background is a genuine problem rather than a nicety. */
+.fh-hero__smoke {
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(45% 38% at 30% 55%, rgba(255, 255, 255, 0.05), transparent 70%),
+    radial-gradient(38% 32% at 70% 40%, rgba(255, 197, 0, 0.05), transparent 70%);
+  animation: fh-drift 44s ease-in-out infinite alternate;
+}
+
+@keyframes fh-drift {
+  from {
+    transform: translate3d(-3%, 1%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(4%, -2%, 0) scale(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fh-hero__smoke {
+    animation: none;
+  }
 }
 
 .fh-hero__image {
@@ -45,12 +90,174 @@
 
 .fh-hero__content {
   position: relative;
-  padding-top: clamp(32px, 6vw, 64px);
-  padding-bottom: clamp(40px, 7vw, 72px);
+  width: 100%;
+  padding-top: clamp(28px, 4vw, 52px);
+  padding-bottom: clamp(40px, 5vw, 68px);
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
   color: #fff;
+}
+
+/* The copy sits on its own pane of dark glass rather than directly on the fire.
+   Two reasons, and the second is the load-bearing one:
+     1. It gives the hero depth — text on a lit surface instead of text floating.
+     2. It makes the contrast deterministic. Copy over a fire gradient varies with
+        where the bloom lands; over a panel it does not. Both states are audited
+        (scripts/check-contrast.mjs, "HERO"): 15.90:1 with the panel, 11.21:1
+        without it, so the reduced-transparency fallback is safe too. */
+/* Copy left, map right. One column until there is genuinely room for two — a map
+   squeezed into half of a tablet is worse than a map with the full width. */
+.fh-hero__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-lg);
+  align-items: start;
+  width: 100%;
+}
+
+@media (min-width: 1100px) {
+  .fh-hero__grid {
+    grid-template-columns: minmax(320px, 27rem) minmax(0, 1fr);
+    gap: var(--space-xl);
+  }
+}
+
+.fh-hero__map {
+  position: relative;
+  border-radius: var(--radius-xl);
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  /* The hero's own backdrop is dark in both themes, so the map panel takes the
+     dark glass treatment regardless of theme — otherwise the light-mode panel would
+     be a white slab dropped onto a night scene. */
+  background: rgba(10, 16, 32, 0.55);
+  -webkit-backdrop-filter: blur(22px) saturate(130%);
+  backdrop-filter: blur(22px) saturate(130%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  /* Inside this panel the surface is dark whatever the page theme, so text tokens
+     are pinned to their on-dark values rather than inherited. Verified in
+     scripts/check-contrast.mjs under "HERO MAP PANEL". */
+  --color-text-primary: #f5f7fb;
+  --color-text-secondary: #c0c6d0;
+  --color-text-tertiary: #98a0af;
+  --color-border: rgba(255, 255, 255, 0.16);
+  --color-bg-surface: #16203a;
+  --color-bg-sunken: rgba(255, 255, 255, 0.05);
+  --glass-sunken: rgba(255, 255, 255, 0.06);
+  --glass-edge: rgba(255, 255, 255, 0.14);
+  --glass-control-border: #7d92b8;
+  --color-accent-tint: rgba(242, 118, 46, 0.18);
+  --color-accent-border: rgba(242, 118, 46, 0.45);
+  color: var(--color-text-primary);
+}
+
+/* The lit top edge, matching the copy panel opposite it. */
+.fh-hero__map::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 197, 0, 0.4) 25%,
+    rgba(255, 158, 99, 0.55) 55%,
+    transparent 88%
+  );
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .fh-hero__map {
+    background: rgba(10, 16, 32, 0.94);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .fh-hero__map {
+    background: rgba(10, 16, 32, 0.9);
+  }
+}
+
+.fh-hero__map-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fh-hero__map-title {
+  margin: 0;
+  font: var(--text-h4);
+  color: var(--color-text-primary);
+}
+
+.fh-hero__map-sub {
+  margin: 0;
+  font: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+
+.fh-hero__panel {
+  position: relative;
+  align-self: stretch;
+  max-width: 780px;
+  padding: clamp(20px, 3vw, 34px) clamp(20px, 3.4vw, 40px);
+  border-radius: var(--radius-xl);
+  background: rgba(10, 16, 32, 0.55);
+  -webkit-backdrop-filter: blur(22px) saturate(130%);
+  backdrop-filter: blur(22px) saturate(130%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/* The lit top edge, in ember rather than white — the light source in this scene is
+   the fire below, so a cool highlight would read as wrong even if few people could
+   say why. */
+.fh-hero__panel::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 197, 0, 0.55) 20%,
+    rgba(255, 158, 99, 0.7) 50%,
+    transparent 85%
+  );
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .fh-hero__panel {
+    background: rgba(10, 16, 32, 0.92);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .fh-hero__panel {
+    background: rgba(10, 16, 32, 0.88);
+  }
+}
+
+/* The heat horizon: the seam where the hero meets the page. Reads as the fire line
+   the whole site sits above. */
+.fh-hero__horizon {
+  position: absolute;
+  inset: auto 0 0;
+  height: 2px;
+  background: var(--heat-line);
 }
 
 .fh-hero__eyebrow {
@@ -64,7 +271,7 @@
 
 .fh-hero__heading {
   margin: 0;
-  font: 800 clamp(32px, 5vw, 56px) / 1.08 var(--font-display);
+  font: 800 clamp(30px, 3.4vw, 46px) / 1.08 var(--font-display);
   max-width: 820px;
   color: #fff;
   text-wrap: balance;
@@ -96,16 +303,47 @@
    ============================================================ */
 
 .fh-stats {
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-bg-surface);
+  /* Pulled up over the hero seam so the stat panes overlap the heat horizon —
+     the site's first piece of content literally sits on the fire line. */
+  margin-top: clamp(-56px, -6vw, -40px);
+  position: relative;
+  z-index: 1;
 }
 
 .fh-stats__row {
-  padding-block: var(--space-xl);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-md);
+}
+
+.fh-stat-pane {
+  padding: var(--space-lg);
+  border-radius: var(--radius-xl);
   display: flex;
-  gap: clamp(32px, 6vw, 80px);
-  flex-wrap: wrap;
-  align-items: flex-start;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+/* A heat bar above each numeral instead of colouring the numeral itself.
+   Gradient text would have to clear 3:1 at every stop against a translucent panel,
+   which the ember end does not reliably do — and a stat you cannot read is worse
+   than a stat that isn't orange. The colour moves to a decorative element where it
+   carries no contrast obligation at all. */
+.fh-stat-pane::after {
+  content: '';
+  display: block;
+  order: -1;
+  width: 36px;
+  height: 3px;
+  border-radius: var(--radius-full);
+  background: var(--heat-gradient);
+  margin-bottom: var(--space-2xs);
+}
+
+@media (max-width: 768px) {
+  .fh-stats {
+    margin-top: calc(var(--space-xl) * -1);
+  }
 }
 
 /* ============================================================
@@ -113,8 +351,14 @@
    ============================================================ */
 
 .fh-topics {
-  padding-block: var(--space-3xl);
+  padding-block: var(--space-4xl);
   scroll-margin-top: var(--space-lg);
+}
+
+@media (max-width: 768px) {
+  .fh-topics {
+    padding-block: var(--space-2xl);
+  }
 }
 
 .fh-topics__intro {
@@ -142,20 +386,36 @@
 
 .fh-topic-card {
   position: relative;
-  background: var(--color-bg-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   padding: var(--space-lg);
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
-  transition: box-shadow 150ms ease, border-color 150ms ease, transform 150ms ease;
+  overflow: hidden;
+  transition: box-shadow 150ms ease, transform 150ms ease;
+}
+
+/* Each card carries a wash of its own topic colour, strongest at the top edge.
+   This is what makes the four cards read as four *areas* at a glance rather than
+   four identical boxes — and it costs nothing in contrast, because the wash tops
+   out at 0.14 alpha and the text above it is checked against the glass composite,
+   not against the tint. */
+.fh-topic-card__wash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(120% 70% at 50% -10%, var(--card-tint), transparent 70%);
 }
 
 .fh-topic-card:hover {
-  border-color: var(--color-border-strong);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
+  box-shadow: var(--glass-shadow-lift);
+  transform: translateY(-3px);
+}
+
+/* Everything above the wash. Without this the card's own content would be painted
+   under the tint layer. */
+.fh-topic-card > *:not(.fh-topic-card__wash) {
+  position: relative;
 }
 
 .fh-topic-card__title {
@@ -218,6 +478,33 @@
   color: var(--color-text-tertiary);
 }
 
+/* AI-synthesis provenance.
+   Deliberately prominent enough to be read rather than tucked into the caption
+   line: this is the one surface on the site where researchers' words are
+   paraphrased by a model instead of quoted, and a federal site owes its readers
+   that disclosure plainly. */
+.fh-topic-card__provenance {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 3px 10px 3px 8px;
+  border-radius: var(--radius-full);
+  border: var(--border-width) solid var(--color-accent-border);
+  background: var(--color-accent-tint);
+  color: var(--color-text-secondary);
+  font: var(--text-caption);
+  letter-spacing: var(--letter-spacing-caption);
+}
+
+.fh-topic-card__provenance-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--heat-gradient);
+  flex-shrink: 0;
+}
+
 .fh-topic-card__cue {
   display: inline-flex;
   align-items: center;
@@ -247,13 +534,14 @@
    ============================================================ */
 
 .fh-cta-band {
-  background: var(--color-bg-sunken);
-  border-top: 1px solid var(--color-border);
-  border-bottom: 1px solid var(--color-border);
+  padding-block: var(--space-2xl);
 }
 
 .fh-cta-band__inner {
-  padding-block: var(--space-2xl);
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  padding: clamp(24px, 4vw, 44px);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -275,4 +563,26 @@
   margin: 0;
   font: var(--text-body);
   color: var(--color-text-secondary);
+}
+
+/* The submit band glows: it is the site's one ask, and on a page of cool glass a
+   warm panel is the thing the eye goes to. */
+.fh-cta-band__glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--heat-gradient-soft);
+}
+
+.fh-cta-band__inner > *:not(.fh-cta-band__glow) {
+  position: relative;
+}
+
+/* Holds the map's place while its chunk loads. Same height as the rendered map, so
+   nothing below it shifts when the real thing arrives. */
+.fh-hero__map-loading {
+  height: clamp(320px, 46vh, 480px);
+  border-radius: var(--radius-xl);
+  background: var(--glass-sunken);
+  border: var(--border-width) solid var(--color-border);
 }
