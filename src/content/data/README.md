@@ -12,10 +12,10 @@ rendering a blank section.
 | `settings.json`      | Real, except `submitFormUrl` — a placeholder Google Forms URL that **must** be replaced before launch. Every submit CTA on the site reads from that one field. |
 | `landing.json`       | Copy is taken verbatim from the approved landing page design.                                                                                            |
 | `topics.json`        | The four topic areas from the FireHouse 1.0 thematic analysis. The `description`, `intro` and `covers` fields are written for this build — they are the copy on `/topics/:topicKey` and need Stephanie/Emily's review. |
-| `topicSummaries.json`| "Top needs" text as it appears in the approved design. Confirm against the FireHouse 1.0 report before launch.                                            |
-| `projects.json`      | **Placeholder.** Nine records stand in for the nine completed DESI and testbed projects so the explorer and the "projects analyzed" count render at the right scale. Titles and summaries are descriptive stand-ins; takeaways, needs and recommendations say "Placeholder" on purpose. `papers` is empty everywhere — no citation is invented. Replace wholesale from the FireHouse 1.0 report. |
+| `topicSummaries.json`| **Placeholder synthesis.** "Top needs" text as it appears in the approved design. The real version is an LLM synthesis (Google NotebookLM) across *all* collected projects, reviewed by the team and pasted in here — topic areas are never assigned to individual projects. Workflow and prompt: `notebooklm/README.md`. `sourceCount` is omitted until a real pass records how many projects it read; the site falls back to the live published count. |
+| `projects.json`      | **Generated — do not hand-edit.** Written by `scripts/import-survey.mjs` from the Qualtrics export (currently the four demo responses of 2026-09-14). Everything the researcher wrote is verbatim; paper titles are looked up from each link's DOI or page metadata. Private answers (email, job title, Q10) are never read. Editorial decisions — topic areas, `published`, summary overrides — live in `scripts/survey-editorial.json`, keyed by ResponseId, so a re-import keeps them. The four topic assignments there are proposals awaiting Emily and Stephanie's review. |
 
-Nothing in `projects.json` should reach a public deploy as-is.
+Re-import with `node scripts/import-survey.mjs path/to/export.xlsx` (add `--dry` to preview, `--offline` to skip link lookups).
 
 ## The "live stats" contract
 

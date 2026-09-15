@@ -6,8 +6,7 @@
       "Higher-resolution surface observations in wildland-urban interface areas",
       "Standardized data-sharing agreements between agencies"
     ],
-    "sourceCount": 9,
-    "model": "gemini-2.5-pro",
+    "model": "NotebookLM",
     "reviewedBy": "GSL Social Science Team"
   },
   {
@@ -17,8 +16,7 @@
       "Longer-lead outlooks for planning windows beyond 72 hours",
       "Model guidance tailored to local fuel and terrain conditions"
     ],
-    "sourceCount": 9,
-    "model": "gemini-2.5-pro",
+    "model": "NotebookLM",
     "reviewedBy": "GSL Social Science Team"
   },
   {
@@ -28,8 +26,7 @@
       "Clearer thresholds for red flag warning issuance across offices",
       "Faster hand-off of forecaster guidance to incident command"
     ],
-    "sourceCount": 9,
-    "model": "gemini-2.5-pro",
+    "model": "NotebookLM",
     "reviewedBy": "GSL Social Science Team"
   },
   {
@@ -39,8 +36,7 @@
       "Shared frameworks for evaluating fire weather program impact",
       "Clearer roles between forecast offices and land management agencies"
     ],
-    "sourceCount": 9,
-    "model": "gemini-2.5-pro",
+    "model": "NotebookLM",
     "reviewedBy": "GSL Social Science Team"
   }
 ]

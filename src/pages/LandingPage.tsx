@@ -201,7 +201,7 @@ export function LandingPage() {
         </div>
 
         <div className="fh-topics__grid">
-          {cards.map(({ topic, needs, updatedAt, projectCount, sourceCount, model }) => (
+          {cards.map(({ topic, needs, updatedAt, sourceCount, model }) => (
             <article
               key={topic.key}
               className="fh-topic-card fh-glass"
@@ -227,17 +227,15 @@ export function LandingPage() {
                 <p className="fh-topic-card__provenance">
                   <span className="fh-topic-card__provenance-dot" aria-hidden="true" />
                   {sourceCount
-                    ? `AI-synthesized from ${sourceCount} submissions`
-                    : 'AI-synthesized from submissions'}
+                    ? `AI-synthesized across ${sourceCount} ${sourceCount === 1 ? 'project' : 'projects'}`
+                    : 'AI-synthesized across all projects'}
                 </p>
               )}
               <div className="fh-topic-card__foot">
                 <p className="fh-topic-card__updated">
-                  {projectCount} {projectCount === 1 ? 'project' : 'projects'}
                   {updatedAt && (
                     <>
-                      {' · reviewed '}
-                      <time dateTime={updatedAt}>{formatReviewDate(updatedAt)}</time>
+                      Reviewed <time dateTime={updatedAt}>{formatReviewDate(updatedAt)}</time>
                     </>
                   )}
                 </p>

@@ -34,15 +34,12 @@ export interface TopicCard {
   sourceCount?: number;
   /** Set when the summary was model-synthesized; drives the provenance label. */
   model?: string;
-  projectCount: number;
 }
 
 export function buildTopicCards(content: SiteContent, needsPerCard: number): TopicCard[] {
   const summaryByTopic = new Map<TopicKey, TopicSummary>(
     content.topicSummaries.map((summary) => [summary.topic, summary]),
   );
-  const published = publishedProjects(content);
-
   return content.topics.map((topic) => {
     const summary = summaryByTopic.get(topic.key);
     return {
@@ -51,9 +48,6 @@ export function buildTopicCards(content: SiteContent, needsPerCard: number): Top
       updatedAt: summary?.updatedAt,
       sourceCount: summary?.sourceCount,
       model: summary?.model,
-      // A project tagged with several areas counts once in each — the card answers
-      // "how much evidence sits behind this area", not "how do projects partition".
-      projectCount: published.filter((project) => project.topics.includes(topic.key)).length,
     };
   });
 }
@@ -69,18 +63,6 @@ export function findTopic(content: SiteContent, key: TopicKey): TopicContent | u
 
 export function findTopicSummary(content: SiteContent, key: TopicKey): TopicSummary | undefined {
   return content.topicSummaries.find((summary) => summary.topic === key);
-}
-
-/**
- * Published projects in one topic area, newest first.
- *
- * Ordering is decided here rather than left to whatever the CMS returns, so the
- * topic page and the explorer can't disagree about it.
- */
-export function projectsInTopic(content: SiteContent, key: TopicKey): Project[] {
-  return publishedProjects(content)
-    .filter((project) => project.topics.includes(key))
-    .sort(byRecency);
 }
 
 /**

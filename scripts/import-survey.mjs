@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Qualtrics CSV export  ->  src/content/data/projects.json
+ * Qualtrics export (.xlsx or .csv)  ->  src/content/data/projects.json
  *
- *   node scripts/import-survey.mjs path/to/export.csv [--dry]
+ *   node scripts/import-survey.mjs path/to/export.xlsx [--dry] [--offline]
  *
  * ---------------------------------------------------------------------------
  * Why this exists
@@ -12,208 +12,111 @@
  * dependencies so that it can be read, audited and re-hosted by whoever takes over.
  *
  * When the integration goes live, the replacement fetches rows from the Qualtrics
- * API instead of a CSV and writes the same file. Everything downstream —
+ * API instead of an export file and writes the same JSON. Everything downstream —
  * `normalize.ts` and the whole app — is unchanged. That boundary is the point.
  *
  * ---------------------------------------------------------------------------
- * Two rules this script enforces that the UI cannot
+ * Rules this script enforces that the UI cannot
  * ---------------------------------------------------------------------------
- * 1. **Q10 never leaves this file.** "How results were communicated" is internal-use
- *    only. It is dropped here rather than hidden in the UI, because a field that is
- *    merely not rendered still ships inside projects.json for anyone to read.
- * 2. **Non-IRB rows are reported, not silently dropped.** `normalize.ts` filters them
- *    at runtime as a backstop, but a row that is excluded should be *visible* to the
- *    person running the import — a silent drop looks identical to a parsing bug.
+ * 1. **Private answers never leave this file.** Q2 (email), Q3 (job title) and Q10
+ *    (how results were shared — internal use only) are not read at all, and neither
+ *    are Qualtrics' own IP address and location columns. They are dropped here rather
+ *    than hidden in the UI, because a field that is merely not rendered still ships
+ *    inside projects.json for anyone to read.
+ * 2. **Excluded rows are reported, not silently dropped.** `normalize.ts` filters
+ *    non-IRB records at runtime as a backstop, but a row that is excluded should be
+ *    *visible* to the person running the import — a silent drop looks identical to a
+ *    parsing bug.
+ * 3. **The researcher's words are copied, never rewritten.** Parsing here only ever
+ *    *segments* text (one need/recommendation pair per entry, the recommendation
+ *    sentence apart from the need); it never trims, merges or rephrases it.
  *
- * ⚠ QUESTION_MAP below is a placeholder keyed to guessed Qualtrics column names.
- * Emily and Steph owe us the mapped question list (PLAN.md, open questions 1–5);
- * when it lands, this map is the only thing that should need editing.
+ * ---------------------------------------------------------------------------
+ * Two inputs
+ * ---------------------------------------------------------------------------
+ *  - The export, for everything the researcher wrote.
+ *  - `scripts/survey-editorial.json`, keyed by ResponseId, for the decisions the
+ *    survey does not ask for: whether the record is live on the site, and optional
+ *    overrides. Re-running an import never loses those decisions.
+ *
+ * Topic areas are not assigned here or anywhere per project. They are synthesized
+ * across the whole collection (see `TopicSummary` in src/content/types.ts).
+ *
+ * Papers are resolved over the network (DOI metadata, then the page's own citation
+ * tags) so the project page can show a title instead of a bare link. `--offline`
+ * skips that; the links still render, just labelled by host.
+ *
+ * It then regenerates `notebooklm/firehouse-findings.md`, the source document for the
+ * topic-area synthesis (see scripts/notebooklm-source.mjs). Needs Node 23.6+.
  */
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import { dirname, extname, resolve } from 'node:path';
+import { inflateRawSync } from 'node:zlib';
+import { NOTEBOOK_SOURCE, writeNotebookSource } from './notebooklm-source.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(HERE, '../src/content/data/projects.json');
+const EDITORIAL = resolve(HERE, 'survey-editorial.json');
 
 /* ------------------------------------------------------------------ mapping -- */
 
 /**
- * Survey column -> Project field. Left side is the Qualtrics column header.
+ * Project field -> Qualtrics column id, from the live survey export of 2026-09-14.
  *
- * `regions` and `states` use the *named export tags* the coverage-map spec asks for
- * (`FirehouseFormAdditions.pdf`, setting 2) rather than positional Q-numbers. That
- * is the whole point of naming them: left as Q7 and Q8, reordering the survey later
- * breaks the map quietly instead of loudly. Everything still on a Q-number is
- * awaiting the same treatment from Emily and Steph.
+ * Numbered columns (`Q15_1`…) are one text box each. They are listed as prefixes and
+ * gathered in column order, so adding a fifth takeaway box to the survey needs no
+ * change here.
  */
 const QUESTION_MAP = {
-  title: 'Q2',
-  completionYear: 'Q3',
-  firePhases: 'Q4', // multi-select
-  publicationStatus: 'Q5',
-  irbApproved: 'Q6',
-  abstract: 'Q7',
-  authors: 'Q8',
-  org: 'Q9',
-  // Q10 — how results were communicated — INTERNAL ONLY. Intentionally absent.
-  topics: 'Q11', // multi-select
-  regions: 'GACC_REGION', // multi-select, required — drives the coverage map
-  states: 'STATES', // multi-select, optional backstop
-  takeaways: 'Q15',
-  needs: 'Q17',
-  recommendations: 'Q17b',
-  papers: 'Q18',
+  responseId: 'ResponseId',
+  submitter: 'Q1', // "First Last" — must be a co-author
+  // Q2 email and Q3 job title — PRIVATE. Intentionally absent.
+  org: 'Q4',
+  title: 'Q5',
+  coResearchers: 'Q6', // "First Last, First Last"
+  completionYear: 'Q7',
+  irbApproved: 'Q8',
+  firePhases: 'Q9', // multi-select
+  // Q10 — how results were shared — INTERNAL ONLY. Intentionally absent.
+  projectType: 'Q11',
+  projectTypeOther: 'Q11_4_TEXT',
+  methods: 'Q12', // multi-select
+  methodsOther: 'Q12_6_TEXT',
+  regions: 'Q13', // multi-select of GACC recode values — drives the coverage map
+  abstract: 'Q14',
 };
 
-/** Survey answer text -> our structural keys. Extend as the real option lists land. */
-const VALUE_MAP = {
-  firePhases: {
-    'preparedness and planning': 'preparedness',
-    'prevention and mitigation': 'prevention',
-    'detection and early warning': 'detection',
-    'active response and suppression': 'response',
-    'recovery and rehabilitation': 'recovery',
-  },
-  topics: {
-    'observations and monitoring': 'observe',
-    'forecasts and modeling': 'forecast',
-    'warnings and immediate response': 'warning',
-    'strategic adaptation and institutional governance': 'governance',
-  },
-  publicationStatus: {
-    published: 'published',
-    'in review': 'in-review',
-    'under review': 'in-review',
-    'in preparation': 'in-preparation',
-    'not published': 'unpublished',
-    unpublished: 'unpublished',
-  },
+const MULTI_COLUMN = {
+  takeaways: 'Q15_', // Q15_1 … Q15_4
+  needs: 'Q16_', // Q16_1 … Q16_10
+  papers: 'Q17_', // Q17_1 … Q17_5
 };
 
 /**
- * Coordination regions.
+ * Fire cycle phase answers -> taxonomy keys.
  *
- * The export SHOULD already contain recode values (`ONCC`), per setting 1 of the
- * spec — so a value that is already a valid code passes straight through. The label
- * forms below are a safety net for an export where the recodes were not configured,
- * which is a real possibility on the first pass and produces a silently empty map
- * otherwise. Both the full label and its bare region name are accepted, because
- * Qualtrics exports vary in whether the parenthetical survives.
+ * Matched on the word before the parenthetical ("Before (Pre-fire Planning, …)"),
+ * so the examples in the survey wording can be edited without breaking the import.
+ * An unmatched answer is warned about — which is how an "After" option would show up
+ * if the survey has one this export didn't exercise.
  */
+const FIRE_PHASE_MAP = {
+  before: 'before',
+  during: 'during',
+  'long-term': 'long-term',
+};
+
 const REGION_CODES = [
   'AICC', 'NWCC', 'ONCC', 'OSCC', 'NRCC',
   'GBCC', 'SWCC', 'RMCC', 'EACC', 'SACC',
   'PACIFIC', 'NATIONAL', 'INTL', 'UNKNOWN',
 ];
 
-const REGION_LABELS = {
-  'alaska (aicc)': 'AICC',
-  alaska: 'AICC',
-  'northwest — or, wa (nwcc)': 'NWCC',
-  'northwest - or, wa (nwcc)': 'NWCC',
-  northwest: 'NWCC',
-  'northern california (oncc)': 'ONCC',
-  'northern california': 'ONCC',
-  'southern california (oscc)': 'OSCC',
-  'southern california': 'OSCC',
-  'northern rockies — mt, n. id, nd (nrcc)': 'NRCC',
-  'northern rockies - mt, n. id, nd (nrcc)': 'NRCC',
-  'northern rockies': 'NRCC',
-  'great basin — ut, nv, s. id (gbcc)': 'GBCC',
-  'great basin - ut, nv, s. id (gbcc)': 'GBCC',
-  'great basin': 'GBCC',
-  'southwest — az, nm (swcc)': 'SWCC',
-  'southwest - az, nm (swcc)': 'SWCC',
-  southwest: 'SWCC',
-  'rocky mountain — co, wy, sd, ne, ks (rmcc)': 'RMCC',
-  'rocky mountain - co, wy, sd, ne, ks (rmcc)': 'RMCC',
-  'rocky mountain': 'RMCC',
-  'eastern area (eacc)': 'EACC',
-  'eastern area': 'EACC',
-  'southern area — incl. pr & usvi (sacc)': 'SACC',
-  'southern area - incl. pr & usvi (sacc)': 'SACC',
-  'southern area': 'SACC',
-  'hawaii / pacific islands': 'PACIFIC',
-  'hawaii/pacific islands': 'PACIFIC',
-  'national / not region-specific': 'NATIONAL',
-  'not region-specific': 'NATIONAL',
-  'outside the u.s.': 'INTL',
-  'outside the us': 'INTL',
-  'not sure': 'UNKNOWN',
-};
+const PUBLICATION_STATUSES = ['published', 'in-review', 'in-preparation', 'unpublished'];
 
-/**
- * Region answers -> region codes.
- *
- * Splitting this column is genuinely ambiguous and the naive version is wrong:
- * Qualtrics joins multi-selects with commas, but the region LABELS contain commas
- * of their own — "Northern Rockies — MT, N. ID, ND (NRCC)" is one answer, not four.
- * A plain comma split turns that single choice into three unrecognised fragments.
- *
- * So the split is layered. Semicolons first, since they are unambiguous. Any piece
- * that doesn't resolve is then retried as a comma-separated list, which is what a
- * recode-value export ("ONCC,OSCC") actually looks like. Recode values never contain
- * a comma, so that second pass is always safe.
- *
- * Unmapped answers are not silently dropped. A region that fails to map is a
- * submission that vanishes from the coverage map — the one failure mode this column
- * exists to prevent — so it is warned about loudly and recorded as UNKNOWN, where it
- * shows up in the "Not on the map" list rather than nowhere at all.
- */
-function resolveRegion(answer) {
-  const trimmed = answer.trim();
-  if (!trimmed) return null;
-  const upper = trimmed.toUpperCase();
-  if (REGION_CODES.includes(upper)) return upper;
-  return REGION_LABELS[trimmed.toLowerCase()] ?? null;
-}
-
-function mapRegions(raw, where, warnings) {
-  const out = [];
-
-  for (const piece of clean(raw).split(';')) {
-    if (!piece.trim()) continue;
-
-    const direct = resolveRegion(piece);
-    if (direct) {
-      out.push(direct);
-      continue;
-    }
-
-    // Retry as a comma-separated list of codes.
-    const parts = piece.split(',').map((part) => part.trim()).filter(Boolean);
-    const resolved = parts.map(resolveRegion);
-
-    if (parts.length > 1 && resolved.every(Boolean)) {
-      out.push(...resolved);
-      continue;
-    }
-
-    warnings.push(
-      `${where}: unrecognised region "${piece.trim()}" — recorded as UNKNOWN. ` +
-        'Check that the survey exports recode values, not labels ' +
-        '(see FirehouseFormAdditions.pdf, setting 1).',
-    );
-    out.push('UNKNOWN');
-  }
-
-  return [...new Set(out)];
-}
-
-/** Q2 states -> two-letter postal codes. Optional; a backstop, not a region source. */
-function mapStates(raw) {
-  return [
-    ...new Set(
-      splitMulti(raw)
-        .map((value) => value.trim().toUpperCase())
-        .filter((value) => /^[A-Z]{2}$/.test(value)),
-    ),
-  ];
-}
-
-/* -------------------------------------------------------------------- csv ---- */
+/* ------------------------------------------------------------ export files -- */
 
 /**
  * Minimal RFC 4180 parser.
@@ -264,77 +167,169 @@ function parseCsv(text) {
     row.push(field);
     rows.push(row);
   }
-  return rows.filter((r) => r.some((cell) => cell.trim() !== ''));
+  return rows;
+}
+
+/**
+ * Reads the first worksheet of an .xlsx as rows of strings.
+ *
+ * Qualtrics' default download is Excel, and asking researchers-turned-editors to
+ * re-export as CSV is exactly the kind of step that gets skipped. An .xlsx is a zip
+ * of XML, and Node ships the inflater, so reading one needs ~60 lines rather than a
+ * dependency. Only what a Qualtrics export uses is supported: shared and inline
+ * strings, and plain numbers.
+ */
+function readXlsx(buffer) {
+  const files = unzip(buffer);
+  const sheetName = [...files.keys()]
+    .filter((name) => /^xl\/worksheets\/sheet\d+\.xml$/.test(name))
+    .sort()[0];
+  if (!sheetName) throw new Error('No worksheet found in the .xlsx file.');
+
+  const text = (xml) =>
+    [...xml.matchAll(/<t\b[^>]*>([\s\S]*?)<\/t>/g)].map((m) => decodeXml(m[1])).join('');
+
+  const shared = files.has('xl/sharedStrings.xml')
+    ? [...files.get('xl/sharedStrings.xml').matchAll(/<si>([\s\S]*?)<\/si>/g)].map((m) => text(m[1]))
+    : [];
+
+  const rows = [];
+  for (const rowMatch of files.get(sheetName).matchAll(/<row\b[^>]*>([\s\S]*?)<\/row>/g)) {
+    const row = [];
+    for (const cell of rowMatch[1].matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
+      const attrs = cell[1];
+      const inner = cell[2] ?? '';
+      const ref = attrs.match(/\br="([A-Z]+)\d+"/)?.[1];
+      const type = attrs.match(/\bt="(\w+)"/)?.[1];
+      const raw = inner.match(/<v>([\s\S]*?)<\/v>/)?.[1];
+
+      let value = '';
+      if (type === 's') value = shared[Number(raw)] ?? '';
+      else if (type === 'inlineStr') value = text(inner);
+      else if (raw !== undefined) value = decodeXml(raw);
+
+      row[ref ? columnIndex(ref) : row.length] = value;
+    }
+    rows.push(Array.from(row, (value) => value ?? ''));
+  }
+  return rows;
+}
+
+function columnIndex(letters) {
+  return [...letters].reduce((n, char) => n * 26 + char.charCodeAt(0) - 64, 0) - 1;
+}
+
+function decodeXml(value) {
+  return value
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(Number(dec)))
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, '&');
+}
+
+/** Just enough of the zip format to read an .xlsx: the central directory, stored or deflated. */
+function unzip(buffer) {
+  let end = buffer.length - 22;
+  while (end >= 0 && buffer.readUInt32LE(end) !== 0x06054b50) end -= 1;
+  if (end < 0) throw new Error('Not a zip file — is this really an .xlsx export?');
+
+  const files = new Map();
+  let offset = buffer.readUInt32LE(end + 16);
+  for (let i = 0, count = buffer.readUInt16LE(end + 10); i < count; i += 1) {
+    const method = buffer.readUInt16LE(offset + 10);
+    const size = buffer.readUInt32LE(offset + 20);
+    const nameLength = buffer.readUInt16LE(offset + 28);
+    const skip = nameLength + buffer.readUInt16LE(offset + 30) + buffer.readUInt16LE(offset + 32);
+    const local = buffer.readUInt32LE(offset + 42);
+    const name = buffer.toString('utf8', offset + 46, offset + 46 + nameLength);
+
+    const start = local + 30 + buffer.readUInt16LE(local + 26) + buffer.readUInt16LE(local + 28);
+    const data = buffer.subarray(start, start + size);
+    if (name.endsWith('.xml')) {
+      files.set(name, (method === 8 ? inflateRawSync(data) : data).toString('utf8'));
+    }
+    offset += 46 + skip;
+  }
+  return files;
 }
 
 /* ----------------------------------------------------------------- helpers -- */
 
-const clean = (value) => (value ?? '').trim();
-
-/** Qualtrics joins multi-selects with commas; some exports use semicolons. */
-function splitMulti(value) {
-  return clean(value)
-    .split(/[;,]/)
-    .map((part) => part.trim())
-    .filter(Boolean);
-}
-
-function mapValues(raw, dictionary, where, warnings) {
-  return splitMulti(raw)
-    .map((answer) => {
-      const key = dictionary[answer.toLowerCase()];
-      if (!key) {
-        warnings.push(`${where}: unmapped answer "${answer}" — add it to VALUE_MAP.`);
-        return null;
-      }
-      return key;
-    })
-    .filter(Boolean);
-}
-
-/** Free text where each line is one item ("major takeaways", Q17 needs, etc.). */
-function splitLines(value) {
-  return clean(value)
-    .split(/\r?\n|(?:^|\s)[••]\s*/m)
-    .map((line) => line.replace(/^[-*\d.)\s]+/, '').trim())
-    .filter(Boolean);
-}
+const clean = (value) => String(value ?? '').trim();
 
 /**
- * "Smith, J.; Doe, A." -> structured authors where possible.
+ * Splits a Qualtrics multi-select answer.
  *
- * Only splits a name into family/given when the "Family, Given" comma form is
- * present. Anything else is kept verbatim as `name` — a byline like "DESI research
- * team" has no surname, and guessing one produces a citation that is confidently
- * wrong rather than honestly loose. See PLAN.md, open question 3.
+ * Qualtrics joins choices with bare commas, and the choice LABELS contain commas of
+ * their own — "Before (Pre-fire Planning, Prevention, and Mitigation (e.g., …))" is
+ * one answer, not four. Every comma in these labels sits inside parentheses, so only
+ * commas at depth zero are separators.
  */
-function parseAuthors(value) {
-  // Split on semicolons only — never commas. The "Family, Given" form this function
-  // exists to read has a comma *inside* each name, so the shared multi-select
-  // splitter would turn "Rodriguez, Ana; Chen, Wei" into four people.
-  const entries = clean(value)
-    .split(/;|\s+\band\b\s+/)
-    .map((part) => part.trim())
-    .filter(Boolean);
+function splitChoices(value) {
+  const out = [];
+  let depth = 0;
+  let current = '';
+  for (const char of clean(value)) {
+    if (char === '(') depth += 1;
+    if (char === ')') depth = Math.max(0, depth - 1);
+    if (char === ',' && depth === 0) {
+      out.push(current);
+      current = '';
+    } else current += char;
+  }
+  out.push(current);
+  return out.map((part) => part.trim()).filter(Boolean);
+}
 
-  return entries.map((entry) => {
-    const match = entry.match(/^([^,]+),\s*(.+)$/);
-    if (!match) return { name: entry };
-    const [, family, given] = match;
-    return { name: entry, family: family.trim(), given: given.trim() };
-  });
+/** Collapses runs of whitespace. Changes spacing only — never a word. */
+const tidy = (value) => clean(value).replace(/\s+/g, ' ');
+
+/**
+ * "First Last" names -> structured authors, where that can be done honestly.
+ *
+ * The survey asks for "First Last", so a two-word name splits cleanly. A longer one
+ * does not: "Laura Sample McMeeking" has a two-word surname, which a last-space
+ * split would render as "McMeeking, L. S." in a citation — confidently wrong. Those
+ * are kept verbatim as `name`, and the citation builder prints them as written.
+ */
+function toAuthor(name) {
+  const parts = tidy(name).split(' ');
+  if (parts.length !== 2) return { name: tidy(name) };
+  return { name: tidy(name), given: parts[0], family: parts[1] };
+}
+
+function parseAuthors(submitter, coResearchers) {
+  const seen = new Set();
+  return [clean(submitter), ...clean(coResearchers).split(/[,;]/)]
+    .map(tidy)
+    .filter((name) => {
+      const key = name.toLowerCase();
+      if (!name || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .map(toAuthor);
 }
 
 function slugify(title, taken) {
-  const base =
-    clean(title)
-      .toLowerCase()
-      .normalize('NFKD')
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '')
-      .slice(0, 60) || 'project';
+  const words = clean(title)
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[^\w\s-]/g, ' ')
+    .split(/[\s_-]+/)
+    .filter(Boolean);
+
+  // Cut at a word boundary: a slug is a public URL people read aloud and cite.
+  let base = '';
+  for (const word of words) {
+    if (base && base.length + word.length + 1 > 60) break;
+    base = base ? `${base}-${word}` : word;
+  }
+  // A cut that lands after "and" or "of" reads as a typo in the address bar.
+  base = base.replace(/(?:-(?:a|an|and|for|in|of|on|or|the|to|with|within))+$/, '') || 'project';
 
   // Slugs are public URLs people cite, so a collision must not silently overwrite.
   let slug = base;
@@ -344,80 +339,217 @@ function slugify(title, taken) {
   return slug;
 }
 
-function parsePapers(value) {
-  // One paper per line; an optional trailing DOI, bare or as a doi.org URL.
-  return splitLines(value).map((line) => {
-    const doi = line.match(/\b(10\.\d{4,9}\/[^\s"<>]+)\b/);
-    const url = line.match(/\bhttps?:\/\/\S+/);
-    const title = line
-      .replace(/\bhttps?:\/\/\S+/g, '')
-      .replace(/\bdoi:\s*/gi, '')
-      .replace(/\b10\.\d{4,9}\/[^\s"<>]+\b/g, '')
-      .replace(/[\s,;–-]+$/, '')
-      .trim();
-    return {
-      title: title || line,
-      ...(doi ? { doi: doi[1] } : {}),
-      ...(url && !doi ? { url: url[0] } : {}),
-    };
-  });
+/** The abstract's opening sentence, as a seed for the grid tile's one-liner. */
+function firstSentence(abstract) {
+  const match = abstract.match(/^[\s\S]*?[a-z0-9)”"][.!?](?=\s+[A-Z])/);
+  const sentence = (match ? match[0] : abstract).trim();
+  if (sentence.length <= 240) return sentence;
+  return `${sentence.slice(0, 237).replace(/\s+\S*$/, '')}…`;
+}
+
+/**
+ * One need/recommendation text box -> entries.
+ *
+ * The survey asks for "Need for [topic] among [group]: [gap]. Recommend [solution]."
+ * in each box. Two things real responses do anyway, both handled here:
+ *  - Two entries pasted into one box, separated by a run of spaces. Split, because
+ *    rendering them as one card would pair the second need with the first
+ *    recommendation.
+ *  - A stand-alone need or a stand-alone recommendation — explicitly allowed.
+ *
+ * The recommendation is everything from the first sentence that begins "Recommend".
+ * The split point is a sentence boundary, so both halves stay verbatim.
+ */
+function parseNeeds(cells, where, warnings) {
+  const entries = [];
+  for (const cell of cells) {
+    const pieces = clean(cell).split(/\s{2,}(?=Need\b)/);
+    if (pieces.length > 1) {
+      warnings.push(`${where}: one needs box held ${pieces.length} entries — split them.`);
+    }
+    for (const piece of pieces.map(tidy).filter(Boolean)) {
+      const at = piece.search(/(?:^|(?<=[.!?:;)"”’]\s))Recommend/);
+      const need = at === -1 ? piece : piece.slice(0, at).trim();
+      const recommendation = at === -1 ? '' : piece.slice(at).trim();
+      entries.push({
+        ...(need ? { need } : {}),
+        ...(recommendation ? { recommendation } : {}),
+      });
+    }
+  }
+  return entries;
+}
+
+/* ------------------------------------------------------------------ papers -- */
+
+const first = (value) => (Array.isArray(value) ? value[0] : value);
+
+/** One retry: repository sites are slow often enough that a single miss means little. */
+async function fetchText(url, accept, attempt = 1) {
+  try {
+    const response = await fetch(url, {
+      headers: { Accept: accept, 'User-Agent': 'FirehouseImporter/1.0 (NOAA GSL)' },
+      redirect: 'follow',
+      signal: AbortSignal.timeout(30000),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return await response.text();
+  } catch (error) {
+    if (attempt >= 2) throw error;
+    return fetchText(url, accept, attempt + 1);
+  }
+}
+
+async function resolveDoi(doi) {
+  const csl = JSON.parse(
+    await fetchText(`https://doi.org/${doi}`, 'application/vnd.citationstyles.csl+json'),
+  );
+  return {
+    title: tidy(first(csl.title)),
+    container: tidy(first(csl['container-title'])) || tidy(csl.publisher) || undefined,
+    year: csl.issued?.['date-parts']?.[0]?.[0],
+  };
+}
+
+/** Reads the citation tags a repository or journal page publishes about itself. */
+async function resolvePage(url) {
+  const html = await fetchText(url, 'text/html');
+  const meta = (name) =>
+    html.match(new RegExp(`<meta[^>]+(?:name|property)=["']${name}["'][^>]*content=["']([^"']*)["']`, 'i'))?.[1];
+  const title = meta('citation_title') ?? meta('og:title');
+  return {
+    title: title ? tidy(decodeXml(title)) : undefined,
+    container: meta('og:site_name') ? tidy(decodeXml(meta('og:site_name'))) : undefined,
+    doi: meta('citation_doi')?.replace(/^doi:/i, ''),
+  };
+}
+
+/**
+ * Repository links whose DOI can be read straight off the address. Resolving those
+ * through doi.org is faster and more reliable than scraping the repository page —
+ * Zenodo's own pages regularly time out for scripted requests.
+ */
+const DOI_FROM_URL = [[/^https?:\/\/(?:www\.)?zenodo\.org\/(?:records|record)\/(\d+)/i, (id) => `10.5281/zenodo.${id}`]];
+
+/**
+ * One link box -> a Paper.
+ *
+ * The survey collects links only, so the title comes from the link's own metadata.
+ * A failed lookup is not an error: the link is still rendered, labelled by its host,
+ * and the warning tells whoever is running the import that a title is missing.
+ */
+async function parsePaper(raw, where, warnings, offline, known) {
+  const value = clean(raw);
+  const url = value.match(/\bhttps?:\/\/\S+/)?.[0];
+  const doiInLink = value.match(/\b(10\.\d{4,9}\/[^\s"<>]+)/)?.[1]?.replace(/[.,;]$/, '');
+  const derived = url && DOI_FROM_URL.map(([re, toDoi]) => url.match(re) && toDoi(url.match(re)[1])).find(Boolean);
+  const doi = doiInLink ?? derived;
+  if (!doi && !url) {
+    warnings.push(`${where}: "${value}" is not a link or DOI — skipped.`);
+    return null;
+  }
+
+  // Keep the researcher's own link beside a DOI we derived from it.
+  const paper = doi ? { doi, ...(derived ? { url } : {}) } : { url };
+  // What the last import resolved for this link. Used when a lookup can't run or
+  // fails, so a slow repository site never strips a title out of committed data.
+  const previous = known.get(url ?? doi) ?? known.get(doi);
+  const reuse = () => Object.assign(paper, { ...previous, ...paper });
+  if (offline) return previous ? reuse() : paper;
+
+  try {
+    const found = doi ? await resolveDoi(doi) : await resolvePage(url);
+    if (found.doi && !doi) paper.doi = found.doi;
+    for (const key of ['title', 'container', 'year']) {
+      if (found[key]) paper[key] = found[key];
+    }
+    if (!paper.title) warnings.push(`${where}: no title published at ${doi ?? url}.`);
+  } catch (error) {
+    if (previous) reuse();
+    warnings.push(
+      `${where}: could not resolve ${doi ?? url} (${error.message})` +
+        (previous ? ' — kept the metadata from the last import.' : '.'),
+    );
+  }
+  // Keep the link the researcher gave when the DOI came from the page: it is the
+  // address they chose, and the DOI is shown beside it.
+  if (paper.doi && url && !doi) paper.url = url;
+  return paper;
 }
 
 const TRUTHY = new Set(['yes', 'y', 'true', '1', 'approved', 'irb approved']);
 
 /* -------------------------------------------------------------------- main -- */
 
-function main() {
-  const [, , csvPath, ...flags] = process.argv;
-  if (!csvPath) {
-    console.error('Usage: node scripts/import-survey.mjs <export.csv> [--dry]');
+async function main() {
+  const [, , inputPath, ...flags] = process.argv;
+  if (!inputPath) {
+    console.error('Usage: node scripts/import-survey.mjs <export.xlsx|export.csv> [--dry] [--offline]');
     process.exit(1);
   }
 
-  const rows = parseCsv(readFileSync(resolve(process.cwd(), csvPath), 'utf8'));
-  if (rows.length < 2) {
-    console.error('No data rows found in the export.');
-    process.exit(1);
-  }
+  const path = resolve(process.cwd(), inputPath);
+  const rows =
+    extname(path).toLowerCase() === '.xlsx'
+      ? readXlsx(readFileSync(path))
+      : parseCsv(readFileSync(path, 'utf8'));
 
-  // Qualtrics writes three header rows: column ids, question text, and an import id
-  // blob. Row 0 is the one that matches QUESTION_MAP; the rest are skipped by
-  // looking for the ResponseId column rather than by counting, since the number of
-  // preamble rows changes with export settings.
+  const editorial = JSON.parse(readFileSync(EDITORIAL, 'utf8'));
+
+  // Paper metadata from the previous import, keyed by the link the researcher gave.
+  const known = new Map();
+  if (existsSync(OUT)) {
+    for (const paper of JSON.parse(readFileSync(OUT, 'utf8')).flatMap((p) => p.papers ?? [])) {
+      // A `url` is only stored when the researcher gave a link rather than a DOI.
+      if (paper.title) known.set(paper.url ?? paper.doi, paper);
+    }
+  }
+  const offline = flags.includes('--offline');
+
+  // Row 0 holds the column ids QUESTION_MAP is keyed to. Qualtrics then writes one or
+  // two more header rows (question text, an import-id blob) depending on export
+  // settings, so responses are found by their ResponseId rather than by counting.
   const header = rows[0].map(clean);
   const column = Object.fromEntries(header.map((name, i) => [name, i]));
   const at = (row, field) => {
     const index = column[QUESTION_MAP[field]];
     return index === undefined ? '' : clean(row[index]);
   };
+  const series = (row, prefix) =>
+    header
+      .map((name, i) => [name, i])
+      .filter(([name]) => new RegExp(`^${prefix}\\d+$`).test(name))
+      .map(([, i]) => clean(row[i]))
+      .filter(Boolean);
 
-  const missing = Object.entries(QUESTION_MAP)
-    .filter(([, col]) => column[col] === undefined)
-    .map(([field, col]) => `${field} (${col})`);
+  const missing = [
+    ...Object.entries(QUESTION_MAP).filter(([, col]) => column[col] === undefined),
+    ...Object.entries(MULTI_COLUMN).filter(([, prefix]) => !header.some((h) => h.startsWith(prefix))),
+  ].map(([field, col]) => `${field} (${col})`);
   if (missing.length) {
     console.warn(`⚠ Columns not found in the export: ${missing.join(', ')}`);
     console.warn('  Update QUESTION_MAP at the top of this script.\n');
   }
 
+  const responses = rows.slice(1).filter((row) => /^R_\w+$/.test(at(row, 'responseId')));
   const warnings = [];
   const excluded = [];
   const taken = new Set();
   const projects = [];
 
-  for (const [i, row] of rows.slice(1).entries()) {
-    const title = at(row, 'title');
-    if (!title) continue; // preamble row or blank response
-    const where = `row ${i + 2} ("${title.slice(0, 40)}")`;
+  for (const row of responses) {
+    const responseId = at(row, 'responseId');
+    const title = tidy(at(row, 'title'));
+    const where = `${responseId} ("${title.slice(0, 40)}")`;
+    const edit = editorial[responseId] ?? {};
 
-    // ---- Rule 2: IRB exclusions are reported, never silent. ------------------
-    if (!TRUTHY.has(at(row, 'irbApproved').toLowerCase())) {
-      excluded.push(`${where} — no IRB approval`);
+    // ---- Rule 2: exclusions are reported, never silent. ----------------------
+    if (!title) {
+      excluded.push(`${where} — no project title`);
       continue;
     }
-
-    const topics = mapValues(at(row, 'topics'), VALUE_MAP.topics, where, warnings);
-    if (topics.length === 0) {
-      warnings.push(`${where}: no topic area — skipped, it could not be surfaced anywhere.`);
+    if (!TRUTHY.has(at(row, 'irbApproved').toLowerCase())) {
+      excluded.push(`${where} — no IRB approval or exemption`);
       continue;
     }
 
@@ -427,44 +559,79 @@ function main() {
       continue;
     }
 
-    const slug = slugify(title, taken);
-    const abstract = at(row, 'abstract');
+    const firePhases = splitChoices(at(row, 'firePhases'))
+      .map((answer) => {
+        const key = FIRE_PHASE_MAP[answer.split(/\s*\(/)[0].trim().toLowerCase()];
+        if (!key) warnings.push(`${where}: unmapped fire cycle phase "${answer.slice(0, 50)}".`);
+        return key;
+      })
+      .filter(Boolean);
+
+    const regions = splitChoices(at(row, 'regions')).map((answer) => {
+      const code = answer.toUpperCase();
+      if (REGION_CODES.includes(code)) return code;
+      // A region that fails to map is a submission that vanishes from the coverage
+      // map — the one failure this column exists to prevent — so it is filed
+      // under UNKNOWN, where it is at least listed, rather than nowhere.
+      warnings.push(
+        `${where}: unrecognised region "${answer}" — recorded as UNKNOWN. ` +
+          'Check that Q13 exports recode values, not labels.',
+      );
+      return 'UNKNOWN';
+    });
+
+    // "Other" choices carry their text in a sibling column; show that, not "Other".
+    const other = (answer, text) => (/^other\b/i.test(answer) && text ? text : answer);
+    const projectType = other(at(row, 'projectType'), at(row, 'projectTypeOther'));
+    const methods = splitChoices(at(row, 'methods')).map((m) => other(m, at(row, 'methodsOther')));
+
+    const abstract = tidy(at(row, 'abstract'));
+    const papers = [];
+    for (const link of series(row, MULTI_COLUMN.papers)) {
+      const paper = await parsePaper(link, where, warnings, offline, known);
+      if (paper) papers.push(paper);
+    }
+    if (papers.length === 0) {
+      warnings.push(`${where}: no publication link — the inclusion criteria require one.`);
+    }
 
     projects.push({
-      id: `p-${String(projects.length + 1).padStart(2, '0')}`,
-      slug,
+      // The ResponseId, not a running number: it survives re-imports and re-ordering,
+      // and it is the key that ties a record back to its row in Qualtrics.
+      id: responseId,
+      slug: edit.slug ?? slugify(title, taken),
       title,
-      topics,
-      // Editorial one-liner; seeded from the abstract so a fresh import renders,
-      // then overwritten by hand. Kept short — it sits on a grid tile.
-      summary: abstract.length > 180 ? `${abstract.slice(0, 177).trimEnd()}…` : abstract,
+      // Editorial one-liner for the grid tile. Seeded with the abstract's first
+      // sentence (verbatim) so a fresh import renders; override in the editorial file.
+      summary: edit.summary ?? firstSentence(abstract),
       abstract,
-      authors: parseAuthors(at(row, 'authors')),
-      org: at(row, 'org') || undefined,
+      authors: parseAuthors(at(row, 'submitter'), at(row, 'coResearchers')),
+      ...(at(row, 'org') ? { org: tidy(at(row, 'org')) } : {}),
       completionYear: year,
-      firePhases: mapValues(at(row, 'firePhases'), VALUE_MAP.firePhases, where, warnings),
-      publicationStatus:
-        VALUE_MAP.publicationStatus[at(row, 'publicationStatus').toLowerCase()] ?? 'unpublished',
+      firePhases: [...new Set(firePhases)],
+      ...(PUBLICATION_STATUSES.includes(edit.publicationStatus)
+        ? { publicationStatus: edit.publicationStatus }
+        : {}),
+      ...(projectType ? { projectType: tidy(projectType) } : {}),
+      methods: methods.map(tidy),
       irbApproved: true,
       geo: {
-        regions: mapRegions(at(row, 'regions'), where, warnings),
-        ...(mapStates(at(row, 'states')).length
-          ? { states: mapStates(at(row, 'states')) }
-          : {}),
+        regions: [...new Set(regions)],
+        ...(edit.geoNote ? { note: edit.geoNote } : {}),
       },
-      takeaways: splitLines(at(row, 'takeaways')),
-      needs: splitLines(at(row, 'needs')),
-      recommendations: splitLines(at(row, 'recommendations')),
-      papers: parsePapers(at(row, 'papers')),
-      // New records stage as unpublished so an import can never put unreviewed
-      // research on a live federal site as a side effect of running a script.
-      published: false,
+      takeaways: series(row, MULTI_COLUMN.takeaways).map(tidy),
+      needs: parseNeeds(series(row, MULTI_COLUMN.needs), where, warnings),
+      papers,
+      ...(edit.fullRecordUrl ? { fullRecordUrl: edit.fullRecordUrl } : {}),
+      // Records stage as unpublished unless the editorial file says otherwise, so an
+      // import can never put unreviewed research on a live federal site by accident.
+      published: edit.published === true,
     });
   }
 
-  console.log(`Parsed ${projects.length} project(s).`);
+  console.log(`Parsed ${projects.length} project(s) from ${responses.length} response(s).`);
   if (excluded.length) {
-    console.log(`\nExcluded ${excluded.length} row(s) by IRB skip logic:`);
+    console.log(`\nExcluded ${excluded.length} response(s):`);
     for (const line of excluded) console.log(`  · ${line}`);
   }
   if (warnings.length) {
@@ -474,12 +641,22 @@ function main() {
 
   if (flags.includes('--dry')) {
     console.log('\n--dry: nothing written.');
+    console.log(JSON.stringify(projects, null, 2));
     return;
   }
 
   writeFileSync(OUT, `${JSON.stringify(projects, null, 2)}\n`);
+  const live = projects.filter((p) => p.published).length;
   console.log(`\nWrote ${OUT}`);
-  console.log('Every record is published:false — flip the ones that are ready to show.');
+  console.log(`${live} of ${projects.length} published — set "published" in survey-editorial.json.`);
+
+  // Keep the NotebookLM source in step with the site. After changing only
+  // survey-editorial.json, run `node scripts/notebooklm-source.mjs` on its own.
+  writeNotebookSource();
+  console.log(`Wrote ${NOTEBOOK_SOURCE} — re-upload it to the notebook before the next synthesis.`);
 }
 
-main();
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

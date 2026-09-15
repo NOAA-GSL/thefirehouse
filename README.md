@@ -19,7 +19,7 @@ npm run preview  # serve the production build
 | ------------------ | ----------------------------------------------------------------------------- |
 | `/`                | **Landing page** — the implemented design. Hero, live stats, four topic-area summary cards, submit CTA band. |
 | `/projects`        | **Project explorer** — first pass at brief §5.2. Topic-filtered grid, detail modal. |
-| `/topics/:topicKey` | **Topic area page** — introduction, current top needs, and every project in that area. One per `TopicKey`. |
+| `/topics/:topicKey` | **Topic area page** — introduction, current synthesized top needs, and where that synthesis comes from. One per `TopicKey`. Projects are not filed under topics: needs are synthesized across the whole collection. |
 | `*`                | **Custom 404** — echoes the requested address, and offers the explorer plus all four topic areas rather than dead-ending. Also rendered by `/topics/:topicKey` for a key that isn't one of the four, with wording tailored to that case. |
 
 The landing page is a faithful implementation of `Firehouse Landing Page.dc.html`

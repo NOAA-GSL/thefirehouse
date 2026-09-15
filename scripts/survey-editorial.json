@@ -1,0 +1,20 @@
+{
+  "_readme": [
+    "Editorial fields the Qualtrics survey does not ask for, keyed by Qualtrics ResponseId.",
+    "import-survey.mjs merges these over each imported record. Survey fields are re-derived on every import; the fields here are not, so this is where hand-made decisions live.",
+    "Accepted keys: published, summary, slug, publicationStatus, geoNote, fullRecordUrl.",
+    "Topic areas are NOT set here: they are an LLM synthesis across all projects (topicSummaries.json), not a tag on any one project."
+  ],
+  "R_5FKyyCLziggLdgA": {
+    "published": true
+  },
+  "R_6LG6UbI2AXyQUtS": {
+    "published": true
+  },
+  "R_5zjcvv7ibzYt735": {
+    "published": true
+  },
+  "R_18IGAm4T7fuN7MJ": {
+    "published": true
+  }
+}

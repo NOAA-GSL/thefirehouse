@@ -1,12 +1,13 @@
 import { useEffect, useMemo, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Button, CitationBlock, Icon, TopicTag, TopicTagRow } from '../design-system';
+import { Button, CitationBlock, Icon } from '../design-system';
+import type { IconName } from '../design-system/Icon';
 import { FIRE_PHASES, PUBLICATION_STATUSES, REGIONS } from '../design-system/taxonomy';
 import { useContent } from '../content/ContentProvider';
 import { byRecency, publishedProjects } from '../content/derive';
 import { CITATION_FORMATS, buildCitation, type CitationFormat } from '../content/citation';
-import { formatByline } from '../content/format';
-import type { Project } from '../content/types';
+import { formatByline, linkLabel, splitNeedLead } from '../content/format';
+import type { NeedEntry, Paper, Project } from '../content/types';
 import { NotFoundPage } from './NotFoundPage';
 import './ProjectPage.css';
 
@@ -56,13 +57,80 @@ function Section({
   );
 }
 
-function VerbatimList({ items }: { items: string[] }) {
+/** Takeaways — numbered, because the survey asks for them as "#1 … #4". */
+function TakeawayList({ items }: { items: string[] }) {
   return (
-    <ul className="fh-project__list">
+    <ol className="fh-project__takeaways">
       {items.map((item, i) => (
-        <li key={i}>{item}</li>
+        <li key={i}>
+          <span className="fh-project__takeaway-num" aria-hidden="true">
+            {String(i + 1).padStart(2, '0')}
+          </span>
+          <p>{item}</p>
+        </li>
       ))}
-    </ul>
+    </ol>
+  );
+}
+
+/**
+ * One need with its recommendation, as the survey collected them.
+ *
+ * The lead phrase is bolded and the recommendation sits in its own labelled band,
+ * but every word is the researcher's — see `splitNeedLead`. A stand-alone
+ * recommendation (allowed by the survey) renders as just the band.
+ */
+function NeedCard({ entry }: { entry: NeedEntry }) {
+  const { lead, rest } = entry.need ? splitNeedLead(entry.need) : { rest: '' };
+
+  return (
+    <li className="fh-need">
+      {entry.need && (
+        <div className="fh-need__need">
+          <span className="fh-need__label">
+            <Icon name="target" size={13} />
+            Need
+          </span>
+          <p className="fh-need__text">
+            {lead && <strong className="fh-need__lead">{lead}</strong>} {rest}
+          </p>
+        </div>
+      )}
+      {entry.recommendation && (
+        <div className="fh-need__rec">
+          <span className="fh-need__label">
+            <Icon name="arrow-right" size={13} />
+            Recommendation
+          </span>
+          <p className="fh-need__text">{entry.recommendation}</p>
+        </div>
+      )}
+    </li>
+  );
+}
+
+function PaperLink({ paper }: { paper: Paper }) {
+  // A DOI outlives a journal URL, so it wins when both are present.
+  const href = paper.doi ? `https://doi.org/${paper.doi}` : paper.url;
+  if (!href) return null;
+
+  // The survey collects links, not titles. When the link publishes no title of its
+  // own, the host and path stand in — never an invented name.
+  const title = paper.title ?? linkLabel(href);
+  const source = [paper.container, paper.year].filter(Boolean).join(' · ');
+
+  return (
+    <a className="fh-project__paper" href={href} target="_blank" rel="noopener noreferrer">
+      <Icon name="file-text" size={16} />
+      <span>
+        <span className="fh-project__paper-title">{title}</span>
+        {source && <span className="fh-project__paper-source">{source}</span>}
+        {paper.doi && <span className="fh-project__doi">doi:{paper.doi}</span>}
+        {!paper.doi && paper.title && <span className="fh-project__doi">{linkLabel(href)}</span>}
+      </span>
+      <Icon name="external-link" size={14} />
+      <span className="fh-visually-hidden">(opens in a new tab)</span>
+    </a>
   );
 }
 
@@ -72,7 +140,7 @@ function Fact({
   label,
   children,
 }: {
-  icon: 'calendar' | 'flame' | 'file-text' | 'map-pin' | 'users' | 'layers' | 'building';
+  icon: IconName;
   label: string;
   children: ReactNode;
 }) {
@@ -115,7 +183,9 @@ export function ProjectPage() {
   // An unknown slug is a bad URL, not a content error.
   if (!project) return <NotFoundPage />;
 
-  const status = PUBLICATION_STATUSES[project.publicationStatus];
+  const status = project.publicationStatus
+    ? PUBLICATION_STATUSES[project.publicationStatus]
+    : undefined;
   const regions = project.geo?.regions ?? [];
   const previous = index > 0 ? projects[index - 1] : null;
   const next = index < projects.length - 1 ? projects[index + 1] : null;
@@ -141,7 +211,9 @@ export function ProjectPage() {
             </Link>
           </nav>
 
-          <TopicTagRow topics={project.topics} size="md" max={0} />
+          {project.projectType && (
+            <span className="fh-eyebrow fh-project__type">{project.projectType}</span>
+          )}
 
           <h1 className="fh-project__title">{project.title}</h1>
 
@@ -155,13 +227,16 @@ export function ProjectPage() {
               <Icon name="calendar" size={12} />
               Completed {project.completionYear}
             </span>
-            {project.firePhases.map((phase) => (
-              <span key={phase} className="fh-meta-pill">
+            {project.firePhases.length > 0 && (
+              <span className="fh-meta-pill">
                 <Icon name="flame" size={12} />
-                {FIRE_PHASES[phase].label}
+                <span className="fh-visually-hidden">Fire cycle phase: </span>
+                {project.firePhases.map((phase) => FIRE_PHASES[phase].short).join(' · ')}
               </span>
-            ))}
-            <span className={`fh-meta-pill fh-meta-pill--${status.tone}`}>{status.label}</span>
+            )}
+            {status && (
+              <span className={`fh-meta-pill fh-meta-pill--${status.tone}`}>{status.label}</span>
+            )}
           </div>
         </div>
         <span className="fh-project__head-rule" aria-hidden="true" />
@@ -178,55 +253,28 @@ export function ProjectPage() {
 
           {project.takeaways.length > 0 && (
             <Section title="Major takeaways" count={project.takeaways.length}>
-              <VerbatimList items={project.takeaways} />
+              <TakeawayList items={project.takeaways} />
             </Section>
           )}
 
           {project.needs.length > 0 && (
-            <Section title="End-user needs" count={project.needs.length}>
-              <VerbatimList items={project.needs} />
-            </Section>
-          )}
-
-          {project.recommendations.length > 0 && (
-            <Section title="Recommendations" count={project.recommendations.length}>
-              <VerbatimList items={project.recommendations} />
+            <Section title="End-user needs and recommendations" count={project.needs.length}>
+              <ol className="fh-needs">
+                {project.needs.map((entry, i) => (
+                  <NeedCard key={i} entry={entry} />
+                ))}
+              </ol>
             </Section>
           )}
 
           {project.papers.length > 0 && (
-            <Section title="Related papers" count={project.papers.length}>
+            <Section title="Publications and resources" count={project.papers.length}>
               <ul className="fh-project__papers">
-                {project.papers.map((paper, i) => {
-                  // A DOI outlives a journal URL, so it wins when both are present.
-                  const href = paper.doi ? `https://doi.org/${paper.doi}` : paper.url;
-                  return (
-                    <li key={i}>
-                      {href ? (
-                        <a
-                          className="fh-project__paper"
-                          href={href}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <Icon name="file-text" size={16} />
-                          <span>
-                            {paper.title}
-                            {paper.doi && (
-                              <span className="fh-project__doi">doi:{paper.doi}</span>
-                            )}
-                          </span>
-                          <Icon name="external-link" size={14} />
-                        </a>
-                      ) : (
-                        <span className="fh-project__paper fh-project__paper--static">
-                          <Icon name="file-text" size={16} />
-                          <span>{paper.title}</span>
-                        </span>
-                      )}
-                    </li>
-                  );
-                })}
+                {project.papers.map((paper, i) => (
+                  <li key={i}>
+                    <PaperLink paper={paper} />
+                  </li>
+                ))}
               </ul>
             </Section>
           )}
@@ -239,29 +287,36 @@ export function ProjectPage() {
           <div className="fh-project__panel fh-glass fh-glass--raised">
             <h2 className="fh-project__panel-title">At a glance</h2>
             <dl className="fh-project__facts">
+              {project.projectType && (
+                <Fact icon="flask" label="Project type">
+                  {project.projectType}
+                </Fact>
+              )}
+
               <Fact icon="calendar" label="Completion year">
                 {project.completionYear}
               </Fact>
 
               <Fact icon="flame" label="Fire cycle phase">
-                {project.firePhases.length > 0
-                  ? project.firePhases.map((phase) => FIRE_PHASES[phase].label).join(', ')
-                  : 'Not specified'}
+                {project.firePhases.length > 0 ? (
+                  <ul className="fh-project__phases">
+                    {project.firePhases.map((phase) => (
+                      <li key={phase}>
+                        <strong>{FIRE_PHASES[phase].short}</strong>
+                        <span>{FIRE_PHASES[phase].label}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  'Not specified'
+                )}
               </Fact>
 
-              <Fact icon="file-text" label="Publication status">
-                {status.label}
-              </Fact>
-
-              <Fact icon="layers" label="Topic areas">
-                <span className="fh-project__fact-tags">
-                  {project.topics.map((topic) => (
-                    <Link key={topic} to={`/topics/${topic}`} className="fh-project__fact-tag">
-                      <TopicTag topic={topic} size="sm" />
-                    </Link>
-                  ))}
-                </span>
-              </Fact>
+              {project.methods.length > 0 && (
+                <Fact icon="clipboard" label="Data collection">
+                  {project.methods.join(', ')}
+                </Fact>
+              )}
 
               {regions.length > 0 && (
                 <Fact icon="map-pin" label="Geographic areas">
@@ -269,7 +324,7 @@ export function ProjectPage() {
                     {regions.map((key) => (
                       <span key={key} className="fh-project__region">
                         {REGIONS[key].short}
-                        <abbr title={REGIONS[key].label}>{key}</abbr>
+                        {REGIONS[key].mapped && <abbr title={REGIONS[key].label}>{key}</abbr>}
                       </span>
                     ))}
                   </span>
@@ -282,6 +337,12 @@ export function ProjectPage() {
               {project.org && (
                 <Fact icon="building" label="Organization">
                   {project.org}
+                </Fact>
+              )}
+
+              {status && (
+                <Fact icon="file-text" label="Publication status">
+                  {status.label}
                 </Fact>
               )}
             </dl>
@@ -304,8 +365,9 @@ export function ProjectPage() {
             <Icon name="quote" size={14} />
             <span>
               Takeaways, needs and recommendations on this page are reproduced as the
-              researcher submitted them. Synthesized summaries appear only on the{' '}
-              <Link to="/#topic-areas">topic areas</Link> of the home page.
+              researcher submitted them. The <Link to="/#topic-areas">topic areas</Link>{' '}
+              are an AI-assisted synthesis across all projects, so no single project is
+              filed under one.
             </span>
           </p>
         </aside>

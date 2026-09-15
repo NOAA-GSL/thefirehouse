@@ -74,6 +74,13 @@
   opacity: 1;
 }
 
+.fh-tile__kicker {
+  font: var(--text-caption);
+  letter-spacing: var(--letter-spacing-caption);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
 .fh-tile__body {
   position: relative;
   display: flex;

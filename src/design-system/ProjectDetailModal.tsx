@@ -1,19 +1,18 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { Button } from './Button';
 import { Icon } from './Icon';
-import { TopicTagRow } from './TopicTagRow';
-import type { TopicKey } from './topics';
 import './ProjectDetailModal.css';
 
 export interface ProjectPaper {
-  title: string;
+  title?: string;
   url?: string;
   /** Bare DOI; the `https://doi.org/` prefix is added here. */
   doi?: string;
 }
 
 export interface ProjectDetailModalProps {
-  topics: TopicKey[];
+  /** Short label above the title, e.g. the project type. */
+  kicker?: string;
   title: string;
   /** Pre-formatted byline. */
   byline: string;
@@ -24,8 +23,8 @@ export interface ProjectDetailModalProps {
   statusLabel?: string;
   abstract?: string;
   takeaways?: string[];
-  needs?: string[];
-  recommendations?: string[];
+  /** Need/recommendation pairs; the preview shows the needs and counts the rest. */
+  needs?: { need?: string; recommendation?: string }[];
   papers?: ProjectPaper[];
   /** In-app route to the full X-ray page. This is the dialog's primary action. */
   pageUrl: string;
@@ -69,7 +68,7 @@ function BulletList({ items }: { items: string[] }) {
  * inert page behind it — all required by the brief's WCAG 2.1 AA commitment (§9.2).
  */
 export function ProjectDetailModal({
-  topics,
+  kicker,
   title,
   byline,
   year,
@@ -79,7 +78,6 @@ export function ProjectDetailModal({
   abstract,
   takeaways = [],
   needs = [],
-  recommendations = [],
   papers = [],
   pageUrl,
   onClose,
@@ -129,6 +127,8 @@ export function ProjectDetailModal({
 
   // Counts, not content — see the component comment. Ordered the way someone
   // scanning for relevance would weigh them.
+  const needTexts = needs.map((entry) => entry.need).filter(Boolean) as string[];
+  const recommendations = needs.filter((entry) => entry.recommendation);
   const rest = [
     takeaways.length > 0 && `${takeaways.length} takeaway${takeaways.length === 1 ? '' : 's'}`,
     recommendations.length > 0 &&
@@ -152,7 +152,7 @@ export function ProjectDetailModal({
       >
         <header className="fh-modal__header">
           <div className="fh-modal__identity">
-            <TopicTagRow topics={topics} size="sm" max={0} />
+            {kicker && <span className="fh-eyebrow">{kicker}</span>}
             <h2 id={titleId} className="fh-modal__title">
               {title}
             </h2>
@@ -190,12 +190,12 @@ export function ProjectDetailModal({
           </Section>
         )}
 
-        {needs.length > 0 && (
+        {needTexts.length > 0 && (
           <Section title="End-user needs">
-            <BulletList items={needs.slice(0, 3)} />
-            {needs.length > 3 && (
+            <BulletList items={needTexts.slice(0, 3)} />
+            {needTexts.length > 3 && (
               <p className="fh-modal__more">
-                and {needs.length - 3} more on the project page
+                and {needTexts.length - 3} more on the project page
               </p>
             )}
           </Section>

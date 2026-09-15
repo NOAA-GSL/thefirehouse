@@ -35,3 +35,31 @@ export function formatByline(authors: { name: string }[], max = 3): string {
   if (names.length === 1) return names[0];
   return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
 }
+
+/**
+ * Splits a need into its lead ("Need for X among Y:") and the rest, for display.
+ *
+ * The survey asks respondents to open every entry with that phrase, so bolding it
+ * lets a reader scan a long list by *what* is needed and *by whom*. Nothing is
+ * rewritten: `lead + ' ' + rest` is the original text, punctuation included.
+ *
+ * Returns no lead when the entry doesn't follow the pattern closely enough — e.g. a
+ * respondent who left out the colon, so the "lead" would swallow half the paragraph.
+ * Bolding a whole paragraph is worse than bolding nothing.
+ */
+export function splitNeedLead(need: string): { lead?: string; rest: string } {
+  const match = need.match(/^(Need (?:for|to)\b.*?[:.])\s+(\S[\s\S]*)$/);
+  if (!match || match[1].split(/\s+/).length > 18) return { rest: need };
+  return { lead: match[1], rest: match[2] };
+}
+
+/** "doi.org/10.1175/…" → a readable label for a link that has no published title. */
+export function linkLabel(url: string): string {
+  try {
+    const { hostname, pathname } = new URL(url);
+    const path = pathname.replace(/\/+$/, '');
+    return `${hostname.replace(/^www\./, '')}${path}`;
+  } catch {
+    return url;
+  }
+}

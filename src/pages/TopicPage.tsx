@@ -1,23 +1,26 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, type CSSProperties } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Button, Icon, ProjectDetailModal, ProjectTile, TopicTag } from '../design-system';
+import { Button, Icon, TopicTag } from '../design-system';
 import { TOPICS, isTopicKey } from '../design-system/topics';
 import { useContent } from '../content/ContentProvider';
-import { findTopic, findTopicSummary, projectsInTopic } from '../content/derive';
-import { formatByline, formatReviewDate } from '../content/format';
-import { FIRE_PHASES, PUBLICATION_STATUSES } from '../design-system/taxonomy';
+import { findTopic, findTopicSummary, publishedProjects } from '../content/derive';
+import { formatReviewDate } from '../content/format';
 import { NotFoundPage } from './NotFoundPage';
 import './TopicPage.css';
 
 /**
- * One topic area in full: introduction, current top needs, and every project
- * filed under it.
+ * One topic area in full: introduction, the current synthesized top needs, and
+ * where that synthesis comes from.
  *
  * This is the destination the four landing-page cards have always implied. The
  * landing page can only show two needs per card with no room to say what the area
  * is; the explorer can filter to a topic but opens on a bare grid with no framing.
  * A reader arriving from a conference slide or an email link needs the framing
  * first and the evidence second, which is the order this page runs in.
+ *
+ * There is no "projects in this area" list. Topic areas are an LLM synthesis across
+ * every collected project (NotebookLM), not a tag on individual ones, so listing a
+ * subset here would assert a project-to-topic mapping that doesn't exist.
  *
  * The route key is the `TopicKey` itself (`/topics/observe`) rather than a CMS
  * slug — the four keys are structural (see `design-system/topics.ts`), so they are
@@ -26,21 +29,14 @@ import './TopicPage.css';
 export function TopicPage() {
   const content = useContent();
   const { topicKey } = useParams();
-  const [openSlug, setOpenSlug] = useState<string | null>(null);
 
   const key = isTopicKey(topicKey) ? topicKey : null;
   const topic = key ? findTopic(content, key) : undefined;
-
-  const projects = useMemo(() => (key ? projectsInTopic(content, key) : []), [content, key]);
 
   useEffect(() => {
     if (!topic) return;
     document.title = `${topic.label} — ${content.settings.siteName}`;
   }, [topic, content.settings.siteName]);
-
-  // Reset when routing sideways between topic areas; the panel is keyed to a slug
-  // from the previous topic and would otherwise stay open on an unrelated project.
-  useEffect(() => setOpenSlug(null), [key]);
 
   // An unknown key is a bad URL, not a content error — the four keys are fixed in
   // code, so nothing an editor does can land a reader here.
@@ -50,7 +46,8 @@ export function TopicPage() {
   const summary = findTopicSummary(content, key);
   const needs = summary?.topNeeds ?? [];
   const others = content.topics.filter((t) => t.key !== key);
-  const openProject = projects.find((p) => p.slug === openSlug) ?? null;
+  // The synthesis records how many projects it read; fall back to what is live now.
+  const sourceCount = summary?.sourceCount ?? publishedProjects(content).length;
 
   const topicVars = {
     '--topic-text': definition.text,
@@ -78,8 +75,8 @@ export function TopicPage() {
 
           <dl className="fh-topic__facts">
             <div className="fh-topic__fact">
-              <dt>Projects in this area</dt>
-              <dd>{projects.length}</dd>
+              <dt>Projects synthesized</dt>
+              <dd>{sourceCount}</dd>
             </div>
             <div className="fh-topic__fact">
               <dt>Needs currently tracked</dt>
@@ -132,7 +129,7 @@ export function TopicPage() {
             </p>
           )}
           <p className="fh-topic__needs-note">
-            Synthesized from the projects below and reviewed before publication.
+            AI-synthesized across all projects and reviewed before publication.
           </p>
           <Button
             variant="accent"
@@ -145,45 +142,24 @@ export function TopicPage() {
         </aside>
       </div>
 
-      {/* ---- Project grid ---- */}
-      <section className="fh-topic__projects fh-container" aria-labelledby="projects-heading">
-        <div className="fh-topic__projects-intro">
-          <h2 id="projects-heading" className="fh-topic__subheading">
-            Projects in this area
+      {/* ---- Where the synthesis comes from ---- */}
+      <section className="fh-topic__source fh-container" aria-labelledby="source-heading">
+        <div className="fh-topic__source-copy">
+          <h2 id="source-heading" className="fh-topic__subheading">
+            Where these needs come from
           </h2>
-          <p className="fh-topic__projects-body">
-            {projects.length > 0
-              ? `${projects.length} completed ${projects.length === 1 ? 'project' : 'projects'} filed under ${topic.short.toLowerCase()}. Open one to read its takeaways, end-user needs, recommendations, and related papers.`
-              : `No projects have been published under ${topic.short.toLowerCase()} yet.`}
+          <p className="fh-topic__source-body">
+            Topic areas are not assigned project by project. The needs above are
+            synthesized across {sourceCount} completed{' '}
+            {sourceCount === 1 ? 'project' : 'projects'} at once
+            {summary?.model ? ` using ${summary.model}` : ''}, then reviewed by
+            {summary?.reviewedBy ? ` the ${summary.reviewedBy}` : ' the team'} before
+            publication. Each project page keeps the researchers' own words.
           </p>
         </div>
-
-        {projects.length > 0 ? (
-          <div className="fh-topic__grid">
-            {projects.map((project) => (
-              <ProjectTile
-                key={project.id}
-                // Every project on this page carries the current topic, so leading
-                // with it would repeat the same tag down the whole grid. Sinking it
-                // to the end means the two-tag cap surfaces what a reader doesn't
-                // already know: the *other* areas this project also speaks to.
-                topics={[...project.topics.filter((t) => t !== key), key]}
-                title={project.title}
-                summary={project.summary}
-                byline={formatByline(project.authors)}
-                year={project.completionYear}
-                phases={project.firePhases.map((phase) => FIRE_PHASES[phase].short)}
-                to={`/projects/${project.slug}`}
-                onPreview={() => setOpenSlug(project.slug)}
-              />
-            ))}
-          </div>
-        ) : (
-          <p className="fh-topic__empty">
-            Research on this area is still being analyzed. If you have a finding to
-            contribute, it will be reviewed and folded in here.
-          </p>
-        )}
+        <Button variant="secondary" size="md" iconRight="arrow-right" to="/projects">
+          Explore all projects
+        </Button>
       </section>
 
       {/* ---- Sideways navigation ---- */}
@@ -206,24 +182,6 @@ export function TopicPage() {
         </ul>
       </nav>
 
-      {openProject && (
-        <ProjectDetailModal
-          topics={openProject.topics}
-          title={openProject.title}
-          byline={formatByline(openProject.authors, 0)}
-          org={openProject.org}
-          year={openProject.completionYear}
-          phases={openProject.firePhases.map((phase) => FIRE_PHASES[phase].label)}
-          statusLabel={PUBLICATION_STATUSES[openProject.publicationStatus].label}
-          abstract={openProject.abstract}
-          takeaways={openProject.takeaways}
-          needs={openProject.needs}
-          recommendations={openProject.recommendations}
-          papers={openProject.papers}
-          pageUrl={`/projects/${openProject.slug}`}
-          onClose={() => setOpenSlug(null)}
-        />
-      )}
     </div>
   );
 }

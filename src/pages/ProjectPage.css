@@ -30,6 +30,10 @@
   opacity: 0.6;
 }
 
+.fh-project__type {
+  color: var(--color-text-secondary);
+}
+
 .fh-project__crumbs {
   margin-bottom: var(--space-2xs);
 }
@@ -157,34 +161,105 @@
   color: var(--color-text-secondary);
 }
 
-.fh-project__list {
+/* ---- Takeaways ---- */
+
+.fh-project__takeaways {
   margin: 0;
-  padding-left: 0;
+  padding: 0;
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: var(--space-md);
 }
 
-.fh-project__list li {
-  position: relative;
-  padding-left: var(--space-lg);
+.fh-project__takeaways li {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  gap: var(--space-sm);
+  align-items: baseline;
+}
+
+/* Tabular numerals in the display face. The number is decorative (the <ol> already
+   carries the order), so it is aria-hidden in the markup. */
+.fh-project__takeaway-num {
+  font: 800 15px / 1 var(--font-display);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-accent);
+}
+
+.fh-project__takeaways p {
+  margin: 0;
   font: var(--text-body);
   color: var(--color-text-secondary);
 }
 
-/* Ember bullet. `list-style: none` above removes the marker from the accessibility
-   tree in Safari, so the <ul>/<li> structure still carries the semantics and this
-   is purely decorative. */
-.fh-project__list li::before {
+/* ---- Needs and recommendations ---- */
+
+.fh-needs {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/* One card per survey entry. The need and its recommendation share a card because
+   the researcher paired them; splitting them into two lists (as the page used to)
+   leaves the reader to re-pair them by position. */
+.fh-need {
+  border-radius: var(--radius-lg);
+  border: var(--border-width) solid var(--color-border);
+  background: var(--glass-sunken);
+  overflow: hidden;
+}
+
+.fh-need__need,
+.fh-need__rec {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--space-md) var(--space-lg);
+}
+
+/* The recommendation is the actionable half, so it gets the accent tint and a heat
+   rule on its leading edge. */
+.fh-need__rec {
+  position: relative;
+  background: var(--color-accent-tint);
+}
+
+.fh-need__need + .fh-need__rec {
+  border-top: var(--border-width) solid var(--color-accent-border);
+}
+
+.fh-need__rec::before {
   content: '';
   position: absolute;
-  left: 2px;
-  top: 0.62em;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
+  inset: 0 auto 0 0;
+  width: 3px;
   background: var(--heat-gradient);
+}
+
+.fh-need__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: var(--text-caption);
+  letter-spacing: var(--letter-spacing-caption);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.fh-need__text {
+  margin: 0;
+  font: var(--text-body);
+  color: var(--color-text-secondary);
+}
+
+.fh-need__lead {
+  font-weight: 700;
+  color: var(--color-text-primary);
 }
 
 /* ---- Papers ---- */
@@ -219,12 +294,24 @@ a.fh-project__paper:hover {
   text-underline-offset: 2px;
 }
 
-.fh-project__paper--static {
-  color: var(--color-text-secondary);
+.fh-project__paper > span:not(.fh-visually-hidden) {
+  flex: 1;
+  min-width: 0;
 }
 
-.fh-project__paper > span {
-  flex: 1;
+.fh-project__paper svg {
+  margin-top: 2px;
+}
+
+.fh-project__paper-title {
+  display: block;
+  font-weight: 600;
+}
+
+.fh-project__paper-source {
+  display: block;
+  margin-top: 2px;
+  color: var(--color-text-secondary);
 }
 
 /* DOI on its own line: it is an identifier to copy, not part of the title, and
@@ -298,15 +385,23 @@ a.fh-project__paper:hover {
   color: var(--color-text-primary);
 }
 
-.fh-project__fact-tags {
+.fh-project__phases {
+  margin: 0;
+  padding: 0;
+  list-style: none;
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2xs);
+  flex-direction: column;
+  gap: 6px;
 }
 
-.fh-project__fact-tag {
-  text-decoration: none;
-  border-radius: var(--radius-full);
+.fh-project__phases li {
+  display: flex;
+  flex-direction: column;
+}
+
+.fh-project__phases span {
+  font: var(--text-caption);
+  color: var(--color-text-secondary);
 }
 
 .fh-project__regions {

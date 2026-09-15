@@ -19,72 +19,10 @@
   color: var(--color-text-secondary);
 }
 
-.fh-explorer__filters {
-  display: flex;
-  gap: var(--space-xs);
-  flex-wrap: wrap;
-  margin-bottom: var(--space-md);
-}
-
-.fh-chip {
-  min-height: 36px;
-  padding: 8px 16px;
-  border-radius: var(--radius-full);
-  /* A control, so the edge owes a real 3:1 (WCAG 1.4.11) — this is the token that
-     was measured against the glass composite, not the decorative sheen. */
-  border: 1px solid var(--glass-control-border);
-  background: var(--glass-panel);
-  -webkit-backdrop-filter: blur(12px) saturate(var(--glass-saturate));
-  backdrop-filter: blur(12px) saturate(var(--glass-saturate));
-  color: var(--color-text-secondary);
-  font: 600 13px/1.4 var(--font-body);
-  cursor: pointer;
-  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  .fh-chip {
-    background: var(--color-bg-surface);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-}
-
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .fh-chip {
-    background: var(--color-bg-surface);
-  }
-}
-
-.fh-chip:hover {
-  background: var(--color-bg-sunken);
-  color: var(--color-text-primary);
-}
-
-.fh-chip--active {
-  background: var(--color-brand-primary);
-  border-color: var(--color-brand-primary);
-  color: var(--color-text-on-brand);
-}
-
-.fh-chip--active:hover {
-  background: var(--color-brand-primary-hover);
-  color: var(--color-text-on-brand);
-}
-
 .fh-explorer__count {
   margin: 0 0 var(--space-lg);
   font: var(--text-caption);
   color: var(--color-text-tertiary);
-}
-
-.fh-explorer__topic-link {
-  color: var(--color-link);
-  font-weight: 600;
-}
-
-.fh-explorer__topic-link:hover {
-  color: var(--color-link-hover);
 }
 
 .fh-explorer__grid {

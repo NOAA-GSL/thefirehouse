@@ -1,12 +1,11 @@
 import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { Icon } from './Icon';
-import { TopicTagRow } from './TopicTagRow';
-import type { TopicKey } from './topics';
 import './ProjectTile.css';
 
 export interface ProjectTileProps {
-  topics: TopicKey[];
+  /** Short label above the title, e.g. the project type ("Testbed Evaluation"). */
+  kicker?: string;
   title: string;
   summary: string;
   /** Pre-formatted byline — the tile shouldn't know how an author list is joined. */
@@ -39,7 +38,7 @@ export interface ProjectTileProps {
  * its clicks — the standard trap with this pattern.
  */
 export function ProjectTile({
-  topics,
+  kicker,
   title,
   summary,
   byline,
@@ -54,7 +53,7 @@ export function ProjectTile({
       <span className="fh-tile__glow" aria-hidden="true" />
 
       <span className="fh-tile__body">
-        <TopicTagRow topics={topics} size="sm" max={2} />
+        {kicker && <span className="fh-tile__kicker">{kicker}</span>}
         <h3 className="fh-tile__title">
           <Link className="fh-tile__link" to={to}>
             {title}

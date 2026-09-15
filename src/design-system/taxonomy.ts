@@ -6,29 +6,24 @@
  * human-readable labels are display concerns, and they live here too because —
  * unlike topic areas — there is no CMS record behind them to override.
  *
- * ⚠ The `FIRE_PHASES` values are a documented best guess at the survey's own list
- * (Emily and Steph owe us the mapped question list — see PLAN.md, open question 1).
- * They are deliberately isolated in this one file: when the real list lands, edit
- * the ordered array below and nothing else moves except `projects.json`.
+ * The `FIRE_PHASES` values are the survey's own Q9 choices (export of 2026-09-14).
+ * Only the three answers that export exercised are listed; if the survey also offers
+ * an "After" phase, the import script warns on it and it gets added to the array
+ * below — nothing else moves except `projects.json`.
  */
 
 /* ---------------------------------------------------------------- fire cycle -- */
 
-export type FirePhase =
-  | 'preparedness'
-  | 'prevention'
-  | 'detection'
-  | 'response'
-  | 'recovery';
+export type FirePhase = 'before' | 'during' | 'long-term';
 
 export interface FirePhaseDefinition {
   key: FirePhase;
-  /** Full label, used on the X-ray page and in filter menus. */
-  label: string;
-  /** Compact label for chips and dense metadata rows. */
+  /** Compact label for chips, pills and dense metadata rows — the survey's lead word. */
   short: string;
-  /** One line of orientation, shown as filter help text. */
-  description: string;
+  /** What the phase covers, from the survey choice text. Used on the X-ray page. */
+  label: string;
+  /** The survey's examples, where it gives them. */
+  description?: string;
 }
 
 /**
@@ -37,34 +32,21 @@ export interface FirePhaseDefinition {
  */
 export const FIRE_PHASE_LIST: FirePhaseDefinition[] = [
   {
-    key: 'preparedness',
-    label: 'Preparedness and planning',
-    short: 'Preparedness',
-    description: 'Readiness, resourcing, and planning before a season or an event.',
+    key: 'before',
+    short: 'Before',
+    label: 'Pre-fire planning, prevention, and mitigation',
+    description: 'e.g., community wildfire prevention plans, fuel management, communication',
   },
   {
-    key: 'prevention',
-    label: 'Prevention and mitigation',
-    short: 'Prevention',
-    description: 'Fuels treatment, defensible space, and reducing ignition risk.',
+    key: 'during',
+    short: 'During',
+    label: 'Fire detection, active suppression, and downstream impacts',
+    description: 'e.g., tactical/strategic operations, smoke, evacuations',
   },
   {
-    key: 'detection',
-    label: 'Detection and early warning',
-    short: 'Detection',
-    description: 'Spotting ignitions and getting the first warning out.',
-  },
-  {
-    key: 'response',
-    label: 'Active response and suppression',
-    short: 'Response',
-    description: 'Decisions made while a fire is burning, including evacuation.',
-  },
-  {
-    key: 'recovery',
-    label: 'Recovery and rehabilitation',
-    short: 'Recovery',
-    description: 'What happens after containment — return, rebuild, and review.',
+    key: 'long-term',
+    short: 'Long-term',
+    label: 'Planning, adaptation, and policy',
   },
 ];
 

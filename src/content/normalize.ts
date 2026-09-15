@@ -8,6 +8,7 @@ import type {
   Author,
   LandingPageContent,
   LinkRef,
+  NeedEntry,
   Project,
   SiteContent,
   SiteSettings,
@@ -51,18 +52,6 @@ function assertTopicKey(value: string, where: string) {
   return value;
 }
 
-function assertTopicKeys(values: unknown, where: string) {
-  if (!Array.isArray(values) || values.length === 0) {
-    throw new ContentError(
-      `${where} must list at least one topic area. A project with no topic cannot be surfaced anywhere.`,
-    );
-  }
-  // Dedupe rather than reject: a survey response tagged the same area twice is a
-  // data-entry slip, not a structural problem, and rejecting it would take a whole
-  // project offline over a duplicate checkbox.
-  return [...new Set(values.map((value) => assertTopicKey(String(value), where)))];
-}
-
 function assertFirePhases(values: unknown, where: string) {
   if (!Array.isArray(values)) return [];
   return [
@@ -96,6 +85,20 @@ function assertRegionKeys(values: unknown, where: string) {
       }),
     ),
   ];
+}
+
+/**
+ * Need/recommendation entries. A bare string is accepted as a stand-alone need, so a
+ * CMS that stores the older flat list still renders rather than failing the load.
+ */
+function normalizeNeeds(raw: unknown, where: string): NeedEntry[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((entry) => (typeof entry === 'string' ? { need: entry } : (entry as NeedEntry)))
+    .filter((entry) => {
+      if (entry?.need || entry?.recommendation) return true;
+      throw new ContentError(`${where} has an empty need/recommendation entry.`);
+    });
 }
 
 /**
@@ -178,16 +181,14 @@ export function normalizeSiteContent(raw: RawSiteContent): SiteContent {
 
       return {
         ...project,
-        topics: assertTopicKeys(project.topics, where),
         authors: normalizeAuthors(project.authors, (project as { author?: string }).author, where),
         firePhases: assertFirePhases(project.firePhases, where),
-        publicationStatus: project.publicationStatus ?? 'unpublished',
         geo: project.geo
           ? { ...project.geo, regions: assertRegionKeys(project.geo.regions, where) }
           : undefined,
+        methods: project.methods ?? [],
         takeaways: project.takeaways ?? [],
-        needs: project.needs ?? [],
-        recommendations: project.recommendations ?? [],
+        needs: normalizeNeeds(project.needs, where),
         papers: project.papers ?? [],
         published: project.published ?? false,
       };

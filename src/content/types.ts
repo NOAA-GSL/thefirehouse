@@ -52,12 +52,17 @@ export interface TopicContent {
 }
 
 /**
- * The rolling "top needs" summary for one topic area.
+ * The rolling "top needs" synthesis for one topic area.
  *
- * Downstream of the submission pipeline (brief §5.3): free-text submissions are
- * bucketed into the four topics, reviewed by a human, and the resulting needs list
- * is written back here. The landing page renders whatever is current — that's what
- * makes the topic cards "update automatically as new submissions are processed".
+ * Topic areas are a lens over the WHOLE body of findings, not a tag on individual
+ * projects. After each survey batch the team runs every collected project through an
+ * LLM synthesis (a Google NotebookLM notebook, per the September 2026 meeting), a
+ * human reviews the result, and it is written back here. There is deliberately no
+ * link from a need to the projects behind it: the synthesis draws on all of them at
+ * once, and a per-project attribution would claim a precision it doesn't have.
+ *
+ * The landing page renders whatever is current — that's what makes the topic cards
+ * "update automatically as new submissions are processed".
  */
 export interface TopicSummary {
   topic: TopicKey;
@@ -65,13 +70,13 @@ export interface TopicSummary {
   /** ISO date of the last review pass; surfaced so readers know how fresh this is. */
   updatedAt?: string;
   /**
-   * How many submissions were folded into this summary. Rendered next to the card,
-   * because "top needs" carries very different weight at 4 submissions and at 40.
+   * How many projects were in the synthesis pass. Rendered next to the card, because
+   * "top needs" carries very different weight at 4 projects and at 40.
    */
   sourceCount?: number;
   /**
-   * Model that produced the synthesis, e.g. "gemini-2.5-pro". Presence of this field
-   * is what flips the card's "AI-synthesized" label on.
+   * Tool or model that produced the synthesis, e.g. "NotebookLM". Presence of this
+   * field is what flips the card's "AI-synthesized" label on.
    *
    * This is not decoration. The landing page is the one surface where the site
    * paraphrases researchers instead of quoting them (project pages stay verbatim),
@@ -82,8 +87,18 @@ export interface TopicSummary {
   reviewedBy?: string;
 }
 
+/**
+ * A publication, report or presentation linked from a project (survey Q17).
+ *
+ * The survey collects links only. `title`, `container` and `year` are looked up
+ * from the link's own metadata by the import script and may be missing — the page
+ * then labels the link by its host rather than inventing a title.
+ */
 export interface Paper {
-  title: string;
+  title?: string;
+  /** Journal, report series, or site the item was published in. */
+  container?: string;
+  year?: number;
   url?: string;
   /**
    * Bare DOI (`10.1175/WCAS-D-21-0042.1`), not a URL — the `https://doi.org/`
@@ -91,6 +106,24 @@ export interface Paper {
    * the same value can be a link, a citation field, and a dedupe key.
    */
   doi?: string;
+}
+
+/**
+ * One entry from survey Q16 — "Need for [topic] among [group]: [gap]. Recommend
+ * [solution]."
+ *
+ * The survey pairs each need with its recommendation, and so does the page, so they
+ * are stored together rather than as two parallel lists that a reorder could
+ * silently mis-pair. Either half may be absent: the survey explicitly allows a
+ * stand-alone need or a stand-alone recommendation.
+ *
+ * Both halves are verbatim substrings of what the researcher typed. The import
+ * script only decides where one ends and the other begins (at the sentence starting
+ * "Recommend").
+ */
+export interface NeedEntry {
+  need?: string;
+  recommendation?: string;
 }
 
 /**
@@ -110,8 +143,8 @@ export interface Author {
 }
 
 /**
- * Where a project's fieldwork or subject matter sits — survey Q1, export column
- * `GACC_REGION` (see FirehouseFormAdditions.pdf).
+ * Where a project's fieldwork or subject matter sits — survey Q13, a multi-select
+ * that exports GACC recode values (see FirehouseFormAdditions.pdf).
  *
  * `regions` rather than `gaccs`, because it holds more than the ten GACCs: the four
  * non-GACC answers (PACIFIC, NATIONAL, INTL, UNKNOWN) are equally valid responses
@@ -122,7 +155,7 @@ export interface ProjectGeo {
   regions: RegionKey[];
   /** Optional free-text refinement shown on the X-ray page, e.g. "Front Range". */
   note?: string;
-  /** Survey Q2, export column `STATES` — two-letter postal codes. Optional backstop. */
+  /** Two-letter postal codes. Optional backstop; not asked in the current survey. */
   states?: string[];
 }
 
@@ -134,10 +167,11 @@ export interface ProjectGeo {
  * *survey* is written by `scripts/import-survey.mjs` and should not be hand-edited
  * in `projects.json` — the next import would overwrite it.
  *
- * Two fields that look like they belong here and deliberately don't:
- *  - **Q10 (how results were communicated)** is internal-use-only. It is dropped by
- *    the import script and has no field here, because a field that merely isn't
- *    rendered still ships in the JSON bundle for anyone to read.
+ * Fields that look like they belong here and deliberately don't:
+ *  - **Q10 (how results were shared)** is internal-use-only, and **Q2/Q3 (submitter
+ *    email and job title)** are private. The import script never reads them and they
+ *    have no field here, because a field that merely isn't rendered still ships in
+ *    the JSON bundle for anyone to read.
  *  - **IRB approval** is a survey field, but records without it are filtered out in
  *    `normalize.ts` rather than carried and hidden — see `irbApproved` below.
  */
@@ -146,39 +180,44 @@ export interface Project {
   slug: string;
   title: string;
   /**
-   * Topic areas this project speaks to, in display order — a project can span
-   * several ("Observations + Warnings"), which is why this is a list and why the
-   * project explorer is no longer grouped by topic.
-   *
-   * Guaranteed non-empty by `normalize.ts`.
+   * One- or two-line summary shown on the grid tile. *Editorial* — seeded by the
+   * import script with the abstract's first sentence until an editor writes one.
    */
-  topics: TopicKey[];
-  /** One- or two-line summary shown on the grid tile. Editorial, not from the survey. */
   summary: string;
-  /** *Survey.* The researcher's own abstract, shown verbatim and searched fuzzily. */
+  /** *Survey (Q14).* The researcher's own abstract, shown verbatim and searched fuzzily. */
   abstract?: string;
   authors: Author[];
   org?: string;
-  /** *Survey.* Year the project was completed — a primary filter and a citation field. */
+  /** *Survey (Q7).* Year the project was completed — a primary filter and a citation field. */
   completionYear: number;
-  /** *Survey.* Where in the fire cycle the work sits. A primary filter. */
+  /** *Survey (Q9).* Where in the fire cycle the work sits. A primary filter. */
   firePhases: FirePhase[];
-  /** *Survey.* Publication state of the underlying research. */
-  publicationStatus: PublicationStatus;
   /**
-   * *Survey.* IRB approval. Records where this is false never reach the UI —
+   * *Editorial.* Publication state of the underlying research. The survey does not
+   * ask, so it is absent unless an editor sets it — and nothing is shown rather than
+   * a guessed "Unpublished" badge on work that is in fact in a journal.
+   */
+  publicationStatus?: PublicationStatus;
+  /** *Survey (Q11).* "Testbed Evaluation", "Research Study", or the respondent's own text. */
+  projectType?: string;
+  /** *Survey (Q12).* Data collection instruments, e.g. "Focus groups". */
+  methods: string[];
+  /**
+   * *Survey (Q8).* IRB approval. Records where this is false never reach the UI —
    * `normalize.ts` drops them at the boundary, implementing the survey's own skip
    * logic in the one place it cannot be forgotten by a future page.
    */
   irbApproved: boolean;
-  /** *Survey.* Geography, for the landing-page GACC map. */
+  /** *Survey (Q13).* Geography, for the landing-page GACC map. */
   geo?: ProjectGeo;
-  /** *Survey.* Major takeaways, in the researcher's own words. */
+  /** *Survey (Q15).* Major takeaways, in the researcher's own words. */
   takeaways: string[];
-  /** *Survey (Q17).* Needs, verbatim. Also the input to the landing-page synthesis. */
-  needs: string[];
-  /** *Survey (Q17).* Recommendations, verbatim. */
-  recommendations: string[];
+  /**
+   * *Survey (Q16).* End-user needs paired with recommendations, verbatim. Also the
+   * input to the landing-page synthesis.
+   */
+  needs: NeedEntry[];
+  /** *Survey (Q17).* Publications, tech notes, presentations or reports. */
   papers: Paper[];
   fullRecordUrl?: string;
   /**

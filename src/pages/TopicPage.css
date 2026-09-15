@@ -224,38 +224,26 @@
   width: 100%;
 }
 
-/* ---- Project grid ---- */
+/* ---- Where the synthesis comes from ---- */
 
-.fh-topic__projects {
+.fh-topic__source {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-lg);
   padding-block: var(--space-xl) var(--space-2xl);
   border-top: 1px solid var(--color-border);
 }
 
-.fh-topic__projects-intro {
+.fh-topic__source-copy {
   max-width: 640px;
-  margin-bottom: var(--space-lg);
 }
 
-.fh-topic__projects-body {
+.fh-topic__source-body {
   margin: 0;
   font: var(--text-body);
   color: var(--color-text-secondary);
-}
-
-.fh-topic__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: var(--space-lg);
-}
-
-.fh-topic__empty {
-  margin: 0;
-  padding: var(--space-xl);
-  border: 1px dashed var(--color-border-strong);
-  border-radius: var(--radius-lg);
-  font: var(--text-body);
-  color: var(--color-text-secondary);
-  text-align: center;
 }
 
 /* ---- Other topic areas ---- */
