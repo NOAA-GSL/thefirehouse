@@ -4,10 +4,10 @@
     { "label": "Home", "to": "/" },
     { "label": "Explore Projects", "to": "/projects" },
     { "label": "Topic Areas", "to": "/#topic-areas" },
-    { "label": "Submit a Finding", "href": "https://forms.gle/REPLACE-WITH-REAL-FORM-ID" }
+    { "label": "Submit a Finding", "href": "" }
   ],
   "submitLabel": "Submit a Finding",
-  "submitFormUrl": "https://forms.gle/REPLACE-WITH-REAL-FORM-ID",
+  "submitFormUrl": "https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths",
   "footerBlurb": "A project of NOAA's Global Systems Laboratory (GSL), Earth Prediction Innovation Center. Part of the National Oceanic and Atmospheric Administration.",
   "footerGroups": [
     {
@@ -15,10 +15,7 @@
       "links": [
         { "label": "All projects", "to": "/projects" },
         { "label": "Topic areas", "to": "/#topic-areas" },
-        {
-          "label": "Submit a finding",
-          "href": "https://forms.gle/REPLACE-WITH-REAL-FORM-ID"
-        }
+        { "label": "Submit a finding", "href": "" }
       ]
     },
     {

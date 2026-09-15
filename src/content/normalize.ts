@@ -24,7 +24,7 @@ import type {
  *     block) instead of rendering a silently empty section. A CMS lets a
  *     non-developer publish at any hour; the failure needs to be legible.
  *  2. Resolve the "inherit the submit URL" convention — any LinkRef with an empty
- *     `href` picks up `settings.submitFormUrl`, so the Google Form address lives in
+ *     `href` picks up `settings.submitFormUrl`, so the submission survey address lives in
  *     exactly one field even though five controls point at it.
  *  3. Enforce the survey's IRB skip logic. This is the only place it happens, and it
  *     happens before content reaches React, so no page can accidentally render a

@@ -62,7 +62,7 @@ Three deliberate changes to how they're built, none to how they look:
   third-party script (which some agencies restrict outright), no layout shift, and
   an unknown icon name is a compile error rather than an empty box.
 - **`Button` is polymorphic.** Renders `<button>`, a router `<Link>`, or an `<a>`.
-  "Submit a Finding" goes off-site to a Google Form and has to be a real link.
+  "Submit a Finding" goes off-site to the Qualtrics survey and has to be a real link.
 
 ### The content layer
 
@@ -81,7 +81,7 @@ Strapi later doesn't change the dependency tree.
 
 `src/content/types.ts` is the contract every adapter meets. `normalize.ts` runs on
 all of them: it rejects unknown topic keys and duplicate slugs loudly, and resolves
-the "empty `href` inherits `settings.submitFormUrl`" convention so the Google Form
+the "empty `href` inherits `settings.submitFormUrl`" convention so the submission survey
 address lives in exactly one field even though five controls point at it.
 
 **Live stats are computed, not stored.** `landing.json` never contains the number 9.
@@ -150,9 +150,8 @@ overrides are isolated so a re-sync doesn't lose them.
 
 ## Before this goes public
 
-- [ ] **Replace `submitFormUrl`** in `src/content/data/settings.json`. It is a
-      placeholder (`forms.gle/REPLACE-WITH-REAL-FORM-ID`) and every submit CTA reads
-      from it.
+- [x] **Replace `submitFormUrl`** in `src/content/data/settings.json` — now the
+      FireHouse Qualtrics survey. Every submit CTA reads from it.
 - [ ] **Replace `projects.json` wholesale** from the FireHouse 1.0 report. The nine
       records there are placeholders — see `src/content/data/README.md`. Their
       takeaways and recommendations say "Placeholder" on purpose, and `papers` is
@@ -189,7 +188,7 @@ Named so it's clear these are gaps, not oversights:
 - **CMS.** The content layer is ready and two adapters are written, but no Sanity or
   Strapi instance exists and neither adapter has been run against a live backend.
   A matching schema still has to be authored on whichever is chosen.
-- **Submission pipeline.** The Google Form is an outbound link. Nothing yet moves a
+- **Submission pipeline.** The Qualtrics survey is an outbound link. Nothing yet moves a
   processed submission into `topicSummaries.json` — brief §9.1 allows this to be
   manual at first, and the brief's own risk list recommends a human review step.
 - **Explorer search and sort** (Phase 1 in `PLAN.md`), an About page.

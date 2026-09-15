@@ -9,7 +9,7 @@ rendering a blank section.
 
 | File                 | Status                                                                                                                                                  |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `settings.json`      | Real, except `submitFormUrl` — a placeholder Google Forms URL that **must** be replaced before launch. Every submit CTA on the site reads from that one field. |
+| `settings.json`      | Real. `submitFormUrl` is the live FireHouse Qualtrics survey; every submit CTA reads from that one field (nav and footer links leave `href` empty to inherit it). |
 | `landing.json`       | Copy is taken verbatim from the approved landing page design.                                                                                            |
 | `topics.json`        | The four topic areas from the FireHouse 1.0 thematic analysis. The `description`, `intro` and `covers` fields are written for this build — they are the copy on `/topics/:topicKey` and need Stephanie/Emily's review. |
 | `topicSummaries.json`| **Placeholder synthesis.** "Top needs" text as it appears in the approved design. The real version is an LLM synthesis (Google NotebookLM) across *all* collected projects, reviewed by the team and pasted in here — topic areas are never assigned to individual projects. Workflow and prompt: `notebooklm/README.md`. `sourceCount` is omitted until a real pass records how many projects it read; the site falls back to the live published count. |

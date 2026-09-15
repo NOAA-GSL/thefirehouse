@@ -298,7 +298,7 @@ export interface SiteSettings {
   nav: LinkRef[];
   /** Label used on every "Submit a Finding" control. */
   submitLabel: string;
-  /** The Google Form the submission CTA points at (brief §5.3). */
+  /** The Qualtrics submission survey every "Submit a Finding" control points at. */
   submitFormUrl: string;
   footerBlurb: string;
   footerGroups: FooterGroupContent[];

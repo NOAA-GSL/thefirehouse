@@ -11,7 +11,7 @@ export interface NavItem {
   label: string;
   /** In-app route. */
   to?: string;
-  /** External destination (e.g. the Google Form). */
+  /** External destination (e.g. the Qualtrics submission survey). */
   href?: string;
 }
 
