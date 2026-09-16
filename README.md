@@ -192,7 +192,9 @@ Named so it's clear these are gaps, not oversights:
 - **Submission pipeline.** The Google Form is an outbound link. Nothing yet moves a
   processed submission into `topicSummaries.json` — brief §9.1 allows this to be
   manual at first, and the brief's own risk list recommends a human review step.
-- **Explorer search and sort** (Phase 1 in `PLAN.md`), an About page.
+- **An About page.** Explorer search and filters are in (`src/content/search.ts`);
+  still open from `PLAN.md` §1.2–1.3 are highlighting matched words in results and
+  multi-select facets (each facet is currently single-select).
 - **Build-time link previews for project pages.** Each project has its own URL and
   sets its own `<title>` and description at runtime, so deep links work and index
   correctly — but a *shared* link still previews with the site-level card. Fixing it

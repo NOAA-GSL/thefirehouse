@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import boundaries from '../content/data/gaccBoundaries.json';
@@ -104,49 +104,76 @@ const OFF_FRAME: Partial<Record<RegionKey, L.LatLngBoundsExpression>> = {
 };
 
 /**
- * Heat ramp for a choropleth over a *small* count range.
+ * Sequential blue ramp for a choropleth over a *small* count range.
  *
- * Two decisions worth spelling out, because the obvious version of this looks fine
+ * Blue rather than the ember/amber ramp this started with: on a fire site, red and
+ * yellow read as danger and caution, so a busy region looked like a *hazard* rather
+ * than a place with a lot of research. Blue carries "more" without "worse".
+ *
+ * Three decisions worth spelling out, because the obvious version of this looks fine
  * in a colour picker and fails on the actual map:
  *
  * 1. **Normalised against the busiest region, not an absolute scale.** With nine
  *    submissions an absolute ramp renders everything at the cold end and the map
  *    says nothing. It rescales as submissions arrive.
  *
- * 2. **The outline is always bright; only the fill carries the count.** A ramp that
- *    runs dark-red-to-yellow puts its low end at the same luminance as the dark
- *    basemap, so a one-submission region simply disappears — the exact regions a
- *    reader most needs to notice are the ones that vanish. Keeping the stroke
- *    legible means every region is always locatable, and intensity stays a
- *    *secondary* channel on top of the count printed in the list.
+ * 2. **One ramp per basemap.** The basemap follows the theme, and "more" has to
+ *    read as *more contrast against the tiles* on either one: brighter on the dark
+ *    basemap, deeper on the light one. A single ramp would put its high end at the
+ *    same luminance as one of the two basemaps.
+ *
+ * 3. **The low end never matches the basemap.** A one-submission region is the
+ *    one a reader most needs to notice, so the ramp starts clearly off the tile
+ *    colour, and the outline stays crisp. Intensity is a *secondary* channel on top
+ *    of the count printed in the list.
  */
-function heat(count: number, max: number): { fill: string; stroke: string; alpha: number } {
+const RAMPS = {
+  dark: {
+    stops: ['#3d6fb0', '#4f93d9', '#7fbaf2', '#c4e2ff'],
+    empty: { fill: '#6e85af', stroke: '#8fa3c4' },
+    selected: '#ffffff',
+    label: { text: '#f5f7fb', halo: 'rgba(10, 16, 32, 0.85)' },
+  },
+  light: {
+    stops: ['#8fb8e6', '#4f8fd6', '#2563b8', '#0b3d86'],
+    empty: { fill: '#9caece', stroke: '#6e85af' },
+    selected: '#0a1020',
+    label: { text: '#0a1020', halo: 'rgba(255, 255, 255, 0.9)' },
+  },
+} as const;
+
+type MapTheme = keyof typeof RAMPS;
+
+function mix(a: string, b: string, t: number): string {
+  const pa = [1, 3, 5].map((o) => parseInt(a.slice(o, o + 2), 16));
+  const pb = [1, 3, 5].map((o) => parseInt(b.slice(o, o + 2), 16));
+  const out = pa.map((v, k) => Math.round(v + (pb[k] - v) * t));
+  return `#${out.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+}
+
+function heat(
+  count: number,
+  max: number,
+  theme: MapTheme,
+): { fill: string; stroke: string; alpha: number } {
+  const ramp = RAMPS[theme];
   if (count === 0) {
-    // Present but plainly empty: a cool outline, almost no fill.
-    return { fill: '#6e85af', stroke: '#8fa3c4', alpha: 0.05 };
+    // Present but plainly empty: a neutral outline, almost no fill.
+    return { ...ramp.empty, alpha: 0.05 };
   }
 
   const t = max <= 1 ? 1 : (count - 1) / (max - 1);
-  // ember-500 -> ember-400 -> amber-500 -> amber-400. The whole ramp sits above the
-  // basemap's luminance, so the cold end is dim rather than invisible.
-  const stops = ['#c21500', '#f2762e', '#ff9000', '#ffc500'];
+  const { stops } = ramp;
   const scaled = t * (stops.length - 1);
   const i = Math.min(Math.floor(scaled), stops.length - 2);
   const local = scaled - i;
 
-  const mix = (a: string, b: string) => {
-    const pa = [1, 3, 5].map((o) => parseInt(a.slice(o, o + 2), 16));
-    const pb = [1, 3, 5].map((o) => parseInt(b.slice(o, o + 2), 16));
-    const out = pa.map((v, k) => Math.round(v + (pb[k] - v) * local));
-    return `#${out.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
-  };
+  const fill = mix(stops[i], stops[i + 1], local);
+  // Stroke is pulled toward the high-contrast end of the ramp regardless of count,
+  // so a sparse region still has a crisp edge.
+  const stroke = mix(stops[Math.max(i, 1)], stops[Math.min(i + 2, stops.length - 1)], local);
 
-  const fill = mix(stops[i], stops[i + 1]);
-  // Stroke is pulled toward the bright end of the ramp regardless of count, so a
-  // sparse region still has a crisp edge.
-  const stroke = mix(stops[Math.max(i, 1)], stops[Math.min(i + 2, stops.length - 1)]);
-
-  return { fill, stroke, alpha: 0.32 + 0.42 * t };
+  return { fill, stroke, alpha: 0.38 + 0.4 * t };
 }
 
 export function RegionMap({
@@ -161,6 +188,7 @@ export function RegionMap({
   const mapRef = useRef<L.Map | null>(null);
   const tilesRef = useRef<L.TileLayer | null>(null);
   const layersRef = useRef<Map<RegionKey, L.Path>>(new Map());
+  const labelsRef = useRef<L.LayerGroup | null>(null);
   /**
    * The view the map should currently be showing.
    *
@@ -172,6 +200,7 @@ export function RegionMap({
   const viewRef = useRef<L.LatLngBoundsExpression>(HOME_VIEW);
   const onSelectRef = useRef(onSelect);
   const [tilesFailed, setTilesFailed] = useState(false);
+  const [showCodes, setShowCodes] = useState(true);
   const listId = useId();
 
   onSelectRef.current = onSelect;
@@ -262,7 +291,7 @@ export function RegionMap({
     for (const feature of boundaries.features) {
       const key = feature.properties.key as RegionKey;
       const count = counts[key] ?? 0;
-      const { fill, stroke, alpha } = heat(count, max);
+      const { fill, stroke, alpha } = heat(count, max, theme);
 
       const layer = L.geoJSON(feature as unknown as GeoJSON.Feature, {
         style: {
@@ -284,7 +313,41 @@ export function RegionMap({
       layer.addTo(map);
       layersRef.current.set(key, layer as unknown as L.Path);
     }
-  }, [counts, max, selected]);
+  }, [counts, max, selected, theme]);
+
+  /* ---- GACC code labels ----
+     Small, and non-interactive so they never swallow a click meant for the region
+     underneath. Anchored to the hand-placed centres in the taxonomy rather than
+     to polygon centroids: EACC and SACC are shapes whose centroid can land in a
+     neighbour. The toggle exists because ten labels on a small map can crowd it,
+     and a reader who knows the regions by shape may prefer them off. */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    labelsRef.current?.remove();
+    labelsRef.current = null;
+    if (!showCodes) return;
+
+    const group = L.layerGroup();
+    for (const region of GACC_LIST) {
+      if (!region.center) continue;
+      const isSelected = selected === region.key;
+      L.marker(region.center, {
+        interactive: false,
+        keyboard: false,
+        icon: L.divIcon({
+          className: `fh-map__code${isSelected ? ' fh-map__code--on' : ''}${
+            selected && !isSelected ? ' fh-map__code--dim' : ''
+          }`,
+          html: region.key,
+          iconSize: undefined,
+        }),
+      }).addTo(group);
+    }
+    group.addTo(map);
+    labelsRef.current = group;
+  }, [showCodes, selected]);
 
   /* ---- Fly to the selected region ---- */
   useEffect(() => {
@@ -319,10 +382,10 @@ export function RegionMap({
   useEffect(() => {
     layersRef.current.forEach((layer, key) => {
       const count = counts[key] ?? 0;
-      const { fill, stroke, alpha } = heat(count, max);
+      const { fill, stroke, alpha } = heat(count, max, theme);
       const isSelected = selected === key;
       (layer as unknown as L.GeoJSON).setStyle({
-        color: isSelected ? '#ffc500' : stroke,
+        color: isSelected ? RAMPS[theme].selected : stroke,
         weight: isSelected ? 3.5 : 1.2,
         fillColor: fill,
         // Dim the unselected regions rather than only brightening the selected one:
@@ -330,17 +393,36 @@ export function RegionMap({
         fillOpacity: selected && !isSelected ? alpha * 0.35 : alpha,
       });
     });
-  }, [selected, counts, max]);
+  }, [selected, counts, max, theme]);
 
   const label = (key: RegionKey) => REGIONS[key];
 
   return (
     <div className="fh-map">
-      <div className="fh-map__stage">
+      <div
+        className="fh-map__stage"
+        style={
+          {
+            '--map-label': RAMPS[theme].label.text,
+            '--map-label-halo': RAMPS[theme].label.halo,
+          } as CSSProperties
+        }
+      >
         {/* aria-hidden: assistive technology is sent to the region list below, which
             carries the same data in an operable form. */}
         <div ref={hostRef} className="fh-map__canvas" aria-hidden="true" />
         <div className="fh-map__scan" aria-hidden="true" />
+        {/* A standard toggle: fixed label, state in aria-pressed. It only affects
+            what is drawn — the codes are always in the list beside the map. */}
+        <button
+          type="button"
+          className="fh-map__codes-toggle"
+          aria-pressed={showCodes}
+          onClick={() => setShowCodes((on) => !on)}
+        >
+          <span className="fh-map__codes-box" aria-hidden="true" />
+          GACC labels
+        </button>
         {tilesFailed && (
           <p className="fh-map__offline" role="status">
             Basemap unavailable — region boundaries and counts are still shown.
@@ -355,7 +437,7 @@ export function RegionMap({
       <div className="fh-map__side">
         <div className="fh-map__side-head">
           <h3 className="fh-map__side-title" id={listId}>
-            Coverage by region
+            Coverage by Geographic Area Coordination Center
           </h3>
           <p className="fh-map__side-total">
             {total} {total === 1 ? 'submission' : 'submissions'}
@@ -372,14 +454,14 @@ export function RegionMap({
               aria-pressed={selected === null}
               onClick={() => onSelect(null)}
             >
-              <span className="fh-map__region-name">All regions</span>
+              <span className="fh-map__region-name">All submissions</span>
               <span className="fh-map__region-count">{total}</span>
             </button>
           </li>
 
           {GACC_LIST.map((region) => {
             const count = counts[region.key] ?? 0;
-            const { fill } = heat(count, max);
+            const { fill } = heat(count, max, theme);
             return (
               <li key={region.key}>
                 <button
@@ -461,7 +543,7 @@ export function RegionMap({
           </>
         ) : (
           <p className="fh-map__hint">
-            Select a region on the map or in the list to see the research filed there.
+            Select a GACC on the map or in the list to see the research filed there.
           </p>
         )}
       </div>

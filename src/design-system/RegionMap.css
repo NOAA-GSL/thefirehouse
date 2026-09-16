@@ -90,7 +90,7 @@
   background: linear-gradient(
     100deg,
     transparent 42%,
-    rgba(255, 197, 0, 0.1) 50%,
+    rgba(127, 186, 242, 0.1) 50%,
     transparent 58%
   );
   transform: translateX(-100%);
@@ -135,6 +135,75 @@
   color: var(--color-text-tertiary);
 }
 
+/* ---- GACC code labels ---- */
+
+.fh-map__code {
+  /* Leaflet's divIcon defaults to a white box; the label is text only. */
+  background: none;
+  border: none;
+  width: auto !important;
+  height: auto !important;
+  transform-origin: center;
+  translate: -50% -50%;
+  white-space: nowrap;
+  pointer-events: none;
+  font: 600 10px/1 var(--font-mono);
+  letter-spacing: 0.04em;
+  color: var(--map-label);
+  /* A halo instead of a chip: legible over any fill without adding ten boxes. */
+  text-shadow:
+    0 0 2px var(--map-label-halo),
+    0 0 4px var(--map-label-halo),
+    0 0 6px var(--map-label-halo);
+  transition: opacity 150ms ease;
+}
+
+.fh-map__code--on {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.fh-map__code--dim {
+  opacity: 0.45;
+}
+
+.fh-map__codes-toggle {
+  position: absolute;
+  top: var(--space-sm);
+  right: var(--space-sm);
+  z-index: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  border: var(--border-width) solid var(--glass-control-border);
+  background: var(--color-bg-surface);
+  color: var(--color-text-secondary);
+  font: var(--text-caption);
+  cursor: pointer;
+}
+
+.fh-map__codes-toggle:hover {
+  color: var(--color-text-primary);
+}
+
+.fh-map__codes-box {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1.5px solid currentColor;
+  flex-shrink: 0;
+}
+
+.fh-map__codes-toggle[aria-pressed='true'] .fh-map__codes-box {
+  background: #7fbaf2
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.2l2.2 2.2 4.8-4.8' fill='none' stroke='%230a1020' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    center / 100% no-repeat;
+  border-color: #7fbaf2;
+}
+
 /* Leaflet tooltip, restyled to the design system. */
 .fh-map__tip.leaflet-tooltip {
   padding: 6px 10px;
@@ -171,13 +240,15 @@
 
 .fh-map__side-head {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-xs);
 }
 
 .fh-map__side-title {
   margin: 0;
+  line-height: 1.35;
+  text-wrap: balance;
   font: var(--text-label);
   letter-spacing: var(--letter-spacing-label);
   text-transform: uppercase;
@@ -186,6 +257,8 @@
 
 .fh-map__side-total {
   margin: 0;
+  flex-shrink: 0;
+  white-space: nowrap;
   font: var(--text-caption);
   color: var(--color-text-tertiary);
 }
@@ -222,9 +295,10 @@
 
 .fh-map__region--on {
   /* Selection is carried by aria-pressed as well as by this treatment — colour is
-     never the only signal. */
-  border-color: var(--color-accent-border);
-  background: var(--color-accent-tint);
+     never the only signal. Blue to match the map ramp; the ember accent read as
+     an alert on a fire site. */
+  border-color: var(--map-select-border, var(--color-accent-border));
+  background: var(--map-select-tint, var(--color-accent-tint));
   color: var(--color-text-primary);
   font-weight: 600;
 }

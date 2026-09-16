@@ -145,8 +145,8 @@ export function LandingPage() {
                 Where the research comes from
               </h2>
               <p className="fh-hero__map-sub">
-                Submissions by GACC coordination region. Select one to open the
-                projects filed there.
+                Submissions by Geographic Area Coordination Center (GACC). Select
+                one to open the projects filed there.
               </p>
             </div>
             {/* The fallback reserves the map's height so the stats band below does

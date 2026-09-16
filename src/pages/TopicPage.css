@@ -93,20 +93,142 @@
   font-weight: 600;
 }
 
-/* ---- Description + needs panel ---- */
+/* ---- In-page jump links ---- */
 
-.fh-topic__body {
-  padding-block: var(--space-2xl);
+.fh-topic__jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-top: var(--space-sm);
+}
+
+.fh-topic__jump a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--topic-border);
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  font: 600 13px/1.3 var(--font-body);
+  text-decoration: none;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.fh-topic__jump a:hover {
+  border-color: var(--topic-fill);
+  background: var(--topic-tint);
+}
+
+/* Jump targets clear the sticky site header (65px) with room to spare. */
+.fh-topic [id$='-heading'] {
+  scroll-margin-top: calc(65px + var(--space-lg));
+}
+
+.fh-topic__subheading {
+  margin: 0 0 var(--space-sm);
+  font: var(--text-h2);
+  color: var(--color-text-primary);
+}
+
+/* ---- Top needs (full width) ---- */
+
+.fh-topic__needs {
+  padding-block: var(--space-2xl) var(--space-xl);
+}
+
+.fh-topic__needs-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-md) var(--space-xl);
+  margin-bottom: var(--space-lg);
+}
+
+.fh-topic__needs-head .fh-topic__subheading {
+  margin-bottom: var(--space-2xs);
+}
+
+.fh-topic__needs-note,
+.fh-topic__needs-empty {
+  margin: 0;
+  max-width: 70ch;
+  font: var(--text-body-sm);
+  color: var(--color-text-tertiary);
+}
+
+.fh-topic__needs-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-md);
+}
+
+.fh-topic__need {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--glass-edge);
+  background: var(--glass-raised);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  /* Topic signal as inset bar — avoids a thick outer border fighting the radius. */
+  box-shadow: inset 4px 0 0 var(--topic-fill), var(--glass-shadow);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .fh-topic__need {
+    background: var(--color-bg-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-color: var(--color-border);
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .fh-topic__need {
+    background: var(--color-bg-surface);
+  }
+}
+
+.fh-topic__need-num {
+  flex-shrink: 0;
+  font: 700 22px/1.2 var(--font-display);
+  font-variant-numeric: tabular-nums;
+  color: var(--topic-text);
+}
+
+.fh-topic__need-text {
+  font: var(--text-body-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  text-wrap: pretty;
+}
+
+/* ---- Background ---- */
+
+.fh-topic__background {
+  padding-block: var(--space-xl) var(--space-2xl);
+  border-top: 1px solid var(--color-border);
+}
+
+.fh-topic__background-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(260px, 1fr);
   gap: var(--space-2xl);
   align-items: start;
 }
 
 @media (max-width: 900px) {
-  .fh-topic__body {
+  .fh-topic__background-grid {
     grid-template-columns: 1fr;
-    gap: var(--space-xl);
+    gap: var(--space-lg);
   }
 }
 
@@ -117,23 +239,30 @@
   color: var(--color-text-secondary);
 }
 
-.fh-topic__subheading {
-  margin: 0 0 var(--space-sm);
-  font: var(--text-h2);
-  color: var(--color-text-primary);
+.fh-topic__prose p:last-child {
+  margin-bottom: 0;
 }
 
-.fh-topic__prose .fh-topic__subheading {
-  margin-top: var(--space-lg);
+.fh-topic__covers-panel {
+  padding: var(--space-lg);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--topic-border);
+  background: var(--topic-tint);
+}
+
+.fh-topic__covers-heading {
+  margin: 0 0 var(--space-sm);
+  font: var(--text-h4);
+  color: var(--color-text-primary);
 }
 
 .fh-topic__covers {
   margin: 0;
   padding: 0;
   list-style: none;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: var(--space-xs) var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
 }
 
 .fh-topic__covers li {
@@ -152,76 +281,6 @@
   height: 8px;
   border-radius: var(--radius-full);
   background: var(--topic-fill);
-}
-
-.fh-topic__needs {
-  position: sticky;
-  top: var(--space-lg);
-  padding: var(--space-lg);
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--glass-edge);
-  background: var(--glass-raised);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  /* Topic signal as inset bar — avoids a thick outer border fighting the radius. */
-  box-shadow: inset 0 3px 0 var(--topic-fill), var(--glass-shadow);
-}
-
-/* This panel is sticky, so it spends most of its life over scrolling content —
-   which is the state blur is actually for. `raised` rather than `panel`: the extra
-   opacity keeps the needs list readable while text slides underneath it. */
-@media (prefers-reduced-transparency: reduce) {
-  .fh-topic__needs {
-    background: var(--color-bg-surface);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-    border-color: var(--color-border);
-  }
-}
-
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .fh-topic__needs {
-    background: var(--color-bg-surface);
-  }
-}
-
-@media (max-width: 900px) {
-  .fh-topic__needs {
-    position: static;
-  }
-}
-
-.fh-topic__needs-heading {
-  margin: 0 0 var(--space-sm);
-  font: var(--text-h3);
-  color: var(--color-text-primary);
-}
-
-.fh-topic__needs-list {
-  margin: 0 0 var(--space-md);
-  padding-left: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-  font: var(--text-body-sm);
-  color: var(--color-text-secondary);
-}
-
-.fh-topic__needs-list::marker,
-.fh-topic__needs-list li::marker {
-  color: var(--topic-text);
-  font-weight: 700;
-}
-
-.fh-topic__needs-empty,
-.fh-topic__needs-note {
-  margin: 0 0 var(--space-md);
-  font: var(--text-caption);
-  color: var(--color-text-tertiary);
-}
-
-.fh-topic__needs .fh-btn {
-  width: 100%;
 }
 
 /* ---- Project grid ---- */

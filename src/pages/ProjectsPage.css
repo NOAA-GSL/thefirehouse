@@ -19,11 +19,244 @@
   color: var(--color-text-secondary);
 }
 
+/* ---- Toolbar: search, topic chips, facets ---- */
+
+.fh-explorer__toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+  padding: var(--space-md);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--glass-edge);
+  background: var(--glass-panel);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: var(--glass-shadow);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .fh-explorer__toolbar {
+    background: var(--color-bg-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .fh-explorer__toolbar {
+    background: var(--color-bg-surface);
+  }
+}
+
+.fh-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  color: var(--color-text-tertiary);
+}
+
+.fh-search > svg {
+  position: absolute;
+  left: 14px;
+  pointer-events: none;
+}
+
+.fh-search__input {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 48px 10px 44px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  font: var(--text-body);
+  font-family: var(--font-body);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* The field has its own clear button; the WebKit one would make two. */
+.fh-search__input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.fh-search__input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.fh-search__input:focus {
+  border-color: var(--color-brand-primary);
+  box-shadow: 0 0 0 var(--focus-ring-width) var(--color-focus-ring);
+}
+
+.fh-search__clear {
+  position: absolute;
+  right: 8px;
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.fh-search__clear:hover {
+  background: var(--color-bg-sunken);
+  color: var(--color-text-primary);
+}
+
+.fh-search__kbd {
+  position: absolute;
+  right: 12px;
+  min-width: 22px;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-strong);
+  font: 600 12px/1.4 var(--font-mono);
+  text-align: center;
+  color: var(--color-text-tertiary);
+  pointer-events: none;
+}
+
+/* A keyboard hint means nothing on a phone. */
+@media (hover: none) {
+  .fh-search__kbd {
+    display: none;
+  }
+}
+
 .fh-explorer__filters {
   display: flex;
   gap: var(--space-xs);
   flex-wrap: wrap;
-  margin-bottom: var(--space-md);
+}
+
+.fh-explorer__facets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: var(--space-sm) var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-border);
+}
+
+.fh-explorer__facets-toggle {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .fh-explorer__facets {
+    grid-template-columns: 1fr 1fr;
+    padding-top: 0;
+    border-top: none;
+  }
+
+  .fh-explorer__facets:not(.fh-explorer__facets--open) {
+    display: none;
+  }
+
+  .fh-explorer__facets-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    width: 100%;
+    min-height: 44px;
+    padding: 8px 4px;
+    border: none;
+    border-top: 1px solid var(--color-border);
+    background: none;
+    color: var(--color-text-primary);
+    font: var(--text-label);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .fh-explorer__facets-toggle svg {
+    margin-left: auto;
+    color: var(--color-text-secondary);
+    transition: transform 150ms ease;
+  }
+
+  .fh-explorer__facets-toggle[aria-expanded='true'] svg {
+    transform: rotate(180deg);
+  }
+
+  /* The toolbar's flex gap would otherwise open a hole under a closed toggle. */
+  .fh-explorer__toolbar {
+    gap: var(--space-sm);
+  }
+}
+
+.fh-explorer__facets-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-brand-primary);
+  color: var(--color-text-on-brand);
+  font: 700 12px/1 var(--font-body);
+}
+
+.fh-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.fh-filter__label {
+  font: var(--text-caption);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.fh-filter__control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.fh-filter__control select {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 34px 8px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  font: var(--text-body-sm);
+  font-family: var(--font-body);
+  text-overflow: ellipsis;
+  cursor: pointer;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.fh-filter__control select:focus {
+  border-color: var(--color-brand-primary);
+  box-shadow: 0 0 0 var(--focus-ring-width) var(--color-focus-ring);
+}
+
+.fh-filter__control svg {
+  position: absolute;
+  right: 10px;
+  pointer-events: none;
+  color: var(--color-text-secondary);
+}
+
+/* A set filter is marked by weight and edge as well as by its value text. */
+.fh-filter--set .fh-filter__control select {
+  border-color: var(--color-brand-primary);
+  font-weight: 600;
 }
 
 .fh-chip {
@@ -67,15 +300,97 @@
   color: var(--color-text-on-brand);
 }
 
+.fh-chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.fh-chip:disabled:hover {
+  background: var(--glass-panel);
+  color: var(--color-text-secondary);
+}
+
+.fh-chip__count {
+  margin-left: 6px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
 .fh-chip--active:hover {
   background: var(--color-brand-primary-hover);
   color: var(--color-text-on-brand);
 }
 
+/* ---- Result summary ---- */
+
+.fh-explorer__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs) var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
 .fh-explorer__count {
-  margin: 0 0 var(--space-lg);
+  margin: 0;
+  font: var(--text-body-sm);
+  color: var(--color-text-secondary);
+}
+
+.fh-explorer__count strong {
+  color: var(--color-text-primary);
+}
+
+.fh-explorer__applied {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.fh-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 4px 8px 4px 12px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-bg-sunken);
+  color: var(--color-text-primary);
   font: var(--text-caption);
-  color: var(--color-text-tertiary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fh-pill:hover {
+  border-color: var(--color-brand-primary);
+}
+
+.fh-pill svg {
+  color: var(--color-text-secondary);
+}
+
+.fh-explorer__clear-all {
+  min-height: 30px;
+  padding: 4px 6px;
+  border: none;
+  background: none;
+  color: var(--color-link);
+  font: var(--text-caption);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.fh-explorer__clear-all:hover {
+  color: var(--color-link-hover);
 }
 
 .fh-explorer__topic-link {
@@ -103,6 +418,12 @@
   border-radius: var(--radius-lg);
   background: var(--color-bg-sunken);
   text-align: center;
+}
+
+.fh-explorer__empty-title {
+  margin: 0;
+  font: var(--text-h4);
+  color: var(--color-text-primary);
 }
 
 .fh-explorer__empty-body {

@@ -49,6 +49,14 @@ builds 90%, Eric wires it live" boundary, made concrete.
 >   multiple topics, all 10 GACCs represented).
 > - Still open: search (Phase 1), per-project URLs and citation (Phase 2), the GACC
 >   map (Phase 3a).
+>
+> **Update:** Phase 1 search and filters shipped — `src/content/search.ts` (token-AND,
+> field-weighted, prefix + one-typo tolerance, accent folding) with `q`, `topic`,
+> `phase`, `region`, `year`, `status` and `sort` in the query string, per-option
+> result counts, applied-filter pills and "Clear all". Deviations from §1.2–1.3:
+> facets are single-select, the map's `region` param is reused instead of `gacc`,
+> the topic chips were kept as the quickest scope control, and matched words are
+> not yet highlighted.
 
 ### Original plan
 
