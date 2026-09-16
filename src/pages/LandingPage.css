@@ -152,6 +152,9 @@
   --glass-control-border: #7d92b8;
   --color-accent-tint: rgba(242, 118, 46, 0.18);
   --color-accent-border: rgba(242, 118, 46, 0.45);
+  /* Region selection follows the map's blue ramp, not the ember accent. */
+  --map-select-tint: rgba(79, 147, 217, 0.2);
+  --map-select-border: rgba(127, 186, 242, 0.55);
   color: var(--color-text-primary);
 }
 
@@ -165,8 +168,8 @@
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 197, 0, 0.4) 25%,
-    rgba(255, 158, 99, 0.55) 55%,
+    rgba(127, 186, 242, 0.4) 25%,
+    rgba(196, 226, 255, 0.55) 55%,
     transparent 88%
   );
 }

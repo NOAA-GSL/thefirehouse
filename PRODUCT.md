@@ -31,13 +31,13 @@ A shared home for **synthesized fire weather social-science needs and recommenda
 
 ## Capabilities and Constraints
 
-**Shipped capabilities:** landing (hero, live stats, topic cards, submit band); project explorer with topic filter and detail modal; per-topic pages; light/dark theme; content adapters (`local` default, Sanity and Strapi stubs).
+**Shipped capabilities:** landing (hero, GACC coverage map, live stats, topic cards, submit band); project explorer with search, fire phase/GACC/year/project type filters, sort, and detail modal; per-topic pages; light/dark theme; content adapters (`local` default, Sanity and Strapi stubs).
 
 **Structural (code, not CMS):** the four `TopicKey` values (`observe`, `forecast`, `warning`, `governance`) are fixed; display names are editable.
 
 **Hard constraints:** WCAG 2.1 AA / Section 508; NOAA–GSL branding and federal chrome; no invented citations, testimonials, or project takeaways; replace placeholder `projects.json` before public launch; hero photo asset still missing (gradient stand-in until then).
 
-**Open decisions:** hosting placement (static build; optional `VITE_BASE_PATH` for subpath); which CMS to stand up; self-hosted vs Google Fonts CDN for Archivo / Public Sans; per-project URLs, explorer search/sort, About page, tests — not built yet.
+**Open decisions:** hosting placement (static build; optional `VITE_BASE_PATH` for subpath); which CMS to stand up; self-hosted vs Google Fonts CDN for Archivo / Public Sans; About page, tests — not built yet.
 
 ## Brand Commitments
 
