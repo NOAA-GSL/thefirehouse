@@ -352,7 +352,7 @@ mobile. `LandingPage.css` grid change, no structural rework.
 - Swap `src/assets/logos/{noaa,gsl}-logo.svg` for Steph's logo; the header lockup
   in `SiteHeader.tsx` (lines ~103–115) currently renders two marks + divider +
   wordmark and will likely collapse to one mark + wordmark.
-- Also: `public/favicon.svg`, `favicon.ico`, `apple-touch-icon.png`, `og-image.png`.
+- Also: `favicon.ico`, `favicon-32.png`, `icon-192/512.png`, `apple-touch-icon.png`, `og-image.png` (from the FireHouse brand files).
 - Keep the NOAA/DOC agency line in the footer regardless — that's a federal
   requirement, not branding.
 - **Blocked on Steph.**

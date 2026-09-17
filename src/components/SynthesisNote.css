@@ -1,0 +1,33 @@
+/* Deliberately prominent enough to be read rather than tucked into a caption. */
+.fh-synthesis-note {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 14px 6px 12px;
+  border-radius: var(--radius-lg);
+  border: var(--border-width) solid var(--color-border-strong);
+  background: var(--color-bg-surface);
+  color: var(--color-text-secondary);
+  font: var(--text-body-sm);
+}
+
+.fh-synthesis-note strong {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.fh-synthesis-note__dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--heat-gradient);
+  translate: 0 -1px;
+}
+
+/* An unreviewed pass gets a warning-toned edge, so "draft" isn't carried by the
+   word alone. */
+.fh-synthesis-note--draft {
+  border-color: var(--color-warning-border);
+}

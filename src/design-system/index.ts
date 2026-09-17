@@ -8,6 +8,9 @@
 export { Button } from './Button';
 export type { ButtonProps, ButtonSize, ButtonVariant } from './Button';
 
+export { BrandMark } from './BrandMark';
+export type { BrandMarkProps } from './BrandMark';
+
 export { Icon } from './Icon';
 export type { IconName, IconProps } from './Icon';
 

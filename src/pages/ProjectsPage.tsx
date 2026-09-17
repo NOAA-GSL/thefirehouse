@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Icon, ProjectDetailModal, ProjectTile } from '../design-system';
 import { useContent } from '../content/ContentProvider';
-import { publishedProjects } from '../content/derive';
+import { effectiveRegions, publishedProjects } from '../content/derive';
 import { formatByline } from '../content/format';
 import {
   FIRE_PHASE_LIST,
@@ -193,7 +193,7 @@ export function ProjectsPage() {
   /* ---- Facet options, each with its would-be result count ---- */
   const phaseCounts = useMemo(() => facetCounts(all, query, 'phase', (p) => p.firePhases), [all, query]);
   const regionCounts = useMemo(
-    () => facetCounts(all, query, 'region', (p) => p.geo?.regions ?? []),
+    () => facetCounts(all, query, 'region', (p) => effectiveRegions(p.geo?.regions)),
     [all, query],
   );
   const yearCounts = useMemo(() => facetCounts(all, query, 'year', (p) => [p.completionYear]), [all, query]);
@@ -490,7 +490,7 @@ export function ProjectsPage() {
               Clear search and filters
             </button>
           ) : (
-            <Link className="fh-explorer__empty-action" to="/#topic-areas">
+            <Link className="fh-explorer__empty-action" to="/#top-needs">
               Browse topic areas
             </Link>
           )}

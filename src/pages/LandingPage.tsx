@@ -1,12 +1,20 @@
 import { Suspense, lazy, useEffect, useMemo, type CSSProperties } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Button, Icon, StatCounter, TopicTag } from '../design-system';
+import { BrandMark, Button, Icon, StatCounter, TopicTag } from '../design-system';
+import { SynthesisNote } from '../components/SynthesisNote';
 import { useTheme } from '../components/ThemeProvider';
 import { useContent } from '../content/ContentProvider';
-import { buildTopicCards, publishedProjects, regionCounts, resolveStatValue } from '../content/derive';
+import {
+  buildTopicCards,
+  effectiveRegions,
+  needMentions,
+  publishedProjects,
+  regionCounts,
+  resolveStatValue,
+  synthesisInfo,
+} from '../content/derive';
 import { isRegionKey, type RegionKey } from '../design-system/taxonomy';
 import { TOPICS } from '../design-system/topics';
-import { formatReviewDate } from '../content/format';
 import type { LinkRef } from '../content/types';
 import './LandingPage.css';
 
@@ -65,6 +73,7 @@ export function LandingPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { hero, stats, topicSection, submitBand, needsPerCard } = content.landing;
   const cards = buildTopicCards(content, needsPerCard);
+  const synthesis = synthesisInfo(content);
   const heroImage = hero.imageUrl ?? packagedHero;
 
   // The selected region lives in the query string, so a view of the map is a
@@ -81,13 +90,16 @@ export function LandingPage() {
         slug: project.slug,
         title: project.title,
         year: project.completionYear,
-        regions: project.geo?.regions ?? [],
+        regions: effectiveRegions(project.geo?.regions),
+        national: project.geo?.regions.includes('NATIONAL') ?? false,
       })),
     [content],
   );
 
   function selectRegion(key: RegionKey | null) {
-    setSearchParams(key ? { region: key } : {}, { replace: true });
+    // preventScrollReset: the map now sits mid-page, and a search-param change must
+    // not throw the reader back to the top.
+    setSearchParams(key ? { region: key } : {}, { replace: true, preventScrollReset: true });
   }
 
   useEffect(() => {
@@ -108,100 +120,74 @@ export function LandingPage() {
 
         <div className="fh-hero__content fh-container">
           <div className="fh-hero__grid">
-          <div className="fh-hero__panel">
-            <span className="fh-hero__eyebrow">{hero.eyebrow}</span>
-            <h1 className="fh-hero__heading">{hero.heading}</h1>
-            <p className="fh-hero__body">{hero.body}</p>
-            <div className="fh-hero__actions">
-              <CtaButton
-                cta={hero.primaryCta}
-                variant="accent"
-                size="lg"
-                iconLeft="plus"
-                blockOnMobile
+            <div className="fh-hero__panel">
+              {/* The full combination mark, once, where the site introduces itself.
+                  The hero is dark in both themes, so it always takes the light-
+                  stroked artwork. */}
+              <BrandMark
+                variant="wordmark"
+                surface="dark"
+                height={72}
+                alt="FireHouse — Fire Weather Research Hub"
+                className="fh-hero__logo"
               />
-              <CtaButton
-                cta={hero.secondaryCta}
-                variant="secondary"
-                size="lg"
-                iconRight="arrow-right"
-                onDark
-                blockOnMobile
-              />
+              <span className="fh-hero__eyebrow">{hero.eyebrow}</span>
+              <h1 className="fh-hero__heading">{hero.heading}</h1>
+              <p className="fh-hero__body">{hero.body}</p>
+              <div className="fh-hero__actions">
+                <CtaButton
+                  cta={hero.primaryCta}
+                  variant="accent"
+                  size="lg"
+                  iconLeft="plus"
+                  blockOnMobile
+                />
+                <CtaButton
+                  cta={hero.secondaryCta}
+                  variant="secondary"
+                  size="lg"
+                  iconRight="arrow-right"
+                  onDark
+                  blockOnMobile
+                />
+              </div>
             </div>
-          </div>
 
-          {/* The coverage map is the hero's second half, not a section further down
-              the page: it is the one visual that answers "what is in here?" before
-              anyone reads a word, which is why the walkthrough put it up top. */}
-          {/* Deliberately NOT .fh-glass. This panel defines its own dark glass in
-              CSS, and .fh-glass sets `background` at the same specificity — so
-              source order decided the winner, which in light mode meant a white
-              panel behind text pinned to on-dark colours (1.15:1, unreadable).
-              The panel owns its surface outright instead. */}
-          <section className="fh-hero__map" aria-labelledby="coverage-heading">
-            <div className="fh-hero__map-head">
-              <h2 id="coverage-heading" className="fh-hero__map-title">
-                Where the research comes from
-              </h2>
-              <p className="fh-hero__map-sub">
-                Submissions by Geographic Area Coordination Center (GACC). Select
-                one to open the projects filed there.
-              </p>
-            </div>
-            {/* The fallback reserves the map's height so the stats band below does
-                not jump upward and then back down as the chunk lands. */}
-            <Suspense
-              fallback={
-                <div className="fh-hero__map-loading" role="status">
-                  <span className="fh-visually-hidden">Loading the coverage map</span>
-                </div>
-              }
-            >
-              <RegionMap
-                counts={counts}
-                projects={mapProjects}
-                selected={selectedRegion}
-                onSelect={selectRegion}
-                projectHref={(slug) => `${import.meta.env.BASE_URL}projects/${slug}`}
-                theme={theme === 'dark' ? 'dark' : 'light'}
-              />
-            </Suspense>
-          </section>
+            {/* Live stats sit beside the copy rather than in a band below it, so
+                nothing stands between the hero and the top needs. */}
+            <ul className="fh-hero__stats" aria-label="Hub statistics">
+              {stats.map((stat) => (
+                <li key={stat.id} className="fh-stat-pane">
+                  <StatCounter
+                    value={resolveStatValue(stat, content)}
+                    label={stat.label}
+                    caption={stat.caption}
+                    accent={stat.accent}
+                  />
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
 
         <span className="fh-hero__horizon" aria-hidden="true" />
       </section>
 
-      {/* ---- Live stats ---- */}
-      <section className="fh-stats" aria-label="Hub statistics">
-        <div className="fh-stats__row fh-container">
-          {stats.map((stat) => (
-            <div key={stat.id} className="fh-stat-pane fh-glass fh-glass--raised">
-              <StatCounter
-                value={resolveStatValue(stat, content)}
-                label={stat.label}
-                caption={stat.caption}
-                accent={stat.accent}
-              />
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ---- Topic summary cards ---- */}
-      <section className="fh-topics fh-container" id="topic-areas" aria-labelledby="topics-heading">
+      {/* ---- Top needs ----
+          Straight after the hero: this synthesis is what the site exists to offer. */}
+      <section className="fh-topics fh-container" id="top-needs" aria-labelledby="topics-heading">
         <div className="fh-topics__intro">
           {topicSection.eyebrow && <span className="fh-eyebrow">{topicSection.eyebrow}</span>}
           <h2 id="topics-heading" className="fh-topics__heading">
             {topicSection.heading}
           </h2>
           {topicSection.body && <p className="fh-topics__body">{topicSection.body}</p>}
+          {/* One disclosure for all four cards, instead of a badge on each. */}
+          <SynthesisNote {...synthesis} className="fh-topics__note" />
         </div>
 
         <div className="fh-topics__grid">
-          {cards.map(({ topic, needs, updatedAt, sourceCount, model }) => (
+          {cards.map(({ topic, needs }) => (
             <article
               key={topic.key}
               className="fh-topic-card fh-glass"
@@ -210,42 +196,105 @@ export function LandingPage() {
               <span className="fh-topic-card__wash" aria-hidden="true" />
               <TopicTag topic={topic.key} label={topic.short} />
               {/* The link sits on the title and is stretched over the whole card by
-                  CSS. A card-wide <a> would work too, but it would announce the tag,
-                  every need and the date as one link name — this keeps the accessible
-                  name to the topic while the click target stays the full card. */}
+                  CSS, so the accessible name stays the topic while the click target
+                  is the full card. */}
               <h3 className="fh-topic-card__title">
                 <Link className="fh-topic-card__link" to={`/topics/${topic.key}`}>
                   {topic.label}
                 </Link>
               </h3>
-              <ul className="fh-topic-card__needs">
-                {needs.map((need, i) => (
-                  <li key={i}>{need}</li>
-                ))}
-              </ul>
-              {model && (
-                <p className="fh-topic-card__provenance">
-                  <span className="fh-topic-card__provenance-dot" aria-hidden="true" />
-                  {sourceCount
-                    ? `AI-synthesized across ${sourceCount} ${sourceCount === 1 ? 'project' : 'projects'}`
-                    : 'AI-synthesized across all projects'}
-                </p>
+              {needs.length > 0 ? (
+                <ol className="fh-needs">
+                  {needs.map((need, i) => {
+                    const mentions = needMentions(need);
+                    return (
+                      <li key={i} className="fh-needs__item">
+                        <span className="fh-needs__rank" aria-hidden="true">
+                          {i + 1}
+                        </span>
+                        <span className="fh-needs__text">{need.text}</span>
+                        {mentions > 0 && (
+                          <span className="fh-needs__count">
+                            {mentions} {mentions === 1 ? 'mention' : 'mentions'}
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ol>
+              ) : (
+                <p className="fh-topic-card__empty">No needs have been published for this area yet.</p>
               )}
               <div className="fh-topic-card__foot">
-                <p className="fh-topic-card__updated">
-                  {updatedAt && (
-                    <>
-                      Reviewed <time dateTime={updatedAt}>{formatReviewDate(updatedAt)}</time>
-                    </>
-                  )}
-                </p>
                 <span className="fh-topic-card__cue" aria-hidden="true">
-                  View topic area
+                  View topic area and sources
                   <Icon name="arrow-right" size={15} />
                 </span>
               </div>
             </article>
           ))}
+        </div>
+
+        {/* ---- Where these needs come from ---- */}
+        <aside className="fh-source" id="needs-source" aria-labelledby="source-heading">
+          <div className="fh-source__copy">
+            <h3 id="source-heading" className="fh-source__heading">
+              Where these needs come from
+            </h3>
+            <p className="fh-source__body">
+              Topic areas are not assigned project by project. Every completed project
+              in The Firehouse — {synthesis.sourceCount}{' '}
+              {synthesis.sourceCount === 1 ? 'project' : 'projects'} today — is read
+              together{synthesis.model ? `, with ${synthesis.model},` : ''} and the
+              end-user needs its researchers recorded are grouped into the four areas
+              above and ranked by how often they come up. A <em>mention</em> is one
+              need or recommendation a researcher submitted; the same one can count in
+              more than one area.
+              {synthesis.reviewedBy
+                ? ` The ${synthesis.reviewedBy} reviews every pass before it is published.`
+                : ' This pass is a draft: the team reviews each synthesis before it is final.'}{' '}
+              Open a topic area to see which projects each need draws on; each project
+              page keeps the researchers’ own words.
+            </p>
+          </div>
+          <Button variant="secondary" size="md" iconRight="arrow-right" to="/projects">
+            Explore all projects
+          </Button>
+        </aside>
+      </section>
+
+      {/* ---- Coverage map ----
+          Deliberately NOT .fh-glass: this panel defines its own dark surface in CSS
+          (see .fh-coverage), and .fh-glass would fight it on `background`. */}
+      <section className="fh-coverage-section fh-container" aria-labelledby="coverage-heading">
+        <div className="fh-coverage">
+          <div className="fh-coverage__head">
+            <h2 id="coverage-heading" className="fh-coverage__title">
+              Where the research comes from
+            </h2>
+            <p className="fh-coverage__sub">
+              Submissions by Geographic Area Coordination Center (GACC). Select one to
+              open the projects filed there.
+            </p>
+          </div>
+          {/* The fallback reserves the map's height so nothing below it jumps as
+              the chunk lands. */}
+          <Suspense
+            fallback={
+              <div className="fh-coverage__loading" role="status">
+                <span className="fh-visually-hidden">Loading the coverage map</span>
+              </div>
+            }
+          >
+            <RegionMap
+              counts={counts}
+              projects={mapProjects}
+              selected={selectedRegion}
+              onSelect={selectRegion}
+              projectHref={(slug) => `${import.meta.env.BASE_URL}projects/${slug}`}
+              theme={theme === 'dark' ? 'dark' : 'light'}
+            />
+          </Suspense>
         </div>
       </section>
 

@@ -3,7 +3,6 @@
   "nav": [
     { "label": "Home", "to": "/" },
     { "label": "Explore Projects", "to": "/projects" },
-    { "label": "Topic Areas", "to": "/#topic-areas" },
     { "label": "Submit a Finding", "href": "" }
   ],
   "submitLabel": "Submit a Finding",
@@ -14,7 +13,7 @@
       "heading": "Explore",
       "links": [
         { "label": "All projects", "to": "/projects" },
-        { "label": "Topic areas", "to": "/#topic-areas" },
+        { "label": "Top needs", "to": "/#top-needs" },
         { "label": "Submit a finding", "href": "" }
       ]
     },

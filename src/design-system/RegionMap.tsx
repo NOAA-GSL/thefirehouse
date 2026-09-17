@@ -15,7 +15,13 @@ export interface RegionMapProject {
   slug: string;
   title: string;
   year: number | string;
+  /**
+   * Regions the project counts toward, already expanded by the caller — a national
+   * study arrives listing every GACC (see `effectiveRegions` in content/derive).
+   */
   regions: RegionKey[];
+  /** A nationally representative study; labelled as such in a GACC's list. */
+  national?: boolean;
 }
 
 export interface RegionMapProps {
@@ -214,6 +220,8 @@ export function RegionMap({
     () => projects.filter((p) => p.regions.length > 0).length,
     [projects],
   );
+
+  const nationalCount = useMemo(() => projects.filter((p) => p.national).length, [projects]);
 
   const shown = useMemo(
     () => (selected ? projects.filter((p) => p.regions.includes(selected)) : []),
@@ -444,6 +452,13 @@ export function RegionMap({
           </p>
         </div>
 
+        {nationalCount > 0 && (
+          <p className="fh-map__note">
+            GACC counts include {nationalCount} national{' '}
+            {nationalCount === 1 ? 'study' : 'studies'}, counted once in every area.
+          </p>
+        )}
+
         {/* The operable surface. Buttons, not decoration — this is how the map is
             used without a mouse, and how it is read by a screen reader. */}
         <ul className="fh-map__list" aria-labelledby={listId}>
@@ -529,6 +544,9 @@ export function RegionMap({
                   <li key={project.slug}>
                     <a className="fh-map__project" href={projectHref(project.slug)}>
                       <span>{project.title}</span>
+                      {project.national && selected !== 'NATIONAL' && (
+                        <span className="fh-map__project-tag">National</span>
+                      )}
                       <span className="fh-map__project-year">{project.year}</span>
                       <Icon name="arrow-right" size={14} />
                     </a>

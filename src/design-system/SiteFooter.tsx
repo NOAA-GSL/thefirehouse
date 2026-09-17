@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import gslLogo from '../assets/logos/gsl-logo.svg';
 import noaaLogo from '../assets/logos/noaa-logo.svg';
+import { BrandMark } from './BrandMark';
 import { Icon } from './Icon';
 import type { NavItem } from './SiteHeader';
 import './SiteFooter.css';
@@ -54,6 +55,7 @@ export function SiteFooter({ siteName, blurb, groups, agencyLine, usaGovUrl }: S
           <div className="fh-footer__lockup">
             <img src={noaaLogo} alt="NOAA" className="fh-footer__logo-noaa" />
             <img src={gslLogo} alt="GSL" className="fh-footer__logo-gsl" />
+            <BrandMark height={28} />
             <span className="fh-footer__wordmark">{siteName}</span>
           </div>
           <p className="fh-footer__blurb">{blurb}</p>

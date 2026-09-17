@@ -4,7 +4,7 @@ import {
   type FirePhase,
   type RegionKey,
 } from '../design-system/taxonomy';
-import { byRecency } from './derive';
+import { byRecency, effectiveRegions } from './derive';
 import type { Project } from './types';
 
 /**
@@ -179,7 +179,9 @@ export function scoreProject(project: Project, q: string): number {
 
 function matchesFacets(project: Project, query: ProjectQuery, skip?: FacetKey): boolean {
   if (skip !== 'phase' && query.phase && !project.firePhases.includes(query.phase)) return false;
-  if (skip !== 'region' && query.region && !project.geo?.regions.includes(query.region)) return false;
+  if (skip !== 'region' && query.region && !effectiveRegions(project.geo?.regions).includes(query.region)) {
+    return false;
+  }
   if (skip !== 'year' && query.year && project.completionYear !== query.year) return false;
   if (skip !== 'type' && query.type && project.projectType !== query.type) return false;
   return true;

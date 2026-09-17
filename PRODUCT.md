@@ -31,7 +31,7 @@ A shared home for **synthesized fire weather social-science needs and recommenda
 
 ## Capabilities and Constraints
 
-**Shipped capabilities:** landing (hero, GACC coverage map, live stats, topic cards, submit band); project explorer with search, fire phase/GACC/year/project type filters, sort, and detail modal; per-topic pages; light/dark theme; content adapters (`local` default, Sanity and Strapi stubs).
+**Shipped capabilities:** landing (FireHouse logo, hero with live stats, top-5 needs per topic area with mention counts, synthesis provenance, GACC coverage map, submit band); project explorer with search, fire phase/GACC/year/project type filters, sort, and detail modal; per-topic pages leading with their top needs and per-need project attribution; light/dark theme; content adapters (`local` default, Sanity and Strapi stubs).
 
 **Structural (code, not CMS):** the four `TopicKey` values (`observe`, `forecast`, `warning`, `governance`) are fixed; display names are editable.
 
@@ -41,7 +41,7 @@ A shared home for **synthesized fire weather social-science needs and recommenda
 
 ## Brand Commitments
 
-- Product name: **The Firehouse**
+- Product name: **The Firehouse**; the logo wordmark reads **FireHouse — Fire Weather Research Hub** (brand files in `src/assets/logos/`)
 - Parent: NOAA Global Systems Laboratory (GSL) / Earth Prediction Innovation Center
 - Voice in approved landing copy: plain, institutional, useful — not marketing flourish
 - Binding assets: NOAA and GSL logos under `src/assets/logos/`; approved landing copy in `src/content/data/landing.json`
@@ -49,7 +49,8 @@ A shared home for **synthesized fire weather social-science needs and recommenda
 
 ## Evidence on Hand
 
-- Approved landing copy and topic “top needs” text aligned to the design mock (`landing.json`, `topicSummaries.json`) — confirm needs against FireHouse 1.0 before launch
+- Approved landing copy in `landing.json`
+- **Draft** top-needs synthesis in `topicSummaries.json`, drafted from the four published projects and traced entry-by-entry in `notebooklm/draft-synthesis-2026-09-17.md` — unreviewed, and labelled as a draft in the UI until `reviewedBy` is set
 - Topic definitions and area copy in `topics.json` — needs Stephanie/Emily review
 - Nine **placeholder** project records in `projects.json` — must not ship publicly as-is; `papers` empty on purpose
 - Placeholders that must not be fabricated later: real citations, testimonials, benchmarks, or a live CMS instance that does not exist yet

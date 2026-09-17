@@ -67,7 +67,7 @@ function RouteFocusManager() {
     const isNavigation = route !== handledRoute.current;
     handledRoute.current = route;
 
-    // In-page anchors ("/#topic-areas"). Client-side routing doesn't scroll to a `#hash`
+    // In-page anchors ("/#top-needs"). Client-side routing doesn't scroll to a `#hash`
     // the way a full page load does — and on a cold load the browser can't either,
     // because the target doesn't exist yet when the document is parsed.
     if (hash) {

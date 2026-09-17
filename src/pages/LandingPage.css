@@ -2,8 +2,7 @@
    Hero
    ============================================================ */
 
-/* The hero now carries the coverage map alongside the copy, so it is sized by its
-   content rather than pinned to a viewport-height band. */
+/* Sized by its content rather than pinned to a viewport-height band. */
 .fh-hero {
   position: relative;
   display: flex;
@@ -106,110 +105,91 @@
         where the bloom lands; over a panel it does not. Both states are audited
         (scripts/check-contrast.mjs, "HERO"): 15.90:1 with the panel, 11.21:1
         without it, so the reduced-transparency fallback is safe too. */
-/* Copy left, map right. One column until there is genuinely room for two — a map
-   squeezed into half of a tablet is worse than a map with the full width. */
+/* Copy left, stats right; one column below 960px. */
 .fh-hero__grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-lg);
-  align-items: start;
+  align-items: stretch;
   width: 100%;
 }
 
-@media (min-width: 1100px) {
+@media (min-width: 960px) {
   .fh-hero__grid {
-    grid-template-columns: minmax(320px, 27rem) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
     gap: var(--space-xl);
   }
 }
 
-.fh-hero__map {
-  position: relative;
+.fh-hero__logo {
+  align-self: flex-start;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: left center;
+  margin-bottom: var(--space-xs);
+}
+
+/* ---- Stats, beside the copy ----
+   On the hero's dark surface in both themes, so text tokens are pinned to their
+   on-dark values (same set as the coverage panel, audited there). */
+.fh-hero__stats {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-sm);
+  align-content: stretch;
+  --color-text-primary: #f5f7fb;
+  --color-text-secondary: #c0c6d0;
+  --color-text-tertiary: #98a0af;
+  /* The accent numeral too: ember-500 is a light-theme value and lands at 2.57:1 on
+     this dark pane. ember-300 is the on-dark accent the rest of the site uses. */
+  --color-accent: var(--ember-300);
+}
+
+@media (min-width: 960px) {
+  .fh-hero__stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+.fh-stat-pane {
+  padding: var(--space-md) var(--space-lg);
   border-radius: var(--radius-xl);
-  padding: var(--space-md);
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
-  /* The hero's own backdrop is dark in both themes, so the map panel takes the
-     dark glass treatment regardless of theme — otherwise the light-mode panel would
-     be a white slab dropped onto a night scene. */
+  justify-content: center;
+  gap: var(--space-xs);
   background: rgba(10, 16, 32, 0.55);
   -webkit-backdrop-filter: blur(22px) saturate(130%);
   backdrop-filter: blur(22px) saturate(130%);
   border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
-  /* Inside this panel the surface is dark whatever the page theme, so text tokens
-     are pinned to their on-dark values rather than inherited. Verified in
-     scripts/check-contrast.mjs under "HERO MAP PANEL". */
-  --color-text-primary: #f5f7fb;
-  --color-text-secondary: #c0c6d0;
-  --color-text-tertiary: #98a0af;
-  --color-border: rgba(255, 255, 255, 0.16);
-  --color-bg-surface: #16203a;
-  --color-bg-sunken: rgba(255, 255, 255, 0.05);
-  --glass-sunken: rgba(255, 255, 255, 0.06);
-  --glass-edge: rgba(255, 255, 255, 0.14);
-  --glass-control-border: #7d92b8;
-  --color-accent-tint: rgba(242, 118, 46, 0.18);
-  --color-accent-border: rgba(242, 118, 46, 0.45);
-  /* Region selection follows the map's blue ramp, not the ember accent. */
-  --map-select-tint: rgba(79, 147, 217, 0.2);
-  --map-select-border: rgba(127, 186, 242, 0.55);
-  color: var(--color-text-primary);
-}
-
-/* The lit top edge, matching the copy panel opposite it. */
-.fh-hero__map::before {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto;
-  height: 1px;
-  border-radius: inherit;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(127, 186, 242, 0.4) 25%,
-    rgba(196, 226, 255, 0.55) 55%,
-    transparent 88%
-  );
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .fh-hero__map {
-    background: rgba(10, 16, 32, 0.94);
+  .fh-stat-pane {
+    background: rgba(10, 16, 32, 0.92);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
 }
 
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .fh-hero__map {
-    background: rgba(10, 16, 32, 0.9);
-  }
-}
-
-.fh-hero__map-head {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.fh-hero__map-title {
-  margin: 0;
-  font: var(--text-h4);
-  color: var(--color-text-primary);
-}
-
-.fh-hero__map-sub {
-  margin: 0;
-  font: var(--text-caption);
-  color: var(--color-text-secondary);
+/* A heat bar above each numeral instead of colouring the numeral itself: gradient
+   text would have to clear contrast at every stop, and the ember end does not. */
+.fh-stat-pane::before {
+  content: '';
+  display: block;
+  width: 36px;
+  height: 3px;
+  border-radius: var(--radius-full);
+  background: var(--heat-gradient);
 }
 
 .fh-hero__panel {
   position: relative;
   align-self: stretch;
-  max-width: 780px;
   padding: clamp(20px, 3vw, 34px) clamp(20px, 3.4vw, 40px);
   border-radius: var(--radius-xl);
   background: rgba(10, 16, 32, 0.55);
@@ -283,7 +263,7 @@
 .fh-hero__body {
   margin: 0;
   font: var(--text-body-lg);
-  max-width: 640px;
+  max-width: 680px;
   color: rgba(255, 255, 255, 0.88);
 }
 
@@ -302,60 +282,13 @@
 }
 
 /* ============================================================
-   Live stats
-   ============================================================ */
-
-.fh-stats {
-  /* Pulled up over the hero seam so the stat panes overlap the heat horizon —
-     the site's first piece of content literally sits on the fire line. */
-  margin-top: clamp(-56px, -6vw, -40px);
-  position: relative;
-  z-index: 1;
-}
-
-.fh-stats__row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--space-md);
-}
-
-.fh-stat-pane {
-  padding: var(--space-lg);
-  border-radius: var(--radius-xl);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-}
-
-/* A heat bar above each numeral instead of colouring the numeral itself.
-   Gradient text would have to clear 3:1 at every stop against a translucent panel,
-   which the ember end does not reliably do — and a stat you cannot read is worse
-   than a stat that isn't orange. The colour moves to a decorative element where it
-   carries no contrast obligation at all. */
-.fh-stat-pane::after {
-  content: '';
-  display: block;
-  order: -1;
-  width: 36px;
-  height: 3px;
-  border-radius: var(--radius-full);
-  background: var(--heat-gradient);
-  margin-bottom: var(--space-2xs);
-}
-
-@media (max-width: 768px) {
-  .fh-stats {
-    margin-top: calc(var(--space-xl) * -1);
-  }
-}
-
-/* ============================================================
    Topic summary cards
    ============================================================ */
 
 .fh-topics {
-  padding-block: var(--space-4xl);
-  scroll-margin-top: var(--space-lg);
+  padding-block: var(--space-3xl) var(--space-2xl);
+  /* Clears the sticky header (65px) when reached from "/#top-needs". */
+  scroll-margin-top: 65px;
 }
 
 @media (max-width: 768px) {
@@ -365,8 +298,12 @@
 }
 
 .fh-topics__intro {
-  max-width: 640px;
+  max-width: 760px;
   margin-bottom: var(--space-xl);
+}
+
+.fh-topics__note {
+  margin-top: var(--space-md);
 }
 
 .fh-topics__heading {
@@ -376,14 +313,15 @@
 }
 
 .fh-topics__body {
-  margin: var(--space-xs) 0 0;
-  font: var(--text-body);
+  margin: var(--space-sm) 0 0;
+  font: var(--text-body-lg);
   color: var(--color-text-secondary);
 }
 
 .fh-topics__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  /* Two across: five ranked needs per card need a readable line length. */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr));
   gap: var(--space-lg);
 }
 
@@ -441,11 +379,6 @@
   border-radius: inherit;
 }
 
-.fh-topic-card:hover .fh-topic-card__link {
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
 /* The stretched ::after has no size of its own to ring, so the focus indicator is
    drawn on the card. The global :focus-visible rule still covers the inline text
    if :has is unavailable. */
@@ -454,14 +387,55 @@
   outline-offset: 2px;
 }
 
-.fh-topic-card__needs {
+.fh-needs {
   margin: 0;
-  padding-left: 18px;
+  padding: 0;
+  list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
+}
+
+.fh-needs__item {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--space-sm);
+  padding: 7px 0;
+  border-top: 1px solid var(--color-border);
   font: var(--text-body-sm);
-  color: var(--color-text-secondary);
+  color: var(--color-text-primary);
+}
+
+.fh-needs__item:first-child {
+  border-top: none;
+}
+
+.fh-needs__rank {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-sunken);
+  border: 1px solid var(--color-border-strong);
+  font: 700 12px/1 var(--font-display);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+  translate: 0 -1px;
+}
+
+.fh-needs__count {
+  white-space: nowrap;
+  font: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-tertiary);
+}
+
+.fh-topic-card__empty {
+  margin: 0;
+  font: var(--text-body-sm);
+  color: var(--color-text-tertiary);
 }
 
 .fh-topic-card__foot {
@@ -470,42 +444,9 @@
   border-top: 1px solid var(--color-border);
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: var(--space-sm);
   flex-wrap: wrap;
-}
-
-.fh-topic-card__updated {
-  margin: 0;
-  font: var(--text-caption);
-  color: var(--color-text-tertiary);
-}
-
-/* AI-synthesis provenance.
-   Deliberately prominent enough to be read rather than tucked into the caption
-   line: this is the one surface on the site where researchers' words are
-   paraphrased by a model instead of quoted, and a federal site owes its readers
-   that disclosure plainly. */
-.fh-topic-card__provenance {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  align-self: flex-start;
-  padding: 3px 10px 3px 8px;
-  border-radius: var(--radius-full);
-  border: var(--border-width) solid var(--color-accent-border);
-  background: var(--color-accent-tint);
-  color: var(--color-text-secondary);
-  font: var(--text-caption);
-  letter-spacing: var(--letter-spacing-caption);
-}
-
-.fh-topic-card__provenance-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--heat-gradient);
-  flex-shrink: 0;
 }
 
 .fh-topic-card__cue {
@@ -530,6 +471,127 @@
   .fh-topic-card:hover .fh-topic-card__cue {
     gap: 5px;
   }
+}
+
+/* ---- Where these needs come from ---- */
+
+.fh-source {
+  margin-top: var(--space-xl);
+  padding: var(--space-lg);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-sunken);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-md) var(--space-xl);
+}
+
+.fh-source__copy {
+  max-width: 760px;
+}
+
+.fh-source__heading {
+  margin: 0 0 var(--space-xs);
+  font: var(--text-h3);
+  color: var(--color-text-primary);
+}
+
+.fh-source__body {
+  margin: 0;
+  font: var(--text-body);
+  color: var(--color-text-secondary);
+}
+
+/* ============================================================
+   Coverage map
+   ============================================================ */
+
+.fh-coverage-section {
+  padding-block: var(--space-xl);
+}
+
+.fh-coverage {
+  position: relative;
+  border-radius: var(--radius-xl);
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  /* A dark instrument panel in both themes: the map, its blue ramp and its labels
+     were tuned against this surface, and a light panel would need a second set. */
+  background: #0f1830;
+  -webkit-backdrop-filter: blur(22px) saturate(130%);
+  backdrop-filter: blur(22px) saturate(130%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  /* Inside this panel the surface is dark whatever the page theme, so text tokens
+     are pinned to their on-dark values rather than inherited. Verified in
+     scripts/check-contrast.mjs under "HERO MAP PANEL". */
+  --color-text-primary: #f5f7fb;
+  --color-text-secondary: #c0c6d0;
+  --color-text-tertiary: #98a0af;
+  --color-border: rgba(255, 255, 255, 0.16);
+  --color-bg-surface: #16203a;
+  --color-bg-sunken: rgba(255, 255, 255, 0.05);
+  --glass-sunken: rgba(255, 255, 255, 0.06);
+  --glass-edge: rgba(255, 255, 255, 0.14);
+  --glass-control-border: #7d92b8;
+  --color-accent-tint: rgba(242, 118, 46, 0.18);
+  --color-accent-border: rgba(242, 118, 46, 0.45);
+  /* Region selection follows the map's blue ramp, not the ember accent. */
+  --map-select-tint: rgba(79, 147, 217, 0.2);
+  --map-select-border: rgba(127, 186, 242, 0.55);
+  color: var(--color-text-primary);
+}
+
+/* The lit top edge. */
+.fh-coverage::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(127, 186, 242, 0.4) 25%,
+    rgba(196, 226, 255, 0.55) 55%,
+    transparent 88%
+  );
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .fh-coverage {
+    background: rgba(10, 16, 32, 0.94);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .fh-coverage {
+    background: rgba(10, 16, 32, 0.9);
+  }
+}
+
+.fh-coverage__head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fh-coverage__title {
+  margin: 0;
+  font: var(--text-h3);
+  color: var(--color-text-primary);
+}
+
+.fh-coverage__sub {
+  margin: 0;
+  font: var(--text-caption);
+  color: var(--color-text-secondary);
 }
 
 /* ============================================================
@@ -583,7 +645,7 @@
 
 /* Holds the map's place while its chunk loads. Same height as the rendered map, so
    nothing below it shifts when the real thing arrives. */
-.fh-hero__map-loading {
+.fh-coverage__loading {
   height: clamp(320px, 46vh, 480px);
   border-radius: var(--radius-xl);
   background: var(--glass-sunken);

@@ -84,6 +84,12 @@
   background: var(--color-border-strong);
 }
 
+.fh-header__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .fh-header__wordmark {
   font: 800 20px/1 var(--font-display-expanded);
   color: var(--color-text-primary);

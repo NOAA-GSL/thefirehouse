@@ -2,6 +2,7 @@ import { useEffect, useId, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import gslLogo from '../assets/logos/gsl-logo.svg';
 import noaaLogo from '../assets/logos/noaa-logo.svg';
+import { BrandMark } from './BrandMark';
 import { Button } from './Button';
 import { Icon } from './Icon';
 import type { Theme } from '../components/ThemeProvider';
@@ -75,7 +76,7 @@ export function SiteHeader({
 
     const to = link.to ?? '/';
 
-    // Links to an anchor within a page ("/#topic-areas") share that page's pathname,
+    // Links to an anchor within a page ("/#top-needs") share that page's pathname,
     // so NavLink would mark them active whenever the page is open — three highlighted
     // nav items at once. They get a plain Link and no active state.
     if (to.includes('#')) {
@@ -112,7 +113,10 @@ export function SiteHeader({
           <img src={noaaLogo} alt="" className="fh-header__logo-noaa" />
           <img src={gslLogo} alt="" className="fh-header__logo-gsl" />
           <span className="fh-header__divider" aria-hidden="true" />
-          <span className="fh-header__wordmark">{siteName}</span>
+          <span className="fh-header__brand">
+            <BrandMark height={32} />
+            <span className="fh-header__wordmark">{siteName}</span>
+          </span>
         </Link>
 
         <nav className="fh-header__nav" aria-label="Primary">

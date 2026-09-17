@@ -14,6 +14,7 @@ import type {
   SiteSettings,
   TopicContent,
   TopicSummary,
+  TopNeed,
 } from './types';
 
 /**
@@ -152,9 +153,24 @@ export function normalizeSiteContent(raw: RawSiteContent): SiteContent {
     throw new ContentError('At least one topic area is required.');
   }
 
+  const publishedSlugs = new Set(
+    (raw.projects as Project[]).filter((p) => p.published && p.irbApproved === true).map((p) => p.slug),
+  );
+
   const topicSummaries = (raw.topicSummaries as TopicSummary[]).map((summary) => ({
     ...summary,
     topic: assertTopicKey(summary.topic, `topicSummaries["${summary.topic}"]`),
+    // Older passes stored plain strings; accept them so a CMS mid-migration still renders.
+    topNeeds: (summary.topNeeds as (TopNeed | string)[]).map((need) => {
+      const entry = typeof need === 'string' ? { text: need } : need;
+      // A citation to an unpublished (or IRB-excluded) project must not become a
+      // link or a count on the public site.
+      const projects = entry.projects?.filter((slug) => publishedSlugs.has(slug));
+      // Nor may its mentions: a stored count that includes a dropped project would
+      // over-report, so fall back to the count of what is actually public.
+      const dropped = (entry.projects?.length ?? 0) !== (projects?.length ?? 0);
+      return { ...entry, projects, mentions: dropped ? undefined : entry.mentions };
+    }),
   }));
 
   const projects = (raw.projects as Project[])

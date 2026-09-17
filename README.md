@@ -17,9 +17,9 @@ npm run preview  # serve the production build
 
 | Route              | Status                                                                        |
 | ------------------ | ----------------------------------------------------------------------------- |
-| `/`                | **Landing page** — the implemented design. Hero, live stats, four topic-area summary cards, submit CTA band. |
-| `/projects`        | **Project explorer** — first pass at brief §5.2. Topic-filtered grid, detail modal. |
-| `/topics/:topicKey` | **Topic area page** — introduction, current synthesized top needs, and where that synthesis comes from. One per `TopicKey`. Projects are not filed under topics: needs are synthesized across the whole collection. |
+| `/`                | **Landing page** — logo and hero with live stats, then the four topic areas' top-5 needs with mention counts, "where these needs come from", the GACC coverage map, and the submit CTA band. |
+| `/projects`        | **Project explorer** — brief §5.2. Search, fire-phase / GACC / year / project-type filters, sort, detail modal. |
+| `/topics/:topicKey` | **Topic area page** — the area's top five needs, each with its mention count and links to the projects it draws on, plus a "what this area covers" callout. One per `TopicKey`. Projects are not filed under topics: needs are synthesized across the whole collection, so the attribution is per *need*. |
 | `*`                | **Custom 404** — echoes the requested address, and offers the explorer plus all four topic areas rather than dead-ending. Also rendered by `/topics/:topicKey` for a key that isn't one of the four, with wording tailored to that case. |
 
 The landing page is a faithful implementation of `Firehouse Landing Page.dc.html`
@@ -161,12 +161,16 @@ overrides are isolated so a re-sync doesn't lose them.
       design-sync API, which returns text. Drop the file in that directory and it's
       picked up automatically; until then the hero renders a gradient stand-in. See
       `src/assets/imagery/README.md`.
-- [ ] **Confirm the topic "top needs" copy** in `topicSummaries.json` against the
-      FireHouse 1.0 report — it currently mirrors the design mock-up.
-- [ ] **Review the topic-area `intro` and `covers` copy** in `topics.json`. It was
-      written from the four topic definitions and the needs already on file, not
-      from the FireHouse 1.0 report, and it is the first thing a reader arriving at
-      `/topics/…` will read. Stephanie or Emily should own the wording.
+- [ ] **Review the draft "top needs" synthesis** in `topicSummaries.json`. It was
+      drafted with Claude from the four published projects, with every need traced to
+      the survey entries it counts in `notebooklm/draft-synthesis-2026-09-17.md`.
+      Nothing is reviewed yet, so the site labels it a draft on every surface that
+      shows it — run the NotebookLM pass in `notebooklm/README.md`, edit the wording,
+      then set `reviewedBy` to clear the label.
+- [ ] **Review the topic-area `covers` copy** in `topics.json` — the bullet list in
+      the callout, and now the only area copy on `/topics/…`. The longer `intro`
+      paragraphs are no longer rendered (September 2026 review) but are kept in the
+      data. Stephanie or Emily should own the wording.
 - [ ] **Set `VITE_SITE_URL`** once hosting is settled, so `canonical`, `og:url` and
       `og:image` are emitted. Until then shared links preview without the image card.
 - [ ] **Confirm the SPA fallback with Matt** — which of `.htaccess` / `_redirects` /
@@ -324,7 +328,10 @@ its title and description, whereas a guessed domain would point at a URL that ma
 exist. Set it once Matt confirms placement and the card at `public/og-image.png` starts
 appearing in Slack, email and social unfurls.
 
-The card is a flat 1200×630 export (Archivo over the navy/ember palette) and the icons
-are generated from the same flame geometry, with `public/favicon.svg` as the editable
-vector source. All of it is static — re-export by hand if the wordmark or tagline
-changes.
+The card (1200×630, the FireHouse wordmark on white) and the icons (`favicon.ico`,
+`favicon-32.png`, `icon-192/512.png`, `apple-touch-icon.png`) are generated from the
+brand files in `src/assets/logos/source/`. Icons use the isolated house-and-flame mark
+on a white tile, so its slate outline still reads on a dark browser tab. The UI copies
+in `src/assets/logos/` include `-on-dark` variants with the slate recoloured light for
+the dark header and hero. There is no vector source yet — if one arrives, regenerate
+from it.

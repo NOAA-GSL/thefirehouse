@@ -1,0 +1,22 @@
+.fh-brand {
+  display: inline-flex;
+  flex-shrink: 0;
+  width: auto;
+}
+
+.fh-brand__img {
+  height: 100%;
+  width: auto;
+}
+
+.fh-brand__img--dark {
+  display: none;
+}
+
+[data-theme='dark'] .fh-brand__img--light {
+  display: none;
+}
+
+[data-theme='dark'] .fh-brand__img--dark {
+  display: block;
+}

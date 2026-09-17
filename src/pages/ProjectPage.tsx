@@ -365,7 +365,7 @@ export function ProjectPage() {
             <Icon name="quote" size={14} />
             <span>
               Takeaways, needs and recommendations on this page are reproduced as the
-              researcher submitted them. The <Link to="/#topic-areas">topic areas</Link>{' '}
+              researcher submitted them. The <Link to="/#top-needs">topic areas</Link>{' '}
               are an AI-assisted synthesis across all projects, so no single project is
               filed under one.
             </span>

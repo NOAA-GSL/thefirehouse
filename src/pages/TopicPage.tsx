@@ -2,25 +2,30 @@ import { useEffect, type CSSProperties } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Button, Icon, TopicTag } from '../design-system';
 import { TOPICS, isTopicKey } from '../design-system/topics';
+import { SynthesisNote } from '../components/SynthesisNote';
 import { useContent } from '../content/ContentProvider';
-import { findTopic, findTopicSummary, publishedProjects } from '../content/derive';
-import { formatReviewDate } from '../content/format';
+import {
+  findProjectBySlug,
+  findTopic,
+  findTopicSummary,
+  needMentions,
+  publishedProjects,
+} from '../content/derive';
+import type { Project } from '../content/types';
 import { NotFoundPage } from './NotFoundPage';
 import './TopicPage.css';
 
 /**
- * One topic area in full: current top needs, background on what the area is,
- * and where that synthesis comes from.
+ * One topic area: its top needs, front and centre, each traced to the projects it
+ * was drawn from — with what the area covers as a callout alongside.
  *
- * This is the destination the four landing-page cards have always implied. The
- * landing page can only show two needs per card with no room to say what the area
- * is; the explorer can filter to a topic but opens on a bare grid with no framing.
- * The page leads with the needs — the synthesis this site exists to provide —
- * then gives the background for anyone who wants the framing, then the source.
+ * Topic areas are a synthesis across every collected project, not a tag on
+ * individual ones, so there is no "projects in this area" list. What a reader can
+ * follow instead is attribution per *need*: which projects raised it. That comes
+ * from the synthesis's own citations (see `TopNeed`).
  *
- * There is no "projects in this area" list. Topic areas are an LLM synthesis across
- * every collected project (NotebookLM), not a tag on individual ones, so listing a
- * subset here would assert a project-to-topic mapping that doesn't exist.
+ * How the synthesis works is explained once, on the landing page, and linked from
+ * here rather than repeated on four pages.
  *
  * The route key is the `TopicKey` itself (`/topics/observe`) rather than a CMS
  * slug — the four keys are structural (see `design-system/topics.ts`), so they are
@@ -44,9 +49,8 @@ export function TopicPage() {
 
   const definition = TOPICS[key];
   const summary = findTopicSummary(content, key);
-  const needs = summary?.topNeeds ?? [];
+  const needs = (summary?.topNeeds ?? []).slice(0, 5);
   const others = content.topics.filter((t) => t.key !== key);
-  const hasBackground = Boolean(topic.intro?.length || topic.covers?.length);
   // The synthesis records how many projects it read; fall back to what is live now.
   const sourceCount = summary?.sourceCount ?? publishedProjects(content).length;
 
@@ -59,152 +63,111 @@ export function TopicPage() {
 
   return (
     <div className="fh-topic" style={topicVars}>
-      {/* ---- Introduction ---- */}
+      {/* ---- Title ---- */}
       <section className="fh-topic__hero">
         <div className="fh-topic__hero-inner fh-container">
           <nav className="fh-crumbs" aria-label="Breadcrumb">
             <Link to="/">Home</Link>
             <Icon name="chevron-right" size={14} />
-            <Link to="/#topic-areas">Topic areas</Link>
+            <Link to="/#top-needs">Top needs</Link>
             <Icon name="chevron-right" size={14} />
             <span aria-current="page">{topic.short}</span>
           </nav>
 
           <TopicTag topic={key} label={topic.short} />
           <h1 className="fh-topic__heading">{topic.label}</h1>
-          {topic.description && <p className="fh-topic__lead">{topic.description}</p>}
-
-          <dl className="fh-topic__facts">
-            <div className="fh-topic__fact">
-              <dt>Projects synthesized</dt>
-              <dd>{sourceCount}</dd>
-            </div>
-            <div className="fh-topic__fact">
-              <dt>Needs currently tracked</dt>
-              <dd>{needs.length}</dd>
-            </div>
-            {summary?.updatedAt && (
-              <div className="fh-topic__fact">
-                <dt>Last reviewed</dt>
-                <dd>
-                  <time dateTime={summary.updatedAt}>{formatReviewDate(summary.updatedAt)}</time>
-                </dd>
-              </div>
-            )}
-          </dl>
-
-          {/* Tab-style wayfinding without hiding anything: every section stays on
-              the page (and in a find-in-page search), this just gets you there. */}
-          <nav className="fh-topic__jump" aria-label="On this page">
-            <a href="#needs-heading">Top needs</a>
-            {hasBackground && <a href="#background-heading">Background</a>}
-            <a href="#source-heading">Sources</a>
-          </nav>
         </div>
       </section>
 
-      {/* ---- Current needs ----
-          First and full width. The needs are the synthesis this site exists to
-          provide (product principle 1), so they lead instead of sitting in a
-          sidebar beside the background reading. */}
-      <section className="fh-topic__needs fh-container" aria-labelledby="needs-heading">
-        <div className="fh-topic__needs-head">
-          <div>
+      <div className="fh-topic__body fh-container">
+        {/* ---- Top needs ---- */}
+        <section className="fh-topic__needs" aria-labelledby="needs-heading">
+          <div className="fh-topic__needs-head">
             <h2 id="needs-heading" className="fh-topic__subheading">
-              Top needs right now
+              Top {needs.length > 0 ? needs.length : ''} needs
             </h2>
-            <p className="fh-topic__needs-note">
-              {summary?.model ? 'AI-synthesized' : 'Synthesized'} across all{' '}
-              {sourceCount} {sourceCount === 1 ? 'project' : 'projects'}
-              {summary?.reviewedBy ? `, reviewed by ${summary.reviewedBy}` : ', reviewed before publication'}
-              {summary?.updatedAt && (
-                <>
-                  {' on '}
-                  <time dateTime={summary.updatedAt}>{formatReviewDate(summary.updatedAt)}</time>
-                </>
-              )}
-              .
+            <SynthesisNote
+              model={summary?.model}
+              reviewedBy={summary?.reviewedBy}
+              updatedAt={summary?.updatedAt}
+              sourceCount={sourceCount}
+            />
+            <p className="fh-topic__how">
+              Ranked by mentions — how many submitted needs and recommendations raise
+              each one. <Link to="/#needs-source">How these needs are synthesized</Link>
             </p>
           </div>
-          <Button
-            variant="accent"
-            size="sm"
-            iconLeft="plus"
-            href={content.settings.submitFormUrl}
-          >
-            {content.settings.submitLabel}
-          </Button>
-        </div>
 
-        {needs.length > 0 ? (
-          <ol className="fh-topic__needs-list">
-            {needs.map((need, i) => (
-              <li key={i} className="fh-topic__need">
-                <span className="fh-topic__need-num" aria-hidden="true">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="fh-topic__need-text">{need}</span>
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <p className="fh-topic__needs-empty">
-            No needs have been published for this area yet.
-          </p>
-        )}
-      </section>
-
-      {/* ---- Background ----
-          The definition of the area lives here, under its own heading, rather than
-          as unlabelled prose beside the needs — so a reader who wants the framing
-          knows where it is, and one who doesn't can skip straight past it. */}
-      {hasBackground && (
-        <section className="fh-topic__background fh-container" aria-labelledby="background-heading">
-          <h2 id="background-heading" className="fh-topic__subheading">
-            About this topic area
-          </h2>
-          <div className="fh-topic__background-grid">
-            {topic.intro && topic.intro.length > 0 && (
-              <div className="fh-topic__prose">
-                {topic.intro.map((paragraph, i) => (
-                  <p key={i}>{paragraph}</p>
-                ))}
-              </div>
-            )}
-
-            {topic.covers && topic.covers.length > 0 && (
-              <div className="fh-topic__covers-panel">
-                <h3 className="fh-topic__covers-heading">What this area covers</h3>
-                <ul className="fh-topic__covers">
-                  {topic.covers.map((item, i) => (
-                    <li key={i}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
+          {needs.length > 0 ? (
+            <ol className="fh-topic__needs-list">
+              {needs.map((need, i) => {
+                const mentions = needMentions(need);
+                const sources = (need.projects ?? [])
+                  .map((slug) => findProjectBySlug(content, slug))
+                  .filter((p): p is Project => Boolean(p));
+                return (
+                  <li key={i} className="fh-need">
+                    <span className="fh-need__rank" aria-hidden="true">
+                      {i + 1}
+                    </span>
+                    <div className="fh-need__main">
+                      <p className="fh-need__text">{need.text}</p>
+                      <p className="fh-need__meta">
+                        {mentions} {mentions === 1 ? 'mention' : 'mentions'}
+                        {sources.length > 0 &&
+                          ` · from ${sources.length} ${sources.length === 1 ? 'project' : 'projects'}`}
+                      </p>
+                      {sources.length > 0 && (
+                        <ul
+                          className="fh-need__sources"
+                          aria-label={`Projects behind need ${i + 1}`}
+                        >
+                          {sources.map((project) => (
+                            <li key={project.slug}>
+                              <Link className="fh-need__source" to={`/projects/${project.slug}`}>
+                                <Icon name="file-text" size={14} />
+                                <span className="fh-need__source-title">{project.title}</span>
+                                <span className="fh-need__source-year">
+                                  {project.completionYear}
+                                </span>
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          ) : (
+            <p className="fh-topic__empty">No needs have been published for this area yet.</p>
+          )}
         </section>
-      )}
 
-      {/* ---- Where the synthesis comes from ---- */}
-      <section className="fh-topic__source fh-container" aria-labelledby="source-heading">
-        <div className="fh-topic__source-copy">
-          <h2 id="source-heading" className="fh-topic__subheading">
-            Where these needs come from
-          </h2>
-          <p className="fh-topic__source-body">
-            Topic areas are not assigned project by project. The needs above are
-            synthesized across {sourceCount} completed{' '}
-            {sourceCount === 1 ? 'project' : 'projects'} at once
-            {summary?.model ? ` using ${summary.model}` : ''}, then reviewed by
-            {summary?.reviewedBy ? ` the ${summary.reviewedBy}` : ' the team'} before
-            publication. Each project page keeps the researchers' own words.
-          </p>
-        </div>
-        <Button variant="secondary" size="md" iconRight="arrow-right" to="/projects">
-          Explore all projects
-        </Button>
-      </section>
+        {/* ---- What this area covers ---- */}
+        <aside className="fh-topic__aside" aria-labelledby="covers-heading">
+          {topic.covers && topic.covers.length > 0 && (
+            <div className="fh-topic__covers-panel">
+              <h2 id="covers-heading" className="fh-topic__covers-heading">
+                What this area covers
+              </h2>
+              <ul className="fh-topic__covers">
+                {topic.covers.map((item, i) => (
+                  <li key={i}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="fh-topic__contribute">
+            <p>Have a finding that speaks to this area?</p>
+            <Button variant="accent" size="sm" iconLeft="plus" href={content.settings.submitFormUrl}>
+              {content.settings.submitLabel}
+            </Button>
+          </div>
+        </aside>
+      </div>
 
       {/* ---- Sideways navigation ---- */}
       <nav className="fh-topic__more fh-container" aria-labelledby="more-heading">
@@ -225,7 +188,6 @@ export function TopicPage() {
           ))}
         </ul>
       </nav>
-
     </div>
   );
 }

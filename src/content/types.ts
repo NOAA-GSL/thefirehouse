@@ -36,17 +36,25 @@ export interface TopicContent {
   /** Pill label, e.g. "Observations". */
   short: string;
   /**
-   * One-sentence description. Doubles as the lead paragraph on the topic page and
-   * the summary a search engine or a link preview will pick up.
+   * One-sentence description. Used in the source document the synthesis reads and as
+   * the summary a search engine or a link preview will pick up; the topic page no
+   * longer shows it above the needs.
    */
   description?: string;
   /**
-   * The longer introduction shown only on the topic page, one string per paragraph.
-   * Kept as an array rather than one blob so an editor can't smuggle markup in and
-   * the page never has to render raw HTML.
+   * The longer introduction, one string per paragraph. Kept as an array rather than
+   * one blob so an editor can't smuggle markup in and the page never has to render
+   * raw HTML.
+   *
+   * **Not currently rendered.** The September 2026 review moved the needs to the top
+   * of the topic page and cut the prose above them, leaving only `covers`. Retained
+   * because the text is written and reviewed, and an About page is still open.
    */
   intro?: string[];
-  /** "What this area covers" — the kinds of question that belong under this topic. */
+  /**
+   * "What this area covers" — the kinds of question that belong under this topic.
+   * Rendered as the callout beside the needs, and the only area copy on the page.
+   */
   covers?: string[];
   order: number;
 }
@@ -57,16 +65,32 @@ export interface TopicContent {
  * Topic areas are a lens over the WHOLE body of findings, not a tag on individual
  * projects. After each survey batch the team runs every collected project through an
  * LLM synthesis (a Google NotebookLM notebook, per the September 2026 meeting), a
- * human reviews the result, and it is written back here. There is deliberately no
- * link from a need to the projects behind it: the synthesis draws on all of them at
- * once, and a per-project attribution would claim a precision it doesn't have.
+ * human reviews the result, and it is written back here.
+ *
+ * Each need carries the projects it was drawn from, taken from the synthesis's own
+ * citations and checked in review. That is attribution for the *need*, not topic
+ * membership for the project: one project can support needs in several areas, and
+ * a project that supports none is still part of the collection.
  *
  * The landing page renders whatever is current — that's what makes the topic cards
  * "update automatically as new submissions are processed".
  */
+export interface TopNeed {
+  /** One plain-language phrase, e.g. "Longer-lead outlooks for planning windows". */
+  text: string;
+  /**
+   * How many survey entries (need/recommendation pairs) raise this need, across all
+   * projects. Falls back to the number of `projects` when a pass didn't record it.
+   */
+  mentions?: number;
+  /** Slugs of the projects the need draws on, most direct first. */
+  projects?: string[];
+}
+
 export interface TopicSummary {
   topic: TopicKey;
-  topNeeds: string[];
+  /** Most important first. The site shows up to five. */
+  topNeeds: TopNeed[];
   /** ISO date of the last review pass; surfaced so readers know how fresh this is. */
   updatedAt?: string;
   /**
@@ -83,7 +107,10 @@ export interface TopicSummary {
    * and a federal site presenting model-derived synthesis needs to say that it is.
    */
   model?: string;
-  /** Who signed off on the synthesis pass. The human review step is not optional. */
+  /**
+   * Who signed off on the synthesis pass. The human review step is not optional:
+   * while this is absent the site labels the needs as a draft pending review.
+   */
   reviewedBy?: string;
 }
 

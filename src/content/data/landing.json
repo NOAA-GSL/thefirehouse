@@ -30,11 +30,11 @@
     }
   ],
   "topicSection": {
-    "eyebrow": "Synthesized across all research projects",
-    "heading": "Top needs, by topic area",
-    "body": "Each area updates automatically as new findings are reviewed and folded in."
+    "eyebrow": "Synthesized across every project",
+    "heading": "The top 5 needs in fire weather social science",
+    "body": "Forecasters, land managers, and emergency managers keep telling researchers what they need. Here, every completed fire weather social science project in The Firehouse is read together as one body of evidence, and the needs its researchers recorded are distilled into the five most pressing in each of four topic areas — in one place, ranked, with how often each one came up."
   },
-  "needsPerCard": 2,
+  "needsPerCard": 5,
   "submitBand": {
     "heading": "Have a finding to share?",
     "body": "Describe what you learned in your own words. Submissions are reviewed and folded into the four topic areas above.",

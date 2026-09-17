@@ -65,5 +65,7 @@ export default defineConfig({
   base: process.env.VITE_BASE_PATH ?? '/',
   build: { outDir: OUT_DIR },
   plugins: [react(), siteMeta(), spaFallback()],
-  server: { port: 5173 },
+  // PORT lets a harness (or a second checkout) run the dev server somewhere else
+  // when 5173 is already taken; 5173 stays the default everyone knows.
+  server: { port: Number(process.env.PORT) || 5173 },
 });

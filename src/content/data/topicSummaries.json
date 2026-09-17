@@ -1,42 +1,159 @@
 [
   {
     "topic": "observe",
-    "updatedAt": "2026-07-23",
+    "updatedAt": "2026-09-17",
+    "sourceCount": 4,
+    "model": "Claude",
     "topNeeds": [
-      "Higher-resolution surface observations in wildland-urban interface areas",
-      "Standardized data-sharing agreements between agencies"
-    ],
-    "model": "NotebookLM",
-    "reviewedBy": "GSL Social Science Team"
+      {
+        "text": "Local ground-truth fuel conditions built into Red Flag Warning decisions",
+        "mentions": 2,
+        "projects": [
+          "igniting-impact-advancing-fire-weather-decision-support",
+          "igniting-insight-evaluating-nws-fire-weather-products"
+        ]
+      },
+      {
+        "text": "Hotspot alerts that reach field partners by text when internet is unreliable",
+        "mentions": 2,
+        "projects": ["fire-weather-testbed-evaluations-002-fire-detection"]
+      },
+      {
+        "text": "Automated “safety net” fire detection so forecasters don’t miss new ignitions",
+        "mentions": 1,
+        "projects": ["fire-weather-testbed-evaluations-002-fire-detection"]
+      },
+      {
+        "text": "Confidence indicators and weather context alongside satellite hotspot detections",
+        "mentions": 1,
+        "projects": ["fire-weather-testbed-evaluations-002-fire-detection"]
+      },
+      {
+        "text": "Hotspot alert thresholds that forecasters can tune with local land managers",
+        "mentions": 1,
+        "projects": ["fire-weather-testbed-evaluations-002-fire-detection"]
+      }
+    ]
   },
   {
     "topic": "forecast",
-    "updatedAt": "2026-07-23",
+    "updatedAt": "2026-09-17",
+    "sourceCount": 4,
+    "model": "Claude",
     "topNeeds": [
-      "Longer-lead outlooks for planning windows beyond 72 hours",
-      "Model guidance tailored to local fuel and terrain conditions"
-    ],
-    "model": "NotebookLM",
-    "reviewedBy": "GSL Social Science Team"
+      {
+        "text": "Earlier signals of critical fire weather, at least 48 hours ahead",
+        "mentions": 2,
+        "projects": [
+          "igniting-impact-advancing-fire-weather-decision-support",
+          "igniting-insight-evaluating-nws-fire-weather-products"
+        ]
+      },
+      {
+        "text": "Trend and duration detail: when conditions peak and how long they last",
+        "mentions": 2,
+        "projects": [
+          "igniting-insight-evaluating-nws-fire-weather-products",
+          "igniting-impact-advancing-fire-weather-decision-support"
+        ]
+      },
+      {
+        "text": "Forecast discussions that state forecaster confidence and reasoning",
+        "mentions": 1,
+        "projects": ["igniting-insight-evaluating-nws-fire-weather-products"]
+      },
+      {
+        "text": "Probabilistic forecasts shown as combined text and graphics",
+        "mentions": 1,
+        "projects": ["igniting-impact-advancing-fire-weather-decision-support"]
+      },
+      {
+        "text": "Highly reliable wind and relative humidity forecasts throughout an incident",
+        "mentions": 1,
+        "projects": ["igniting-impact-advancing-fire-weather-decision-support"]
+      }
+    ]
   },
   {
     "topic": "warning",
-    "updatedAt": "2026-07-23",
+    "updatedAt": "2026-09-17",
+    "sourceCount": 4,
+    "model": "Claude",
     "topNeeds": [
-      "Clearer thresholds for red flag warning issuance across offices",
-      "Faster hand-off of forecaster guidance to incident command"
-    ],
-    "model": "NotebookLM",
-    "reviewedBy": "GSL Social Science Team"
+      {
+        "text": "Clear authority for who issues Fire Warnings during multi-agency incidents",
+        "mentions": 2,
+        "projects": [
+          "igniting-insight-evaluating-nws-fire-weather-products",
+          "fire-weather-testbed-evaluations-003-interagency"
+        ]
+      },
+      {
+        "text": "Consistent Red Flag Warning criteria and timing across neighboring offices",
+        "mentions": 2,
+        "projects": ["igniting-insight-evaluating-nws-fire-weather-products"]
+      },
+      {
+        "text": "Clearer public distinction between Fire Warnings, Red Flag Warnings, and evacuations",
+        "mentions": 1,
+        "projects": ["igniting-insight-evaluating-nws-fire-weather-products"]
+      },
+      {
+        "text": "Tiered warnings that flag rare, catastrophic fire weather",
+        "mentions": 1,
+        "projects": ["igniting-impact-advancing-fire-weather-decision-support"]
+      },
+      {
+        "text": "Forecaster discretion to warn in near-criteria events, labeled as marginal",
+        "mentions": 1,
+        "projects": ["igniting-impact-advancing-fire-weather-decision-support"]
+      }
+    ]
   },
   {
     "topic": "governance",
-    "updatedAt": "2026-07-23",
+    "updatedAt": "2026-09-17",
+    "sourceCount": 4,
+    "model": "Claude",
     "topNeeds": [
-      "Shared frameworks for evaluating fire weather program impact",
-      "Clearer roles between forecast offices and land management agencies"
-    ],
-    "model": "NotebookLM",
-    "reviewedBy": "GSL Social Science Team"
+      {
+        "text": "Trusted local relationships and joint training before an incident",
+        "mentions": 3,
+        "projects": [
+          "fire-weather-testbed-evaluations-003-interagency",
+          "igniting-insight-evaluating-nws-fire-weather-products",
+          "igniting-impact-advancing-fire-weather-decision-support"
+        ]
+      },
+      {
+        "text": "Integrated Warning Team frameworks with clear, locally scalable roles",
+        "mentions": 3,
+        "projects": [
+          "fire-weather-testbed-evaluations-003-interagency",
+          "igniting-insight-evaluating-nws-fire-weather-products"
+        ]
+      },
+      {
+        "text": "Direct, two-way communication channels between forecasters and fire partners",
+        "mentions": 2,
+        "projects": [
+          "igniting-impact-advancing-fire-weather-decision-support",
+          "fire-weather-testbed-evaluations-002-fire-detection"
+        ]
+      },
+      {
+        "text": "Regional flexibility to adopt or tailor Fire Warning workflows",
+        "mentions": 2,
+        "projects": [
+          "igniting-insight-evaluating-nws-fire-weather-products",
+          "fire-weather-testbed-evaluations-003-interagency"
+        ]
+      },
+      {
+        "text": "Staffing capacity and organizational buy-in to sustain interagency teams",
+        "mentions": 2,
+        "projects": ["fire-weather-testbed-evaluations-003-interagency"]
+      }
+    ]
   }
 ]

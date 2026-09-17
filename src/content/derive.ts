@@ -1,6 +1,6 @@
-import { REGION_KEYS, type RegionKey } from '../design-system/taxonomy';
+import { GACC_KEYS, REGION_KEYS, type RegionKey } from '../design-system/taxonomy';
 import type { TopicKey } from '../design-system/topics';
-import type { Project, SiteContent, StatContent, TopicContent, TopicSummary } from './types';
+import type { Project, SiteContent, StatContent, TopicContent, TopicSummary, TopNeed } from './types';
 
 /**
  * Values computed from live content rather than stored.
@@ -28,12 +28,7 @@ export function resolveStatValue(stat: StatContent, content: SiteContent): strin
 /** A topic paired with its current top-needs list, in display order. */
 export interface TopicCard {
   topic: TopicContent;
-  needs: string[];
-  updatedAt?: string;
-  /** Submissions folded into this summary — see `TopicSummary.sourceCount`. */
-  sourceCount?: number;
-  /** Set when the summary was model-synthesized; drives the provenance label. */
-  model?: string;
+  needs: TopNeed[];
 }
 
 export function buildTopicCards(content: SiteContent, needsPerCard: number): TopicCard[] {
@@ -45,9 +40,6 @@ export function buildTopicCards(content: SiteContent, needsPerCard: number): Top
     return {
       topic,
       needs: (summary?.topNeeds ?? []).slice(0, needsPerCard),
-      updatedAt: summary?.updatedAt,
-      sourceCount: summary?.sourceCount,
-      model: summary?.model,
     };
   });
 }
@@ -76,10 +68,46 @@ export function byRecency(a: Project, b: Project): number {
   return b.completionYear - a.completionYear || a.title.localeCompare(b.title);
 }
 
-/** Published projects tagged for one coordination region, newest first. */
+/** How many times a need was raised; falls back to how many projects raised it. */
+export function needMentions(need: TopNeed): number {
+  return need.mentions ?? need.projects?.length ?? 0;
+}
+
+/**
+ * The provenance shared by every topic's needs, for the one line the landing page
+ * shows above the cards. Passes are run over the whole collection at once, so the
+ * four summaries normally agree; the most recent date and the largest source count
+ * win if they don't. `reviewed` is true only when every summary has a reviewer.
+ */
+export function synthesisInfo(content: SiteContent) {
+  const summaries = content.topicSummaries;
+  const dates = summaries.map((s) => s.updatedAt).filter((d): d is string => Boolean(d));
+  return {
+    model: summaries.find((s) => s.model)?.model,
+    reviewedBy: summaries.every((s) => s.reviewedBy) ? summaries[0]?.reviewedBy : undefined,
+    updatedAt: dates.sort().at(-1),
+    sourceCount:
+      Math.max(0, ...summaries.map((s) => s.sourceCount ?? 0)) || publishedProjects(content).length,
+  };
+}
+
+/**
+ * The regions a project counts toward.
+ *
+ * A NATIONAL answer means a nationally representative study, so it speaks to every
+ * GACC: the map counts it once in each and lists it when any GACC is selected, and
+ * the explorer's GACC filter matches it. NATIONAL itself is kept too, so the
+ * "National" row still counts these studies on their own. PACIFIC, INTL and
+ * UNKNOWN are not expanded — none of them is a claim about the whole country.
+ */
+export function effectiveRegions(regions: readonly RegionKey[] = []): RegionKey[] {
+  return regions.includes('NATIONAL') ? [...new Set([...regions, ...GACC_KEYS])] : [...regions];
+}
+
+/** Published projects that count toward one coordination region, newest first. */
 export function projectsInRegion(content: SiteContent, key: RegionKey): Project[] {
   return publishedProjects(content)
-    .filter((project) => project.geo?.regions.includes(key))
+    .filter((project) => effectiveRegions(project.geo?.regions).includes(key))
     .sort(byRecency);
 }
 
@@ -91,6 +119,8 @@ export function projectsInRegion(content: SiteContent, key: RegionKey): Project[
  * empty regions reads as "no data exists here" when it means "nothing is filed here
  * yet", and a count that quietly drops NATIONAL/INTL/UNKNOWN submissions reports a
  * total smaller than the number of submissions actually received.
+ *
+ * National studies are counted in every GACC as well — see `effectiveRegions`.
  */
 export function regionCounts(content: SiteContent): Record<RegionKey, number> {
   const counts = Object.fromEntries(REGION_KEYS.map((key) => [key, 0])) as Record<
@@ -98,7 +128,7 @@ export function regionCounts(content: SiteContent): Record<RegionKey, number> {
     number
   >;
   for (const project of publishedProjects(content)) {
-    for (const key of project.geo?.regions ?? []) counts[key] += 1;
+    for (const key of effectiveRegions(project.geo?.regions)) counts[key] += 1;
   }
   return counts;
 }
