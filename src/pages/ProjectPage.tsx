@@ -1,4 +1,4 @@
-import { useEffect, useMemo, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Button, CitationBlock, Icon } from '../design-system';
 import type { IconName } from '../design-system/Icon';
@@ -80,31 +80,98 @@ function TakeawayList({ items }: { items: string[] }) {
  * but every word is the researcher's — see `splitNeedLead`. A stand-alone
  * recommendation (allowed by the survey) renders as just the band.
  */
+/**
+ * One survey entry: a need and the recommendation the researcher paired with it.
+ *
+ * The body is a scroll container with a cap on its height. Verbatim survey text
+ * runs anywhere from one line to several hundred words, and an uncapped card let a
+ * single long entry push the next one off the screen entirely — so the list stopped
+ * being scannable at exactly the point it had the most to say.
+ *
+ * The scrolling is measured rather than assumed, because a scrollable region has
+ * obligations that a short card must not pay:
+ *  - it needs to be keyboard operable (WCAG 2.1.1) — Chrome only made overflow
+ *    containers focusable by default recently and Safari still doesn't, so it gets
+ *    an explicit `tabIndex`;
+ *  - it needs an accessible name and a role once it is focusable, or it lands as an
+ *    unlabelled stop in the tab order;
+ *  - and it needs to say that it is scrollable, which is what the edge shadows do.
+ * A card whose content fits gets none of that: no tab stop, no role, no shadow.
+ */
 function NeedCard({ entry }: { entry: NeedEntry }) {
   const { lead, rest } = entry.need ? splitNeedLead(entry.need) : { rest: '' };
+  const bodyRef = useRef<HTMLDivElement>(null);
+  // 'none' until measured, so a card that fits never becomes a tab stop.
+  const [overflow, setOverflow] = useState<'none' | 'top' | 'bottom' | 'both'>('none');
+
+  useEffect(() => {
+    const body = bodyRef.current;
+    if (!body) return;
+
+    function measure() {
+      const el = bodyRef.current;
+      if (!el) return;
+      // 2px of slack: fractional layout sizes make an exactly-fitting box report a
+      // scrollHeight a hair over its clientHeight, which would add a phantom tab stop.
+      const scrollable = el.scrollHeight - el.clientHeight > 2;
+      if (!scrollable) return setOverflow('none');
+      const atTop = el.scrollTop <= 1;
+      const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= 1;
+      setOverflow(atTop ? 'bottom' : atBottom ? 'top' : 'both');
+    }
+
+    measure();
+    body.addEventListener('scroll', measure, { passive: true });
+    // Re-measure on resize: the cap is viewport-relative and the text reflows, so
+    // a card that fits at one width can overflow at another.
+    const observer = new ResizeObserver(measure);
+    observer.observe(body);
+    return () => {
+      body.removeEventListener('scroll', measure);
+      observer.disconnect();
+    };
+  }, [entry]);
+
+  const scrollable = overflow !== 'none';
+  const label = entry.need ? splitNeedLead(entry.need).lead : undefined;
 
   return (
-    <li className="fh-need">
-      {entry.need && (
-        <div className="fh-need__need">
-          <span className="fh-need__label">
-            <Icon name="target" size={13} />
-            Need
-          </span>
-          <p className="fh-need__text">
-            {lead && <strong className="fh-need__lead">{lead}</strong>} {rest}
-          </p>
-        </div>
-      )}
-      {entry.recommendation && (
-        <div className="fh-need__rec">
-          <span className="fh-need__label">
-            <Icon name="arrow-right" size={13} />
-            Recommendation
-          </span>
-          <p className="fh-need__text">{entry.recommendation}</p>
-        </div>
-      )}
+    <li className="fh-entry">
+      <div
+        className="fh-entry__body"
+        ref={bodyRef}
+        data-overflow={overflow}
+        {...(scrollable
+          ? {
+              tabIndex: 0,
+              role: 'group',
+              'aria-label': label
+                ? `${label.replace(/:$/, '')} — scrollable`
+                : 'Need and recommendation — scrollable',
+            }
+          : {})}
+      >
+        {entry.need && (
+          <div className="fh-entry__need">
+            <span className="fh-entry__label">
+              <Icon name="target" size={13} />
+              Need
+            </span>
+            <p className="fh-entry__text">
+              {lead && <strong className="fh-entry__lead">{lead}</strong>} {rest}
+            </p>
+          </div>
+        )}
+        {entry.recommendation && (
+          <div className="fh-entry__rec">
+            <span className="fh-entry__label">
+              <Icon name="arrow-right" size={13} />
+              Recommendation
+            </span>
+            <p className="fh-entry__text">{entry.recommendation}</p>
+          </div>
+        )}
+      </div>
     </li>
   );
 }
@@ -259,7 +326,7 @@ export function ProjectPage() {
 
           {project.needs.length > 0 && (
             <Section title="End-user needs and recommendations" count={project.needs.length}>
-              <ol className="fh-needs">
+              <ol className="fh-entries">
                 {project.needs.map((entry, i) => (
                   <NeedCard key={i} entry={entry} />
                 ))}

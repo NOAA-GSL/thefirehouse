@@ -1,3 +1,4 @@
+import { isIconName } from '../design-system/Icon';
 import {
   isFirePhase,
   isPublicationStatus,
@@ -5,6 +6,7 @@ import {
 } from '../design-system/taxonomy';
 import { isTopicKey } from '../design-system/topics';
 import type {
+  AboutPageContent,
   Author,
   LandingPageContent,
   LinkRef,
@@ -12,6 +14,7 @@ import type {
   Project,
   SiteContent,
   SiteSettings,
+  TeamMember,
   TopicContent,
   TopicSummary,
   TopNeed,
@@ -125,12 +128,67 @@ function normalizeAuthors(raw: unknown, legacy: unknown, where: string): Author[
   throw new ContentError(`${where} must credit at least one author.`);
 }
 
+/**
+ * About page content.
+ *
+ * Validated rather than trusted for one reason the other blocks don't share: the
+ * audience cards address the icon registry by name, and an unknown name would reach
+ * React as `undefined` and take the whole page down at render. Caught here it is a
+ * legible content error instead — which is the difference between "your icon name is
+ * wrong" and a blank page an editor cannot diagnose.
+ *
+ * Biographies are normalised in shape only. A bare string becomes a one-paragraph
+ * array; nothing is trimmed, split, or rewritten, because the text belongs to the
+ * person it describes.
+ */
+function normalizeAbout(raw: unknown, submitFormUrl: string): AboutPageContent {
+  if (!raw || typeof raw !== 'object') {
+    throw new ContentError('About page content is missing — the primary nav links to it.');
+  }
+
+  const about = raw as AboutPageContent;
+
+  const items = (about.audiences?.items ?? []).map((item) => {
+    if (!isIconName(item.icon)) {
+      throw new ContentError(
+        `about.audiences item "${item.title}" uses unknown icon "${String(item.icon)}". ` +
+          'Valid names are the keys of the registry in design-system/Icon.tsx.',
+      );
+    }
+    return item;
+  });
+
+  const members: TeamMember[] = (about.team?.members ?? []).map((member) => {
+    if (!member?.name) {
+      throw new ContentError('about.team has a member with no name.');
+    }
+    const bio = Array.isArray(member.bio) ? member.bio : [member.bio as unknown as string];
+    const paragraphs = bio.filter((text) => typeof text === 'string' && text.trim());
+    if (paragraphs.length === 0) {
+      throw new ContentError(`about.team member "${member.name}" has no biography.`);
+    }
+    return { ...member, bio: paragraphs };
+  });
+
+  return {
+    ...about,
+    audiences: { ...about.audiences, items },
+    process: {
+      ...about.process,
+      links: (about.process?.links ?? []).map((link) => resolveLink(link, submitFormUrl)),
+    },
+    team: { ...about.team, members },
+    cta: { ...about.cta, cta: resolveLink(about.cta.cta, submitFormUrl) },
+  };
+}
+
 export interface RawSiteContent {
   settings: unknown;
   topics: unknown;
   topicSummaries: unknown;
   projects: unknown;
   landing: unknown;
+  about: unknown;
 }
 
 export function normalizeSiteContent(raw: RawSiteContent): SiteContent {
@@ -244,5 +302,6 @@ export function normalizeSiteContent(raw: RawSiteContent): SiteContent {
     topicSummaries,
     projects,
     landing,
+    about: normalizeAbout(raw.about, submitFormUrl),
   };
 }

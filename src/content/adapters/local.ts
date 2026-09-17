@@ -1,3 +1,4 @@
+import about from '../data/about.json';
 import landing from '../data/landing.json';
 import projects from '../data/projects.json';
 import settings from '../data/settings.json';
@@ -23,6 +24,7 @@ export const localAdapter: ContentAdapter = {
       topicSummaries,
       projects,
       landing,
+      about,
     });
   },
 };

@@ -51,7 +51,7 @@ export function createStrapiAdapter(): ContentAdapter {
   return {
     name: 'strapi',
     async load(): Promise<SiteContent> {
-      const [settings, topics, summaries, projects, landing] = await Promise.all([
+      const [settings, topics, summaries, projects, landing, about] = await Promise.all([
         get<Record<string, unknown>>('site-setting?populate=deep'),
         get<Record<string, unknown>[]>('topics?sort=order:asc'),
         get<Record<string, unknown>[]>('topic-summaries?populate=topic'),
@@ -60,6 +60,7 @@ export function createStrapiAdapter(): ContentAdapter {
             '&sort=completionYear:desc',
         ),
         get<Record<string, unknown>>('landing-page?populate=deep'),
+        get<Record<string, unknown>>('about-page?populate=deep'),
       ]);
 
       return normalizeSiteContent({
@@ -68,6 +69,7 @@ export function createStrapiAdapter(): ContentAdapter {
         topicSummaries: summaries.map((s) => ({ ...s, topic: topicKeyOf(s.topic) })),
         projects,
         landing,
+        about,
       });
     },
   };

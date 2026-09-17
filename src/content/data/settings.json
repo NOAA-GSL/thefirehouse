@@ -1,9 +1,22 @@
 {
   "siteName": "The Firehouse",
   "nav": [
-    { "label": "Home", "to": "/" },
-    { "label": "Explore Projects", "to": "/projects" },
-    { "label": "Submit a Finding", "href": "" }
+    {
+      "label": "Home",
+      "to": "/"
+    },
+    {
+      "label": "Explore Projects",
+      "to": "/projects"
+    },
+    {
+      "label": "About",
+      "to": "/about"
+    },
+    {
+      "label": "Submit a Finding",
+      "href": ""
+    }
   ],
   "submitLabel": "Submit a Finding",
   "submitFormUrl": "https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths",
@@ -12,30 +25,76 @@
     {
       "heading": "Explore",
       "links": [
-        { "label": "All projects", "to": "/projects" },
-        { "label": "Top needs", "to": "/#top-needs" },
-        { "label": "Submit a finding", "href": "" }
+        {
+          "label": "About The Firehouse",
+          "to": "/about"
+        },
+        {
+          "label": "All projects",
+          "to": "/projects"
+        },
+        {
+          "label": "Top needs",
+          "to": "/#top-needs"
+        },
+        {
+          "label": "Submit a finding",
+          "href": ""
+        }
       ]
     },
     {
       "heading": "About GSL",
       "links": [
-        { "label": "gsl.noaa.gov", "href": "https://gsl.noaa.gov" },
-        { "label": "Research programs", "href": "https://gsl.noaa.gov/research" },
-        { "label": "Contact GSL", "href": "https://gsl.noaa.gov/contact" },
-        { "label": "Careers", "href": "https://gsl.noaa.gov/careers" }
+        {
+          "label": "gsl.noaa.gov",
+          "href": "https://gsl.noaa.gov"
+        },
+        {
+          "label": "Research programs",
+          "href": "https://gsl.noaa.gov/research"
+        },
+        {
+          "label": "Contact GSL",
+          "href": "https://gsl.noaa.gov/contact"
+        },
+        {
+          "label": "Careers",
+          "href": "https://gsl.noaa.gov/careers"
+        }
       ]
     },
     {
       "heading": "Federal resources",
       "links": [
-        { "label": "NOAA.gov", "href": "https://www.noaa.gov" },
-        { "label": "Department of Commerce", "href": "https://www.commerce.gov" },
-        { "label": "USA.gov", "href": "https://www.usa.gov" },
-        { "label": "No FEAR Act", "href": "https://www.noaa.gov/organization/no-fear-act" },
-        { "label": "Privacy policy", "href": "https://www.noaa.gov/protecting-your-privacy" },
-        { "label": "Accessibility", "href": "https://www.noaa.gov/accessibility" },
-        { "label": "FOIA", "href": "https://www.noaa.gov/information-technology/foia" },
+        {
+          "label": "NOAA.gov",
+          "href": "https://www.noaa.gov"
+        },
+        {
+          "label": "Department of Commerce",
+          "href": "https://www.commerce.gov"
+        },
+        {
+          "label": "USA.gov",
+          "href": "https://www.usa.gov"
+        },
+        {
+          "label": "No FEAR Act",
+          "href": "https://www.noaa.gov/organization/no-fear-act"
+        },
+        {
+          "label": "Privacy policy",
+          "href": "https://www.noaa.gov/protecting-your-privacy"
+        },
+        {
+          "label": "Accessibility",
+          "href": "https://www.noaa.gov/accessibility"
+        },
+        {
+          "label": "FOIA",
+          "href": "https://www.noaa.gov/information-technology/foia"
+        },
         {
           "label": "Information quality",
           "href": "https://www.noaa.gov/organization/information-technology/information-quality"

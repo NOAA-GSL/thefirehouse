@@ -193,9 +193,23 @@
   color: var(--color-text-secondary);
 }
 
-/* ---- Needs and recommendations ---- */
+/* ---- Needs and recommendations ----
 
-.fh-needs {
+   Class names here are `fh-entry*`, not `fh-need*`.
+
+   They used to be `fh-need`/`fh-needs`, which collided with the topic page's
+   `.fh-need` and the landing page's `.fh-needs`. Every page's CSS is bundled into
+   one global stylesheet, so the last definition won: the topic page's
+   `display: grid; grid-template-columns: auto minmax(0, 1fr)` landed on this card
+   and put the recommendation in a second column that computed to ZERO pixels wide.
+   With `overflow: hidden` on the card, every recommendation on every project page
+   was invisible, and the card stretched to over 1200px tall around it.
+
+   `entry` is also the truer name: one card is one survey entry (`NeedEntry` in
+   content/types.ts), which is a need and its recommendation together.
+   ------------------------------------------------------------------------- */
+
+.fh-entries {
   margin: 0;
   padding: 0;
   list-style: none;
@@ -207,15 +221,100 @@
 /* One card per survey entry. The need and its recommendation share a card because
    the researcher paired them; splitting them into two lists (as the page used to)
    leaves the reader to re-pair them by position. */
-.fh-need {
+.fh-entry {
   border-radius: var(--radius-lg);
   border: var(--border-width) solid var(--color-border);
   background: var(--glass-sunken);
+  /* Clips the body's corners against the radius. */
   overflow: hidden;
 }
 
-.fh-need__need,
-.fh-need__rec {
+/* The scroll container.
+
+   No cap below 768px, on purpose. A phone column is narrow, so the same text runs
+   far taller — at 375px every card here overflowed a viewport-relative cap, which
+   turned a simple page scroll into five nested touch-scroll regions, each clipping
+   mid-sentence. Vertical space is the cheap axis on a phone: the reader is already
+   scrolling, and a long card costs them a flick. The cap earns its place on a wide
+   screen, where a runaway card pushes the next one out of view entirely. */
+.fh-entry__body {
+  overflow-y: auto;
+  /* Scroll chaining is deliberately left at the default `auto`.
+     `overscroll-behavior: contain` was tried here and is wrong for this card: it
+     traps the pointer. These cards are as wide as the reading column, so someone
+     scrolling the page lands on one, scrolls it to its end, and then the page stops
+     responding to the wheel until they move the pointer off the card. `contain`
+     belongs on an overlay the page shouldn't move behind — a modal or a drawer —
+     not on an inline card the reader is scrolling *past*. With the default, the
+     card takes the wheel until it runs out and the page carries on. */
+  /* Firefox; the WebKit equivalent is below. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+@media (min-width: 768px) {
+  .fh-entry__body {
+    /* Viewport-relative, because the problem the cap solves — one entry pushing the
+       next off the screen — is measured in screens. The floor stops a short laptop
+       window from clipping ordinary cards (most land near 320px) for the sake of a
+       few pixels of padding; the ceiling stops a tall monitor from reintroducing
+       the runaway card. */
+    max-height: clamp(24rem, 55vh, 34rem);
+  }
+}
+
+/* Edge shadows are the affordance: they say "there is more this way" over any
+   background, in either theme, without needing to know the colour underneath —
+   which matters here because the card's two halves have different backgrounds and
+   a colour fade would be wrong over one of them.
+
+   `data-overflow` is set by the card from a real measurement, so a card whose
+   content fits shows nothing. */
+.fh-entry__body[data-overflow='bottom'] {
+  box-shadow: inset 0 -16px 16px -16px rgba(0, 0, 0, 0.28);
+}
+
+.fh-entry__body[data-overflow='top'] {
+  box-shadow: inset 0 16px 16px -16px rgba(0, 0, 0, 0.28);
+}
+
+.fh-entry__body[data-overflow='both'] {
+  box-shadow:
+    inset 0 16px 16px -16px rgba(0, 0, 0, 0.28),
+    inset 0 -16px 16px -16px rgba(0, 0, 0, 0.28);
+}
+
+/* Only ever focused because it scrolls, so the ring is the cue that the card is
+   now taking arrow keys — it has to be visible against both halves. */
+.fh-entry__body:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: -3px;
+}
+
+.fh-entry__body::-webkit-scrollbar {
+  width: 10px;
+}
+
+.fh-entry__body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.fh-entry__body::-webkit-scrollbar-thumb {
+  border-radius: var(--radius-full);
+  background: var(--color-border-strong);
+  /* Inset from the track so the thumb reads as a floating pill rather than a bar
+     welded to the card edge. */
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+.fh-entry__body::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-tertiary);
+  background-clip: content-box;
+}
+
+.fh-entry__need,
+.fh-entry__rec {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -224,16 +323,16 @@
 
 /* The recommendation is the actionable half, so it gets the accent tint and a heat
    rule on its leading edge. */
-.fh-need__rec {
+.fh-entry__rec {
   position: relative;
   background: var(--color-accent-tint);
 }
 
-.fh-need__need + .fh-need__rec {
+.fh-entry__need + .fh-entry__rec {
   border-top: var(--border-width) solid var(--color-accent-border);
 }
 
-.fh-need__rec::before {
+.fh-entry__rec::before {
   content: '';
   position: absolute;
   inset: 0 auto 0 0;
@@ -241,7 +340,7 @@
   background: var(--heat-gradient);
 }
 
-.fh-need__label {
+.fh-entry__label {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -251,13 +350,14 @@
   color: var(--color-text-tertiary);
 }
 
-.fh-need__text {
+.fh-entry__text {
   margin: 0;
   font: var(--text-body);
   color: var(--color-text-secondary);
+  text-wrap: pretty;
 }
 
-.fh-need__lead {
+.fh-entry__lead {
   font-weight: 700;
   color: var(--color-text-primary);
 }

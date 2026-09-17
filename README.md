@@ -18,6 +18,7 @@ npm run preview  # serve the production build
 | Route              | Status                                                                        |
 | ------------------ | ----------------------------------------------------------------------------- |
 | `/`                | **Landing page** — logo and hero with live stats, then the four topic areas' top-5 needs with mention counts, "where these needs come from", the GACC coverage map, and the submit CTA band. |
+| `/about`           | **About page** — what the hub is, the three audiences it serves, how a completed project becomes a published need, and the two people who maintain it. All copy lives in `about.json`; the biographies are rendered verbatim. |
 | `/projects`        | **Project explorer** — brief §5.2. Search, fire-phase / GACC / year / project-type filters, sort, detail modal. |
 | `/topics/:topicKey` | **Topic area page** — the area's top five needs, each with its mention count and links to the projects it draws on, plus a "what this area covers" callout. One per `TopicKey`. Projects are not filed under topics: needs are synthesized across the whole collection, so the attribution is per *need*. |
 | `*`                | **Custom 404** — echoes the requested address, and offers the explorer plus all four topic areas rather than dead-ending. Also rendered by `/topics/:topicKey` for a key that isn't one of the four, with wording tailored to that case. |
@@ -132,8 +133,9 @@ overrides are isolated so a re-sync doesn't lose them.
   promises the area "updates automatically", and a reader has no way to tell how
   fresh it is. It only renders when a summary has `updatedAt` — delete that field
   in `topicSummaries.json` and the line disappears.
-- **"About" removed from the nav.** It was in the design pointing at nothing.
-  Restore it in `settings.json` once there's an About page.
+- **"About" back in the nav.** It was in the design pointing at nothing, so it was
+  cut; the page now exists (`/about`) and the link is restored in `settings.json`,
+  alongside one in the footer's "Explore" group.
 - **Project explorer built.** The landing page's secondary CTA points at it and the
   design system ships `ProjectTile` / `ProjectDetailModal` for exactly this screen,
   so shipping the landing page alone would have left a dead button.
@@ -195,7 +197,7 @@ Named so it's clear these are gaps, not oversights:
 - **Submission pipeline.** The Qualtrics survey is an outbound link. Nothing yet moves a
   processed submission into `topicSummaries.json` — brief §9.1 allows this to be
   manual at first, and the brief's own risk list recommends a human review step.
-- **An About page.** Explorer search and filters are in (`src/content/search.ts`);
+- **The rest of explorer search.** Search and filters are in (`src/content/search.ts`);
   still open from `PLAN.md` §1.2–1.3 are highlighting matched words in results and
   multi-select facets (each facet is currently single-select).
 - **Build-time link previews for project pages.** Each project has its own URL and

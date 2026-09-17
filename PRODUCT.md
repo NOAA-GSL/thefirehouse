@@ -31,13 +31,13 @@ A shared home for **synthesized fire weather social-science needs and recommenda
 
 ## Capabilities and Constraints
 
-**Shipped capabilities:** landing (FireHouse logo, hero with live stats, top-5 needs per topic area with mention counts, synthesis provenance, GACC coverage map, submit band); project explorer with search, fire phase/GACC/year/project type filters, sort, and detail modal; per-topic pages leading with their top needs and per-need project attribution; light/dark theme; content adapters (`local` default, Sanity and Strapi stubs).
+**Shipped capabilities:** landing (FireHouse logo, hero with live stats, top-5 needs per topic area with mention counts, synthesis provenance, GACC coverage map, submit band); project explorer with search, fire phase/GACC/year/project type filters, sort, and detail modal; per-topic pages leading with their top needs and per-need project attribution; About page (purpose, audiences, process, team bios); light/dark theme; content adapters (`local` default, Sanity and Strapi stubs).
 
 **Structural (code, not CMS):** the four `TopicKey` values (`observe`, `forecast`, `warning`, `governance`) are fixed; display names are editable.
 
-**Hard constraints:** WCAG 2.1 AA / Section 508; NOAA–GSL branding and federal chrome; no invented citations, testimonials, or project takeaways; replace placeholder `projects.json` before public launch; hero photo asset still missing (gradient stand-in until then).
+**Hard constraints:** WCAG 2.1 AA / Section 508; NOAA–GSL branding and federal chrome; no invented citations, testimonials, or project takeaways; team biographies published verbatim as written by their subjects; replace placeholder `projects.json` before public launch; hero photo still missing (gradient stand-in until then); About portraits are real photographs of staff and need their subjects' consent before public launch.
 
-**Open decisions:** hosting placement (static build; optional `VITE_BASE_PATH` for subpath); which CMS to stand up; self-hosted vs Google Fonts CDN for Archivo / Public Sans; About page, tests — not built yet.
+**Open decisions:** hosting placement (static build; optional `VITE_BASE_PATH` for subpath); which CMS to stand up; self-hosted vs Google Fonts CDN for Archivo / Public Sans; tests — not built yet.
 
 ## Brand Commitments
 

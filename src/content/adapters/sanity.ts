@@ -68,6 +68,22 @@ const QUERY = /* groq */ `{
     topicSection{eyebrow, heading, body},
     needsPerCard,
     submitBand{heading, body, cta{label, to, href}}
+  },
+  "about": *[_type == "aboutPage"][0]{
+    hero{eyebrow, heading, body},
+    mission{heading, paragraphs},
+    audiences{eyebrow, heading, body, items[]{icon, title, body}},
+    process{eyebrow, heading, body, steps[]{title, body}, links[]{label, to, href}},
+    team{
+      eyebrow, heading, body,
+      members[]{
+        name,
+        bio,
+        "photoUrl": photo.asset->url,
+        "photoAlt": coalesce(photo.alt, null)
+      }
+    },
+    cta{heading, body, cta{label, to, href}}
   }
 }`;
 
@@ -101,6 +117,7 @@ export function createSanityAdapter(): ContentAdapter {
         topicSummaries: result.topicSummaries,
         projects: result.projects,
         landing: result.landing,
+        about: result.about,
       });
     },
   };

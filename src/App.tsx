@@ -3,6 +3,7 @@ import { Route, Routes, useLocation } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { ContentProvider, useContentState } from './content/ContentProvider';
 import { ThemeProvider } from './components/ThemeProvider';
+import { AboutPage } from './pages/AboutPage';
 import { LandingPage } from './pages/LandingPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ProjectPage } from './pages/ProjectPage';
@@ -97,6 +98,7 @@ export function App() {
           <Layout>
             <Routes>
               <Route path="/" element={<LandingPage />} />
+              <Route path="/about" element={<AboutPage />} />
               <Route path="/projects" element={<ProjectsPage />} />
               {/* Per-project "X-ray" pages. The slug is the citable identifier, so
                   it is the one field an editor must not rename after publishing. */}

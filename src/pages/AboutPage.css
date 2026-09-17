@@ -1,0 +1,340 @@
+/* ============================================================
+   About
+
+   One long read rather than a dashboard, so the page is a single measured column
+   of sections with a consistent rhythm, and only two things break out of it: the
+   audience cards and the team cards. Both are glass panels, both read as lists of
+   peers, and neither carries a link — nothing here competes with the CTA at the
+   foot of the page.
+   ============================================================ */
+
+/* ---- Introduction ---- */
+
+.fh-about__hero {
+  position: relative;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* The heat rule from the design system, used here exactly as the topic pages use a
+   topic tint: one warm line to mark the top of a section and nothing else. Being a
+   pseudo-element it adds no markup and carries no contrast obligation. */
+.fh-about__hero::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 -1px;
+  height: 2px;
+  background: var(--heat-line);
+  pointer-events: none;
+}
+
+.fh-about__hero-inner {
+  padding-block: var(--space-2xl) var(--space-2xl);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-sm);
+}
+
+.fh-about__heading {
+  margin: 0;
+  /* Matches the topic page's title scale, so the two top-level pages read as
+     siblings rather than as two different designs. */
+  font: 700 clamp(28px, 4vw, 44px) / 1.12 var(--font-display);
+  max-width: 18ch;
+  color: var(--color-text-primary);
+}
+
+.fh-about__lede {
+  margin: 0;
+  font: var(--text-body-lg);
+  color: var(--color-text-secondary);
+}
+
+/* ---- Section rhythm ---- */
+
+.fh-about__body {
+  padding-block: var(--space-2xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xl);
+}
+
+.fh-about__section-intro {
+  margin-bottom: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+.fh-about__section-heading {
+  margin: 0;
+  font: var(--text-h2);
+  color: var(--color-text-primary);
+  max-width: 26ch;
+}
+
+.fh-about__section-body {
+  margin: 0;
+  font: var(--text-body);
+  color: var(--color-text-secondary);
+}
+
+/* Runs the full width of the container rather than sitting at a typographic
+   measure. Asked for directly: at 72ch the paragraphs left a wide empty gutter on
+   a desktop screen. Nothing here sets a width, so the text simply tracks the
+   container — which `.fh-container` already caps at --container-max (1280px). */
+.fh-about__prose {
+  margin-top: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.fh-about__prose p {
+  margin: 0;
+  font: var(--text-body);
+  color: var(--color-text-secondary);
+}
+
+/* ---- Who it serves ---- */
+
+.fh-about__audiences {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--space-lg);
+}
+
+.fh-audience {
+  border-radius: var(--radius-xl);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.fh-audience__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: var(--space-2xs);
+  border-radius: var(--radius-md);
+  /* A wash rather than a fill: the ramp is a decorative surface under an icon that
+     inherits its own colour from the text, so it owes no contrast of its own. */
+  background: var(--heat-gradient-soft);
+  color: var(--color-accent);
+}
+
+.fh-audience__title {
+  margin: 0;
+  font: var(--text-h4);
+  color: var(--color-text-primary);
+}
+
+.fh-audience__body {
+  margin: 0;
+  font: var(--text-body-sm);
+  color: var(--color-text-secondary);
+}
+
+/* ---- How it works ---- */
+
+.fh-about__steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.fh-step {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-md);
+  align-items: start;
+}
+
+.fh-step__rank {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-accent-border);
+  background: var(--color-accent-tint);
+  color: var(--color-accent);
+  font: 800 15px/1 var(--font-display);
+}
+
+.fh-step__title {
+  margin: 0 0 var(--space-3xs);
+  font: var(--text-h4);
+  color: var(--color-text-primary);
+}
+
+.fh-step__body {
+  margin: 0;
+  font: var(--text-body);
+  color: var(--color-text-secondary);
+}
+
+.fh-about__process-links {
+  margin-top: var(--space-lg);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs) var(--space-lg);
+}
+
+/* ---- The team ---- */
+
+.fh-about__team {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: var(--space-lg);
+}
+
+.fh-person {
+  border-radius: var(--radius-xl);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/* Portrait and name share a row; the biography runs the full width of the card
+   below them. Set beside the portrait instead, the bio measured about 43 characters
+   a line at two cards across — below the floor where a paragraph this long stays
+   comfortable to read. */
+.fh-person__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.fh-person__portrait {
+  flex: none;
+  /* Sized for the photographs that are actually here: both are environmental
+     rather than tight headshots — a person in a setting — so a small avatar frame
+     reduced them to an unreadable smudge. */
+  width: 168px;
+  /* Portrait crop, because the source photographs are portrait-orientation — a
+     landscape or square frame would cut most of them away. */
+  aspect-ratio: 4 / 5;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-bg-sunken);
+  border: 1px solid var(--color-border);
+  display: grid;
+  place-items: center;
+}
+
+.fh-person__photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Faces sit above centre in a standing or seated portrait, so the crop favours
+     the top of the frame. Override per photo if one needs a different anchor. */
+  object-position: 50% 30%;
+  display: block;
+}
+
+/* Stands in until the photographs are added — initials on the heat wash rather
+   than a grey box, so a card with no photo still looks finished. */
+.fh-person__monogram {
+  font: 800 44px/1 var(--font-display-expanded);
+  letter-spacing: 0.02em;
+  color: var(--color-accent);
+  background: var(--heat-gradient-soft);
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+}
+
+.fh-person__name {
+  margin: 0;
+  font: var(--text-h3);
+  color: var(--color-text-primary);
+  text-wrap: balance;
+}
+
+/* Below roughly 400px the portrait and the name stop fitting side by side without
+   the name breaking to one word a line, so they stack. */
+@media (max-width: 400px) {
+  .fh-person__head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-sm);
+  }
+}
+
+.fh-person__bio {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.fh-person__bio p {
+  margin: 0;
+  font: var(--text-body);
+  color: var(--color-text-secondary);
+}
+
+/* A 420px minimum would overflow a 360px phone before the grid drops to one
+   column, so the track minimum is released below the breakpoint. */
+@media (max-width: 520px) {
+  .fh-about__team {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- Submit CTA ----
+   The same warm panel as the landing page's submit band, and deliberately so: it is
+   the same ask, and a visitor who has seen one should recognise the other. */
+
+.fh-about__cta-section {
+  padding-block: 0 var(--space-3xl);
+}
+
+.fh-about__cta {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  padding: clamp(24px, 4vw, 44px);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-lg);
+}
+
+.fh-about__cta-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--heat-gradient-soft);
+}
+
+.fh-about__cta > *:not(.fh-about__cta-glow) {
+  position: relative;
+}
+
+.fh-about__cta-heading {
+  margin: 0 0 8px;
+  font: var(--text-h2);
+  color: var(--color-text-primary);
+}
+
+.fh-about__cta-body {
+  margin: 0;
+  max-width: 560px;
+  font: var(--text-body);
+  color: var(--color-text-secondary);
+}

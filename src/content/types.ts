@@ -1,3 +1,4 @@
+import type { IconName } from '../design-system/Icon';
 import type {
   FirePhase,
   PublicationStatus,
@@ -19,7 +20,7 @@ import type { TopicKey } from '../design-system/topics';
  *     (the four topic keys, the route table) is code. See `design-system/topics.ts`.
  */
 
-export type { FirePhase, PublicationStatus, RegionKey, TopicKey };
+export type { FirePhase, IconName, PublicationStatus, RegionKey, TopicKey };
 
 /** A destination: either an in-app route (`to`) or an absolute URL (`href`). */
 export interface LinkRef {
@@ -48,7 +49,7 @@ export interface TopicContent {
    *
    * **Not currently rendered.** The September 2026 review moved the needs to the top
    * of the topic page and cut the prose above them, leaving only `covers`. Retained
-   * because the text is written and reviewed, and an About page is still open.
+   * because the text is written and reviewed, and a surface for it may yet appear.
    */
   intro?: string[];
   /**
@@ -314,6 +315,67 @@ export interface LandingPageContent {
   submitBand: CtaBandContent;
 }
 
+/**
+ * One person on the About page.
+ *
+ * `bio` is the person's own biography and is rendered verbatim — the page has no
+ * excerpting, no pull-quotes and no derived job title, because a bio is the one
+ * piece of copy on this site whose author is also its subject. Anything the page
+ * needs to say about someone that isn't in their bio goes in the surrounding
+ * section copy, not here.
+ */
+export interface TeamMember {
+  name: string;
+  /**
+   * Basename (no extension) of a portrait in `src/assets/people/`, e.g.
+   * "stephanie-hoekstra". Resolved at build time by `AboutPage.tsx`; when the file
+   * isn't there the card falls back to an initials monogram, so a missing photo is
+   * never a broken image. See the README in that directory.
+   */
+  photo?: string;
+  /** CMS-hosted portrait. Takes precedence over the packaged `photo`. */
+  photoUrl?: string;
+  /**
+   * Normally absent. The name is rendered immediately beside the portrait, so alt
+   * text repeating it would be announced twice; the photo is decorative in the
+   * accessibility sense. Set this only if a portrait starts carrying information
+   * the name and bio don't.
+   */
+  photoAlt?: string;
+  /** One string per paragraph, kept as an array so no markup can be smuggled in. */
+  bio: string[];
+}
+
+/** An audience the hub serves — icon, who they are, what they get from it. */
+export interface AboutAudience {
+  /** A key of the design system's icon registry; validated at load. */
+  icon: IconName;
+  title: string;
+  body: string;
+}
+
+/** One step in the "how the hub works" sequence. */
+export interface AboutStep {
+  title: string;
+  body: string;
+}
+
+/**
+ * The About page.
+ *
+ * Content, not code, for the same reason the landing page is: it is the page most
+ * likely to need a wording change without a developer — a new team member, a
+ * revised description of who the hub is for.
+ */
+export interface AboutPageContent {
+  hero: SectionIntro;
+  mission: SectionIntro & { paragraphs: string[] };
+  audiences: SectionIntro & { items: AboutAudience[] };
+  process: SectionIntro & { steps: AboutStep[]; links: LinkRef[] };
+  team: SectionIntro & { members: TeamMember[] };
+  cta: CtaBandContent;
+}
+
 export interface FooterGroupContent {
   heading: string;
   links: LinkRef[];
@@ -340,6 +402,7 @@ export interface SiteContent {
   topicSummaries: TopicSummary[];
   projects: Project[];
   landing: LandingPageContent;
+  about: AboutPageContent;
 }
 
 /**

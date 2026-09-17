@@ -1,0 +1,85 @@
+{
+  "hero": {
+    "eyebrow": "About The Firehouse",
+    "heading": "What this hub is, and who it is for",
+    "body": "The Firehouse is NOAA Global Systems Laboratory's public hub for fire weather social science. It gathers what completed research has already established about end-user needs and recommendations, so the next project, product or conversation can start from what is known instead of rediscovering the same gaps."
+  },
+  "mission": {
+    "heading": "Why it exists",
+    "paragraphs": [
+      "Fire weather social science asks what forecasters, incident staff and land managers actually need from weather information, and what would make that information more usable when a decision cannot wait. A great deal of this work has been done — through DESI, through testbed evaluations, and through studies run by individual teams — and its findings have tended to stay inside the report that carried them.",
+      "The Firehouse collects those completed projects into one record. Each project keeps its researchers' own words: their takeaways, the end-user needs they recorded, and the recommendations they paired with them. Read together across the whole collection, those needs are distilled into the five most pressing in each of four topic areas — observations, forecasts, warnings and governance — and ranked by how often they come up.",
+      "The counts on this site are derived from published content rather than written by hand, every synthesis pass is reviewed by a person before it is published, and each need names the projects it draws on. Where the hub paraphrases a researcher, it says so; everywhere else it quotes."
+    ]
+  },
+  "audiences": {
+    "eyebrow": "Who it serves",
+    "heading": "Built for the people who use fire weather information",
+    "body": "The same body of evidence answers a different question depending on who is reading it.",
+    "items": [
+      {
+        "icon": "radar",
+        "title": "Fire weather forecasters",
+        "body": "See what the people receiving a forecast have said they need from it — timing, framing, lead time, delivery — and what has already been recommended about how it reaches them."
+      },
+      {
+        "icon": "flask",
+        "title": "Researchers",
+        "body": "See which needs are already well documented and which rest on a single study, so a new project adds to the record rather than repeating it. Every need links back to the work behind it."
+      },
+      {
+        "icon": "landmark",
+        "title": "Decision-makers and land managers",
+        "body": "Point to evidence when making the case for a tool, a product change or a different way of working — with the study, the year and the researchers named."
+      }
+    ]
+  },
+  "process": {
+    "eyebrow": "How it works",
+    "heading": "From a completed project to a published need",
+    "steps": [
+      {
+        "title": "Researchers submit completed work",
+        "body": "A short survey collects what was studied, where, at which point in the fire cycle, the major takeaways, the end-user needs and recommendations, and links to anything published. Submissions are open at any time."
+      },
+      {
+        "title": "The findings are synthesized and reviewed",
+        "body": "The needs recorded across every project are read together, grouped into the four topic areas and ranked by mentions. A person on the team reviews each pass before it is published; until then the site labels it a draft."
+      },
+      {
+        "title": "Everything stays traceable",
+        "body": "Each published need names the projects it draws on, and each project keeps a page of its own with the researchers' verbatim takeaways, needs and papers."
+      }
+    ],
+    "links": [
+      { "label": "How the synthesis works", "to": "/#needs-source" },
+      { "label": "Explore all projects", "to": "/projects" }
+    ]
+  },
+  "team": {
+    "eyebrow": "The team",
+    "heading": "Who is behind it",
+    "body": "Stephanie and Emily run the surveys, review every synthesis pass before it is published, and keep the project records current.",
+    "members": [
+      {
+        "name": "Dr. Stephanie Hoekstra",
+        "photo": "stephanie-hoekstra",
+        "bio": [
+          "By day, Dr. Stephanie Hoekstra studies the human side of extreme weather—translating how people interpret risk and make high-stakes decisions when nature gets wild. Her current focus is all about fire weather, partnering directly with National Weather Service forecasters and wildland fire professionals to make sure decision-support tools are actually, genuinely useful in the heat of the moment. By night (and weekend), she trades risk communication for refereeing her three kids, playing ice hockey, endlessly scrolling Zillow floorplans she has no intention of buying, and pursuing a lifelong mission of finding the absolute best cannoli on Earth."
+        ]
+      },
+      {
+        "name": "Dr. Emily Wells",
+        "photo": "emily-wells",
+        "bio": [
+          "Dr. Emily Wells is a social and decision scientist with a deep curiosity about how wildland fire operational professionals make decisions under uncertainty, particularly when it comes to if and how they use advanced technologies. What motivates her most is engaging with practitioners: listening to their stories, learning from their perspectives, and translating their operational realities and needs back to researchers and model developers. Emily is a proud, born and raised Yinzer (here we go Steelers!). When her laptop is closed, you can find her swimming laps, hiking in the Rockies, or tuning into her guilty pleasure - reality TV."
+        ]
+      }
+    ]
+  },
+  "cta": {
+    "heading": "Add your work to the record",
+    "body": "If you have completed fire weather social science research, submit it — your findings join the same record, and the same synthesis, as everything else here.",
+    "cta": { "label": "Submit a Finding", "href": "" }
+  }
+}
