@@ -1,5 +1,8 @@
 .fh-tile {
   position: relative;
+  /* Own stacking context: the hover glow sits at z-index -1 (above this tile's
+     background, behind its content) and must not escape to the page. */
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -34,8 +37,11 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  /* Below the quick-look button, which lifts itself above this. */
-  z-index: 0;
+  /* Positioned, so it paints above the tile's in-flow content: the whole tile is
+     one click target, not just the title and summary. Its containing block is the
+     tile because nothing between them is positioned — which is why .fh-tile__body
+     and .fh-tile__foot must stay static. Only the quick-look button lifts higher. */
+  z-index: 1;
 }
 
 .fh-tile:hover .fh-tile__link {
@@ -56,6 +62,9 @@
 .fh-tile__glow {
   position: absolute;
   inset: 0;
+  /* Behind the content rather than over it, so the content can stay in flow and the
+     stretched link above can reach the tile's edges. */
+  z-index: -1;
   pointer-events: none;
   opacity: 0;
   background: radial-gradient(80% 60% at 0% 100%, var(--color-accent-tint), transparent 70%);
@@ -82,7 +91,6 @@
 }
 
 .fh-tile__body {
-  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -93,9 +101,10 @@
 /* Fire-cycle phases, bottom of the tile. Sits below the byline rule because it is
    filter metadata — useful when scanning a filtered grid, noise when reading one
    card — so it should be findable without competing with the title. */
-/* Footer row: phases on the left, quick-look on the right. */
+/* Footer row: phases on the left, quick-look on the right. Deliberately NOT
+   positioned: a stacking context here would trap the quick-look button below the
+   stretched link's overlay. */
 .fh-tile__foot {
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -115,7 +124,7 @@
    is not enough once the link's ::after is also positioned. */
 .fh-tile__peek {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -219,7 +228,6 @@
 }
 
 .fh-tile__meta {
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;

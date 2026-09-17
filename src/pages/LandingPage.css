@@ -327,6 +327,9 @@
 
 .fh-topic-card {
   position: relative;
+  /* Own stacking context, so the tint wash below can sit at z-index -1 (above this
+     card's background, behind its content) without escaping to the page. */
+  isolation: isolate;
   border-radius: var(--radius-xl);
   padding: var(--space-lg);
   display: flex;
@@ -340,10 +343,15 @@
    This is what makes the four cards read as four *areas* at a glance rather than
    four identical boxes — and it costs nothing in contrast, because the wash tops
    out at 0.14 alpha and the text above it is checked against the glass composite,
-   not against the tint. */
+   not against the tint.
+
+   z-index -1 rather than positioning every sibling above it: the content then stays
+   in flow, which is what lets the title's stretched link cover the whole card (see
+   .fh-topic-card__link::after). */
 .fh-topic-card__wash {
   position: absolute;
   inset: 0;
+  z-index: -1;
   pointer-events: none;
   background: radial-gradient(120% 70% at 50% -10%, var(--card-tint), transparent 70%);
 }
@@ -351,12 +359,6 @@
 .fh-topic-card:hover {
   box-shadow: var(--glass-shadow-lift);
   transform: translateY(-3px);
-}
-
-/* Everything above the wash. Without this the card's own content would be painted
-   under the tint layer. */
-.fh-topic-card > *:not(.fh-topic-card__wash) {
-  position: relative;
 }
 
 .fh-topic-card__title {
@@ -377,6 +379,12 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
+  /* Positioned, so it paints above the card's in-flow content and the whole card —
+     needs list, mention counts, the "View topic area and sources" cue — is one
+     click target. Its containing block is the card because no ancestor between
+     them is positioned; that is why the title must stay static. Nothing inside
+     this card is interactive, so the overlay can own the entire surface. */
+  z-index: 1;
 }
 
 /* The stretched ::after has no size of its own to ring, so the focus indicator is
@@ -477,6 +485,8 @@
 
 .fh-source {
   margin-top: var(--space-xl);
+  /* Linked from every topic page, so it has to clear the sticky header (65px). */
+  scroll-margin-top: calc(65px + var(--space-md));
   padding: var(--space-lg);
   border-radius: var(--radius-xl);
   border: 1px solid var(--color-border);
