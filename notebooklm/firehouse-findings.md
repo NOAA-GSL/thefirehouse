@@ -1,6 +1,6 @@
 # The Firehouse — collected project findings
 
-Source document for the topic-area synthesis. It contains all 4 published projects in The Firehouse, NOAA Global Systems Laboratory's hub for fire weather social science. Each project's abstract, takeaways, needs and recommendations are reproduced exactly as the researchers submitted them.
+Source document for the topic-area synthesis. It contains all 7 published projects in The Firehouse, NOAA Global Systems Laboratory's hub for fire weather social science. Each project's abstract, takeaways, needs and recommendations are reproduced exactly as the researchers submitted them.
 
 Topic areas are a lens across the whole collection. No project is assigned to a topic area; a single project may inform several areas or none.
 
@@ -52,7 +52,79 @@ Covers:
 
 ---
 
-## Project 1: Igniting Impact: Advancing Fire Weather Decision Support Services
+## Project 1: California Tribal Advisors Share Contemporary Environmental Data and Information Needs
+
+- **Project ID:** R_6QnhA0vE4tfuIw9
+- **Page:** /projects/california-tribal-advisors-share-contemporary-environmental
+- **Researchers:** Emily Wells, Benjamin J. Hatchett, Laurie Monserrat, Shasta Gaughen, Bryce Lewis-Smith, Isabel Corcos
+- **Organization:** Cooperative Institute for Research in the Atmosphere
+- **Completed:** 2026
+- **Project type:** Research Study
+- **Data collection:** Interviews
+- **Fire cycle phases:** Before (Pre-fire planning, prevention, and mitigation); During (Fire detection, active suppression, and downstream impacts); After (Postfire recovery and rehabilitation); Long-term (Planning, adaptation, and policy)
+- **Geographic areas:** Northern California (ONCC); Southern California (OSCC)
+
+### Abstract
+
+Long-term environmental changes and extreme events negatively affect the human and ecosystem health of Indigenous and other rural communities. Mitigating the varied negative effects of hazards is critical for community adaptation and resiliency; however, there is a limited understanding of the specific, community-level information needed to support environmental adaptation and hazard management efforts. Our objective is to identify how external entities can collaborate with and provide accessible, usable, and useful environmental information to Tribes for adaptation and hazard management, according to Tribal perspectives. Ten semi-structured interviews were held with Tribal environmental professionals in California. Interview questions included: What current or future environmental conditions and hazards are you most concerned about? What information and resources do you use and need to adapt to and manage these concerns? Using a thematic analysis approach to analyze the exploratory interview data, seven identified themes highlight key needs pertaining to data sharing from public agencies, communication between agencies and communities, and training materials to support protective actions. Themes were distilled into recommendations for external entities to improve environmental information access and use while honoring Tribal self-determination, sovereignty, and worldviews.
+
+### Major takeaways
+
+- The environmental hazard-related concerns of Tribal environmental professionals (n = 10) centered on the wildfire and water nexus. Wildfire (n=10), water supply/quality (n=8), air quality (n=7), flooding (n=7), and drought (n=5) were the most prevalent, noting that participating Tribal Advisors were from more inland locations.
+- The most prevalent sources of environmental information included Tribal leadership, other Tribes, Tribal liaisons, and Elders, and all Advisors described the use and value of documented and archived observations of Tribal lands over time, including Tribal leadership’s documentation, especially of Tribal Chairmen.
+- To supplement Tribally-held knowledge, Tribal environmental professionals shared ways in which external entities (e.g., state and federal agencies, universities, NGOs) can provide weather information that is more accessible, readily usable, and useful for adaptation and hazard management. Their unmet needs and recommendations are documented below.
+
+### End-user needs and recommendations
+
+**Entry 1**
+
+Need: Need for projected weather-related cascading effects information among Tribal environmental professionals: Participants expressed unmet information needs from external entities regarding observed and projected climate impacts on local ecosystems, cultural/economic sustainability, holistic health, and built infrastructure.
+
+Recommendation: Recommend establishing interagency working groups and participatory public processes to co-produce localized understandings of cascading weather effects on Tribal lands while systematically documenting events.
+
+**Entry 2**
+
+Need: Need for consolidated and accessible approaches to document environmental adaptation planning and implementation efforts among Tribal environmental professionals. Participants described a need for approaches to document, consolidate, and readily access adaptation and hazard management efforts. These approaches could complement–rather than replace–Tribal ways of knowing.
+
+Recommendation: Recommend that external entities co-develop templates/guidance for tracking project progress with Tribal environmental professionals for Tribal use.
+
+**Entry 3**
+
+Need: Need for respectful information and knowledge sharing from neighboring jurisdictions to Tribes: Insufficient information sharing from neighboring jurisdictions regarding land management activities (e.g., fuels conditions/treatments) creates uncertainty regarding fire ignition likelihood and behavior, perpetuating risk assessment challenges for Tribes.
+
+Recommendation: Recommend sharing accessible, usable information with Tribal leadership on land stewardship activities, co-producing data-sharing best practices, and fostering producer-user relationships to enable information co-generation.
+
+**Entry 4**
+
+Need: Need for training and templates for sharing environmental information among Tribal environmental professionals: Nearly all participants (n=9) wanted accessible, standardized, interpretable environmental information and tools from external entities for Tribal leadership to use when communicating with Tribal members.
+
+Recommendation: Recommend co-producing training materials, standardized outreach templates, and After Action Review guidance with Tribal leaders to effectively document environmental extremes, ensure iterative community feedback, and communicate risk.
+
+**Entry 5**
+
+Need: Need environmental information at actionable scales among Tribal environmental professionals. Nearly all participants (n=9) expressed a need for more accessible, localized historical and projected environmental data from external entities to supplement hazard management and adaptation. Key gaps in externally-provided information include geographic resolution for interpretable, shareable outreach materials.
+
+**Entry 6**
+
+Need: Need for timely, localized hazard warning/alerting systems from external entities to Tribal leadership. Five participants called for other agencies to provide timely, localized weather and hazard alerts (e.g., wildfire, smoke, flood) to Tribal leadership, such as through phone calls/texts.
+
+Recommendation: Recommend that external entities consider if, how, and when weather-related warnings are communicated to Tribes via notification systems, particularly for Tribes on rural lands with dispersed populations.
+
+**Entry 7**
+
+Recommendation: Recommend considering the full, long-term life cycle of environmental adaptation needs in project/proposal planning and allocation (e.g., training, data collection, analysis, storage, maintenance).
+
+**Entry 8**
+
+Need: Honor TEK and Tribal stewardship and cultural practices in government-to-government relationships and agreements. Inquire with Tribes while in the incipient phase of potential projects to learn about their preference and process for consultation and subsequent collaboration. Develop and formalize agreements that respect Tribal knowledge and integrate it into co-management activities to collectively shape objectives and implementation.
+
+### Publications and resources
+
+- California Tribal Advisors Share Contemporary Environmental Data and Information Needs — Zenodo, 2026 — https://doi.org/10.5281/zenodo.20799480
+
+---
+
+## Project 2: Igniting Impact: Advancing Fire Weather Decision Support Services
 
 - **Project ID:** R_18IGAm4T7fuN7MJ
 - **Page:** /projects/igniting-impact-advancing-fire-weather-decision-support
@@ -131,7 +203,122 @@ Recommendation: Recommend NWS forecasters exercise professional discretion to is
 
 ---
 
-## Project 2: Fire Weather Testbed Evaluations #002: Fire Detection and Dissemination - NESDIS Next Generation Fire System and NWS Hotspot Notification Tool
+## Project 3: An Evaluation of the Next Generation Fire System (NGFS) for Predictive Services
+
+- **Project ID:** R_105K9mMhkvhmWbS
+- **Page:** /projects/an-evaluation-of-the-next-generation-fire-system-ngfs
+- **Researchers:** Laura McMeeking, Ansley Baring, Benjamin J. Hatchett, Laura B. Sample McMeeking, Phil Schumacher, and Kyle J. Thiem
+- **Organization:** CIRA / NOAA Fire Weather Testbed
+- **Completed:** 2025
+- **Project type:** Testbed Evaluation
+- **Data collection:** Focus groups
+- **Fire cycle phases:** Before (Pre-fire planning, prevention, and mitigation); During (Fire detection, active suppression, and downstream impacts)
+- **Geographic areas:** Northern California (ONCC); Southern California (OSCC); Northern Rockies — MT, N. ID, ND (NRCC); Southwest — AZ, NM (SWCC); Rocky Mountain — CO, WY, SD, NE, KS (RMCC); National / not region-specific
+
+### Abstract
+
+This evaluation by the NOAA Fire Weather Testbed assesses the Next Generation Fire System (NGFS) for wildland fire Predictive Services personnel. Based on a May 2025 evaluation with six interagency specialists, NGFSâ€™s high temporal resolution and Fire Radiative Power (FRP) data significantly enhance situational awareness and early wildfire verification. While participants praised its rapid cadence, operational adoption is hindered by usability friction, such as map navigation challenges and visual ambiguities between wildfires and non-fire heat sources like solar arrays. Predictive Services relies on a "trust but verify" workflow across multiple tools; thus, standalone systems risk becoming "one more tab to check". Key recommendations include exposing robust APIs to integrate NGFS data directly into existing Common Operating Platforms, implementing push alerts and user-defined watchboxes, improving visual differentiation of event types, and delivering role-specific training.
+
+### Major takeaways
+
+- NGFSâ€™s high temporal resolution and rapid 5-minute data cadence significantly enhance situational awareness, enabling fast verification of unconfirmed initial wildfire reports.
+- Operational adoption is hindered by map navigation friction and visual ambiguities, such as misidentifying solar arrays or prescribed burns as wildfires.
+- To avoid becoming "one more tab to check," NGFS data needs robust API integration into existing Common Operating Platforms and automated push notifications.
+
+### End-user needs and recommendations
+
+**Entry 1**
+
+Need: Need for efficient fire activity verification among wildland fire analysts and intelligence coordinators: Distinguishing unplanned wildfires from planned prescribed burns or non-fire thermal anomalies is a slow, manual process dependent on checking scattered agency databases.
+
+**Entry 2**
+
+Recommendation: Recommend establishing consistent, cross-agency standards for reporting planned fire activity and authorized ignitions to enable rapid identification.
+
+**Entry 3**
+
+Need: Need for proactive fire detection notifications among fire managers and dispatchers: Actively monitoring multiple dashboards continuously creates operational friction in busy, shared workspaces where attention is divided.
+
+**Entry 4**
+
+Recommendation: Recommend designing fire detection systems to deliver automated, push-based alerts tailored to specific user roles and geographic areas of responsibility.
+
+**Entry 5**
+
+Need: Need for precise detection geolocations among wildland fire dispatchers and regional response agencies: Coarse or imprecise satellite detection locations make it difficult to determine which side of a jurisdictional boundary a fire is on, delaying response decisions near federal, state, and tribal borders.
+
+### Publications and resources
+
+- An Evaluation of the Next Generation Fire System for Predictive Services — https://doi.org/10.25923/0vz0-ra19
+
+---
+
+## Project 4: Fire Weather Testbed Evaluation #004 - National Weather Service Fire Warnings Using a Tactical Integrated Warning Team Approach
+
+- **Project ID:** R_76tDXTLsSUJtEDD
+- **Page:** /projects/fire-weather-testbed-evaluation-004-national-weather-service
+- **Researchers:** Emily Wells, Ansley Baring, Benjamin Hatchett, Stephanie Hoekstra, Laura Sample McMeeking, Kyle Thiem, Zach Tolby, Jamie Vickery
+- **Organization:** Cooperative Institute for Research in the Atmosphere
+- **Completed:** 2025
+- **Project type:** Testbed Evaluation
+- **Data collection:** Survey, Focus groups, Workshop/roundtable discussions
+- **Fire cycle phases:** Before (Pre-fire planning, prevention, and mitigation); During (Fire detection, active suppression, and downstream impacts); Long-term (Planning, adaptation, and policy)
+- **Geographic areas:** Northern California (ONCC); Southern California (OSCC); Rocky Mountain — CO, WY, SD, NE, KS (RMCC); Southern Area — incl. PR & USVI (SACC)
+
+### Abstract
+
+In June 2024, the NOAA Fire Weather Testbed conducted a five-day evaluation of National Weather Service (NWS) Fire Warnings for wildland fire operations. Aligned with the NWS “science first responder” vision, the FWT evaluated meteorologist and land manager workflows and information sharing leading up to joint Fire Warning issuance using a Tactical IWT approach. The Tactical Integrated Warning Team (IWT) approach originated in the Southern Great Plains, where meteorologists and land managers have collaboratively assessed wildfire threats and jointly issued Fire Warnings to the public when fires threaten lives and property. Evaluation efforts centered on interagency coordination and situational awareness to evaluate broader applicability, decision authority, and public messaging mechanisms across diverse regions. Evaluation feedback addressed public risk communication and technological integration (e.g., warning platforms, fire spread modeling, Wireless Emergency Alerts (WEA), and polygon sharing). Participating meteorologists and land managers were paired by state and worked together on real-time simulations mirroring the Tactical IWT workflow. Participants completed daily surveys and joined focus group discussions—one for meteorologists and one for fire partners—providing discipline-specific feedback synthesized for product development teams.
+
+### Major takeaways
+
+- Fire Warnings were perceived to be a valuable collaborative wildland fire alerting tool capable of relaying critical information from the NWS and land managers to other emergency management partners and the public when wildland fire poses an imminent threat to life and property.
+- However, both land managers and NWS participants’ expressed concerns centering around determining warning authority and the potential public confusion with other products or directives (e.g., evacuation warnings and orders)
+
+### End-user needs and recommendations
+
+**Entry 1**
+
+Need: Need to explore transforming Fire Warning into a standalone warning product with Wireless Emency Alert (WEA) capabilities among land managers: At the time of the evaluation, Fire Warnings were a non-weather emergency product, and land managers shared that Fire Warnings may more effectively reach the public via WEA.
+
+Recommendation: Recommend exploring WEA and other dissemination capabilities for Fire Warnings.
+
+**Entry 2**
+
+Need: Need for timely satellite data availability among NWS meteorologists: Participating meteorologists expressed concerns over potential delays in satellite data availability needed for Fire Warning issuance during active operations.
+
+**Entry 3**
+
+Need: Need for Fire Warning polygon training and capabilities among meteorologists and land managers: Meteorologists expressed a need for training, guidance, and coordination on Fire Warning polygon determination (e.g., adding buffer zones), and land managers preferred Fire Warnings tailored to specific areas over county-wide.
+
+Recommendation: Recommend exploring technological capabilities including integrating in NWS warning software (Hazard Services) and enabling land managers and meteorologists to view proposed warning areas prior to issuance.
+
+**Entry 4**
+
+Need: Need for Fire Warning public education campaigns among meteorologists and land managers: Land managers expressed a need for training/education of the public, who may confuse fire warnings with other NWS fire products (Red Flag Warnings, Fire Weather Watches) or evacuation warnings/orders. Meteorologists recommended public education campaigns and training explaining the purpose of Fire Warnings are made available so the public can discern NWS products and take protective actions.
+
+**Entry 5**
+
+Need: Need for defined delegation authority, joint messaging, and embedded links among meteorologists and land managers: Participants foresaw a need to resolve inter-agency delays, decision-making complexities, and role authority for Fire Warning issuance.
+
+Recommendation: Recommend building Tactical Integrated Warning Teams aligning local needs/resources, clearly delegating decision authority, and including product wording that highlights co-creation, joint issuance, and links to other information sources (e.g., evacuation alerts) to enhance public trust.
+
+**Entry 6**
+
+Need: Need for comprehensive Fire Warning training and fire behavior guidance among meteorologists and land managers: Participating meteorologists expressed a need for training/guidance to address their limited fire behavior expertise, as they were hesitant to rely on 'gut instincts' to suggest Fire Warnings (or not).
+
+Recommendation: Recommend implementing comprehensive Fire Warning training for NWS personnel, land management agencies, and emergency management agencies emphasizing collaborative processes for fire detection, monitoring, and response.
+
+**Entry 7**
+
+Need: Need for allowing NWS meteorologists to issue Fire Warnings among land managers: At the time of the evaluation, Fire Warning issuance required secondary permission/input of land management agencies. Participating land managers recommended allowing NWS meteorologists to issue Fire Warnings without secondary permission/input of land management agencies.
+
+### Publications and resources
+
+- Fire Weather Testbed Evaluations #002–004: An End-to-End Evaluation of NOAA's Emerging Wildland Fire Detection and Warning Capabilities — NOAA technical memorandum OAR GSL ; 71, 2025 — https://doi.org/10.25923/4pqf-7g49
+
+---
+
+## Project 5: Fire Weather Testbed Evaluations #002: Fire Detection and Dissemination - NESDIS Next Generation Fire System and NWS Hotspot Notification Tool
 
 - **Project ID:** R_5FKyyCLziggLdgA
 - **Page:** /projects/fire-weather-testbed-evaluations-002-fire-detection
@@ -193,7 +380,7 @@ Recommendation: Recommend ensuring multiple communication pathways are available
 
 ---
 
-## Project 3: Fire Weather Testbed Evaluations #003 - Interagency Collaboration: Tactical Integrated Warning Team (IWT) for Wildland Fire Operations
+## Project 6: Fire Weather Testbed Evaluations #003 - Interagency Collaboration: Tactical Integrated Warning Team (IWT) for Wildland Fire Operations
 
 - **Project ID:** R_5zjcvv7ibzYt735
 - **Page:** /projects/fire-weather-testbed-evaluations-003-interagency
@@ -254,7 +441,7 @@ Recommendation: Recommend consistent and coordinated training involving local me
 
 ---
 
-## Project 4: Igniting Insight: Evaluating NWS Fire Weather Products within a Fire Partner Decision Making Context
+## Project 7: Igniting Insight: Evaluating NWS Fire Weather Products within a Fire Partner Decision Making Context
 
 - **Project ID:** R_6LG6UbI2AXyQUtS
 - **Page:** /projects/igniting-insight-evaluating-nws-fire-weather-products

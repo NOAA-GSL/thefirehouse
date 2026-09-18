@@ -7,14 +7,14 @@
  * unlike topic areas — there is no CMS record behind them to override.
  *
  * The `FIRE_PHASES` values are the survey's own Q9 choices (export of 2026-09-14).
- * Only the three answers that export exercised are listed; if the survey also offers
- * an "After" phase, the import script warns on it and it gets added to the array
- * below — nothing else moves except `projects.json`.
+ * "After" first appeared in the export of 2026-09-18. If the survey gains another
+ * phase, the import script warns on it and it gets added to the array below —
+ * nothing else moves except `projects.json`.
  */
 
 /* ---------------------------------------------------------------- fire cycle -- */
 
-export type FirePhase = 'before' | 'during' | 'long-term';
+export type FirePhase = 'before' | 'during' | 'after' | 'long-term';
 
 export interface FirePhaseDefinition {
   key: FirePhase;
@@ -42,6 +42,11 @@ export const FIRE_PHASE_LIST: FirePhaseDefinition[] = [
     short: 'During',
     label: 'Fire detection, active suppression, and downstream impacts',
     description: 'e.g., tactical/strategic operations, smoke, evacuations',
+  },
+  {
+    key: 'after',
+    short: 'After',
+    label: 'Postfire recovery and rehabilitation',
   },
   {
     key: 'long-term',

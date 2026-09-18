@@ -99,12 +99,12 @@ const MULTI_COLUMN = {
  *
  * Matched on the word before the parenthetical ("Before (Pre-fire Planning, …)"),
  * so the examples in the survey wording can be edited without breaking the import.
- * An unmatched answer is warned about — which is how an "After" option would show up
- * if the survey has one this export didn't exercise.
+ * An unmatched answer is warned about — which is how a new survey option shows up.
  */
 const FIRE_PHASE_MAP = {
   before: 'before',
   during: 'during',
+  after: 'after',
   'long-term': 'long-term',
 };
 
