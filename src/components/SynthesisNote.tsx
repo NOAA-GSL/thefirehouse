@@ -6,6 +6,8 @@ export interface SynthesisNoteProps {
   reviewedBy?: string;
   updatedAt?: string;
   sourceCount: number;
+  /** Whether to show the review status after the synthesis line. Default true. */
+  showStatus?: boolean;
   className?: string;
 }
 
@@ -22,6 +24,7 @@ export function SynthesisNote({
   reviewedBy,
   updatedAt,
   sourceCount,
+  showStatus = true,
   className = '',
 }: SynthesisNoteProps) {
   const projects = `${sourceCount} ${sourceCount === 1 ? 'project' : 'projects'}`;
@@ -29,22 +32,27 @@ export function SynthesisNote({
     <time dateTime={updatedAt}>{formatReviewDate(updatedAt)}</time>
   );
 
+  const draft = showStatus && !reviewedBy;
+
   return (
-    <p className={`fh-synthesis-note ${reviewedBy ? '' : 'fh-synthesis-note--draft'} ${className}`.trim()}>
+    <p className={['fh-synthesis-note', draft && 'fh-synthesis-note--draft', className].filter(Boolean).join(' ')}>
       <span className="fh-synthesis-note__dot" aria-hidden="true" />
       <span>
-        <strong>{model ? 'AI-synthesized' : 'Synthesized'}</strong> across all {projects}.{' '}
-        {reviewedBy ? (
-          <>
-            Reviewed by {reviewedBy}
-            {date && <> on {date}</>}.
-          </>
-        ) : (
-          <>
-            <strong>Draft, pending team review</strong>
-            {date && <> · updated {date}</>}.
-          </>
-        )}
+        <strong>{model ? 'AI-synthesized' : 'Synthesized'}</strong> across all {projects}.
+        {showStatus &&
+          (reviewedBy ? (
+            <>
+              {' '}
+              Reviewed by {reviewedBy}
+              {date && <> on {date}</>}.
+            </>
+          ) : (
+            <>
+              {' '}
+              <strong>Draft, pending team review</strong>
+              {date && <> · updated {date}</>}.
+            </>
+          ))}
       </span>
     </p>
   );

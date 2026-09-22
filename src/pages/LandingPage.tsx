@@ -182,8 +182,9 @@ export function LandingPage() {
             {topicSection.heading}
           </h2>
           {topicSection.body && <p className="fh-topics__body">{topicSection.body}</p>}
-          {/* One disclosure for all four cards, instead of a badge on each. */}
-          <SynthesisNote {...synthesis} className="fh-topics__note" />
+          {/* One disclosure for all four cards, instead of a badge on each. The
+              review status stays on the topic pages, next to the needs themselves. */}
+          <SynthesisNote {...synthesis} showStatus={false} className="fh-topics__note" />
         </div>
 
         <div className="fh-topics__grid">
