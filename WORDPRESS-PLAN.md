@@ -1,6 +1,7 @@
 # WordPress plan — The Firehouse as a GSL WordPress plugin
 
-> **Status: proposal for review, 30 September 2026.** Nothing here is built. This
+> **Status: proposal for review, 30 September 2026; updated 1 October after the
+> 30 September meeting with Stephanie and Emily.** Nothing here is built. This
 > document records the decisions made so far, the architecture they lead to, and a
 > phased plan from the current `main` branch to a plugin running on gsl.noaa.gov.
 > Disagreements belong in the pull request that adds this file.
@@ -21,12 +22,19 @@ that produced it).
 - **Who edits.** Stephanie and Emily, in wp-admin, through a Firehouse Editor role
   that can change Firehouse content and nothing else on the site. Content changes need
   no developer, no terminal and no deploy.
-- **How long.** About **16–20 weeks of one developer's time**, plus the wait for each
+- **What's under one roof.** Everything after a submission or a synthesis arrives:
+  drafts, previews, review, publishing and revision history. In the first release the
+  survey stays in Qualtrics and the AI pass stays outside WordPress, each feeding an
+  import screen. Either can move inside later as its own release (see
+  [Scope](#scope-one-roof-in-stages)).
+- **How long.** About **17–21 weeks of one developer's time**, plus the wait for each
   security review. Two developers working in parallel after Phase 2 bring it to
   roughly 11–14 calendar weeks.
-- **AMS.** The plugin will not be ready for the January 2027 launch. The current
-  React site launches at `gsl.noaa.gov/firehouse/` as a static bridge, on the same URLs
-  the plugin will use, so nothing cited at AMS breaks at cutover.
+- **Mid-November and AMS.** The plugin will not be ready for the WPO meeting in
+  mid-November or the January 2027 AMS launch. The current React site covers both as a
+  static bridge: first on GSL's test site, restricted to GSL staff, for the WPO
+  meeting; then at `gsl.noaa.gov/firehouse/`, on the same URLs the plugin will use, so
+  nothing cited at AMS breaks at cutover.
 
 ---
 
@@ -43,9 +51,47 @@ that produced it).
 | Install path | Security reviews each plugin release; developers install it. |
 | WP-CLI | **Not relied on.** Everything, including the first data load, is done in wp-admin. |
 | Outbound network | Believed allowed (doi.org, Qualtrics). A Site Health check confirms it on the test site. |
-| Qualtrics API sync | To be decided. Designed for from the start, built after the file upload. |
+| Qualtrics API sync | **Not now** (30 September). Stephanie and Emily export from Qualtrics after their own quality check, and expect about 50 submissions a year. The design is kept as a later phase. |
+| Survey intake | **Stays in Qualtrics** for the first release (see [Scope](#scope-one-roof-in-stages)). |
+| AI synthesis | **Runs outside WordPress** (NotebookLM today) and is pasted in as JSON for review. Running it from an approved LLM API is a later phase. |
 | Link previews through Cloudflare | Found out during testing (see [Link previews](#page-titles-descriptions-and-link-previews)). |
-| AMS bridge | Probably possible, and recommended (see [The AMS bridge](#the-ams-bridge)). |
+| AMS bridge | Probably possible, and recommended, starting on the test site for the mid-November WPO meeting (see [The AMS bridge](#the-ams-bridge)). |
+
+---
+
+## Scope: one roof, in stages
+
+The team's original concept puts the whole workflow in one system: a submission form,
+an AI pass, a pending queue, human review, then publishing. This plan builds toward
+that in stages.
+
+**The first release puts the workflow under one roof.** Everything after data arrives
+happens in wp-admin:
+
+```
+Qualtrics survey ──export──▶ Import screen ────▶ draft projects ──preview, Publish──▶ site
+AI pass (NotebookLM) ─JSON─▶ Synthesis screen ─▶ draft synthesis ──diff, Mark reviewed──▶ site
+```
+
+**Two inputs stay outside, each behind an import screen:**
+
+- **The survey stays in Qualtrics.** Stephanie and Emily use it as their quality-check
+  step, and said on 30 September that they don't need it connected. Moving it inside
+  would store names, emails and job titles on gsl.noaa.gov and add a public form that
+  writes to the database. That reverses two commitments the security review rests on
+  (see [Security review](#security-review), and rule 2 under
+  [Rules that must survive the port](#rules-that-must-survive-the-port)). A
+  NOAA-hosted form that asks ten or more non-federal researchers the same questions
+  may also need OMB clearance under the Paperwork Reduction Act.
+- **The AI pass stays where the team runs it.** No LLM API is approved for this use
+  yet, and NotebookLM is not believed to offer one inside the NOAA enterprise. The
+  synthesis is a batch pass over every published project, not a tag on each new
+  submission, so a paste-and-review screen fits it. That screen is the same whichever
+  way the JSON arrives.
+
+Keeping the first release read-only to the public, with nothing personal stored, keeps
+its security review short. Each input can move inside later as its own reviewed
+release once its trigger is met; see [Later phases](#later-phases).
 
 ---
 
@@ -277,8 +323,8 @@ in a rewrite.
   at launch. After launch, **prod is the only place content is edited.**
 - **Test is never indexed or cited.** It is set to `noindex` and shows a visible
   test-site banner, because a citation copied from a test page carries the test URL.
-- **Qualtrics sync is configured per environment,** so only prod pulls the real
-  survey.
+- **If the Qualtrics sync is built later,** it is configured per environment, so only
+  prod pulls the real survey.
 
 ### Security review
 
@@ -311,7 +357,9 @@ confirms.
 - **Qualtrics export.** The `.xlsx` or `.csv` from Qualtrics. It is a PHP port of
   `import-survey.mjs`: CSV through `fgetcsv`, XLSX through `ZipArchive`.
   - Records are matched on ResponseId.
-  - New records arrive as drafts.
+  - New records arrive as drafts. The import result links each one to a preview of
+    its project page, so the quality check can happen on the page as visitors will
+    see it rather than in spreadsheet cells. Publishing is WordPress's Publish button.
   - Responses missing from a newer export are flagged, not deleted.
   - Paper titles are looked up from DOIs and pages, keeping the last good metadata
     when a lookup fails.
@@ -319,9 +367,27 @@ confirms.
 WP-CLI commands may exist for developers, but nothing depends on them.
 
 The same area offers **Download NotebookLM source**, a port of `notebooklm-source.mjs`.
-Next to it is a **synthesis screen**: paste the notebook's JSON, preview it with any
-unknown project flagged, save it as a draft, then **Mark reviewed**, which records the
-reviewer and the date.
+It holds only published projects, so it should be the notebook's only source.
+
+Next to it is the **synthesis screen**, where the AI pass comes back in:
+
+1. **Paste the JSON** the prompt produced: up to five needs for each topic key
+   (`observe`, `forecast`, `warning`, `governance`), each with its text, its mention
+   count and the projects it draws on. Projects can be named by slug or by Qualtrics
+   ResponseId, so the prompt can run against the downloaded source or the team's
+   spreadsheet. Fields the site does not display are ignored.
+2. **Validate.** A need that names an unknown project, or one that is not published, is
+   flagged with the entry quoted: the synthesis may only draw on what the site shows.
+   If the team settles on one mention per project (open question 13), the screen also
+   flags any need whose count differs from the number of projects it lists.
+3. **Compare.** The screen shows what changes against the published synthesis: needs
+   added, dropped or reworded, rank and count changes, and sources gained or lost. This
+   is what the reviewer signs off on.
+4. **Save as a draft, then Mark reviewed.** Marking it reviewed publishes it to the
+   topic pages and records the reviewer and the date. Until then, visitors keep seeing
+   the last reviewed version. Earlier versions stay in the revision history.
+
+No project link is made by hand: the JSON carries them.
 
 ### Caching
 
@@ -351,7 +417,10 @@ response header.
   Phase 4 on the test site, and again on prod before launch, because the two may be
   configured differently.
 
-### Qualtrics sync (if adopted)
+### Qualtrics sync (deferred)
+
+Not needed for now (30 September). The design below is kept for
+[later phase L2](#later-phases).
 
 - **The survey is on Colorado State's Qualtrics** (`colostate.az1.qualtrics.com`, per
   `settings.json`). The API token would be a CSU account credential stored on a NOAA
@@ -373,6 +442,14 @@ The React app already builds for a sub-path, and its routes match the plugin's U
 map. Launching it at `gsl.noaa.gov/firehouse/` for AMS means citations made there
 survive the cutover.
 
+**Mid-November first, on the test site.** The same build serves the WPO meeting from
+GSL's test site, restricted to GSL staff by login or by network, whichever ITS prefers.
+Stephanie confirmed on 30 September that a demo opened with their own accounts is
+enough, and it keeps the demo on GSL's infrastructure rather than a personal domain.
+Build that copy with the test site's address as `VITE_SITE_URL`. If the test site isn't
+ready in time, the fallback is running the build on the presenter's laptop and sharing
+the screen.
+
 1. Build with `VITE_BASE_PATH=/firehouse/` and `VITE_SITE_URL=https://gsl.noaa.gov`.
 2. Serve the build as a static directory at `/firehouse`.
    - If the origin server is **Apache**, uncomment `RewriteBase /firehouse/` in
@@ -383,9 +460,12 @@ survive the cutover.
    header and footer. `GovBanner` and `SiteFooter` still exist; they were hidden in
    `1593473`.
 4. Finish the remaining items in the README's "Before this goes public" list: hero
-   image, synthesis review, `robots.txt` and the sitemap.
+   image, synthesis review, `robots.txt` and the sitemap. The synthesis review matters
+   most: today's draft covers 4 of the 7 published projects, so it has to be rerun
+   across all of them and reviewed before anyone outside the team sees it.
 
-About 2–3 days of work, not counted in the plugin estimate.
+About 2–3 days of work, plus about a day for the test-site copy, not counted in the
+plugin estimate.
 
 **Cutover with no downtime.** Build the WordPress `firehouse` page tree on prod while
 the static directory still shadows it; editors preview it through its page-ID URL.
@@ -466,12 +546,13 @@ the mobile menu.
 **Done when:** it reaches feature parity with the React site, every URL parameter
 behaves the same, and the accessibility snapshots match.
 
-### Phase 6 — Editing screens (1.5–2 weeks)
+### Phase 6 — Editing screens (2–2.5 weeks)
 
 - Project and topic edit screens: survey fields read-only, editorial fields editable,
   publishing through WordPress's Publish button.
 - Landing and About layouts locked to text-only edits.
-- The synthesis screen with **Mark reviewed**.
+- The synthesis screen: paste, validation, the comparison against the published
+  synthesis, and **Mark reviewed**.
 - Submit buttons bound to the settings.
 - Validation notices.
 
@@ -480,7 +561,9 @@ behaves the same, and the accessibility snapshots match.
 
 ### Phase 7a — Survey import (2 weeks)
 
-- The Qualtrics export path on the Import screen.
+- The Qualtrics export path on the Import screen, with each new draft linked to its
+  preview.
+- Repair of mis-encoded characters in the export (see the appendix).
 - Download NotebookLM source.
 - Site Health checks: outbound reach to doi.org and Qualtrics, `noindex` on test, and
   HTML caching status.
@@ -488,12 +571,9 @@ behaves the same, and the accessibility snapshots match.
 **Done when:** the Node and PHP importers produce identical records from a scrubbed
 test export, and the uploaded file is never stored.
 
-### Phase 7b — Qualtrics sync, if adopted (+1 week)
+### Phase 7b — Qualtrics sync (deferred)
 
-- Token in `wp-config.php`.
-- Column-selective export with recode values.
-- "Sync now" plus an optional schedule.
-- Drafts, with an email to the editors.
+Not needed for now (30 September). Moved to [later phase L2](#later-phases).
 
 ### Phase 8 — Review, launch, cutover (1.5–2 weeks)
 
@@ -510,6 +590,57 @@ test export, and the uploaded file is never stored.
 **Done when:** gsl.noaa.gov/firehouse is served by the plugin, and every URL from the
 bridge resolves to the same content.
 
+### Later phases
+
+Each is its own plugin release with its own security review. None is scheduled: each
+starts when its trigger is met. They are listed in the order they are likely to be
+needed.
+
+**L1 — Run the synthesis from an approved LLM API (about 1 week).**
+
+- *Trigger:* an LLM API approved for this use. A colleague of Stephanie's received OAR
+  clearance for similar work, and she has the contacts he worked with.
+- *What changes:* a **Run synthesis** button sends the published projects' text and
+  the team's prompt to the model. The reply lands in the synthesis screen as a draft,
+  with the same validation, comparison and **Mark reviewed** step. The prompt lives on
+  the settings screen, so Stephanie and Emily can refine it without a release.
+- *Review impact:* one outbound host and one key in `wp-config.php`. Only text that is
+  already public on the site is sent, so nothing personal leaves GSL.
+
+**L2 — Qualtrics API sync (about 1 week).** Designed under
+[Qualtrics sync](#qualtrics-sync-deferred): a token in `wp-config.php`, a
+column-selective export with recode values, "Sync now" plus an optional schedule, and
+drafts with an email to the editors.
+
+- *Trigger:* exporting by hand becomes a chore. The likeliest cause is WPO making
+  submission a funding requirement.
+- *Needs first:* CSU's agreement and an owner for the token.
+
+**L3 — The survey inside WordPress (2–3 weeks, plus reviews).**
+
+- *Trigger:* Qualtrics stops being workable: ITS objects to a tool that isn't
+  FedRAMP-authorized, or CSU access ends. Volume alone is L2's job.
+- *Needs first:*
+  - A Paperwork Reduction Act check with NOAA's PRA clearance officer. If OMB
+    clearance is needed, it can take months.
+  - A privacy review. The form stores names, emails and job titles, which reverses
+    "nothing personal is stored" and rule 2.
+  - Spam protection that adds no third-party service, or one the review accepts.
+  - An accessible form with up to ten repeated need entries, checked with a screen
+    reader like the rest.
+  - Confirmation and acceptance emails sent through GSL's mail setup.
+- *What stays the same:* submissions arrive as drafts, exactly like imports.
+
+**L4 — Reporting and export.**
+
+- *Trigger:* someone names who will use it, and for what.
+- *Cheapest first:* a print stylesheet (about a day), so the landing and topic pages
+  save cleanly to PDF from the browser. PDFs generated on the server run into the
+  no-third-party-PHP-libraries rule.
+- *Not recommended:* a live "last submission" ticker. At about 50 submissions a year
+  it would mostly show how long ago the last one was, and it would publish submitters'
+  names.
+
 ### At a glance
 
 | Phase | Work | Size | Visible on the test site |
@@ -520,11 +651,12 @@ bridge resolves to the same content.
 | 3 | Design system and frame | 2 wk | Firehouse frame inside GSL's chrome |
 | 4 | Display-only pages | 2–2.5 wk | Pages to read and review |
 | 5 | Interactive pieces | 3–4 wk | Feature parity |
-| 6 | Editing screens | 1.5–2 wk | Editors working on test |
+| 6 | Editing screens | 2–2.5 wk | Editors working on test |
 | 7a | Survey import | 2 wk | Import rehearsal |
-| 7b | Qualtrics sync (optional) | +1 wk | — |
+| 7b | Qualtrics sync | deferred to L2 | — |
 | 8 | Review, launch, cutover | 1.5–2 wk | → gsl.noaa.gov |
-| | **Total** | **~16–20 wk** | plus security-review wait time |
+| | **Total** | **~17–21 wk** | plus security-review wait time |
+| L1–L4 | Later phases, each when triggered | ~1–3 wk each | — |
 
 With two developers the work splits after Phase 2: one on Phases 3–5, the other on
 Phases 6–7.
@@ -541,6 +673,8 @@ Phases 6–7.
   are synthetic.
 - **Migration parity.** After the seed import, the content WordPress renders must
   match `normalizeSiteContent()` run over today's JSON.
+- **Synthesis import.** Pasting the published synthesis back shows no changes. A need
+  that names an unknown or unpublished project is flagged with the entry quoted.
 - **Contrast.** `scripts/check-contrast.mjs` against the tokens, and the live audit in
   `scripts/audit-contrast-live.js` on pages inside GSL's header and footer.
 - **Assistive technology.** A real screen-reader pass on the public pages and on every
@@ -586,14 +720,33 @@ Phases 6–7.
 
 **For the team**
 
-6. Launch the AMS bridge? *Recommended.*
+6. Launch the bridge, on the test site for mid-November and on prod for AMS?
+   *Recommended.*
 7. Drop dark mode for the WordPress version? A dark Firehouse section between GSL's
    light header and footer will look broken, and dropping it halves the visual and
    contrast testing.
 8. Keep Archivo and Public Sans, or use GSL's fonts?
-9. Adopt the Qualtrics API sync, and who owns the token on the CSU side?
+9. ~~Adopt the Qualtrics API sync?~~ *Not now (30 September); see later phase L2.*
 10. Is working without JavaScript a requirement? If not, the PHP search is dropped (see
     [Interactivity](#interactivity)).
+
+**Added after the 30 September meeting**
+
+11. *(GSL's web team)* Can the bridge go on the test site, restricted to GSL staff, by
+    mid-November?
+12. *(GSL's web team)* What do the Project Intake Request and the Technical Assessment
+    Worksheet still need for this site? Dmitri started them.
+13. *(Stephanie and Emily)* Which counting rule is canonical? The team's prompt counts
+    at most one mention per project. Today's numbers count every entry (the rule in
+    `notebooklm/README.md` and the 17 September draft), so one project can give a need
+    two mentions. The synthesis screen's count check depends on the answer.
+14. *(Stephanie and Emily, with NOAA's PRA clearance officer)* Does the Qualtrics survey
+    already count as a NOAA information collection under the Paperwork Reduction Act?
+    It asks non-federal researchers the same questions on NOAA's behalf. The answer
+    also bears on later phase L3.
+15. *(Stephanie and Emily)* Should a project that answers "Project did not require IRB
+    review" be published? The importer treats that answer as no approval (see the
+    appendix).
 
 ---
 
@@ -608,3 +761,14 @@ Phases 6–7.
   migration treats them as real.
 - **The Sanity and Strapi adapters** were never run against a live backend. They
   retire with this plan.
+- **A submission missing from the site.** The latest export has eight responses; the
+  site has seven. `R_3e9GnZYuWAjuZM5` (FWT Evaluation 001, WoFS-Smoke) answered Q8
+  with "Project did not require IRB review", which `import-survey.mjs` counts as no
+  approval, so it is excluded. The question itself asks about "approval or exemption",
+  so it may belong on the site (open question 15).
+- **Mis-encoded text in the export.** Some Qualtrics rows arrive double-encoded
+  (`NGFSâ€™s` for `NGFS’s`), and two strings in `projects.json` carry it today. Both
+  importers should repair it, and the importer parity fixtures should include a case.
+- **The live synthesis is out of date.** `topicSummaries.json` is a 17 September draft,
+  written with Claude, that covers 4 of the 7 published projects. The landing page
+  reports it as drawn from "4 projects today".
