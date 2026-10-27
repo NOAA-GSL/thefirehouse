@@ -4,7 +4,7 @@
 > design system (`DESIGN.md` and `src/styles/tokens/`), then paste this whole file in
 > as the prompt. Everything the diagrams need is written here; nothing has to be
 > worked out from the code. The source of truth is `WORDPRESS-PLAN.md` (updated
-> 1 October 2026). If the two disagree, the plan wins and this brief is out of date.
+> 27 October 2026). If the two disagree, the plan wins and this brief is out of date.
 
 ---
 
@@ -72,64 +72,70 @@ in the "For ITS" notes and the markers below, not in the box labels.
   a person carries the AI's output in.
 - Show a survey form inside WordPress anywhere except Later phases (L3).
 - Show a live "latest submission" ticker or a PDF generator on the server.
+- Draw a citation button or "Cite this page" anywhere. The site no longer offers
+  citations.
+- Draw any hosting outside GSL, except the taken-down prototype in Diagram 1.
 - Invent numbers, dates, hostnames or product names that are not in this brief.
 
 ---
 
-## Diagram 1: Today (as of 1 October 2026)
+## Diagram 1: Today (as of 27 October 2026)
 
-**Takeaway:** Every change to the site, even one sentence, goes through a developer.
+**Takeaway:** Every change to the site, even one sentence, goes through a developer,
+and the site is not online anywhere until GSL hosts it.
 
-**Zones, left to right:** Outside NOAA (CSU and Google) · Developer's computer and
-GitHub · Hosting outside NOAA
+**Zones, left to right:** Outside GSL's servers (Google and AI tools) · Developer's
+computer and GitHub · Hosting (none today)
 
 | Zone | Who | Box | What happens there | Markers |
 | --- | --- | --- | --- | --- |
-| Outside NOAA | Researchers | Qualtrics survey | Hosted on Colorado State's Qualtrics | Personal data |
-| Outside NOAA | Steph & Emily | Google Sheet | Quality check of each response | Personal data, Review step |
-| Outside NOAA | Steph & Emily | AI synthesis | NotebookLM with the team's prompt. The live draft was made with Claude. | Personal data (the sheet is one of its sources) |
-| Outside NOAA | Steph & Emily | Edit requests | A Google Doc of text changes | — |
-| Developer | Developer | Import script | Drops email, job title, the internal-use answer and IP; skips projects without IRB approval | — |
+| Outside GSL | Researchers | Google Form | Replaced Colorado State's Qualtrics survey | Personal data |
+| Outside GSL | Steph & Emily | Google Sheet | Linked to the form; quality check of each response | Personal data, Review step |
+| Outside GSL | Steph & Emily | AI synthesis | NotebookLM with the team's prompt. The live draft was made with Claude. | Personal data (the sheet is one of its sources) |
+| Outside GSL | Steph & Emily | Edit requests | A Google Doc of text changes | — |
+| Developer | Developer | Import script | Drops email, job title, the internal-use answer and IP; skips projects without IRB approval. Written for Qualtrics exports; being adapted to the form | — |
 | Developer | Developer | Site files in GitHub | Projects, top needs and page text, stored as JSON | — |
 | Developer | Developer | Build | Turns the files into a static site | — |
-| Hosting | Visitors | The Firehouse website | Dmitri's personal domain, password-protected | — |
+| Hosting | — | Earlier prototype (muted, dotted outline) | Ran on the former developer's personal domain; taken down in October 2026 | — |
 
 **Arrows:**
 
-- Qualtrics survey → Google Sheet: "exported" (dashed)
+- Google Form → Google Sheet: "responses land" (solid)
 - Google Sheet → AI synthesis: "added as a source" (dashed)
-- Google Sheet → Import script: "approved export sent over" (dashed)
+- Google Sheet → Import script: "approved responses sent over" (dashed)
 - Import script → Site files: "writes project records" (solid)
 - AI synthesis → Site files: "top needs copied in" (dashed)
 - Edit requests → Site files: "retyped by developer" (dashed)
 - Site files → Build: "build" (solid)
-- Build → The Firehouse website: "uploaded" (dashed)
-- The Firehouse website → Qualtrics survey: "Submit a Finding opens the survey" (a
-  thin dotted link routed around the outside of the diagram)
+- No arrow leaves Build: nothing is hosted today.
 
 **For Steph and Emily:** You run the survey, the quality check and the AI synthesis.
 Everything after that, including a one-word change to the About page, waits for a
-developer to retype, rebuild and upload it.
+developer to retype and rebuild it, and there is nowhere to put it online until GSL
+hosts the site.
 
-**For ITS:** Personal data lives in three outside services (CSU's Qualtrics, a Google
-Sheet and the NotebookLM notebook). The website holds none: the import script drops
-it before anything is written. The site is static, with no database, logins or forms,
-and it is hosted outside NOAA today.
+**For ITS:** Personal data lives in Google: the form's response Sheet, and the
+NotebookLM notebook that uses it as a source. Earlier responses were collected in
+CSU's Qualtrics. The website holds none: the import script drops it before anything
+is written. The site is static, with no database, logins or forms. It is not hosted
+anywhere today: an earlier prototype on the former developer's personal domain was
+taken down in October 2026, and its Netlify configuration has been removed from the
+repository.
 
 ## Diagram 2: The bridge (WPO meeting in mid-November, AMS in January 2027)
 
 **Takeaway:** Same workflow as today, but the site moves onto GSL's servers at the
 address the WordPress version will keep.
 
-**Zones:** Outside NOAA · Developer's computer and GitHub · GSL web servers (behind
-Cloudflare)
+**Zones:** Outside GSL's servers · Developer's computer and GitHub · GSL web servers
+(behind Cloudflare)
 
 | Zone | Who | Box | What happens there | Markers |
 | --- | --- | --- | --- | --- |
-| Outside NOAA | Same as today | Survey, quality check, edit requests | Qualtrics, Google Sheet, Google Doc | Personal data |
-| Outside NOAA | Steph & Emily | AI synthesis, rerun | Across all 7 published projects, reviewed before the WPO meeting | Review step |
-| Developer | Developer | Import and site files | The same script and files as today | — |
-| Developer | Developer | Build for /firehouse/ | Gov banner and footer turned back on | — |
+| Outside GSL | Same as today | Survey, quality check, edit requests | The Google Form and its Sheet; a Google Doc | Personal data, Open question: "Whose Google account?" |
+| Outside GSL | Steph & Emily | AI synthesis, rerun | Across all 7 published projects, reviewed before the WPO meeting | Review step |
+| Developer | Developer | Import and site files | The same files as today; the import script learns the Google Form's format | — |
+| Developer | Developer | Build for /firehouse/ | Gov banner and footer back on; Submit a Finding opens the Google Form; no citation generator | — |
 | GSL web servers | Mid-November · WPO | Test site copy | GSL staff only, not indexed by search engines | Open question: "Login or network restriction?" |
 | GSL web servers | January · AMS | gsl.noaa.gov/firehouse/ | Public, on the same addresses the WordPress version will use | — |
 
@@ -146,24 +152,25 @@ the top needs have to be rerun across all seven projects and signed off by you: 
 live draft covers four of them.
 
 **For ITS:** Static files only: no database, no logins, no forms and no personal data.
-The test copy is restricted to GSL staff and kept out of search engines. Citations
-made at AMS keep working when WordPress takes over, because the addresses do not
-change.
+The test copy is restricted to GSL staff and kept out of search engines. Links shared
+at AMS keep working when WordPress takes over, because the addresses do not change.
+Nothing runs outside GSL.
 
 ## Diagram 3: WordPress, first release (one roof for the workflow)
 
 **Takeaway:** Once data arrives, Stephanie and Emily do everything themselves in
 GSL's WordPress, and nothing goes public without their review.
 
-**Zones:** Outside NOAA · GSL WordPress: staff screens (login required) · GSL
-WordPress: public pages. Add a thin lane along the bottom, spanning both WordPress
+**Zones:** Outside WordPress (Google) · GSL WordPress: staff screens (login required)
+· GSL WordPress: public pages. Add a thin lane along the bottom, spanning both WordPress
 zones, for code changes.
 
 | Zone | Who | Box | What happens there | Markers |
 | --- | --- | --- | --- | --- |
-| Outside NOAA | Researchers | Qualtrics survey | Hosted on CSU's Qualtrics, unchanged | Personal data |
-| Outside NOAA | Steph & Emily | AI tool | NotebookLM with the team's prompt; returns JSON | — |
-| Staff screens | Steph & Emily | Import screen | Shows a preview first; drops email, job title and IP; the uploaded file is not kept | — |
+| Outside WordPress | Researchers | Google Form | Replaces the Qualtrics survey | Personal data, Open question: "Whose Google account?" |
+| Outside WordPress | Steph & Emily | Response Sheet | The form's linked Google Sheet; responses land here, ready to download | Personal data |
+| Outside WordPress | Steph & Emily | AI tool | NotebookLM with the team's prompt; returns JSON | — |
+| Staff screens | Steph & Emily | Import screen | Shows a preview first; drops email and job title; the uploaded file is not kept | — |
 | Staff screens | Steph & Emily | Draft projects | Preview each project page as visitors will see it, then Publish | Review step |
 | Staff screens | Steph & Emily | Synthesis screen | Paste the AI's JSON; flags any project it doesn't recognize | — |
 | Staff screens | Steph & Emily | Draft synthesis | Shows what changed since the published version, then Mark reviewed | Review step |
@@ -173,24 +180,26 @@ zones, for code changes.
 | Public pages | Visitors | About page | — | — |
 | Code lane | Developer and ITS | Plugin release | Security review → test site → gsl.noaa.gov | — |
 
-**Arrows:** Qualtrics survey → Import screen: "export uploaded" (dashed) · Import
-screen → Draft projects: "creates drafts" (solid) · Draft projects → Explorer and
+**Arrows:** Google Form → Response Sheet: "responses land" (solid) · Response Sheet →
+Import screen: "downloaded, then uploaded" (dashed) · Import screen → Draft projects:
+"creates drafts" (solid) · Draft projects → Explorer and
 project pages: "Publish" (solid) · Synthesis screen → AI tool: "download AI source"
 (dashed; the source holds published projects only) · AI tool → Synthesis screen:
 "paste JSON" (dashed) · Synthesis screen → Draft synthesis: "checks links" (solid) ·
 Draft synthesis → Landing and topic pages: "Mark reviewed" (solid) · Page text →
-About page: "Update" (solid) · public pages → Qualtrics survey: "Submit a Finding
-opens the survey" (thin dotted link).
+About page: "Update" (solid) · public pages → Google Form: "Submit a Finding opens
+the form" (thin dotted link).
 
-**For Steph and Emily:** You upload the Qualtrics export and preview each new project
-before publishing it. You paste the AI's output, see exactly what changed, and mark
+**For Steph and Emily:** You download the form's response Sheet, upload it, and
+preview each new project before publishing it. You paste the AI's output, see exactly what changed, and mark
 it reviewed. Text edits are yours too. A developer is only needed for code changes.
 
 **For ITS:** Stored on GSL's server: project text, editorial fields, the syntheses and
 their revision history. Not stored: emails, job titles, IP addresses or uploaded
 files. Public pages are read-only, with no forms. Logins are a Firehouse Editor role
 that can change Firehouse content and nothing else. Outbound requests: doi.org, for
-paper titles. Map tiles load in the visitor's own browser.
+paper titles. Map tiles load in the visitor's own browser. Personal data stays in
+the form's Google Sheet; which Google account holds it is still open.
 
 ## Diagram 4: Later phases (each its own release, only when its trigger is met)
 
@@ -202,9 +211,9 @@ each tagged with its number:
 
 | Tag | Change | Trigger | For Steph and Emily | For ITS |
 | --- | --- | --- | --- | --- |
-| L1 | Synthesis screen → **Approved LLM API** (new box, outside NOAA): "Run synthesis" (solid) | An LLM API approved for this use | No more copying between the AI tool and WordPress; the review step stays | One new outbound host and one key; sends only text that is already public |
-| L2 | Qualtrics survey → Import screen becomes solid: "Sync now" | Exporting by hand becomes a chore, for example if WPO makes submission a funding requirement | No more exports | A CSU-owned token stored on a NOAA server; needs CSU's agreement |
-| L3 | **Survey form on gsl.noaa.gov** (new box in public pages, Personal data marker) → Draft projects: "creates drafts" | Qualtrics stops being workable | Submissions arrive as drafts, as before | Personal data on GSL's server and a public form; needs a Paperwork Reduction Act check and a privacy review |
+| L1 | Synthesis screen → **Approved LLM API** (new box, outside WordPress): "Run synthesis" (solid) | An LLM API approved for this use | No more copying between the AI tool and WordPress; the review step stays | One new outbound host and one key; sends only text that is already public |
+| L2 | Response Sheet → Import screen becomes solid: "Sync now" | Downloading by hand becomes a chore, for example if WPO makes submission a funding requirement | No more downloads | A read-only Google key stored on GSL's server; fetches only the public columns; needs the form owner's agreement |
+| L3 | **Survey form on gsl.noaa.gov** (new box in public pages, Personal data marker) → Draft projects: "creates drafts" | Google Forms stops being workable | Submissions arrive as drafts, as before | Personal data on GSL's server and a public form; needs a Paperwork Reduction Act check and a privacy review |
 | L4 | **Print-ready pages** (small addition on the public pages): "save as PDF from the browser" | Someone names who will use it | A clean PDF of the top needs | No server change |
 
 ---
@@ -216,13 +225,14 @@ titles from `src/content/data/projects.json` and the four topic areas: Observati
 and Monitoring; Forecasts and Modeling; Warnings and Immediate Response; Strategic
 Adaptation and Institutional Governance.
 
-1. **Import screen.** Upload a Qualtrics export. The preview lists new projects
-   (arriving as drafts), updated projects, and excluded rows with their reasons, for
-   example "no IRB approval or exemption". Nothing is written until "Import" is
-   pressed. After import, each new draft links to its preview.
+1. **Import screen.** Upload the response Sheet downloaded from Google. The preview
+   lists new projects (arriving as drafts), updated projects, and excluded rows with
+   their reasons, for example "no IRB approval or exemption". If a question was
+   reworded, the preview asks which column now holds it. Nothing is written until
+   "Import" is pressed. After import, each new draft links to its preview.
 2. **Draft project preview.** The project page as visitors will see it, under a bar
    reading "Draft, not public" with "Publish" and "Edit" buttons. Survey answers are
-   marked "From Qualtrics, read-only"; editorial fields are editable.
+   marked "From the survey, read-only"; editorial fields are editable.
 3. **Synthesis review.** A paste box, then a checks panel (for example: "A need in
    Forecasts and Modeling names a project that is not published"), then a comparison
    per topic area: needs added, dropped or reworded, mention-count changes, and
@@ -231,10 +241,12 @@ Adaptation and Institutional Governance.
 
 ## Facts to keep straight
 
-- About 50 submissions a year are expected. The latest export has 8 responses; 7 are
-  published.
+- About 50 submissions a year are expected. The latest Qualtrics export has 8
+  responses; 7 are published. New responses come from the Google Form that replaced
+  Qualtrics.
 - The public address is `gsl.noaa.gov/firehouse/`. The test site's address is not
   given here; label it "Test site".
 - Open questions to mark with "?" where they appear: Apache or nginx on GSL's
   servers; whether Cloudflare caches pages; login or network restriction for the
-  test copy; one mention per project or per entry in the synthesis counts.
+  test copy; one mention per project or per entry in the synthesis counts; which
+  Google account owns the form.
