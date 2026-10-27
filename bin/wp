@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# WP-CLI against the local Firehouse WordPress (docker-compose.yml).
+#   bin/wp plugin list
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+# Git Bash on Windows would otherwise rewrite /var/www/... arguments into Windows paths.
+export MSYS_NO_PATHCONV=1
+
+exec docker compose run --rm wpcli "$@"

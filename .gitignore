@@ -1,6 +1,10 @@
 # Dependencies
 node_modules/
 
+# PHP tooling for the WordPress plugin
+vendor/
+.phpunit.cache/
+
 # Build
 dist/
 dist-ssr/

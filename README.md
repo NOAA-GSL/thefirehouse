@@ -42,6 +42,10 @@ src/
 
 public/             Served verbatim at the site root: icons, the link-preview card,
                     robots.txt, and the two host-level SPA fallbacks (see Hosting)
+
+wp-content/plugins/firehouse/
+                    The WordPress plugin that will replace this app (see
+                    The WordPress plugin, below). Empty so far.
 ```
 
 ### The design system
@@ -206,6 +210,32 @@ Named so it's clear these are gaps, not oversights:
   means emitting a per-project HTML shell at build time (`PLAN.md` §2.2).
 - **Tests.** None. Worth adding around `normalize.ts` and `derive.ts` first — they're
   pure functions and they're what stands between a bad CMS edit and a broken page.
+
+## The WordPress plugin
+
+The site is moving into GSL's WordPress as a plugin; `WORDPRESS-PLAN.md` has the plan.
+The plugin sits at `wp-content/plugins/firehouse/`, the path it has in a WordPress
+install, the way GSL's own repository (NOAA-GSL/gsl-wordpress) keeps its theme. It
+registers nothing yet.
+
+The local WordPress runs in Docker and borrows GSL's theme, WordPress images and
+database from a checkout of GSL's internal gsl-wordpress repository beside this one
+(`../wordpress-gsl`, or set `GSL_WORDPRESS_DIR`). GSL's database has to be running for
+the first step.
+
+```bash
+bin/wp-init         # once: copy GSL's local database, activate the plugin
+                    # then http://localhost:8090, with your GSL local login
+bin/wp plugin list  # WP-CLI against that site
+bin/wp plugin install plugin-check --activate   # once
+bin/wp plugin check firehouse                   # WordPress's Plugin Check
+composer install
+composer lint       # PHPCS: WordPress coding standards, PHP 8.1 compatibility
+composer test       # PHPUnit
+```
+
+It listens only on this computer and is never exposed beyond it, because Firehouse
+isn't hosted outside GSL, even for a demo.
 
 ## The coverage map
 

@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+#
+# First run of the local Firehouse WordPress (docker-compose.yml).
+#
+# Copies the database from GSL's local site (NOAA-GSL/gsl-wordpress), so pages, menus
+# and theme settings match it, moves it to this site's address, and activates the
+# Firehouse plugin. Log in with the same account as GSL's local site.
+#
+#   bin/wp-init             set up once; stops if the site is already set up
+#   bin/wp-init --refresh   replace this site's database with a new copy of GSL's
+#
+# GSL's media library isn't copied, so images in GSL's own pages don't load here.
+# The theme's logos and icons do.
+
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+export MSYS_NO_PATHCONV=1
+
+# Compose reads .env itself; this script needs the same two settings from it.
+if [[ -f .env ]]; then
+	set -a
+	# shellcheck disable=SC1091
+	source .env
+	set +a
+fi
+
+GSL_DIR=${GSL_WORDPRESS_DIR:-../wordpress-gsl}
+URL="http://localhost:${FIREHOUSE_WP_PORT:-8090}"
+
+if [[ ! -f "$GSL_DIR/docker-compose.yml" ]]; then
+	echo "No gsl-wordpress checkout at $GSL_DIR. Set GSL_WORDPRESS_DIR to its path." >&2
+	exit 1
+fi
+
+# This repository is public, so GSL's exact WordPress and PHP versions aren't written
+# in it. Read GSL's images from the checkout and keep them in .env (ignored by git),
+# where Compose finds them.
+gsl_image() {
+	sed -n "s/^[[:space:]]*image:[[:space:]]*\(wordpress:$1[^[:space:]]*\).*/\1/p" "$GSL_DIR/docker-compose.yml" | head -n1
+}
+set_env() {
+	touch .env
+	{ grep -v "^$1=" .env || true; echo "$1=$2"; } > .env.tmp
+	mv .env.tmp .env
+}
+GSL_WORDPRESS_IMAGE=$(gsl_image '[0-9]')
+GSL_WPCLI_IMAGE=$(gsl_image cli)
+if [[ -z "$GSL_WORDPRESS_IMAGE" || -z "$GSL_WPCLI_IMAGE" ]]; then
+	echo "Couldn't find the WordPress images in $GSL_DIR/docker-compose.yml." >&2
+	exit 1
+fi
+set_env GSL_WORDPRESS_IMAGE "$GSL_WORDPRESS_IMAGE"
+set_env GSL_WPCLI_IMAGE "$GSL_WPCLI_IMAGE"
+export GSL_WORDPRESS_IMAGE GSL_WPCLI_IMAGE
+
+if ! (cd "$GSL_DIR" && docker compose ps --status running --services) | grep -qx db; then
+	echo "GSL's database isn't running. Start only that service:" >&2
+	echo "  (cd $GSL_DIR && docker compose up -d db)" >&2
+	exit 1
+fi
+
+docker compose up -d db wordpress
+
+echo "Waiting for the database..."
+# Over TCP: MySQL's first-start setup runs a socket-only server that would answer too early.
+until docker compose exec -T db sh -c 'mysqladmin ping -h 127.0.0.1 -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" --silent' >/dev/null 2>&1; do
+	sleep 2
+done
+
+if bin/wp core is-installed >/dev/null 2>&1 && [[ "${1:-}" != "--refresh" ]]; then
+	echo "Already set up at $URL. Run bin/wp-init --refresh to copy GSL's database again."
+	exit 0
+fi
+
+echo "Copying the database from $GSL_DIR..."
+(cd "$GSL_DIR" && docker compose exec -T db sh -c 'mysqldump --single-transaction --quick --skip-lock-tables --no-tablespaces -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"') |
+	docker compose exec -T db sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"'
+
+OLD_URL=$(bin/wp option get home | tr -d '\r')
+if [[ "$OLD_URL" != "$URL" ]]; then
+	bin/wp search-replace "$OLD_URL" "$URL" --skip-columns=guid --report-changed-only
+fi
+
+# Plugins active on GSL's site but not mounted here are switched off, as WordPress
+# would do on the next admin page load.
+bin/wp eval 'require_once ABSPATH . "wp-admin/includes/plugin.php"; validate_active_plugins();'
+bin/wp plugin activate firehouse
+bin/wp rewrite flush
+
+echo "Done: $URL"

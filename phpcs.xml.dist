@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<ruleset name="Firehouse">
+  <description>PHPCS rules for the Firehouse plugin: GSL's WordPress standards, plus a check against the plugin's PHP minimum.</description>
+
+  <arg name="tab-width" value="4"/>
+  <arg name="extensions" value="php"/>
+  <arg value="ps"/>
+
+  <file>wp-content/plugins/firehouse</file>
+
+  <exclude-pattern>*/build/*</exclude-pattern>
+  <exclude-pattern>*/vendor/*</exclude-pattern>
+
+  <rule ref="WordPress" />
+  <rule ref="WordPress-Extra" />
+  <rule ref="WordPress-Docs" />
+
+  <rule ref="PHPCompatibilityWP" />
+  <config name="testVersion" value="8.1-"/>
+  <config name="minimum_wp_version" value="6.7"/>
+
+  <rule ref="WordPress.WP.I18n">
+    <properties>
+      <property name="text_domain" type="array">
+        <element value="firehouse"/>
+      </property>
+    </properties>
+  </rule>
+
+  <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+    <properties>
+      <property name="prefixes" type="array">
+        <element value="firehouse"/>
+      </property>
+    </properties>
+  </rule>
+
+  <!--
+    Tests run outside WordPress: PHPUnit needs each class in a file of the same name
+    (VersionTest.php), the bootstrap defines ABSPATH, and tests read local files.
+  -->
+  <rule ref="WordPress.Files.FileName">
+    <exclude-pattern>*/tests/*</exclude-pattern>
+  </rule>
+  <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+    <exclude-pattern>*/tests/*</exclude-pattern>
+  </rule>
+  <rule ref="WordPress.WP.AlternativeFunctions">
+    <exclude-pattern>*/tests/*</exclude-pattern>
+  </rule>
+</ruleset>

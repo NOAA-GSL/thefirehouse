@@ -1,0 +1,49 @@
+name: WordPress plugin
+
+# Coding standards and unit tests for wp-content/plugins/firehouse, on the oldest PHP
+# the plugin supports ("Requires PHP" in firehouse.php).
+
+on:
+  push:
+    paths:
+      - 'wp-content/**'
+      - 'composer.json'
+      - 'composer.lock'
+      - 'phpcs.xml.dist'
+      - 'phpunit.xml.dist'
+      - '.github/workflows/wordpress-plugin.yml'
+  pull_request:
+    paths:
+      - 'wp-content/**'
+      - 'composer.json'
+      - 'composer.lock'
+      - 'phpcs.xml.dist'
+      - 'phpunit.xml.dist'
+      - '.github/workflows/wordpress-plugin.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          tools: composer:v2
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: PHPCS
+        run: vendor/bin/phpcs
+
+      - name: PHPUnit
+        run: vendor/bin/phpunit

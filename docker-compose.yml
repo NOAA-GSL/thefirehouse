@@ -1,0 +1,75 @@
+# Local WordPress for building the Firehouse plugin (WORDPRESS-PLAN.md, "Local development").
+#
+# GSL's theme and must-use plugins are mounted read-only from a checkout of GSL's
+# internal gsl-wordpress repository, and the Firehouse plugin from this one. Set
+# GSL_WORDPRESS_DIR if that checkout isn't at ../wordpress-gsl.
+#
+# The WordPress images are GSL's own. This repository is public, so their exact
+# versions aren't written here: bin/wp-init reads them from the checkout into .env.
+#
+# The site listens only on this computer: Firehouse is not hosted outside GSL, even
+# for a demo.
+#
+#   bin/wp-init    first run: copy GSL's local database and activate the plugin
+#   bin/wp ...     WP-CLI against this site
+
+name: firehouse-wordpress
+
+# wp-config.php reads these at run time, so WP-CLI needs them as much as the site does.
+x-wordpress-env: &wordpress-env
+  WORDPRESS_DB_HOST: db:3306
+  WORDPRESS_DB_USER: wordpress
+  WORDPRESS_DB_PASSWORD: wordpress
+  WORDPRESS_DB_NAME: wordpress
+  WORDPRESS_DEBUG: 1
+  WORDPRESS_CONFIG_EXTRA: |
+    define( 'WP_ENVIRONMENT_TYPE', 'local' );
+    define( 'WP_DEBUG_LOG', false );
+    define( 'WP_DEBUG_DISPLAY', true );
+    @ini_set( 'display_errors', 1 );
+    define( 'SCRIPT_DEBUG', true );
+
+x-wordpress-volumes: &wordpress-volumes
+  - wordpress:/var/www/html
+  - ./wp-content/plugins/firehouse:/var/www/html/wp-content/plugins/firehouse
+  - ${GSL_WORDPRESS_DIR:-../wordpress-gsl}/wp-content/themes/gsl-theme:/var/www/html/wp-content/themes/gsl-theme:ro
+  - ${GSL_WORDPRESS_DIR:-../wordpress-gsl}/wp-content/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
+  - ${GSL_WORDPRESS_DIR:-../wordpress-gsl}/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini:ro
+
+services:
+  db:
+    image: mysql:8.0
+    command: --default-authentication-plugin=mysql_native_password
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - db:/var/lib/mysql
+
+  wordpress:
+    image: ${GSL_WORDPRESS_IMAGE:?run bin/wp-init first; it reads GSL's images into .env}
+    depends_on:
+      - db
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${FIREHOUSE_WP_PORT:-8090}:80"
+    environment: *wordpress-env
+    volumes: *wordpress-volumes
+
+  wpcli:
+    image: ${GSL_WPCLI_IMAGE:?run bin/wp-init first; it reads GSL's images into .env}
+    profiles: [cli]
+    user: "33:33"
+    depends_on:
+      - wordpress
+    environment: *wordpress-env
+    working_dir: /var/www/html
+    volumes: *wordpress-volumes
+    entrypoint: wp
+
+volumes:
+  db:
+  wordpress:
