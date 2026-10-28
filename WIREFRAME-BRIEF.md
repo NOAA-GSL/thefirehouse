@@ -197,8 +197,9 @@ it reviewed. Text edits are yours too. A developer is only needed for code chang
 **For ITS:** Stored on GSL's server: project text, editorial fields, the syntheses and
 their revision history. Not stored: emails, job titles, IP addresses or uploaded
 files. Public pages are read-only, with no forms. Logins are a Firehouse Editor role
-that can change Firehouse content and nothing else. Outbound requests: doi.org, for
-paper titles. Map tiles load in the visitor's own browser. Personal data stays in
+that can change Firehouse content and nothing else. Outbound requests: doi.org and the
+two services it forwards to (Crossref and DataCite), for the titles of papers with a
+DOI. Researchers' own links are never fetched. Map tiles load in the visitor's own browser. Personal data stays in
 the form's Google Sheet; which Google account holds it is still open.
 
 ## Diagram 4: Later phases (each its own release, only when its trigger is met)

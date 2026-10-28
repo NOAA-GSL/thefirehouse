@@ -52,7 +52,7 @@ that produced it).
 | Caching | Cloudflare. Whether it caches HTML, and how purges work, is still unknown (see [Caching](#caching)). |
 | Install path | Security reviews each plugin release; developers install it. |
 | WP-CLI | **Not relied on.** Everything, including the first data load, is done in wp-admin. |
-| Outbound network | Believed allowed (doi.org). A Site Health check confirms it on the test site. |
+| Outbound network | Believed allowed (doi.org). DOI lookups also reach api.crossref.org and data.crosscite.org, where doi.org forwards them. A Site Health check confirms all three on the test site. |
 | Survey tool | **Google Forms** today; it replaced Colorado State's Qualtrics. Where the survey lives long term is undecided. Responses land in a linked Google Sheet. Which Google account owns the form is open (question 16). See [What changes with Google Forms](#what-changes-with-google-forms). |
 | Survey API sync | **Not now** (30 September). Stephanie and Emily download responses after their own quality check, and expect about 50 submissions a year. The design is kept as a later phase. |
 | Survey intake | **Stays in Google Forms** for the first release (see [Scope](#scope-one-roof-in-stages)). |
@@ -377,8 +377,11 @@ Every code change is a reviewed release, so the design keeps releases rare and r
 short:
 
 - **No third-party PHP libraries.** Only WordPress's own APIs.
-- **A short, documented list of outbound hosts:** doi.org, Google's APIs (if the sync
-  is adopted) and the Esri basemap tiles, which the visitor's browser loads directly.
+- **A short, documented list of outbound hosts:** doi.org and the two metadata services
+  it forwards DOI lookups to (api.crossref.org and data.crosscite.org), Google's APIs
+  (if the sync is adopted) and the Esri basemap tiles, which the visitor's browser
+  loads directly. The server never fetches a link a researcher typed, and a redirect
+  to any host off that list is refused.
 - **Secrets in `wp-config.php`, not the database.** The sync's Google key, if the sync
   is built, is a constant set by developers. It stays out of database backups, and
   editors never handle it.
@@ -409,8 +412,13 @@ confirms.
     its project page, so the quality check can happen on the page as visitors will
     see it rather than in spreadsheet cells. Publishing is WordPress's Publish button.
   - Responses missing from a newer export are flagged, not deleted.
-  - Paper titles are looked up from DOIs and pages, keeping the last good metadata
-    when a lookup fails.
+  - Paper titles are looked up for DOIs only, keeping the last good metadata when a
+    lookup fails. A DOI is also read off a link whose address carries one, as Zenodo
+    records do. Today's importer also fetches other links and reads the page's
+    citation tags; the port drops that, so the server only contacts the hosts in
+    [Security review](#security-review). The dry run lists links without a DOI, and an
+    editor can type a title for one on the project's edit screen, which re-imports
+    keep. Titles the site already shows for such links carry over in the seed bundle.
 
 WP-CLI commands may exist for developers, but nothing depends on them.
 
@@ -457,7 +465,12 @@ things differ.
   so `.xlsx` and `.csv` downloads give the same value. It holds still only while
   **"Allow response editing" stays off**: an edited response gets a new timestamp and
   would import as a new project. As a backstop, the dry run flags a new response whose
-  title and submitter match an existing project.
+  title and submitter match an existing project. A timestamp is only to the second, so
+  the dry run never guesses on a match. Two rows with the same timestamp stop both from
+  importing, and moving one by a second in the Sheet resolves it. A row whose timestamp
+  matches a project but whose title or submitter differs is shown beside that project,
+  and updates it only when the person importing confirms that row: it may be a
+  correction made in the Sheet, or a different response.
 - **Answers are labels, not codes.** Qualtrics exported recode values (`ONCC`), so the
   map never depended on wording. Google exports the label the respondent clicked. The
   ten GACC labels already end in their code ("Northern California (ONCC)"), so the
@@ -687,8 +700,8 @@ behaves the same, and the accessibility snapshots match.
 - The Google Forms path on the Import screen: column matching, the timestamp key,
   label matching, and each new draft linked to its preview.
 - Download NotebookLM source.
-- Site Health checks: outbound reach to doi.org, `noindex` on test, and HTML caching
-  status.
+- Site Health checks: outbound reach to doi.org, api.crossref.org and
+  data.crosscite.org, `noindex` on test, and HTML caching status.
 
 **Done when:** the Node and PHP importers produce identical records from a synthetic
 Google Forms export, a reworded question imports after one column choice, and the
