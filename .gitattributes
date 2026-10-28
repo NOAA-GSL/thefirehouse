@@ -1,0 +1,2 @@
+# Shell scripts run in Git Bash and Linux; a CRLF checkout breaks them.
+bin/* text eol=lf
