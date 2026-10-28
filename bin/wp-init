@@ -68,7 +68,13 @@ until docker compose exec -T db sh -c 'mysqladmin ping -h 127.0.0.1 -u"$MYSQL_US
 	sleep 2
 done
 
-if bin/wp core is-installed >/dev/null 2>&1 && [[ "${1:-}" != "--refresh" ]]; then
+# Ask MySQL, not WP-CLI: a WP-CLI failure (its container not starting, say) must not
+# read as "not set up" and overwrite this site's database.
+if ! TABLES=$(docker compose exec -T db sh -c 'mysql -N -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -e "SHOW TABLES"' 2>/dev/null); then
+	echo "Couldn't read this site's database, so nothing was copied." >&2
+	exit 1
+fi
+if [[ -n "$TABLES" && "${1:-}" != "--refresh" ]]; then
 	echo "Already set up at $URL. Run bin/wp-init --refresh to copy GSL's database again."
 	exit 0
 fi
