@@ -2,6 +2,7 @@
   "name": "noaa-gsl/thefirehouse",
   "description": "Coding standards and tests for the Firehouse WordPress plugin in wp-content/plugins/firehouse.",
   "type": "project",
+  "license": "Apache-2.0",
   "require-dev": {
     "squizlabs/php_codesniffer": "^3.10",
     "wp-coding-standards/wpcs": "^3.0",

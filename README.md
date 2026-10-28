@@ -367,3 +367,7 @@ on a white tile, so its slate outline still reads on a dark browser tab. The UI 
 in `src/assets/logos/` include `-on-dark` variants with the slate recoloured light for
 the dark header and hero. There is no vector source yet — if one arrives, regenerate
 from it.
+
+## License
+
+Apache License 2.0. See [LICENSE](LICENSE).

@@ -8,8 +8,8 @@
  * Requires PHP:      8.1
  * Author:            NOAA Global Systems Laboratory
  * Author URI:        https://gsl.noaa.gov
- * License:           GPL-2.0-or-later
- * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
+ * License:           Apache-2.0
+ * License URI:       https://www.apache.org/licenses/LICENSE-2.0
  * Text Domain:       firehouse
  *
  * Registers nothing yet. WORDPRESS-PLAN.md in the repository describes what this

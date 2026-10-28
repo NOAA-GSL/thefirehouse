@@ -3,8 +3,8 @@ Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 8.1
 Stable tag: 0.1.0
-License: GPLv2 or later
-License URI: https://www.gnu.org/licenses/gpl-2.0.html
+License: Apache-2.0
+License URI: https://www.apache.org/licenses/LICENSE-2.0
 
 Public-facing hub for NOAA GSL's fire weather social science needs and findings.
 
