@@ -51,6 +51,7 @@ Thumbs.db
 
 # Agents / AI tooling (local state & configs)
 .claude/
+Claude outputs/
 .impeccable/
 .agents/
 .agent/
