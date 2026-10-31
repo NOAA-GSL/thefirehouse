@@ -16,12 +16,13 @@ order:
 1. **Today:** how a survey response becomes a page on the current site.
 2. **The bridge:** the same site moved onto GSL's servers for the mid-November WPO
    meeting and for AMS in January 2027.
-3. **WordPress, first release:** the workflow under one roof in GSL's WordPress.
-4. **Later phases:** what could move inside WordPress later, and what each move
-   would take.
+3. **WordPress, first release:** the whole workflow under one roof in GSL's
+   WordPress, survey form and AI synthesis included.
+4. **Later phases:** what could come after the first release, and what each would
+   take.
 
 **Part 2 (optional): three editor-screen wireframes** for the first WordPress
-release: the Import screen, a draft project preview, and the synthesis review.
+release: a new submission, a draft project preview, and the synthesis review.
 
 **Part 3: one page-frame mockup** showing a Firehouse page inside GSL's header and
 footer, so Stephanie and Emily can see what changes at the top and bottom of the page.
@@ -72,9 +73,10 @@ in the "For ITS" notes and the markers below, not in the box labels.
 
 **Don't:**
 
-- Draw NotebookLM, or any AI tool, talking directly to the website. In every diagram
-  a person carries the AI's output in.
-- Show a survey form inside WordPress anywhere except Later phases (L3).
+- Draw any AI output reaching the public pages without passing through Stephanie and
+  Emily's review. In Diagrams 1 and 2 a person carries the AI's output in; in
+  Diagram 3 the plugin fetches it, and it still waits as a draft for review.
+- Show a survey form inside WordPress in Diagrams 1 and 2.
 - Show a live "latest submission" ticker or a PDF generator on the server.
 - Draw a citation button or "Cite this page" anywhere. The site no longer offers
   citations.
@@ -162,64 +164,67 @@ Nothing runs outside GSL.
 
 ## Diagram 3: WordPress, first release (one roof for the workflow)
 
-**Takeaway:** Once data arrives, Stephanie and Emily do everything themselves in
-GSL's WordPress, and nothing goes public without their review.
+**Takeaway:** Researchers submit on gsl.noaa.gov, the synthesis runs from the
+dashboard, and Stephanie and Emily review everything before it goes public, all in
+GSL's WordPress.
 
-**Zones:** Outside WordPress (Google) · GSL WordPress: staff screens (login required)
-· GSL WordPress: public pages. Add a thin lane along the bottom, spanning both WordPress
-zones, for code changes.
+**Zones:** Outside WordPress (the AI service, and the retiring Google Form) · GSL
+WordPress: staff screens (login required) · GSL WordPress: public pages. Add a thin
+lane along the bottom, spanning both WordPress zones, for code changes.
 
 | Zone | Who | Box | What happens there | Markers |
 | --- | --- | --- | --- | --- |
-| Outside WordPress | Researchers | Google Form | Replaces the Qualtrics survey | Personal data, Open question: "Whose Google account?" |
-| Outside WordPress | Steph & Emily | Response Sheet | The form's linked Google Sheet; responses land here, ready to download | Personal data |
-| Outside WordPress | Steph & Emily | AI tool | NotebookLM with the team's prompt; returns JSON | — |
-| Staff screens | Steph & Emily | Import screen | Shows a preview first; drops email and job title; the uploaded file is not kept | — |
-| Staff screens | Steph & Emily | Draft projects | Preview each project page as visitors will see it, then Publish | Review step |
-| Staff screens | Steph & Emily | Synthesis screen | Paste the AI's JSON; flags any project it doesn't recognize | — |
+| Public pages | Researchers | Survey form | The Submit page; replaces the Google Form at launch | Personal data, Open question: "PRA answer in writing?" |
+| Outside WordPress | — | Approved AI service | Receives published project text and the team's prompt; returns the top needs | Open question: "Which service is approved?" |
+| Outside WordPress | Steph & Emily | Google Form and Sheet (muted, dotted outline) | Responses collected before launch | Personal data |
+| Staff screens | Steph & Emily | Import screen | One-time import of the Google Form's responses; drops email and job title; the uploaded file is not kept | — |
+| Staff screens | Steph & Emily | Draft projects | Each submission arrives here; preview the page as visitors will see it, then Publish. The submitter's email is visible only here | Review step, Personal data |
+| Staff screens | Steph & Emily | Synthesis screen | "Analyze results", or paste NotebookLM's output as a fallback; flags any project it doesn't recognize | — |
 | Staff screens | Steph & Emily | Draft synthesis | Shows what changed since the published version, then Mark reviewed | Review step |
-| Staff screens | Steph & Emily | Page text | Edit About and landing page words in place; layout is locked | — |
+| Staff screens | Steph & Emily | Page text and question wording | Edit About and landing page words, and the survey's questions, in place; layout is locked | — |
 | Public pages | Visitors | Explorer and project pages | Inside GSL's header and footer | — |
 | Public pages | Visitors | Landing and topic pages | The ranked top needs, with their sources | — |
 | Public pages | Visitors | About page | — | — |
 | Code lane | Developer and ITS | Plugin release | Security review → test site → gsl.noaa.gov | — |
 
-**Arrows:** Google Form → Response Sheet: "responses land" (solid) · Response Sheet →
-Import screen: "downloaded, then uploaded" (dashed) · Import screen → Draft projects:
-"creates drafts" (solid) · Draft projects → Explorer and
-project pages: "Publish" (solid) · Synthesis screen → AI tool: "download AI source"
-(dashed; the source holds published projects only) · AI tool → Synthesis screen:
-"paste JSON" (dashed) · Synthesis screen → Draft synthesis: "checks links" (solid) ·
-Draft synthesis → Landing and topic pages: "Mark reviewed" (solid) · Page text →
-About page: "Update" (solid) · public pages → Google Form: "Submit a Finding opens
-the form" (thin dotted link).
+**Arrows:** Survey form → Draft projects: "creates a draft" (solid) · Google Form and
+Sheet → Import screen: "downloaded once, then uploaded" (dashed) · Import screen →
+Draft projects: "creates drafts" (solid) · Draft projects → Explorer and project
+pages: "Publish" (solid) · Synthesis screen → Approved AI service: "Analyze results"
+(solid; published projects only) · Approved AI service → Synthesis screen: "top needs
+back" (solid) · Synthesis screen → Draft synthesis: "checks links" (solid) · Draft
+synthesis → Landing and topic pages: "Mark reviewed" (solid) · Page text → About page:
+"Update" (solid) · public pages → Survey form: "Submit a Finding" (thin dotted link).
 
-**For Steph and Emily:** You download the form's response Sheet, upload it, and
-preview each new project before publishing it. You paste the AI's output, see exactly what changed, and mark
-it reviewed. Text edits are yours too. A developer is only needed for code changes.
+**For Steph and Emily:** Submissions arrive as drafts: you preview each one as a
+project page and publish it. You press Analyze results, see exactly what changed, and
+mark it reviewed. Page text and the survey's wording are yours too. A developer is
+only needed for code changes. Until an AI service is approved, you paste NotebookLM's
+output in instead.
 
 **For ITS:** Stored on GSL's server: project text, editorial fields, the syntheses and
-their revision history. Not stored: emails, job titles, IP addresses or uploaded
-files. Public pages are read-only, with no forms. Logins are a Firehouse Editor role
-that can change Firehouse content and nothing else. Outbound requests: doi.org and the
-two services it forwards to (Crossref and DataCite), for the titles of papers with a
-DOI. Researchers' own links are never fetched. Map tiles load in the visitor's own browser. Personal data stays in
-the form's Google Sheet; which Google account holds it is still open.
+their revision history, and from the form, submitters' emails, job titles and
+internal-only answers. Those are readable only by the Firehouse roles, never shown on a
+page, and kept as long as the privacy review allows. No IP addresses or uploaded files.
+One public form writes to the database, with server-side validation and spam
+protection. Logins are a Firehouse Editor role that can change Firehouse content and
+nothing else. Outbound requests: the approved AI service (published text only), and
+doi.org and the two services it forwards to (Crossref and DataCite), for the titles of
+papers with a DOI. Researchers' own links are never fetched. Map tiles load in the
+visitor's own browser.
 
 ## Diagram 4: Later phases (each its own release, only when its trigger is met)
 
-**Takeaway:** Each piece can move inside WordPress later, one at a time, each with its
-own security review.
+**Takeaway:** The first release already holds the whole workflow. What remains is
+optional, one release at a time, each with its own security review.
 
-Draw Diagram 3's boxes in a muted, outlined style, then add four highlighted changes,
+Draw Diagram 3's boxes in a muted, outlined style, then add two highlighted changes,
 each tagged with its number:
 
 | Tag | Change | Trigger | For Steph and Emily | For ITS |
 | --- | --- | --- | --- | --- |
-| L1 | Synthesis screen → **Approved LLM API** (new box, outside WordPress): "Run synthesis" (solid) | An LLM API approved for this use | No more copying between the AI tool and WordPress; the review step stays | One new outbound host and one key; sends only text that is already public |
-| L2 | Response Sheet → Import screen becomes solid: "Sync now" | Downloading by hand becomes a chore, for example if WPO makes submission a funding requirement | No more downloads | A read-only Google key stored on GSL's server; fetches only the public columns; needs the form owner's agreement |
-| L3 | **Survey form on gsl.noaa.gov** (new box in public pages, Personal data marker) → Draft projects: "creates drafts" | Google Forms stops being workable | Submissions arrive as drafts, as before | Personal data on GSL's server and a public form; needs a Paperwork Reduction Act check and a privacy review |
-| L4 | **Print-ready pages** (small addition on the public pages): "save as PDF from the browser" | Someone names who will use it | A clean PDF of the top needs | No server change |
+| L1 | **Print-ready pages** (small addition on the public pages): "save as PDF from the browser" | Someone names who will use it | A clean PDF of the top needs | No server change |
+| L2 | **Survey plugin** (the Survey form box splits out as its own plugin, which another GSL project's box also uses) | Another GSL project wants a survey | No change to how you work | One more plugin to review, holding code that already passed review |
 
 ---
 
@@ -230,19 +235,20 @@ titles from `src/content/data/projects.json` and the four topic areas: Observati
 and Monitoring; Forecasts and Modeling; Warnings and Immediate Response; Strategic
 Adaptation and Institutional Governance.
 
-1. **Import screen.** Upload the response Sheet downloaded from Google. The preview
-   lists new projects (arriving as drafts), updated projects, and excluded rows with
-   their reasons, for example "no IRB approval or exemption". If a question was
-   reworded, the preview asks which column now holds it. Nothing is written until
-   "Import" is pressed. After import, each new draft links to its preview.
+1. **New submission.** A draft that arrived from the survey form, listed with its
+   submitter and date. A panel visible only to the Firehouse roles shows the
+   submitter's email and job title, marked "Private, never shown on the site". A
+   submission the checks flagged shows the reason, for example "no IRB approval or
+   exemption".
 2. **Draft project preview.** The project page as visitors will see it, under a bar
    reading "Draft, not public" with "Publish" and "Edit" buttons. Survey answers are
    marked "From the survey, read-only"; editorial fields are editable.
-3. **Synthesis review.** A paste box, then a checks panel (for example: "A need in
-   Forecasts and Modeling names a project that is not published"), then a comparison
-   per topic area: needs added, dropped or reworded, mention-count changes, and
-   sources gained or lost. Buttons: "Save draft" and "Mark reviewed" (the ember
-   action). After marking, show the reviewer's name and the date.
+3. **Synthesis review.** An "Analyze results" button, with "or paste a result" beneath
+   it, then a checks panel (for example: "A need in Forecasts and Modeling names a
+   project that is not published"), then a comparison per topic area: needs added,
+   dropped or reworded, mention-count changes, and sources gained or lost. Buttons:
+   "Save draft" and "Mark reviewed" (the ember action). After marking, show the
+   reviewer's name and the date.
 
 ## Part 3: the page frame
 
@@ -270,12 +276,14 @@ current design."
 
 ## Facts to keep straight
 
-- About 50 submissions a year are expected. The latest Qualtrics export has 8
-  responses; 7 are published. New responses come from the Google Form that replaced
-  Qualtrics.
+- About 50 submissions a year are expected. There are 8 submissions so far; 7 are
+  published. Qualtrics is closed, and all 8 were re-entered through the Google Form,
+  which takes new submissions until the plugin's own form replaces it at launch.
+- Needs are counted once per project: a need raised several times in one project
+  counts once.
 - The public address is `gsl.noaa.gov/firehouse/`. The test site's address is not
   given here; label it "Test site".
 - Open questions to mark with "?" where they appear: Apache or nginx on GSL's
   servers; whether Cloudflare caches pages; login or network restriction for the
-  test copy; one mention per project or per entry in the synthesis counts; which
-  Google account owns the form.
+  test copy; which Google account owns the form; which AI service is approved; the
+  Paperwork Reduction Act answer in writing.

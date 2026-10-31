@@ -56,9 +56,9 @@ Governance.
 For each topic area:
 - List up to 5 needs, most important first. Weigh a need higher when several projects
   raise it independently.
-- For each need, count its mentions: the number of numbered "Entry" blocks, across
-  all projects, that raise it. The same entry may count toward needs in more than
-  one topic area.
+- For each need, count its mentions: the number of projects that raise it. A project
+  counts once, however many of its numbered "Entry" blocks raise the need. The same
+  entry may count toward needs in more than one topic area.
 - Write each need as one plain-language phrase of no more than 15 words, starting
   with a noun (e.g. "Longer-lead outlooks for planning windows beyond 72 hours").
   Name the end-user group when the projects do.
