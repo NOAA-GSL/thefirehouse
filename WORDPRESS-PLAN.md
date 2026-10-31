@@ -1,14 +1,10 @@
 # WordPress plan — The Firehouse as a GSL WordPress plugin
 
-> **Status: proposal for review, 30 September 2026; updated 1 October after the
-> 30 September meeting with Stephanie and Emily, 27 October when the survey moved
-> from Qualtrics to Google Forms and GSL's theme was confirmed as a classic theme, and
-> 31 October with the look and feel and the decisions of 28–31 October: the survey
-> form and the AI synthesis move inside the plugin.**
-> Only the empty plugin and a local WordPress are built (Phase 0). This
-> document records the decisions made so far, the architecture they lead to, and a
-> phased plan from the current `main` branch to a plugin running on gsl.noaa.gov.
-> Disagreements belong in the pull request that adds this file.
+> **Status: proposal for review, last updated 31 October 2026.** Only the empty plugin
+> and a local WordPress are built (Phase 0). This document is the current plan: the
+> decisions made so far, the architecture they lead to, and a phased plan from the
+> current `main` branch to a plugin running on gsl.noaa.gov. It changes through pull
+> requests, so earlier versions are in its git history.
 
 Read alongside `README.md` (what exists today) and `PLAN.md` (the walkthrough changes
 that produced it).
@@ -47,7 +43,7 @@ that produced it).
 | --- | --- |
 | Rendering | **Full WordPress rendering, in a plugin.** Not headless, not WordPress serving the React bundle, and not a standalone application linked from GSL's site (considered and set aside in October; see [Why full rendering](#why-full-rendering)). |
 | Hosts | GSL's test WordPress site first, gsl.noaa.gov later. Both run GSL's own **classic theme** (`gsl-theme`: PHP header and footer, no Site Editor; confirmed 27 October) and meet the plugin's minimums (WordPress 6.7+, PHP 8.1+). |
-| Design | **The Firehouse keeps its own design** (the one in this repository, described in `DESIGN.md`) for everything between GSL's header and footer. Stephanie and Emily chose it on 28 October; ITS approval is still needed (open question 18). The plugin carries the templates, stylesheets and fonts and loads them on Firehouse pages only. Nothing goes into GSL's theme. See [Look and feel](#look-and-feel). |
+| Design | **The Firehouse keeps its own design** (the one in this repository, described in `DESIGN.md`) for everything between GSL's header and footer. Stephanie and Emily chose it on 28 October; ITS approval is still needed (open question 6). The plugin carries the templates, stylesheets and fonts and loads them on Firehouse pages only. Nothing goes into GSL's theme. See [Look and feel](#look-and-feel). |
 | URL base | `/firehouse` on both. The path is free on both sites. |
 | Place in GSL's menus | A Firehouse item under GSL's Research Portal menu, or failing that a tile on its Decision Support Systems page (Stephanie and Emily, 28 October). GSL's web team adds it. |
 | Fields | **WordPress built-in fields**: `register_post_meta`, the Settings API and block attributes. No ACF or Secure Custom Fields. |
@@ -59,7 +55,7 @@ that produced it).
 | Survey tool | **A form built into the plugin** (29 October), as a self-contained part of it (31 October). See [The survey form](#the-survey-form). Until the plugin launches, researchers submit through the **Google Form** that replaced Colorado State's Qualtrics. Its responses go into the site's files through the existing import script, as today, and reach WordPress in the seed bundle at launch (see [Importing the Google Form until launch](#importing-the-google-form-until-launch)). |
 | Responses so far | Qualtrics is closed, and every real submission was re-entered through the Google Form (28 October), so the form's Sheet is the complete record. |
 | Survey API sync | **Dropped** (29 October). With the form in the plugin there is no Sheet to sync. |
-| AI synthesis | **Runs from the plugin** (agreed with Stephanie and Emily, 28 October). An **Analyze results** button sends the published projects and the team's prompt to an approved AI service, and the result waits as a draft for review. Amazon Bedrock is proposed and needs approval under NOAA's AI policy (open question 20). Until then, and as the fallback, the synthesis screen takes NotebookLM's output by paste. See [The AI service](#the-ai-service). |
+| AI synthesis | **Runs from the plugin** (agreed with Stephanie and Emily, 28 October). An **Analyze results** button sends the published projects and the team's prompt to an approved AI service, and the result waits as a draft for review. Amazon Bedrock is proposed and needs approval under NOAA's AI policy (open question 7). Until then, and as the fallback, the synthesis screen takes NotebookLM's output by paste. See [The AI service](#the-ai-service). |
 | Need counts | **Once per project** (28 October): a need mentioned several times in one project counts once. |
 | Link previews through Cloudflare | Found out during testing (see [Link previews](#page-titles-descriptions-and-link-previews)). |
 | AMS bridge | Probably possible, and recommended, starting on the test site for the mid-November WPO meeting (see [The AMS bridge](#the-ams-bridge)). |
@@ -72,9 +68,8 @@ that produced it).
 
 ## Scope: one roof
 
-The team's original concept puts the whole workflow in one system: a submission form,
-an AI pass, a pending queue, human review, then publishing. The first release builds
-all of it (decided 28–29 October):
+The first release puts the whole workflow in one system: a submission form, an AI
+pass, a pending queue, human review, then publishing.
 
 ```
 Survey form (/firehouse/submit/) ───▶ draft projects ──preview, Publish──▶ site
@@ -92,11 +87,11 @@ Analyze results (AI service) ───────▶ draft synthesis ──diff
   projects, including every Google Form response collected before launch, once. Pasted
   AI output is the fallback until an AI service is approved.
 
-**What it costs.** The first release now stores personal data (submitters' emails and
-job titles) on GSL's server and has a public form that writes to the database. Its
+**What it costs.** The first release stores personal data (submitters' emails and job
+titles) on GSL's server and has a public form that writes to the database. Its
 security review is longer, and the form can't open on gsl.noaa.gov until a privacy
 review is done and the Paperwork Reduction Act question is answered in writing (open
-questions 14 and 19).
+questions 12 and 15).
 
 ---
 
@@ -104,15 +99,8 @@ questions 14 and 19).
 
 ### Why full rendering
 
-Three shapes were considered:
-
-- **Headless.** WordPress holds the content and the React site stays elsewhere.
-- **WordPress serves the React app.** WordPress owns routing and `<head>`; React
-  renders the page body.
-- **Full WordPress rendering.** PHP renders the pages.
-
-The third was chosen. The site will be maintained inside GSL's WordPress by the people
-who run it, so it should behave like the rest of it:
+PHP renders every page, in a plugin. The site is maintained inside GSL's WordPress by
+the people who run it, so it should behave like the rest of it:
 
 - server-rendered pages, real 404s and per-page link previews;
 - a codebase in the stack GSL's WordPress developers and security reviewers already
@@ -120,12 +108,18 @@ who run it, so it should behave like the rest of it:
 
 The cost is rewriting the page layer, which is where most of the estimate goes.
 
-A fourth shape was considered in October: **a standalone application that GSL's site
-links to**, which keeps custom code out of WordPress. It was set aside. The Firehouse
-is a whole application, not a widget on a page, and a standalone version would have to
-build the sign-in, roles, editing, drafts and revision history that WordPress already
-provides. Plugins that share one set of patterns are also easier for one developer to
-maintain than separate sites.
+The alternatives, and why not:
+
+- **Headless.** WordPress holds the content and the React site stays elsewhere. The
+  site would still need hosting of its own, and wouldn't behave like GSL's other pages.
+- **WordPress serves the React app.** WordPress owns routing and `<head>`; React
+  renders the page body. Two stacks to maintain, and pages that render only in the
+  browser.
+- **A standalone application that GSL's site links to.** It keeps custom code out of
+  WordPress, but The Firehouse is a whole application, not a widget on a page, and a
+  standalone version would have to build the sign-in, roles, editing, drafts and
+  revision history that WordPress already provides. Plugins that share one set of
+  patterns are also easier for one developer to maintain than separate sites.
 
 ### Where today's code goes
 
@@ -135,13 +129,13 @@ maintain than separate sites.
 | Design-system components (~2,300 lines of TSX) | PHP partials that emit **the same markup and class names** |
 | All CSS (~5,000 lines: tokens, components, pages) | Carried over nearly verbatim, scoped under a wrapper class |
 | `derive.ts`, `format.ts`, `normalize.ts` | Rewritten in PHP. |
-| `citation.ts` and the citation tabs | Not ported. The citation generator comes off the site (October 2026). |
+| `citation.ts` and the citation tabs | Not ported: the site offers no citations (see [Decisions so far](#decisions-so-far)). |
 | `search.ts` | Kept in both languages: PHP renders the first, already-filtered page, and JavaScript filters as you type. |
 | `RegionMap.tsx` | Leaflet stays, driven by an Interactivity API store |
 | Mobile menu, scrollable need cards, quick-look modal | Interactivity API. The modal becomes a native `<dialog>`, which traps focus and handles Escape itself. |
 | React Router, `ContentProvider`, the adapters, `RouteFocusManager` | Retired. Full page loads make them unnecessary. |
 | `SiteHeader`, `GovBanner`, `SiteFooter` | The Firehouse bar (`firehouse/subnav`) sits under GSL's header. GSL's header and footer take over the gov banner, the NOAA and GSL logos and the footer (see [Look and feel](#look-and-feel)). |
-| `ThemeProvider` and its light/dark toggle | Retired. GSL's header has its own toggle, which sets the same `data-theme` attribute Firehouse's dark colors key off (open question 7). |
+| `ThemeProvider` and its light/dark toggle | Retired. GSL's header has its own toggle, which sets the same `data-theme` attribute Firehouse's dark colors key off (open question 9). |
 | `lucide-react` | The same icons as inline SVG from Lucide's static set |
 | `landing.json`, `about.json` | Pages built from blocks, locked so editors change words but not layout |
 | `projects.json` | `fh_project` posts |
@@ -151,12 +145,11 @@ maintain than separate sites.
 | `scripts/notebooklm-source.mjs` | Rewritten in PHP as **Download NotebookLM source**, for the paste-in fallback |
 | The Google Form (outside this repository) | The plugin's survey form (see [The survey form](#the-survey-form)) |
 | The NotebookLM notebook | Analyze results and an approved AI service (see [The AI service](#the-ai-service)); paste-in stays as the fallback |
-| Vite, `public/.htaccess`, `public/_redirects` | Retired. The block and view scripts build with `@wordpress/scripts`. (`netlify.toml` was removed in October 2026.) |
+| Vite, `public/.htaccess`, `public/_redirects` | Retired. The block and view scripts build with `@wordpress/scripts`. |
 
-The rewrite is smaller than the line counts suggest. The original port already moved
-the design system from inline React styles into plain CSS files with `fh-` class
-names. The PHP templates emit the same markup and classes, so the stylesheets move
-across nearly untouched.
+The rewrite is smaller than the line counts suggest. The design system is already in
+plain CSS files with `fh-` class names, not inline React styles. The PHP templates emit
+the same markup and classes, so the stylesheets move across nearly untouched.
 
 `src/content/types.ts` stays useful: it becomes the specification for the post meta.
 A JSON Schema generated from it is passed to `register_post_meta`, so WordPress itself
@@ -180,11 +173,11 @@ A Firehouse page is stacked like this:
    Today's header stays pinned while the page scrolls; whether the bar does depends on
    how GSL's header behaves, and is settled in Phase 3.
 3. **The Firehouse page** in the current design: the atmosphere background, glass
-   panels, Archivo and Public Sans (open question 8), the cards and the ember accent,
+   panels, Archivo and Public Sans (open question 10), the cards and the ember accent,
    all scoped under `.fh-app` (rule 9).
 4. **GSL's footer** (`get_footer()`), with the federal links.
 
-Set aside:
+The alternatives, and why not:
 
 - **Building the Firehouse look into GSL's theme**, switched on under `/firehouse`.
   One feature would be split across two codebases, its markup in the plugin and its
@@ -326,7 +319,7 @@ in a rewrite.
      a submitter. They are stored apart from the survey fields, in meta that is never
      rendered, never sent through the REST API and never copied into revisions, and
      only the Firehouse roles can read them. How long they are kept is for the privacy
-     review (open question 19). The form records no IP address.
+     review (open question 15). The form records no IP address.
 3. **Unpublished records never leave the server.** Today `normalize.ts` keeps
    unpublished projects, and only the pages filter them out, so staged records ship in
    the JavaScript bundle. As WordPress drafts they are never rendered or sent to a
@@ -353,9 +346,9 @@ in a rewrite.
    query on Firehouse pages so the explorer's parameter keeps its meaning.
 8. **The vocabularies live in one place.** Fire phases, regions, publication statuses,
    topic keys and icon names move to `shared/vocabulary.json`, read by both PHP and
-   JavaScript, and the survey form draws its choices from it. Adding a survey option
-   (as "After" was in September 2026) becomes a code change that waits on a reviewed
-   release: the form can't offer the new option until then.
+   JavaScript, and the survey form draws its choices from it. Adding a survey option,
+   such as a new fire phase, is a code change that waits on a reviewed release: the
+   form can't offer the new option until then.
 9. **CSS is walled off in both directions.**
    - Outward: tokens on `:root`, the `body` background and its fixed atmosphere layer,
      the `*` and `img, svg` rules and the global `:focus-visible` ring all move under an
@@ -485,8 +478,8 @@ Next to it is the **synthesis screen**, where the AI pass comes back in:
    display are ignored.
 2. **Validate.** A need that names an unknown project, or one that is not published, is
    flagged with the entry quoted: the synthesis may only draw on what the site shows.
-   Needs count once per project (decided 28 October), so the screen also flags any need
-   whose count differs from the number of projects it lists.
+   Needs count once per project, so the screen also flags any need whose count differs
+   from the number of projects it lists.
 3. **Compare.** The screen shows what changes against the published synthesis: needs
    added, dropped or reworded, rank and count changes, and sources gained or lost. This
    is what the reviewer signs off on.
@@ -498,10 +491,9 @@ No project link is made by hand: the JSON carries them.
 
 ### The survey form
 
-The survey moves onto gsl.noaa.gov as part of the plugin (decided 29 October), at
-`/firehouse/submit/`. It is built in its own `survey/` folder with its own tests, so it
-could later become a separate plugin if other GSL projects want a survey (see
-[Later phases](#later-phases)).
+The survey is part of the plugin, at `/firehouse/submit/`. It is built in its own
+`survey/` folder with its own tests, so it could later become a separate plugin if
+other GSL projects want a survey (see [Later phases](#later-phases)).
 
 - **The same questions as the Google Form.** The choices for regions, fire phases and
   publication status come from `shared/vocabulary.json` (rule 8). The wording of each
@@ -527,17 +519,16 @@ could later become a separate plugin if other GSL projects want a survey (see
   problem, and up to ten repeated need entries that can be added and removed without
   JavaScript. It is checked with a screen reader like the rest.
 - **Before it opens on prod:** a privacy review, a written answer on the Paperwork
-  Reduction Act (open questions 14 and 19), and the security review's sign-off on the
+  Reduction Act (open questions 12 and 15), and the security review's sign-off on the
   submission handler (see [Security review](#security-review)).
 - **The switch.** At launch the Google Form closes, its last responses go through the
   import script into the seed bundle, and Submit a Finding moves to the Submit page.
 
 ### The AI service
 
-The synthesis moves from NotebookLM into the plugin (agreed with Stephanie and Emily,
-28 October). NotebookLM is not believed to offer an API inside the NOAA enterprise, so
-the plugin calls an approved AI service instead. Amazon Bedrock is proposed; it needs
-approval under NOAA's AI policy (open question 20).
+The synthesis runs from the plugin. NotebookLM is not believed to offer an API inside
+the NOAA enterprise, so the plugin calls an approved AI service. Amazon Bedrock is
+proposed; it needs approval under NOAA's AI policy (open question 7).
 
 - **Analyze results** sends the published projects' text and the team's prompt, and
   the reply lands on the synthesis screen as a draft, with the same validation,
@@ -589,9 +580,9 @@ working after the cutover.
 
 **Mid-November first, on the test site.** The same build serves the WPO meeting from
 GSL's test site, restricted to GSL staff by login or by network, whichever ITS prefers.
-Stephanie confirmed on 30 September that a demo opened with their own accounts is
-enough. It also keeps the demo on GSL's infrastructure, the only place the site may
-run: hosting outside GSL is not allowed (see [Decisions so far](#decisions-so-far)).
+A demo opened with Stephanie and Emily's own accounts is enough for that meeting. It
+also keeps the demo on GSL's infrastructure, the only place the site may run: hosting
+outside GSL is not allowed (see [Decisions so far](#decisions-so-far)).
 Build that copy with the test site's address as `VITE_SITE_URL`. If the test site isn't
 ready in time, the fallback is running the build on the presenter's laptop and sharing
 the screen.
@@ -612,8 +603,8 @@ the screen.
 5. **Point Submit a Finding at the Google Form.** `submitFormUrl` in `settings.json`
    still links to the Qualtrics survey, which is closed. The Google Form stays the way
    to submit through AMS, where the team's talk invites researchers to submit.
-6. **Remove the citation generator** from the project page, as agreed in October, so
-   the public site does not invite citations.
+6. **Remove the citation generator** from the project page, so the public site does
+   not invite citations.
 
 About 2–3 days of work, plus about a day for the test-site copy, not counted in the
 plugin estimate.
@@ -654,9 +645,9 @@ The script was written for Qualtrics, so it needs these changes before the next 
   over.
 
 The form's settings that keep this working: "Allow response editing" off; open to
-respondents without a NOAA Google login (*confirmed 28 October*); no file-upload
-question, which would make every respondent sign in to Google (*confirmed 28 October*);
-and region and fire-phase options worded as in `shared/vocabulary.json`.
+respondents without a NOAA Google login (*confirmed*); no file-upload question, which
+would make every respondent sign in to Google (*confirmed*); and region and fire-phase
+options worded as in `shared/vocabulary.json`.
 
 ---
 
@@ -675,8 +666,8 @@ and region and fire-phase options worded as in `shared/vocabulary.json`.
 - **Repair the seed data.** Fix the two double-encoded strings in `projects.json` (see
   the appendix) before the seed bundle is built.
 - **Scaffold the plugin** and a local WordPress for developers (see
-  [Local development](#local-development)). *Done 27 October: the empty plugin passes
-  PHPCS, PHPUnit and Plugin Check.*
+  [Local development](#local-development)). *Done: the empty plugin passes PHPCS,
+  PHPUnit and Plugin Check.*
 - **Check `cf-cache-status`** on gsl.noaa.gov.
 - **Send the design summary** to security.
 
@@ -715,7 +706,7 @@ ones.
   GSL's theme is classic, so no Site Editor copy of a template can override the
   plugin's.
 - Dark colors keyed to GSL's light/dark toggle, if dark mode is kept (open
-  question 7).
+  question 9).
 - The Firehouse bar (`firehouse/subnav`), including whether it stays pinned under
   GSL's header (see [Look and feel](#look-and-feel)).
 - Stephanie and Emily see the frame on the test site (or in screenshots, if the VPN
@@ -811,9 +802,7 @@ bridge resolves to the same content.
 ### Later phases
 
 Each is its own plugin release with its own security review. None is scheduled: each
-starts when its trigger is met. The AI synthesis and the survey form, once later
-phases here, are now in the first release (Phases 7a and 7b), and the Google Sheets
-sync is dropped.
+starts when its trigger is met.
 
 **L1 — Reporting and export.**
 
@@ -891,7 +880,7 @@ Phases 6–7.
 - Revision history on projects and topic syntheses.
 - Unpublished records no longer shipping to browsers.
 - The federal chrome items in the README (gov banner, footer, privacy and
-  accessibility links) now come from GSL's theme.
+  accessibility links) come from GSL's theme.
 
 **Given up:**
 
@@ -910,79 +899,74 @@ Phases 6–7.
 
 1. Is the origin server Apache or nginx? This decides how the bridge is served.
 2. How long does a security review take, and what does a submission need to include?
-3. ~~What are the slugs of the theme's header and footer template parts?~~ *None:
-   GSL's theme is classic, with PHP header and footer files (confirmed 27 October).*
-4. ~~Do administrators customize templates in the Site Editor?~~ *They can't: a
-   classic theme has no Site Editor.*
-5. Does Cloudflare cache HTML (`cf-cache-status`), and who can purge? Does any other
+3. Does Cloudflare cache HTML (`cf-cache-status`), and who can purge? Does any other
    cache sit in front of either site?
+4. Can the bridge go on the test site, restricted to GSL staff, by mid-November?
+
+**For ITS**
+
+5. What else do the Project Intake Request and the Technical Assessment Worksheet
+   need before the project is accepted?
+6. Is The Firehouse's own design approved for the pages between GSL's header and
+   footer, in place of GSL's standard page styles (see
+   [Look and feel](#look-and-feel))? Stephanie and Emily chose it.
+7. Which AI service is approved for the synthesis? Amazon Bedrock is proposed. A
+   colleague of Stephanie's received OAR clearance for similar work, and she has the
+   contacts that colleague worked with. Until a service is approved, the synthesis is
+   pasted in from NotebookLM (see [The AI service](#the-ai-service)).
 
 **For the team**
 
-6. Launch the bridge, on the test site for mid-November and on prod for AMS?
+8. Launch the bridge, on the test site for mid-November and on prod for AMS?
    *Recommended.*
-7. Drop dark mode for the WordPress version? *Recommended (27 October): keep it, and
-   follow GSL's toggle.* The worry was a dark Firehouse section between GSL's light
-   header and footer. GSL's theme turns out to have its own light/dark switch, which
-   sets `data-theme="dark"` on the page, the same attribute Firehouse's dark colors
-   use, so the two always match. Keeping it means the visual and contrast checks run
-   in both themes.
-8. Keep Archivo and Public Sans, or use GSL's fonts (Nunito Sans for text, Montserrat
-   for headings)? GSL's pages already load those, so using them adds nothing to
-   self-host.
-9. ~~Adopt an API sync for the survey?~~ *Not now (30 September); dropped
-   29 October, when the form moved into the plugin.*
-10. Is working without JavaScript a requirement? If not, the PHP search is dropped (see
+9. Keep dark mode for the WordPress version? *Recommended: keep it, and follow GSL's
+   toggle.* GSL's theme has its own light/dark switch, which sets `data-theme="dark"`
+   on the page, the same attribute Firehouse's dark colors use, so a Firehouse page
+   never sits dark between a light header and footer. Keeping it means the visual and
+   contrast checks run in both themes.
+10. Keep Archivo and Public Sans, or use GSL's fonts (Nunito Sans for text, Montserrat
+    for headings)? GSL's pages already load those, so using them adds nothing to
+    self-host.
+11. Is working without JavaScript a requirement? If not, the PHP search is dropped (see
     [Interactivity](#interactivity)).
+12. *(With NOAA's PRA clearance officer)* Does the survey count as a NOAA information
+    collection under the Paperwork Reduction Act? It asks non-federal researchers the
+    same questions on NOAA's behalf. The answer depends on what is collected and for
+    whom, not on which tool hosts the form, and a form on gsl.noaa.gov makes the
+    question more pointed. The current view (29 October) is that clearance isn't
+    needed, but that isn't confirmed in writing, and the form can't open on prod until
+    it is.
+13. Should a project that answers "Project did not require IRB review" be published?
+    The import script treats that answer as no approval, and the survey form flags it
+    the same way (see the appendix).
+14. Which Google account owns the Google Form and its response Sheet: NOAA's Google
+    Workspace, Colorado State's, or another? It decides where personal data lives until
+    launch, and who deletes the Sheet once its responses are imported. If it is NOAA's,
+    the intake documents should say so, because that settles the concern that the
+    survey sat outside NOAA. (The form is open to respondents outside NOAA.)
 
-**Added after the 30 September meeting**
+**For the privacy review**
 
-11. *(GSL's web team)* Can the bridge go on the test site, restricted to GSL staff, by
-    mid-November?
-12. *(GSL's web team)* What do the Project Intake Request and the Technical Assessment
-    Worksheet still need for this site? Dmitri started them.
-13. ~~*(Stephanie and Emily)* Which counting rule is canonical?~~ *Once per project
-    (28 October): a need mentioned several times in one project counts once. Their
-    27 October rerun already used it, and the prompt in `notebooklm/README.md` now
-    does too. The 17 September draft on the site still counts every entry, until the
-    synthesis is rerun.*
-14. *(Stephanie and Emily, with NOAA's PRA clearance officer)* Does the survey count
-    as a NOAA information collection under the Paperwork Reduction Act? It asks
-    non-federal researchers the same questions on NOAA's behalf. The tool doesn't
-    change the question: it is about what is collected and for whom, not which tool
-    hosts the form. Moving the form onto gsl.noaa.gov makes it more pointed. The
-    current view (29 October) is that clearance isn't needed, but that isn't confirmed
-    in writing, and the form can't open on prod until it is.
-15. *(Stephanie and Emily)* Should a project that answers "Project did not require IRB
-    review" be published? The import script treats that answer as no approval, and
-    the survey form will flag it the same way (see the appendix).
+15. What may the survey form keep, and for how long? It stores submitters' emails, job
+    titles and internal-only answers so the team can follow up (rule 2). The review
+    decides how long they are kept and when they are deleted.
 
-**Added after the switch to Google Forms (27 October)**
+**Settled**
 
-16. *(Stephanie and Emily)* Which Google account owns the form and its response Sheet:
-    NOAA's Google Workspace, Colorado State's, or another? It decides where personal
-    data lives until launch, and who deletes the Sheet once its responses are
-    imported. If it is NOAA's, the intake documents should say so, because that is
-    what settles the concern that the survey sat outside NOAA. (The form is open to
-    respondents outside NOAA, confirmed 28 October.)
-17. ~~*(Stephanie and Emily)* Is the Qualtrics survey closed?~~ *Yes (28 October).
-    Every real submission was re-entered through the Google Form, so no last
-    Qualtrics import is needed; the re-entered rows are paired with their existing
-    projects instead (see
-    [Importing the Google Form until launch](#importing-the-google-form-until-launch)).*
-
-**Added 28–31 October**
-
-18. *(ITS)* Is The Firehouse's own design approved for the pages between GSL's header
-    and footer, in place of GSL's standard page styles (see
-    [Look and feel](#look-and-feel))? Stephanie and Emily chose it on 28 October.
-19. *(Privacy review)* What may the survey form keep, and for how long? It stores
-    submitters' emails, job titles and internal-only answers so the team can follow
-    up (rule 2). The review decides how long they are kept and when they are deleted.
-20. *(ITS)* Which AI service is approved for the synthesis? Amazon Bedrock is
-    proposed. A colleague of Stephanie's received OAR clearance for similar work, and
-    she has the contacts that colleague worked with. Until a service is approved, the
-    synthesis is pasted in from NotebookLM (see [The AI service](#the-ai-service)).
+- ~~What are the slugs of the theme's header and footer template parts?~~ *None:
+  GSL's theme is classic, with PHP header and footer files (27 October).*
+- ~~Do administrators customize templates in the Site Editor?~~ *They can't: a
+  classic theme has no Site Editor.*
+- ~~Sync the survey through Google's API?~~ *No (29 October): with the form in the
+  plugin there is no Sheet to sync.*
+- ~~Which counting rule is canonical?~~ *Once per project (28 October): a need
+  mentioned several times in one project counts once. The prompt in
+  `notebooklm/README.md` counts this way; the 17 September draft on the site doesn't,
+  until the synthesis is rerun.*
+- ~~Is the Qualtrics survey closed?~~ *Yes (28 October). Every real submission was
+  re-entered through the Google Form, so no last Qualtrics import is needed; the
+  re-entered rows are paired with their existing projects instead (see
+  [Importing the Google Form until launch](#importing-the-google-form-until-launch)).*
 
 ---
 
@@ -993,7 +977,7 @@ Phases 6–7.
   records are published, so nothing is exposed yet, but the next import stages new
   records as unpublished and they would ship with the next deploy.
 - **Documentation drift.** `README.md` and `PRODUCT.md` still describe nine placeholder
-  projects. `projects.json` now holds seven survey-imported records, all published. The
+  projects. `projects.json` holds seven survey-imported records, all published. The
   migration treats them as real.
 - **The Sanity and Strapi adapters** were never run against a live backend. They
   retire with this plan.
@@ -1001,7 +985,7 @@ Phases 6–7.
   site has seven. `R_3e9GnZYuWAjuZM5` (FWT Evaluation 001, WoFS-Smoke) answered Q8
   with "Project did not require IRB review", which `import-survey.mjs` counts as no
   approval, so it is excluded. The question itself asks about "approval or exemption",
-  so it may belong on the site (open question 15).
+  so it may belong on the site (open question 13).
 - **Mis-encoded text in the export.** Some Qualtrics rows arrive double-encoded
   (`NGFSâ€™s` for `NGFS’s`), and two strings in `projects.json` carry it today. Google
   Forms exports are clean UTF-8, so rather than port a repair, fix the two strings
