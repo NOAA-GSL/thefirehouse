@@ -168,16 +168,17 @@ Nothing runs outside GSL.
 dashboard, and Stephanie and Emily review everything before it goes public, all in
 GSL's WordPress.
 
-**Zones:** Outside WordPress (the AI service, and the retiring Google Form) · GSL
-WordPress: staff screens (login required) · GSL WordPress: public pages. Add a thin
-lane along the bottom, spanning both WordPress zones, for code changes.
+**Zones:** Outside WordPress (the AI service) · GSL WordPress: staff screens (login
+required) · GSL WordPress: public pages. Add a thin lane along the bottom, spanning
+both WordPress zones, for code changes.
+
+Don't draw the Google Form here. Its responses reach WordPress once, at launch, with
+the site's existing projects, and the form then closes.
 
 | Zone | Who | Box | What happens there | Markers |
 | --- | --- | --- | --- | --- |
 | Public pages | Researchers | Survey form | The Submit page; replaces the Google Form at launch | Personal data, Open question: "PRA answer in writing?" |
 | Outside WordPress | — | Approved AI service | Receives published project text and the team's prompt; returns the top needs | Open question: "Which service is approved?" |
-| Outside WordPress | Steph & Emily | Google Form and Sheet (muted, dotted outline) | Responses collected before launch | Personal data |
-| Staff screens | Steph & Emily | Import screen | One-time import of the Google Form's responses; drops email and job title; the uploaded file is not kept | — |
 | Staff screens | Steph & Emily | Draft projects | Each submission arrives here; preview the page as visitors will see it, then Publish. The submitter's email is visible only here | Review step, Personal data |
 | Staff screens | Steph & Emily | Synthesis screen | "Analyze results", or paste NotebookLM's output as a fallback; flags any project it doesn't recognize | — |
 | Staff screens | Steph & Emily | Draft synthesis | Shows what changed since the published version, then Mark reviewed | Review step |
@@ -187,14 +188,13 @@ lane along the bottom, spanning both WordPress zones, for code changes.
 | Public pages | Visitors | About page | — | — |
 | Code lane | Developer and ITS | Plugin release | Security review → test site → gsl.noaa.gov | — |
 
-**Arrows:** Survey form → Draft projects: "creates a draft" (solid) · Google Form and
-Sheet → Import screen: "downloaded once, then uploaded" (dashed) · Import screen →
-Draft projects: "creates drafts" (solid) · Draft projects → Explorer and project
-pages: "Publish" (solid) · Synthesis screen → Approved AI service: "Analyze results"
-(solid; published projects only) · Approved AI service → Synthesis screen: "top needs
-back" (solid) · Synthesis screen → Draft synthesis: "checks links" (solid) · Draft
-synthesis → Landing and topic pages: "Mark reviewed" (solid) · Page text → About page:
-"Update" (solid) · public pages → Survey form: "Submit a Finding" (thin dotted link).
+**Arrows:** Survey form → Draft projects: "creates a draft" (solid) · Draft projects →
+Explorer and project pages: "Publish" (solid) · Synthesis screen → Approved AI
+service: "Analyze results" (solid; published projects only) · Approved AI service →
+Synthesis screen: "top needs back" (solid) · Synthesis screen → Draft synthesis:
+"checks links" (solid) · Draft synthesis → Landing and topic pages: "Mark reviewed"
+(solid) · Page text → About page: "Update" (solid) · public pages → Survey form:
+"Submit a Finding" (thin dotted link).
 
 **For Steph and Emily:** Submissions arrive as drafts: you preview each one as a
 project page and publish it. You press Analyze results, see exactly what changed, and
