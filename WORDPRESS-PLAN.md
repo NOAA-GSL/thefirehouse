@@ -1,8 +1,9 @@
 # WordPress plan — The Firehouse as a GSL WordPress plugin
 
 > **Status: proposal for review, 30 September 2026; updated 1 October after the
-> 30 September meeting with Stephanie and Emily, and 27 October when the survey moved
-> from Qualtrics to Google Forms and GSL's theme was confirmed as a classic theme.**
+> 30 September meeting with Stephanie and Emily, 27 October when the survey moved
+> from Qualtrics to Google Forms and GSL's theme was confirmed as a classic theme, and
+> 31 October to record the look and feel.**
 > Only the empty plugin and a local WordPress are built (Phase 0). This
 > document records the decisions made so far, the architecture they lead to, and a
 > phased plan from the current `main` branch to a plugin running on gsl.noaa.gov.
@@ -46,6 +47,7 @@ that produced it).
 | --- | --- |
 | Rendering | **Full WordPress rendering.** Not headless, and not WordPress serving the React bundle. |
 | Hosts | GSL's test WordPress site first, gsl.noaa.gov later. Both run GSL's own **classic theme** (`gsl-theme`: PHP header and footer, no Site Editor; confirmed 27 October) and meet the plugin's minimums (WordPress 6.7+, PHP 8.1+). |
+| Design | **The Firehouse keeps its own design** (the one in this repository, described in `DESIGN.md`) for everything between GSL's header and footer. Stephanie and Emily chose it on 28 October; ITS approval is still needed (open question 18). The plugin carries the templates, stylesheets and fonts and loads them on Firehouse pages only. Nothing goes into GSL's theme. See [Look and feel](#look-and-feel). |
 | URL base | `/firehouse` on both. The path is free on both sites. |
 | Fields | **WordPress built-in fields**: `register_post_meta`, the Settings API and block attributes. No ACF or Secure Custom Fields. |
 | SEO plugin | None installed. The plugin writes its own meta tags and defers to an SEO plugin if one is added later. |
@@ -139,6 +141,7 @@ The cost is rewriting the page layer, which is where most of the estimate goes.
 | `RegionMap.tsx` | Leaflet stays, driven by an Interactivity API store |
 | Mobile menu, scrollable need cards, quick-look modal | Interactivity API. The modal becomes a native `<dialog>`, which traps focus and handles Escape itself. |
 | React Router, `ContentProvider`, the adapters, `RouteFocusManager` | Retired. Full page loads make them unnecessary. |
+| `SiteHeader`, `GovBanner`, `SiteFooter` | The Firehouse bar (`firehouse/subnav`) sits under GSL's header. GSL's header and footer take over the gov banner, the NOAA and GSL logos and the footer (see [Look and feel](#look-and-feel)). |
 | `ThemeProvider` and its light/dark toggle | Retired. GSL's header has its own toggle, which sets the same `data-theme` attribute Firehouse's dark colors key off (open question 7). |
 | `lucide-react` | The same icons as inline SVG from Lucide's static set |
 | `landing.json`, `about.json` | Pages built from blocks, locked so editors change words but not layout |
@@ -156,6 +159,43 @@ across nearly untouched.
 `src/content/types.ts` stays useful: it becomes the specification for the post meta.
 A JSON Schema generated from it is passed to `register_post_meta`, so WordPress itself
 rejects a malformed value.
+
+### Look and feel
+
+WordPress runs one theme per site, so the plugin doesn't add a second one. It doesn't
+need to: for its own pages, a plugin can do what a theme does. It picks the template
+with the `template_include` filter and loads its own stylesheets, fonts and scripts on
+Firehouse pages only.
+
+A Firehouse page is stacked like this:
+
+1. **GSL's header** (`get_header()`): the gov banner, the NOAA and GSL logos, GSL's
+   navigation and its light/dark switch.
+2. **The Firehouse bar** (`firehouse/subnav`), on every Firehouse page: the FireHouse
+   wordmark, Home, Explore Projects, About and the Submit a Finding button. It is
+   today's header without the NOAA and GSL logos and the theme toggle, which GSL's
+   header already has. Below 1024px the links fold into a drawer, as they do today.
+   Today's header stays pinned while the page scrolls; whether the bar does depends on
+   how GSL's header behaves, and is settled in Phase 3.
+3. **The Firehouse page** in the current design: the atmosphere background, glass
+   panels, Archivo and Public Sans (open question 8), the cards and the ember accent,
+   all scoped under `.fh-app` (rule 9).
+4. **GSL's footer** (`get_footer()`), with the federal links.
+
+Set aside:
+
+- **Building the Firehouse look into GSL's theme**, switched on under `/firehouse`.
+  One feature would be split across two codebases, its markup in the plugin and its
+  styles in a theme the web team owns. Every design change would wait on a theme
+  release, the two halves would drift apart, and deactivating the plugin would leave
+  its styles behind.
+- **Full-page Firehouse, without GSL's header and footer.** The plugin could do it
+  (its template would still call `wp_head()` and `wp_footer()`), and the pages would
+  look exactly like today. But Firehouse would have to rebuild the gov banner and
+  footer links, would lose GSL's navigation, and would read as a separate site.
+- **A separate theme for `/firehouse`**, through WordPress Multisite or a
+  theme-switching plugin. Multisite means converting GSL's whole install, and theme
+  switchers are fragile.
 
 ### Plugin layout
 
@@ -658,10 +698,16 @@ ones.
   plugin's.
 - Dark colors keyed to GSL's light/dark toggle, if dark mode is kept (open
   question 7).
-- The `firehouse/subnav` block.
+- The Firehouse bar (`firehouse/subnav`), including whether it stays pinned under
+  GSL's header (see [Look and feel](#look-and-feel)).
+- Stephanie and Emily see the frame on the test site (or in screenshots, if the VPN
+  gets in the way), in light and dark and at phone width, before Phase 4 builds pages
+  on it. The header is the part of the design that changes most, so this is the
+  cheapest point to change it.
 
 **Done when:** an empty Firehouse page on the test site sits inside GSL's header and
-footer, with no styles leaking in either direction.
+footer, with no styles leaking in either direction, and Stephanie and Emily have
+signed off on the frame.
 
 ### Phase 4 — Display-only pages (2–2.5 weeks)
 
@@ -907,6 +953,12 @@ Phases 6–7.
 17. *(Stephanie and Emily)* Is the Qualtrics survey closed? Anything submitted there
     since the last export needs one last Qualtrics import before the seed bundle is
     built.
+
+**Added 31 October**
+
+18. *(ITS)* Is The Firehouse's own design approved for the pages between GSL's header
+    and footer, in place of GSL's standard page styles (see
+    [Look and feel](#look-and-feel))? Stephanie and Emily chose it on 28 October.
 
 ---
 

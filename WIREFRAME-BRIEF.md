@@ -4,7 +4,7 @@
 > design system (`DESIGN.md` and `src/styles/tokens/`), then paste this whole file in
 > as the prompt. Everything the diagrams need is written here; nothing has to be
 > worked out from the code. The source of truth is `WORDPRESS-PLAN.md` (updated
-> 27 October 2026). If the two disagree, the plan wins and this brief is out of date.
+> 31 October 2026). If the two disagree, the plan wins and this brief is out of date.
 
 ---
 
@@ -23,8 +23,12 @@ order:
 **Part 2 (optional): three editor-screen wireframes** for the first WordPress
 release: the Import screen, a draft project preview, and the synthesis review.
 
-These are conversation starters for a meeting, not final art. Keep them low fidelity
-and easy to change.
+**Part 3: one page-frame mockup** showing a Firehouse page inside GSL's header and
+footer, so Stephanie and Emily can see what changes at the top and bottom of the page.
+
+These are conversation starters for a meeting, not final art. Keep Parts 1 and 2 low
+fidelity and easy to change. Part 3 is the exception: it uses the real design system,
+because how the page looks is the question it answers.
 
 ## Who reads them
 
@@ -239,6 +243,30 @@ Adaptation and Institutional Governance.
    per topic area: needs added, dropped or reworded, mention-count changes, and
    sources gained or lost. Buttons: "Save draft" and "Mark reviewed" (the ember
    action). After marking, show the reviewer's name and the date.
+
+## Part 3: the page frame
+
+The WordPress version keeps The Firehouse's own design for the page itself, but
+GSL's header and footer replace the Firehouse header's logos and the footer (see
+"Look and feel" in `WORDPRESS-PLAN.md`). This mockup shows the result.
+
+Two frames, side by side: desktop (1440 wide) and phone (390 wide), both in light
+mode, both showing the top of the landing page. Stacked top to bottom:
+
+1. **GSL's header:** a plain gray placeholder band labelled "GSL header: gov banner,
+   NOAA and GSL logos, GSL's site navigation, light/dark switch". Don't draw GSL's
+   real header or invent its design.
+2. **The Firehouse bar**, in the real design (`SiteHeader` in
+   `src/design-system/`): the FireHouse wordmark, Home, Explore Projects, About and
+   the ember Submit a Finding button. No NOAA or GSL logos and no theme toggle, since
+   GSL's header has both. On the phone frame the links fold into the drawer button.
+3. **The Firehouse landing page** as it looks today: the atmosphere background, the
+   hero and the top of the topic cards.
+4. **GSL's footer:** a gray placeholder band labelled "GSL footer: federal links",
+   shown after a short "…" gap that stands for the rest of the page.
+
+Under the frames, one line: "Everything between the gray bands is The Firehouse's
+current design."
 
 ## Facts to keep straight
 
