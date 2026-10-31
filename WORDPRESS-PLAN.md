@@ -448,17 +448,20 @@ short:
 ### No WP-CLI: the Import screen
 
 One **Firehouse → Import** screen, available only to a separate import capability,
-loads the **seed bundle**: a zip of today's JSON files plus the About portraits. This
-is how test, and later prod, get their first load. A dry-run preview first lists what
-was parsed and any warnings, and nothing is written until the person confirms. It is
-repeatable: running it again updates the same posts rather than duplicating them. The
-zip is parsed from PHP's temporary upload and never stored.
+loads the **seed bundle**: a zip of today's JSON files, the excluded responses' file
+(see below) and the About portraits. This is how test, and later prod, get their first
+load. A dry-run preview first lists what was parsed and any warnings, and nothing is
+written until the person confirms. It is repeatable: running it again updates the same
+posts rather than duplicating them. The zip is parsed from PHP's temporary upload and
+never stored.
 
-Survey responses don't come through this screen. Until launch they go into the JSON
-files through the existing import script (see
+Survey responses don't come through this screen. Until launch the existing import
+script turns them into the JSON files (see
 [Importing the Google Form until launch](#importing-the-google-form-until-launch)),
-so the seed bundle already holds every response collected before then. After launch
-they arrive through the plugin's own form.
+so the seed bundle holds every response collected before then. Projects arrive as they
+are on the site. Responses the script excludes, such as one without IRB approval or
+exemption, arrive as drafts marked with the reason, the same as a form submission the
+checks flag. After launch, responses arrive through the plugin's own form.
 
 WP-CLI commands may exist for developers, but nothing depends on them.
 
@@ -643,6 +646,13 @@ The script was written for Qualtrics, so it needs these changes before the next 
   through the Google Form with a new timestamp. The first run pairs each with its
   existing record, by title and submitter, so its slug and editorial fields carry
   over.
+- **Keeping the excluded responses.** A response without IRB approval or exemption
+  stays out of the site's files, as today. The script also writes it, with the private
+  answers already dropped and the reason attached, to a separate file. That file is
+  never committed, because the repository is public, and never built into the bridge.
+  The seed bundle carries it, so each excluded response reaches WordPress as a flagged
+  draft. A row with no project title is still dropped outright: there is nothing to
+  make a project from.
 
 The form's settings that keep this working: "Allow response editing" off; open to
 respondents without a NOAA Google login (*confirmed*); no file-upload question, which
@@ -849,7 +859,9 @@ Phases 6–7.
 - **Logic parity.** PHP and TypeScript run the same shared test cases.
 - **Import script.** The adapted `import-survey.mjs` runs on a synthetic Google Forms
   export (real exports contain submitters' emails) and produces the expected records,
-  including the paired re-entered submissions.
+  including the paired re-entered submissions. Excluded responses land only in the
+  uncommitted file, never in the site's JSON, and the seed import turns each into a
+  flagged draft.
 - **Migration parity.** After the seed import, the content WordPress renders must
   match `normalizeSiteContent()` run over today's JSON.
 - **Synthesis import.** Pasting the published synthesis back shows no changes. A need
@@ -938,7 +950,8 @@ Phases 6–7.
     it is.
 13. Should a project that answers "Project did not require IRB review" be published?
     The import script treats that answer as no approval, and the survey form flags it
-    the same way (see the appendix).
+    the same way. Either way it reaches WordPress as a flagged draft, so the answer
+    decides only whether it can be published (see the appendix).
 14. Which Google account owns the Google Form and its response Sheet: NOAA's Google
     Workspace, Colorado State's, or another? It decides where personal data lives until
     launch, and who deletes the Sheet once its responses are imported. If it is NOAA's,
