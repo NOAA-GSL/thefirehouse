@@ -1,7 +1,9 @@
 name: WordPress plugin
 
 # Coding standards and unit tests for wp-content/plugins/firehouse, on the oldest PHP
-# the plugin supports ("Requires PHP" in firehouse.php).
+# the plugin supports ("Requires PHP" in firehouse.php), and WordPress's Plugin Check
+# against a throwaway WordPress. Every release has to pass all three before it goes to
+# security review.
 
 on:
   push:
@@ -47,3 +49,16 @@ jobs:
 
       - name: PHPUnit
         run: vendor/bin/phpunit
+
+  plugin-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Pinned to the commit behind v1.1.9 rather than the movable tag, as the action
+      # pins its own dependencies: a third-party action runs with this job's token.
+      - name: Plugin Check
+        uses: WordPress/plugin-check-action@10857da14b6c2246d15402b3e69f777edcf8c12e # v1.1.9
+        with:
+          build-dir: ./wp-content/plugins/firehouse

@@ -415,7 +415,8 @@ builds on it rather than on a generic `wp-env` site.
   GSL, even for a demo.
 - **GSL's tooling.** PHPCS with the WordPress Coding Standards (plus a check against
   the PHP 8.1 minimum), PHPUnit 10 with Brain Monkey so tests run without WordPress,
-  and CI on that minimum. Plugin Check runs inside the local site.
+  and CI on that minimum. Plugin Check runs inside the local site, and in CI against a
+  throwaway WordPress.
 - **GSL's media library is not copied,** so images on GSL's own pages don't load
   locally. The theme's header, footer and logos do.
 
@@ -453,7 +454,8 @@ short:
   capabilities, outbound hosts, secrets. Surprises at the final review are the
   expensive kind.
 - **Every release passes `PHPCS` (WordPress coding standards) and Plugin Check**
-  before it is submitted.
+  before it is submitted. CI runs both on every change to the plugin, so a failure
+  shows up on the pull request that caused it rather than at release time.
 
 ### No WP-CLI: the Import screen
 

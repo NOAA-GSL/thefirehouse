@@ -238,6 +238,9 @@ composer lint       # PHPCS: WordPress coding standards, PHP 8.1 compatibility
 composer test       # PHPUnit
 ```
 
+CI runs all three on every change to the plugin: PHPCS and PHPUnit on PHP 8.1, and
+Plugin Check in a throwaway WordPress (`.github/workflows/wordpress-plugin.yml`).
+
 It listens only on this computer and is never exposed beyond it, because Firehouse
 isn't hosted outside GSL, even for a demo.
 
