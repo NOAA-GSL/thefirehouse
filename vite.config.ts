@@ -41,9 +41,9 @@ function spaFallback(): Plugin {
  * `VITE_NOINDEX=1` also asks search engines not to index any page, for a copy that
  * isn't the public site, such as the one on GSL's test site. A `robots.txt` can't do
  * that job here: under a sub-path like `/firehouse/` it isn't at the site's root, so
- * crawlers never read it. Empty, `0`, `false` and `no` leave it off, so a public build
- * can't drop out of search by a value meant to say "off". The build prints which tags
- * it added.
+ * crawlers never read it. `1`, `true` and `yes` turn it on; empty, `0`, `false` and
+ * `no` leave it off; anything else stops the build, so a value meant to say "off"
+ * can't take the public site out of search. The build prints which tags it added.
  *
  * Both are read from the shell's environment at build time, not from `.env` files,
  * which Vite loads for the app's code but not for this config.
@@ -55,8 +55,10 @@ function siteMeta(): Plugin {
       order: 'post',
       handler(html) {
         const tags: string[] = [];
-        if (!/^(|0|false|no)$/i.test(process.env.VITE_NOINDEX?.trim() ?? '')) {
-          tags.push('<meta name="robots" content="noindex" />');
+        const noindex = process.env.VITE_NOINDEX?.trim() ?? '';
+        if (/^(1|true|yes)$/i.test(noindex)) tags.push('<meta name="robots" content="noindex" />');
+        else if (!/^(|0|false|no)$/i.test(noindex)) {
+          throw new Error(`VITE_NOINDEX="${noindex}" is neither on (1, true, yes) nor off (0, false, no).`);
         }
 
         const site = process.env.VITE_SITE_URL?.trim().replace(/\/+$/, '');
