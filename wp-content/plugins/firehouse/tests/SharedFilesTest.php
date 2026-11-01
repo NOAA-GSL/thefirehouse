@@ -40,6 +40,9 @@ final class SharedFilesTest extends TestCase {
 		$this->assertSame( array( 'observe', 'forecast', 'warning', 'governance' ), $keys( $vocabulary['topics'] ) );
 		$this->assertCount( 10, array_filter( array_column( $vocabulary['regions'], 'mapped' ) ) );
 		$this->assertContains( 'Northwest -- OR, WA (NWCC)', array_column( $vocabulary['regions'], 'formLabel' ) );
+		foreach ( $vocabulary['topics'] as $topic ) {
+			$this->assertContains( $topic['icon'], $vocabulary['icons'], $topic['key'] );
+		}
 	}
 
 	/**

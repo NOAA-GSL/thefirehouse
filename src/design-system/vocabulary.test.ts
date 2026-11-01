@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import vocabulary from '../../wp-content/plugins/firehouse/shared/vocabulary.json' with { type: 'json' };
-import { isIconName } from './Icon';
+import { ICON_NAMES, isIconName } from './Icon';
 import type { FirePhase, GaccKey, NonGaccRegion, PublicationStatus } from './taxonomy';
 import type { TopicKey } from './topics';
 
@@ -64,6 +64,10 @@ describe('shared/vocabulary.json', () => {
   it('has no two options with one Google Form label', () => {
     const labels = [...vocabulary.firePhases, ...vocabulary.regions].map((item) => item.formLabel);
     expect(new Set(labels).size).toBe(labels.length);
+  });
+
+  it('names exactly the icons the registry has', () => {
+    expect([...vocabulary.icons].sort()).toEqual([...ICON_NAMES].sort());
   });
 
   it('has the four topics, each with a known icon', () => {

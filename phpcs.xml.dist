@@ -37,7 +37,8 @@
 
   <!--
     Tests run outside WordPress: PHPUnit needs each class in a file of the same name
-    (VersionTest.php), the bootstrap defines ABSPATH, and tests read local files.
+    (VersionTest.php), the bootstrap defines ABSPATH, tests read local files, and a
+    test's exception message goes to the test report, never to a page.
   -->
   <rule ref="WordPress.Files.FileName">
     <exclude-pattern>*/tests/*</exclude-pattern>
@@ -46,6 +47,9 @@
     <exclude-pattern>*/tests/*</exclude-pattern>
   </rule>
   <rule ref="WordPress.WP.AlternativeFunctions">
+    <exclude-pattern>*/tests/*</exclude-pattern>
+  </rule>
+  <rule ref="WordPress.Security.EscapeOutput.ExceptionNotEscaped">
     <exclude-pattern>*/tests/*</exclude-pattern>
   </rule>
 </ruleset>

@@ -14,3 +14,7 @@ require dirname( __DIR__, 4 ) . '/vendor/autoload.php';
 if ( ! defined( 'ABSPATH' ) ) {
 	define( 'ABSPATH', __DIR__ . '/' );
 }
+
+require_once dirname( __DIR__ ) . '/firehouse.php';
+require_once __DIR__ . '/Cases.php';
+require_once __DIR__ . '/DomainTestCase.php';
