@@ -30,7 +30,7 @@ interface ButtonAsButton extends BaseProps {
   onClick?: MouseEventHandler<HTMLButtonElement>;
 }
 
-/** External / absolute destinations, e.g. the Qualtrics submission survey. */
+/** External / absolute destinations, e.g. the submission survey. */
 interface ButtonAsAnchor extends BaseProps {
   href: string;
   to?: undefined;
