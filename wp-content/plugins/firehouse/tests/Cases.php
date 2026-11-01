@@ -44,6 +44,7 @@ final class Cases {
 		foreach ( self::read( $file )['cases'] as $case ) {
 			$key = ( $case['fn'] ?? '' ) . ': ' . $case['name'];
 			if ( isset( $cases[ $key ] ) ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- A test's message goes to the test report, never to a page.
 				throw new RuntimeException( 'Two cases share a name in ' . $file . ': ' . $key );
 			}
 			$cases[ $key ] = array( $case );
@@ -190,6 +191,7 @@ final class Cases {
 		$node = &$document;
 		foreach ( $tokens as $token ) {
 			if ( ! is_array( $node ) || ! array_key_exists( $token, $node ) || ! is_array( $node[ $token ] ) ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- A test's message goes to the test report, never to a page.
 				throw new RuntimeException( "Can't reach " . $pointer . '.' );
 			}
 			$node = &$node[ $token ];
