@@ -19,9 +19,9 @@
     <meta name="theme-color" content="#0a1020" media="(prefers-color-scheme: dark)" />
 
     <!-- Link previews. Everything that doesn't need to know the final domain lives
-         here; og:url, og:image and the canonical link are injected at build time from
-         VITE_SITE_URL, because they have to be absolute and hosting is still open.
-         See the firehouse-site-meta plugin in vite.config.ts. -->
+         here; og:image is injected at build time from VITE_SITE_URL, because it has
+         to be absolute. There's deliberately no og:url or canonical link: see the
+         firehouse-site-meta plugin in vite.config.ts. -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="The Firehouse" />
     <meta property="og:locale" content="en_US" />
