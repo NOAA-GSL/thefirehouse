@@ -690,6 +690,14 @@ something new has arrived.
   appendix). If the team wants an excluded response in WordPress, an editor enters it
   through the Submit page after launch, which flags it the same way. A row with no
   project title is still dropped outright: there is nothing to make a project from.
+- **Tests first, and a check in CI.** The import already stops on two columns that
+  claim one question, two rows that land on one record, a missing title, IRB or year
+  column, and anything shaped like an email address (the PR #6 reviews). Tests with
+  made-up rows pin those stops before the rewrite, so none is lost in it. A column
+  whose title asks for an email, a job title or how results were shared is refused
+  rather than mapped. CI also checks `src/content/data/projects.json` and
+  `notebooklm/` for email-shaped text, which catches a hand edit or a merge the
+  script never saw.
 
 The form's settings that keep this working, all confirmed: "Allow response editing"
 off; open to respondents without a NOAA Google login; no file-upload question, which

@@ -160,7 +160,7 @@ overrides are isolated so a re-sync doesn't lose them.
   so a published URL can't be broken by renaming a topic in the CMS.
 - **Two new topic fields**, `intro` (paragraphs) and `covers` (a "what this area
   covers" list), in `topics.json` and `types.ts`. Both optional: a topic without
-  them still renders, just shorter. Arrays of plain strings rather than rich text,
+  them still renders. `intro` is kept in the data but no longer shown. Arrays of plain strings rather than rich text,
   so nothing has to render editor-supplied HTML.
 
 ## Before this goes public
@@ -173,7 +173,7 @@ overrides are isolated so a re-sync doesn't lose them.
 - [x] **Remove the citation generator.** The site isn't a permanent archive and pages
       may be withdrawn, so project pages don't offer a citation.
 - [x] **Stop the topic pages scrolling sideways on phones.** `npm run reference` now
-      fails if any page is wider than the window, at 390px or at WCAG's 320px.
+      fails if any page is wider than the window, at 1280px, 390px or WCAG's 320px.
 - [ ] **Add the hero image.** `src/assets/imagery/fire-weather-hero.png` is missing —
       it's a binary asset in the design project and couldn't come across the
       design-sync API, which returns text. Drop the file in that directory and it's
@@ -314,15 +314,16 @@ Two rules it enforces that the UI cannot:
   is published like "Yes". `normalize.ts` filters ineligible records again at runtime
   as a backstop.
 
-A record new to `survey-editorial.json` stages as `published: false`, so the site
-doesn't show it until Stephanie or Emily publish it. It is still in `projects.json`,
+A record whose `survey-editorial.json` entry doesn't set `"published": true` stages
+as unpublished, so the site doesn't show it until Stephanie or Emily publish it. It is still in `projects.json`,
 though, and so in this public repository and the site's JavaScript once it's committed
 and built: staging hides a record, it doesn't keep it private.
 
 `QUESTION_MAP` at the top of the script maps each field to its question id (`Q5`).
 A column is found by the id its header starts with, so both Qualtrics' bare ids and
-the team's sheet's "Q5. Project Title" work. Two columns that claim one id stop the
-import, except that a header that is exactly the id beats one like "Q14 - Topics". A
+the team's sheet's "Q5. Project Title" work. Two columns that claim the id of a
+question the script reads stop the import, except that a header that is exactly the
+id beats one like "Q14 - Topics". A
 missing title, IRB or completion-year column stops it too, rather than writing an
 empty file. Only the links box (`Q17`) may hold several entries in one cell, split
 before each link or DOI; takeaways and needs have to come one per column.
@@ -332,7 +333,8 @@ The sheet has no ResponseId column, so each row is matched to its record by titl
 in `projects.json`. A row matching neither is skipped and listed under Excluded. To
 add a row, or after a title changes in the sheet, give its ResponseId a `title` in
 `survey-editorial.json`, as WoFS-Smoke has. Two rows that land on one record stop the
-import, and the report lists any record in `projects.json` the import would drop.
+import. The report says which record each row was matched to, and lists any record
+in `projects.json` the import would drop.
 
 The script stops before writing if any field holds something shaped like an email
 address, naming only the record and field, and its report masks addresses. It
@@ -390,8 +392,9 @@ VITE_BASE_PATH=/firehouse/ VITE_SITE_URL=https://gsl.noaa.gov npm run build
 ```
 
 Set these in the shell, as above: `vite.config.ts` reads them from the environment,
-and Vite doesn't give it `.env` files. Leave `VITE_NOINDEX` unset for the public build;
-`0`, `false` and `no` also leave it off. The build prints the tags it added.
+and Vite doesn't give it `.env` files. Leave `VITE_NOINDEX` unset for the public build.
+It takes `1`, `true` or `yes` for on and `0`, `false` or `no` for off, and stops the
+build on anything else. The build prints the tags it added.
 
 In Git Bash on Windows, start each with `MSYS_NO_PATHCONV=1`. Otherwise Git Bash
 rewrites `/firehouse/` into a Windows path, and every asset link in the build breaks.
