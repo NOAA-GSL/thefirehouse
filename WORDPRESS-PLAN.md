@@ -48,7 +48,7 @@ that produced it).
 | Place in GSL's menus | A Firehouse item under GSL's Research Portal menu, or failing that a tile on its Decision Support Systems page (Stephanie and Emily, 28 October). GSL's web team adds it. |
 | Fields | **WordPress built-in fields**: `register_post_meta`, the Settings API and block attributes. No ACF or Secure Custom Fields. |
 | SEO plugin | None installed. The plugin writes its own meta tags and defers to an SEO plugin if one is added later. |
-| Caching | **Cloudflare doesn't cache HTML** on gsl.noaa.gov (`cf-cache-status: DYNAMIC`, checked 1 November), so publishing shows up immediately and the plugin needs no purge step. The test site is checked in Phase 7b (see [Caching](#caching)). |
+| Caching | **Cloudflare doesn't cache HTML** on either site (`cf-cache-status: DYNAMIC` on both, checked 1 November), so publishing shows up immediately and the plugin needs no purge step (see [Caching](#caching)). |
 | Install path | Security reviews each plugin release; developers install it. |
 | WP-CLI | **Not relied on.** Everything, including the first data load, is done in wp-admin. |
 | Outbound network | Believed allowed (doi.org). DOI lookups also reach api.crossref.org and data.crosscite.org, where doi.org forwards them. The AI service adds one more host. A Site Health check confirms them on the test site. |
@@ -565,14 +565,13 @@ proposed; it needs approval under NOAA's AI policy (open question 7).
 
 ### Caching
 
-Cloudflare sits in front of both sites. On gsl.noaa.gov it **doesn't cache HTML**:
-pages come back with `cf-cache-status: DYNAMIC` (checked 1 November). Publishing shows
-up immediately, and the only job is versioned CSS and JS filenames, which WordPress
+Cloudflare sits in front of both sites, and on both it **doesn't cache HTML**: pages
+come back with `cf-cache-status: DYNAMIC` (checked 1 November). Publishing shows up
+immediately, and the only job is versioned CSS and JS filenames, which WordPress
 already does.
 
-If the test site turns out to differ (Phase 7b's Site Health check reads the same
-header there), or prod changes later, a new project, a count or a synthesis update
-would stay stale until the cache expired. Publishing would then have to purge, through
+If that changes (Phase 7b's Site Health check keeps reading the header), a new
+project, a count or a synthesis update would stay stale until the cache expired. Publishing would then have to purge, through
 Cloudflare's own WordPress integration or the plugin calling Cloudflare's purge API
 with a token limited to purging, and the token would be a security-review item.
 
@@ -712,8 +711,8 @@ as in `shared/vocabulary.json`, which takes its labels from the form.
 - **Scaffold the plugin** and a local WordPress for developers (see
   [Local development](#local-development)). *Done: the empty plugin passes PHPCS,
   PHPUnit and Plugin Check.*
-- **Check `cf-cache-status`** on gsl.noaa.gov. *Done: `DYNAMIC`, so HTML isn't cached
-  (see [Caching](#caching)).*
+- **Check `cf-cache-status`** on gsl.noaa.gov and the test site. *Done: `DYNAMIC` on
+  both, so HTML isn't cached (see [Caching](#caching)).*
 - **Send the design summary** to security. *Drafted, not yet sent.*
 
 **Done when:** the reference is captured, the shared cases pass in TypeScript, and an
@@ -831,8 +830,7 @@ ships.
 ### Phase 8 — Review, launch, cutover (1.5–2 weeks)
 
 - Security review and fixes.
-- Cache purging, only if the test site's caching check or a change on prod calls for
-  it.
+- Cache purging, only if Site Health shows Cloudflare has started caching HTML.
 - A screen-reader audit of the public pages and the admin screens.
 - CI that builds the versioned plugin zip.
 - A runbook for editors and for administrators.
@@ -952,8 +950,7 @@ Phases 6–7.
    enough spam protection, and whether the AI service needs a security review as well
    as approval under NOAA's AI policy.
 3. Does any other cache sit in front of either site, such as a page cache on the
-   server, and does the test site treat HTML as gsl.noaa.gov does? (Cloudflare doesn't
-   cache gsl.noaa.gov's HTML: see [Caching](#caching).)
+   server? (Cloudflare caches neither site's HTML: see [Caching](#caching).)
 4. Can the bridge go on the test site, restricted to GSL staff, by mid-November?
 
 **For ITS**
@@ -1011,7 +1008,7 @@ Phases 6–7.
   GSL's theme is classic, with PHP header and footer files (27 October).*
 - ~~Do administrators customize templates in the Site Editor?~~ *They can't: a
   classic theme has no Site Editor.*
-- ~~Does Cloudflare cache HTML on gsl.noaa.gov?~~ *No (1 November): pages come back
+- ~~Does Cloudflare cache HTML?~~ *No, on either site (1 November): pages come back
   with `cf-cache-status: DYNAMIC`, so publishing needs no purge.*
 - ~~Sync the survey through Google's API?~~ *No (29 October): with the form in the
   plugin there is no Sheet to sync.*
