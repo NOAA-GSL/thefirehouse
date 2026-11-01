@@ -16,6 +16,11 @@ npm run reference
 `scripts/capture-reference.mjs` explains what it does. It uses Edge by default; set
 `REFERENCE_BROWSER=chrome` to use Chrome.
 
-The snapshots here were taken before the AMS bridge changes (the gov banner and footer
-back on, the citation generator off, Submit a Finding pointed at the Google Form), and
-are retaken with them. The retaken set is the reference the plugin is built against.
+The snapshots here include the AMS bridge changes: the gov banner and footer back on,
+the citation generator off, Submit a Finding pointed at the Google Form, and the topic
+pages fitting a phone screen. They are retaken once more when the rerun synthesis
+replaces the draft on the topic pages; that set is the reference the plugin is built
+against.
+
+The capture also checks that every page fits the window. A page wider than the window
+scrolls sideways on a phone, so the script reports it and exits with an error.

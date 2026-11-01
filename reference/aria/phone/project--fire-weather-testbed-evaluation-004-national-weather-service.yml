@@ -1,5 +1,7 @@
 - link "Skip to main content":
   - /url: "#main"
+- text: An official website of the United States government
+- button "Here’s how you know"
 - banner:
   - link "The Firehouse, NOAA Global Systems Laboratory — home":
     - /url: /
@@ -71,15 +73,6 @@
       - listitem:
         - 'link "Fire Weather Testbed Evaluations #002–004: An End-to-End Evaluation of NOAA''s Emerging Wildland Fire Detection and Warning Capabilities NOAA technical memorandum OAR GSL ; 71 · 2025 doi:10.25923/4pqf-7g49 (opens in a new tab)"':
           - /url: https://doi.org/10.25923/4pqf-7g49
-    - region "Cite this project":
-      - heading "Cite this project" [level=2]
-      - tablist "Citation format":
-        - tab "APA 7" [selected]
-        - tab "Chicago"
-        - tab "BibTeX"
-      - tabpanel "APA 7": "Wells, E., Baring, A., Hatchett, B., Hoekstra, S., Laura Sample McMeeking, Thiem, K., Tolby, Z., & Vickery, J. (2025). Fire Weather Testbed Evaluation #004 - National Weather Service Fire Warnings Using a Tactical Integrated Warning Team Approach. The Firehouse, NOAA Global Systems Laboratory. https://doi.org/10.25923/4pqf-7g49"
-      - button "Copy"
-      - status
     - complementary "Project details":
       - heading "At a glance" [level=2]
       - term: Project type
@@ -114,3 +107,49 @@
         - /url: /projects/an-evaluation-of-the-next-generation-fire-system-ngfs
       - 'link "Next Fire Weather Testbed Evaluations #002: Fire Detection and Dissemination - NESDIS Next Generation Fire System and NWS Hotspot Notification Tool"':
         - /url: /projects/fire-weather-testbed-evaluations-002-fire-detection
+- contentinfo:
+  - img "NOAA"
+  - img "GSL"
+  - text: The Firehouse
+  - paragraph: A project of NOAA's Global Systems Laboratory (GSL), Earth Prediction Innovation Center. Part of the National Oceanic and Atmospheric Administration.
+  - navigation "Explore":
+    - heading "Explore" [level=2]
+    - link "About The Firehouse":
+      - /url: /about
+    - link "All projects":
+      - /url: /projects
+    - link "Top needs":
+      - /url: /#top-needs
+    - link "Submit a finding":
+      - /url: https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform
+  - navigation "About GSL":
+    - heading "About GSL" [level=2]
+    - link "gsl.noaa.gov":
+      - /url: https://gsl.noaa.gov
+    - link "Research programs":
+      - /url: https://gsl.noaa.gov/research
+    - link "Contact GSL":
+      - /url: https://gsl.noaa.gov/contact
+    - link "Careers":
+      - /url: https://gsl.noaa.gov/careers
+  - navigation "Federal resources":
+    - heading "Federal resources" [level=2]
+    - link "NOAA.gov":
+      - /url: https://www.noaa.gov
+    - link "Department of Commerce":
+      - /url: https://www.commerce.gov
+    - link "USA.gov":
+      - /url: https://www.usa.gov
+    - link "No FEAR Act":
+      - /url: https://www.noaa.gov/organization/no-fear-act
+    - link "Privacy policy":
+      - /url: https://www.noaa.gov/protecting-your-privacy
+    - link "Accessibility":
+      - /url: https://www.noaa.gov/accessibility
+    - link "FOIA":
+      - /url: https://www.noaa.gov/information-technology/foia
+    - link "Information quality":
+      - /url: https://www.noaa.gov/organization/information-technology/information-quality
+  - text: U.S. Department of Commerce | National Oceanic and Atmospheric Administration
+  - link "usa.gov":
+    - /url: https://www.usa.gov

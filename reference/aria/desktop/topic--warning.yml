@@ -1,5 +1,7 @@
 - link "Skip to main content":
   - /url: "#main"
+- text: An official website of the United States government
+- button "Here’s how you know"
 - banner:
   - link "The Firehouse, NOAA Global Systems Laboratory — home":
     - /url: /
@@ -12,10 +14,10 @@
     - link "About":
       - /url: /about
     - link "Submit a Finding":
-      - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths
+      - /url: https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform
   - button "Switch to dark theme"
   - link "Submit a Finding":
-    - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths
+    - /url: https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform
 - main:
   - navigation "Breadcrumb":
     - link "Home":
@@ -86,7 +88,7 @@
       - listitem: Evacuation, public messaging, and protective action decisions
     - paragraph: Have a finding that speaks to this area?
     - link "Submit a Finding":
-      - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths
+      - /url: https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform
   - navigation "Other topic areas":
     - heading "Other topic areas" [level=2]
     - list:
@@ -99,3 +101,49 @@
       - listitem:
         - link "Governance Strategic Adaptation and Institutional Governance":
           - /url: /topics/governance
+- contentinfo:
+  - img "NOAA"
+  - img "GSL"
+  - text: The Firehouse
+  - paragraph: A project of NOAA's Global Systems Laboratory (GSL), Earth Prediction Innovation Center. Part of the National Oceanic and Atmospheric Administration.
+  - navigation "Explore":
+    - heading "Explore" [level=2]
+    - link "About The Firehouse":
+      - /url: /about
+    - link "All projects":
+      - /url: /projects
+    - link "Top needs":
+      - /url: /#top-needs
+    - link "Submit a finding":
+      - /url: https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform
+  - navigation "About GSL":
+    - heading "About GSL" [level=2]
+    - link "gsl.noaa.gov":
+      - /url: https://gsl.noaa.gov
+    - link "Research programs":
+      - /url: https://gsl.noaa.gov/research
+    - link "Contact GSL":
+      - /url: https://gsl.noaa.gov/contact
+    - link "Careers":
+      - /url: https://gsl.noaa.gov/careers
+  - navigation "Federal resources":
+    - heading "Federal resources" [level=2]
+    - link "NOAA.gov":
+      - /url: https://www.noaa.gov
+    - link "Department of Commerce":
+      - /url: https://www.commerce.gov
+    - link "USA.gov":
+      - /url: https://www.usa.gov
+    - link "No FEAR Act":
+      - /url: https://www.noaa.gov/organization/no-fear-act
+    - link "Privacy policy":
+      - /url: https://www.noaa.gov/protecting-your-privacy
+    - link "Accessibility":
+      - /url: https://www.noaa.gov/accessibility
+    - link "FOIA":
+      - /url: https://www.noaa.gov/information-technology/foia
+    - link "Information quality":
+      - /url: https://www.noaa.gov/organization/information-technology/information-quality
+  - text: U.S. Department of Commerce | National Oceanic and Atmospheric Administration
+  - link "usa.gov":
+    - /url: https://www.usa.gov
