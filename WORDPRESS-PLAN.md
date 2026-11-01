@@ -55,7 +55,7 @@ that produced it).
 | Survey tool | **A form built into the plugin** (29 October), as a self-contained part of it (31 October). See [The survey form](#the-survey-form). Until the plugin launches, researchers submit through the **Google Form** that replaced Colorado State's Qualtrics; it belongs to Emily's account in NOAA's Google Workspace. Its responses go into the site's files through the existing import script, as today, and reach WordPress in the seed bundle at launch (see [Importing the Google Form until launch](#importing-the-google-form-until-launch)). |
 | Responses so far | Qualtrics is closed, and every real submission was re-entered through the Google Form (28 October), so the form's Sheet is the complete record. |
 | Survey API sync | **Dropped** (29 October). With the form in the plugin there is no Sheet to sync. |
-| AI synthesis | **Runs from the plugin** (agreed with Stephanie and Emily, 28 October). An **Analyze results** button sends the published projects and the team's prompt to an approved AI service, and the result waits as a draft for review. Amazon Bedrock is proposed and needs approval under NOAA's AI policy (open question 7). Until then, and as the fallback, the synthesis screen takes NotebookLM's output by paste. See [The AI service](#the-ai-service). |
+| AI synthesis | **Runs from the plugin** (agreed with Stephanie and Emily, 28 October). An **Analyze results** button sends the published projects and the team's prompt to an approved AI service, and the result waits as a draft for review. The service will likely be Cloudflare Workers AI or Amazon Bedrock, and either needs approval under NOAA's AI policy (open question 7). The model is still open (1 November) and is chosen by checking its output. Until then, and as the fallback, the synthesis screen takes NotebookLM's output by paste. See [The AI service](#the-ai-service). |
 | Need counts | **Once per project** (28 October): a need mentioned several times in one project counts once. |
 | Link previews through Cloudflare | Found out during testing (see [Link previews](#page-titles-descriptions-and-link-previews)). |
 | AMS bridge | Probably possible, and recommended, starting on the test site for the mid-November WPO meeting (see [The AMS bridge](#the-ams-bridge)). |
@@ -549,8 +549,11 @@ other GSL projects want a survey (see [Later phases](#later-phases)).
 ### The AI service
 
 The synthesis runs from the plugin. NotebookLM is not believed to offer an API inside
-the NOAA enterprise, so the plugin calls an approved AI service. Amazon Bedrock is
-proposed; it needs approval under NOAA's AI policy (open question 7).
+the NOAA enterprise, so the plugin calls an approved AI service. It will likely be
+Cloudflare Workers AI or Amazon Bedrock, and either needs approval under NOAA's AI
+policy (open question 7). The model isn't chosen yet (1 November): Llama 4, another
+open model, or a commercial one. Either service fits the client as planned: one
+host, and one key in `wp-config.php`.
 
 - **Analyze results** sends the published projects' text and the team's prompt, and
   the reply lands on the synthesis screen as a draft, with the same validation,
@@ -558,9 +561,15 @@ proposed; it needs approval under NOAA's AI policy (open question 7).
   settings screen, so Stephanie and Emily can refine it without a release. It runs
   when an editor presses the button; running it on its own each time a project is
   published can come later.
-- **Before NotebookLM is retired,** both run on the same published projects, and
-  Stephanie and Emily judge whether the new output matches in substance and nuance.
-  Changing tools halfway through would otherwise change the results.
+- **The model is chosen by its output.** Before NotebookLM is retired, each
+  candidate runs the team's prompt on the same published projects as the reviewed
+  NotebookLM synthesis, and Stephanie and Emily judge whether it matches in substance
+  and nuance. Each draft also gets the checks any synthesis gets: every need traced
+  to the entries it cites, its count equal to the projects it names, and wording no
+  stronger than the entries. A model may need the prompt adjusted, and the old and
+  new prompts run on the same projects before switching. Changing tools or models
+  halfway through would otherwise change the results, so each synthesis records the
+  model that wrote it, and the site's AI notice names it.
 - **The fallback stays.** Until the service is approved, and whenever it is
   unavailable, the team runs the prompt in NotebookLM and pastes the result in.
 
@@ -975,10 +984,12 @@ Phases 6–7.
 6. Is The Firehouse's own design approved for the pages between GSL's header and
    footer, in place of GSL's standard page styles (see
    [Look and feel](#look-and-feel))? Stephanie and Emily chose it.
-7. Which AI service is approved for the synthesis? Amazon Bedrock is proposed. A
-   colleague of Stephanie's received OAR clearance for similar work, and she has the
-   contacts that colleague worked with. Until a service is approved, the synthesis is
-   pasted in from NotebookLM (see [The AI service](#the-ai-service)).
+7. Which AI service and model are approved for the synthesis? Cloudflare Workers AI
+   or Amazon Bedrock is likely; the model (Llama 4, another open model, or a
+   commercial one) is picked after its output is checked. A colleague of Stephanie's
+   received OAR clearance for similar work, and she has the contacts that colleague
+   worked with. Until a service is approved, the synthesis is pasted in from
+   NotebookLM (see [The AI service](#the-ai-service)).
 
 **For the team**
 
