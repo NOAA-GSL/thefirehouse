@@ -1,3 +1,4 @@
+import vocabulary from '../../wp-content/plugins/firehouse/shared/vocabulary.json' with { type: 'json' };
 import type { IconName } from './Icon';
 
 /**
@@ -8,6 +9,10 @@ import type { IconName } from './Icon';
  * is a structural change that needs a code + schema change, not a CMS edit. Human-
  * readable labels are editable in the CMS and override `label`/`short` at render
  * time (see `content/types.ts`).
+ *
+ * The keys, labels and icons live in `shared/vocabulary.json` with the other
+ * vocabularies, so the WordPress plugin reads the same ones. The colours are this
+ * site's CSS custom properties, named after the key.
  */
 export interface TopicDefinition {
   key: TopicKey;
@@ -23,48 +28,24 @@ export interface TopicDefinition {
 
 export type TopicKey = 'observe' | 'forecast' | 'warning' | 'governance';
 
-export const TOPICS: Record<TopicKey, TopicDefinition> = {
-  observe: {
-    key: 'observe',
-    label: 'Observations and Monitoring',
-    short: 'Observations',
-    icon: 'radar',
-    text: 'var(--topic-observe-text)',
-    fill: 'var(--topic-observe-fill)',
-    tint: 'var(--topic-observe-tint)',
-    border: 'var(--topic-observe-border)',
-  },
-  forecast: {
-    key: 'forecast',
-    label: 'Forecasts and Modeling',
-    short: 'Forecasts',
-    icon: 'waves',
-    text: 'var(--topic-forecast-text)',
-    fill: 'var(--topic-forecast-fill)',
-    tint: 'var(--topic-forecast-tint)',
-    border: 'var(--topic-forecast-border)',
-  },
-  warning: {
-    key: 'warning',
-    label: 'Warnings and Immediate Response',
-    short: 'Warnings',
-    icon: 'flame',
-    text: 'var(--topic-warning-text)',
-    fill: 'var(--topic-warning-fill)',
-    tint: 'var(--topic-warning-tint)',
-    border: 'var(--topic-warning-border)',
-  },
-  governance: {
-    key: 'governance',
-    label: 'Strategic Adaptation and Institutional Governance',
-    short: 'Governance',
-    icon: 'landmark',
-    text: 'var(--topic-governance-text)',
-    fill: 'var(--topic-governance-fill)',
-    tint: 'var(--topic-governance-tint)',
-    border: 'var(--topic-governance-border)',
-  },
-};
+export const TOPICS: Record<TopicKey, TopicDefinition> = Object.fromEntries(
+  vocabulary.topics.map((topic) => {
+    const key = topic.key as TopicKey;
+    return [
+      key,
+      {
+        key,
+        label: topic.label,
+        short: topic.short,
+        icon: topic.icon as IconName,
+        text: `var(--topic-${key}-text)`,
+        fill: `var(--topic-${key}-fill)`,
+        tint: `var(--topic-${key}-tint)`,
+        border: `var(--topic-${key}-border)`,
+      },
+    ];
+  }),
+) as Record<TopicKey, TopicDefinition>;
 
 export const TOPIC_LIST: TopicDefinition[] = Object.values(TOPICS);
 

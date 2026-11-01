@@ -1,0 +1,70 @@
+{
+  "$comment": "Cases for normalizeSiteContent in src/content/normalize.ts. Each case starts from site.json, applies `set` ({ path, value }) and `remove` (paths) as JSON Pointers, then either expects the content to be refused (`throws`) or runs `checks` against the result: `equals`, `length`, `absent`, or `pluck` (a field from each item of a list) with `equals`. In the plugin these refusals become validation at save and import time, so a port matches what is refused, not the wording.",
+  "cases": [
+    { "name": "the site fixture is valid as it stands", "checks": [{ "path": "/projects", "length": 5 }] },
+
+    { "name": "an empty href picks up the survey address", "checks": [
+      { "path": "/settings/nav/3/href", "equals": "https://forms.example.org/firehouse" },
+      { "path": "/settings/footerGroups/0/links/1/href", "equals": "https://forms.example.org/firehouse" },
+      { "path": "/landing/hero/primaryCta/href", "equals": "https://forms.example.org/firehouse" },
+      { "path": "/landing/submitBand/cta/href", "equals": "https://forms.example.org/firehouse" },
+      { "path": "/about/process/links/0/href", "equals": "https://forms.example.org/firehouse" },
+      { "path": "/about/cta/cta/href", "equals": "https://forms.example.org/firehouse" }
+    ] },
+    { "name": "links with a route are left alone", "checks": [
+      { "path": "/settings/nav/0", "equals": { "label": "Home", "to": "/" } },
+      { "path": "/landing/hero/secondaryCta", "equals": { "label": "Explore", "to": "/projects" } }
+    ] },
+
+    { "name": "topics are sorted by their order", "checks": [{ "path": "/topics", "pluck": "key", "equals": ["observe", "forecast", "warning", "governance"] }] },
+
+    { "name": "a project without IRB approval is dropped", "checks": [{ "path": "/projects", "pluck": "slug", "equals": ["smoke-alerts-for-evacuation", "national-outlook-study", "pacific-island-recovery", "draft-fuel-study", "alpha-fire-forecasting"] }] },
+    { "name": "IRB approval has to be exactly true", "set": [{ "path": "/projects/0/irbApproved", "value": "yes" }], "checks": [{ "path": "/projects", "pluck": "slug", "equals": ["national-outlook-study", "pacific-island-recovery", "draft-fuel-study", "alpha-fire-forecasting"] }] },
+    { "name": "a repeated fire phase is kept once", "checks": [{ "path": "/projects/0/firePhases", "equals": ["during"] }] },
+    { "name": "a legacy author string becomes one author", "checks": [{ "path": "/projects/2/authors", "equals": [{ "name": "Dee Legacy" }] }] },
+    { "name": "a plain-string author becomes a name", "set": [{ "path": "/projects/1/authors", "value": ["Cara Placeholder"] }], "checks": [{ "path": "/projects/1/authors", "equals": [{ "name": "Cara Placeholder" }] }] },
+    { "name": "a bare-string need is a stand-alone need", "checks": [{ "path": "/projects/4/needs", "equals": [{ "need": "Need for longer lead times among incident meteorologists." }] }] },
+    { "name": "missing lists become empty", "remove": ["/projects/1/methods", "/projects/1/takeaways", "/projects/1/needs", "/projects/1/papers"], "checks": [
+      { "path": "/projects/1/methods", "equals": [] },
+      { "path": "/projects/1/takeaways", "equals": [] },
+      { "path": "/projects/1/needs", "equals": [] },
+      { "path": "/projects/1/papers", "equals": [] }
+    ] },
+    { "name": "a missing published flag means unpublished", "remove": ["/projects/1/published"], "checks": [{ "path": "/projects/1/published", "equals": false }] },
+    { "name": "a project with no regions has none", "remove": ["/projects/1/geo"], "checks": [{ "path": "/projects/1/geo", "absent": true }] },
+
+    { "name": "a top need keeps only published sources, and loses its count when one is dropped", "checks": [
+      { "path": "/topicSummaries/0/topNeeds/0/projects", "equals": ["smoke-alerts-for-evacuation"] },
+      { "path": "/topicSummaries/0/topNeeds/0/mentions", "absent": true }
+    ] },
+    { "name": "a top need keeps its count when every source is published", "checks": [
+      { "path": "/topicSummaries/0/topNeeds/1/projects", "equals": ["smoke-alerts-for-evacuation", "national-outlook-study"] },
+      { "path": "/topicSummaries/0/topNeeds/1/mentions", "equals": 2 }
+    ] },
+    { "name": "a plain-string top need is accepted", "checks": [{ "path": "/topicSummaries/1/topNeeds/0", "equals": { "text": "Longer-lead outlooks for planning beyond 72 hours" } }] },
+
+    { "name": "a one-string biography becomes one paragraph", "checks": [{ "path": "/about/team/members/0/bio", "equals": ["A one-paragraph biography."] }] },
+    { "name": "empty biography paragraphs are dropped", "set": [{ "path": "/about/team/members/0/bio", "value": ["First.", "  ", "Second."] }], "checks": [{ "path": "/about/team/members/0/bio", "equals": ["First.", "Second."] }] },
+
+    { "name": "no settings", "remove": ["/settings"], "throws": true },
+    { "name": "no survey address", "set": [{ "path": "/settings/submitFormUrl", "value": "" }], "throws": true },
+    { "name": "an unknown topic", "set": [{ "path": "/topics/0/key", "value": "fire" }], "throws": true },
+    { "name": "no topics", "set": [{ "path": "/topics", "value": [] }], "throws": true },
+    { "name": "a summary for an unknown topic", "set": [{ "path": "/topicSummaries/0/topic", "value": "fire" }], "throws": true },
+    { "name": "an unknown fire phase", "set": [{ "path": "/projects/0/firePhases", "value": ["winter"] }], "throws": true },
+    { "name": "an unknown region", "set": [{ "path": "/projects/0/geo/regions", "value": ["XYZ"] }], "throws": true },
+    { "name": "an unknown publication status", "set": [{ "path": "/projects/0/publicationStatus", "value": "retracted" }], "throws": true },
+    { "name": "no completion year", "remove": ["/projects/0/completionYear"], "throws": true },
+    { "name": "a completion year that isn't a number", "set": [{ "path": "/projects/0/completionYear", "value": "2025" }], "throws": true },
+    { "name": "two projects with one slug", "set": [{ "path": "/projects/1/slug", "value": "smoke-alerts-for-evacuation" }], "throws": true },
+    { "name": "an empty need entry", "set": [{ "path": "/projects/0/needs", "value": [{}] }], "throws": true },
+    { "name": "no authors", "set": [{ "path": "/projects/1/authors", "value": [] }], "throws": true },
+    { "name": "an author with no name", "set": [{ "path": "/projects/1/authors", "value": [{ "org": "Somewhere" }] }], "throws": true },
+    { "name": "no About page", "remove": ["/about"], "throws": true },
+    { "name": "an About card with an unknown icon", "set": [{ "path": "/about/audiences/items/0/icon", "value": "unicorn" }], "throws": true },
+    { "name": "a team member with no name", "set": [{ "path": "/about/team/members/0/name", "value": "" }], "throws": true },
+    { "name": "a team member with no biography", "set": [{ "path": "/about/team/members/0/bio", "value": ["  "] }], "throws": true },
+
+    { "name": "an IRB-excluded project isn't checked, because it is never shown", "set": [{ "path": "/projects/4/firePhases", "value": ["winter"] }], "checks": [{ "path": "/projects", "length": 5 }] }
+  ]
+}

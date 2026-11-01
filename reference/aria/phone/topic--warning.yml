@@ -1,0 +1,91 @@
+- link "Skip to main content":
+  - /url: "#main"
+- banner:
+  - link "The Firehouse, NOAA Global Systems Laboratory — home":
+    - /url: /
+    - text: The Firehouse
+  - button "Switch to dark theme"
+  - button "Open menu"
+- main:
+  - navigation "Breadcrumb":
+    - link "Home":
+      - /url: /
+    - link "Top needs":
+      - /url: /#top-needs
+    - text: Warnings
+  - text: Warnings
+  - heading "Warnings and Immediate Response" [level=1]
+  - region "Top 5 needs":
+    - heading "Top 5 needs" [level=2]
+    - paragraph:
+      - strong: AI-synthesized
+      - text: across all 4 projects.
+      - strong: Draft, pending team review
+      - text: · updated
+      - time: September 17, 2026
+      - text: .
+    - paragraph:
+      - text: Ranked by mentions — how many submitted needs and recommendations raise each one.
+      - link "How these needs are synthesized":
+        - /url: /#needs-source
+    - list:
+      - listitem:
+        - paragraph: Clear authority for who issues Fire Warnings during multi-agency incidents
+        - paragraph: 2 mentions · from 2 projects
+        - list "Projects behind need 1":
+          - listitem:
+            - 'link "Igniting Insight: Evaluating NWS Fire Weather Products within a Fire Partner Decision Making Context 2025"':
+              - /url: /projects/igniting-insight-evaluating-nws-fire-weather-products
+          - listitem:
+            - 'link "Fire Weather Testbed Evaluations #003 - Interagency Collaboration: Tactical Integrated Warning Team (IWT) for Wildland Fire Operations 2025"':
+              - /url: /projects/fire-weather-testbed-evaluations-003-interagency
+      - listitem:
+        - paragraph: Consistent Red Flag Warning criteria and timing across neighboring offices
+        - paragraph: 2 mentions · from 1 project
+        - list "Projects behind need 2":
+          - listitem:
+            - 'link "Igniting Insight: Evaluating NWS Fire Weather Products within a Fire Partner Decision Making Context 2025"':
+              - /url: /projects/igniting-insight-evaluating-nws-fire-weather-products
+      - listitem:
+        - paragraph: Clearer public distinction between Fire Warnings, Red Flag Warnings, and evacuations
+        - paragraph: 1 mention · from 1 project
+        - list "Projects behind need 3":
+          - listitem:
+            - 'link "Igniting Insight: Evaluating NWS Fire Weather Products within a Fire Partner Decision Making Context 2025"':
+              - /url: /projects/igniting-insight-evaluating-nws-fire-weather-products
+      - listitem:
+        - paragraph: Tiered warnings that flag rare, catastrophic fire weather
+        - paragraph: 1 mention · from 1 project
+        - list "Projects behind need 4":
+          - listitem:
+            - 'link "Igniting Impact: Advancing Fire Weather Decision Support Services 2026"':
+              - /url: /projects/igniting-impact-advancing-fire-weather-decision-support
+      - listitem:
+        - paragraph: Forecaster discretion to warn in near-criteria events, labeled as marginal
+        - paragraph: 1 mention · from 1 project
+        - list "Projects behind need 5":
+          - listitem:
+            - 'link "Igniting Impact: Advancing Fire Weather Decision Support Services 2026"':
+              - /url: /projects/igniting-impact-advancing-fire-weather-decision-support
+  - complementary "What this area covers":
+    - heading "What this area covers" [level=2]
+    - list:
+      - listitem: Red flag warning criteria and issuance thresholds
+      - listitem: How warnings are worded, received, and interpreted
+      - listitem: Hand-off between forecast offices and incident command
+      - listitem: Evacuation, public messaging, and protective action decisions
+    - paragraph: Have a finding that speaks to this area?
+    - link "Submit a Finding":
+      - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths
+  - navigation "Other topic areas":
+    - heading "Other topic areas" [level=2]
+    - list:
+      - listitem:
+        - link "Observations Observations and Monitoring":
+          - /url: /topics/observe
+      - listitem:
+        - link "Forecasts Forecasts and Modeling":
+          - /url: /topics/forecast
+      - listitem:
+        - link "Governance Strategic Adaptation and Institutional Governance":
+          - /url: /topics/governance

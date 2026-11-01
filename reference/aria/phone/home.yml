@@ -1,0 +1,128 @@
+- link "Skip to main content":
+  - /url: "#main"
+- banner:
+  - link "The Firehouse, NOAA Global Systems Laboratory — home":
+    - /url: /
+    - text: The Firehouse
+  - button "Switch to dark theme"
+  - button "Open menu"
+- main:
+  - img "FireHouse — Fire Weather Research Hub"
+  - text: NOAA / Global Systems Laboratory
+  - heading "A shared home for fire weather social science" [level=1]
+  - paragraph: The Firehouse centralizes the needs and recommendations learned across completed fire weather research, so forecasters, researchers, and decision-makers can find what's already known — and add to it.
+  - link "Submit a Finding":
+    - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths
+  - link "Explore Projects":
+    - /url: /projects
+  - list "Hub statistics":
+    - listitem: 7 Projects analyzed Completed DESI and testbed research
+    - listitem: 4 Topic areas Observations, forecasts, warnings, governance
+    - listitem: Open For submissions Researchers can contribute findings any time
+  - region "The top 5 needs in fire weather social science":
+    - text: Synthesized across every project
+    - heading "The top 5 needs in fire weather social science" [level=2]
+    - paragraph: Forecasters, land managers, and emergency managers keep telling researchers what they need. Here, every completed fire weather social science project in The Firehouse is read together as one body of evidence, and the needs its researchers recorded are distilled into the five most pressing in each of four topic areas — in one place, ranked, with how often each one came up.
+    - paragraph:
+      - strong: AI-synthesized
+      - text: across all 4 projects.
+    - article:
+      - text: Observations
+      - heading "Observations and Monitoring" [level=3]:
+        - link "Observations and Monitoring":
+          - /url: /topics/observe
+      - list:
+        - listitem: Local ground-truth fuel conditions built into Red Flag Warning decisions 2 mentions
+        - listitem: Hotspot alerts that reach field partners by text when internet is unreliable 2 mentions
+        - listitem: Automated “safety net” fire detection so forecasters don’t miss new ignitions 1 mention
+        - listitem: Confidence indicators and weather context alongside satellite hotspot detections 1 mention
+        - listitem: Hotspot alert thresholds that forecasters can tune with local land managers 1 mention
+    - article:
+      - text: Forecasts
+      - heading "Forecasts and Modeling" [level=3]:
+        - link "Forecasts and Modeling":
+          - /url: /topics/forecast
+      - list:
+        - listitem: Earlier signals of critical fire weather, at least 48 hours ahead 2 mentions
+        - listitem: "Trend and duration detail: when conditions peak and how long they last 2 mentions"
+        - listitem: Forecast discussions that state forecaster confidence and reasoning 1 mention
+        - listitem: Probabilistic forecasts shown as combined text and graphics 1 mention
+        - listitem: Highly reliable wind and relative humidity forecasts throughout an incident 1 mention
+    - article:
+      - text: Warnings
+      - heading "Warnings and Immediate Response" [level=3]:
+        - link "Warnings and Immediate Response":
+          - /url: /topics/warning
+      - list:
+        - listitem: Clear authority for who issues Fire Warnings during multi-agency incidents 2 mentions
+        - listitem: Consistent Red Flag Warning criteria and timing across neighboring offices 2 mentions
+        - listitem: Clearer public distinction between Fire Warnings, Red Flag Warnings, and evacuations 1 mention
+        - listitem: Tiered warnings that flag rare, catastrophic fire weather 1 mention
+        - listitem: Forecaster discretion to warn in near-criteria events, labeled as marginal 1 mention
+    - article:
+      - text: Governance
+      - heading "Strategic Adaptation and Institutional Governance" [level=3]:
+        - link "Strategic Adaptation and Institutional Governance":
+          - /url: /topics/governance
+      - list:
+        - listitem: Trusted local relationships and joint training before an incident 3 mentions
+        - listitem: Integrated Warning Team frameworks with clear, locally scalable roles 3 mentions
+        - listitem: Direct, two-way communication channels between forecasters and fire partners 2 mentions
+        - listitem: Regional flexibility to adopt or tailor Fire Warning workflows 2 mentions
+        - listitem: Staffing capacity and organizational buy-in to sustain interagency teams 2 mentions
+    - complementary "Where these needs come from":
+      - heading "Where these needs come from" [level=3]
+      - paragraph:
+        - text: Topic areas are not assigned project by project. Every completed project in The Firehouse — 4 projects today — is read together, with Claude, and the end-user needs its researchers recorded are grouped into the four areas above and ranked by how often they come up. A
+        - emphasis: mention
+        - text: "is one need or recommendation a researcher submitted; the same one can count in more than one area. This pass is a draft: the team reviews each synthesis before it is final. Open a topic area to see which projects each need draws on; each project page keeps the researchers’ own words."
+      - link "Explore all projects":
+        - /url: /projects
+  - region "Where the research comes from":
+    - heading "Where the research comes from" [level=2]
+    - paragraph: Submissions by Geographic Area Coordination Center (GACC). Select one to open the projects filed there.
+    - button "GACC labels" [pressed]
+    - paragraph: "Boundaries: NIFC National GACC Boundaries. Basemap: Esri, HERE, Garmin, © OpenStreetMap contributors."
+    - heading "Coverage by Geographic Area Coordination Center" [level=3]
+    - paragraph: 7 submissions
+    - paragraph: GACC counts include 3 national studies, counted once in every area.
+    - list "Coverage by Geographic Area Coordination Center":
+      - listitem:
+        - button "All submissions 7" [pressed]
+      - listitem:
+        - button "Alaska AICC 3"
+      - listitem:
+        - button "Northwest NWCC 3"
+      - listitem:
+        - button "N. California ONCC 7"
+      - listitem:
+        - button "S. California OSCC 7"
+      - listitem:
+        - button "N. Rockies NRCC 3"
+      - listitem:
+        - button "Great Basin GBCC 3"
+      - listitem:
+        - button "Southwest SWCC 3"
+      - listitem:
+        - button "Rocky Mountain RMCC 6"
+      - listitem:
+        - button "Eastern Area EACC 3"
+      - listitem:
+        - button "Southern Area SACC 6"
+    - heading "Not on the map" [level=4]
+    - list:
+      - listitem:
+        - button "Hawaii / Pacific 0"
+      - listitem:
+        - button "National 3"
+      - listitem:
+        - button "International 0"
+      - listitem:
+        - button "Not sure 0"
+    - region:
+      - paragraph: Select a GACC on the map or in the list to see the research filed there.
+  - region "Have a finding to share?":
+    - heading "Have a finding to share?" [level=2]
+    - paragraph: Describe what you learned in your own words. Submissions are reviewed and folded into the four topic areas above.
+    - link "Submit a Finding":
+      - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths

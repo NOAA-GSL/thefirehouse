@@ -1,0 +1,210 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$comment": "Generated from the Project type in src/content/types.ts by scripts/project-schema.mjs. Edit the type and run `npm run schema`, not this file.",
+  "title": "Project",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "summary": {
+      "description": "One- or two-line summary shown on the grid tile. *Editorial* — seeded by the import script with the abstract's first sentence until an editor writes one.",
+      "type": "string"
+    },
+    "abstract": {
+      "description": "*Survey (Q14).* The researcher's own abstract, shown verbatim and searched fuzzily.",
+      "type": "string"
+    },
+    "authors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "family": {
+            "type": "string"
+          },
+          "given": {
+            "type": "string"
+          },
+          "org": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "org": {
+      "type": "string"
+    },
+    "completionYear": {
+      "description": "*Survey (Q7).* Year the project was completed — a primary filter and a citation field.",
+      "type": "number"
+    },
+    "firePhases": {
+      "description": "*Survey (Q9).* Where in the fire cycle the work sits. A primary filter.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "before",
+          "during",
+          "after",
+          "long-term"
+        ]
+      }
+    },
+    "publicationStatus": {
+      "description": "*Editorial.* Publication state of the underlying research. The survey does not ask, so it is absent unless an editor sets it — and nothing is shown rather than a guessed \"Unpublished\" badge on work that is in fact in a journal.",
+      "type": "string",
+      "enum": [
+        "published",
+        "in-review",
+        "in-preparation",
+        "unpublished"
+      ]
+    },
+    "projectType": {
+      "description": "*Survey (Q11).* \"Testbed Evaluation\", \"Research Study\", or the respondent's own text.",
+      "type": "string"
+    },
+    "methods": {
+      "description": "*Survey (Q12).* Data collection instruments, e.g. \"Focus groups\".",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "irbApproved": {
+      "description": "*Survey (Q8).* IRB approval. Records where this is false never reach the UI — `normalize.ts` drops them at the boundary, implementing the survey's own skip logic in the one place it cannot be forgotten by a future page.",
+      "type": "boolean"
+    },
+    "geo": {
+      "description": "*Survey (Q13).* Geography, for the landing-page GACC map.",
+      "type": "object",
+      "properties": {
+        "regions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "AICC",
+              "NWCC",
+              "ONCC",
+              "OSCC",
+              "NRCC",
+              "GBCC",
+              "SWCC",
+              "RMCC",
+              "EACC",
+              "SACC",
+              "PACIFIC",
+              "NATIONAL",
+              "INTL",
+              "UNKNOWN"
+            ]
+          }
+        },
+        "note": {
+          "description": "Optional free-text refinement shown on the X-ray page, e.g. \"Front Range\".",
+          "type": "string"
+        },
+        "states": {
+          "description": "Two-letter postal codes. Optional backstop; not asked in the current survey.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "regions"
+      ],
+      "additionalProperties": false
+    },
+    "takeaways": {
+      "description": "*Survey (Q15).* Major takeaways, in the researcher's own words.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "needs": {
+      "description": "*Survey (Q16).* End-user needs paired with recommendations, verbatim. Also the input to the landing-page synthesis.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "need": {
+            "type": "string"
+          },
+          "recommendation": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "papers": {
+      "description": "*Survey (Q17).* Publications, tech notes, presentations or reports.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "container": {
+            "description": "Journal, report series, or site the item was published in.",
+            "type": "string"
+          },
+          "year": {
+            "type": "number"
+          },
+          "url": {
+            "type": "string"
+          },
+          "doi": {
+            "description": "Bare DOI (`10.1175/WCAS-D-21-0042.1`), not a URL — the `https://doi.org/` prefix is added at render time. Storing it bare keeps one canonical form, so the same value can be a link, a citation field, and a dedupe key.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "fullRecordUrl": {
+      "type": "string"
+    },
+    "published": {
+      "description": "Counted in the \"projects analyzed\" stat only when true. Lets editors stage a project in the CMS before it should affect the public count. Note this is *editorial* visibility on this site — distinct from `publicationStatus`, which describes the underlying research in the literature. A project can be published here while its paper is still in review.",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "id",
+    "slug",
+    "title",
+    "summary",
+    "authors",
+    "completionYear",
+    "firePhases",
+    "methods",
+    "irbApproved",
+    "takeaways",
+    "needs",
+    "papers",
+    "published"
+  ],
+  "additionalProperties": false
+}

@@ -138,7 +138,7 @@ address the WordPress version will keep.
 
 | Zone | Who | Box | What happens there | Markers |
 | --- | --- | --- | --- | --- |
-| Outside GSL | Same as today | Survey, quality check, edit requests | The Google Form and its Sheet; a Google Doc | Personal data, Open question: "Whose Google account?" |
+| Outside GSL | Same as today | Survey, quality check, edit requests | The Google Form and its Sheet; a Google Doc | Personal data, "NOAA Google Workspace" |
 | Outside GSL | Steph & Emily | AI synthesis, rerun | Across all 7 published projects, reviewed before the WPO meeting | Review step |
 | Developer | Developer | Import and site files | The same files as today; the import script learns the Google Form's format | — |
 | Developer | Developer | Build for /firehouse/ | Gov banner and footer back on; Submit a Finding opens the Google Form; no citation generator | — |
@@ -203,8 +203,8 @@ only needed for code changes. Until an AI service is approved, you paste Noteboo
 output in instead.
 
 **For ITS:** Stored on GSL's server: project text, editorial fields, the syntheses and
-their revision history, and from the form, submitters' emails, job titles and
-internal-only answers. Those are readable only by the Firehouse roles, never shown on a
+their revision history, and from the form, submitters' emails, job titles and how they
+shared their results. Those are readable only by the Firehouse roles, never shown on a
 page, and kept as long as the privacy review allows. No IP addresses or uploaded files.
 One public form writes to the database, with server-side validation and spam
 protection. Logins are a Firehouse Editor role that can change Firehouse content and
@@ -284,6 +284,5 @@ current design."
 - The public address is `gsl.noaa.gov/firehouse/`. The test site's address is not
   given here; label it "Test site".
 - Open questions to mark with "?" where they appear: Apache or nginx on GSL's
-  servers; whether Cloudflare caches pages; login or network restriction for the
-  test copy; which Google account owns the form; which AI service is approved; the
-  Paperwork Reduction Act answer in writing.
+  servers; login or network restriction for the test copy; which AI service is
+  approved; the Paperwork Reduction Act answer in writing.

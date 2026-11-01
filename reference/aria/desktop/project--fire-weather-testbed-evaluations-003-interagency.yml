@@ -1,0 +1,124 @@
+- link "Skip to main content":
+  - /url: "#main"
+- banner:
+  - link "The Firehouse, NOAA Global Systems Laboratory — home":
+    - /url: /
+    - text: The Firehouse
+  - navigation "Primary":
+    - link "Home":
+      - /url: /
+    - link "Explore Projects":
+      - /url: /projects
+    - link "About":
+      - /url: /about
+    - link "Submit a Finding":
+      - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths
+  - button "Switch to dark theme"
+  - link "Submit a Finding":
+    - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths
+- main:
+  - article:
+    - navigation "Breadcrumb":
+      - link "All projects":
+        - /url: /projects
+    - text: Testbed Evaluation
+    - 'heading "Fire Weather Testbed Evaluations #003 - Interagency Collaboration: Tactical Integrated Warning Team (IWT) for Wildland Fire Operations" [level=1]'
+    - paragraph: Emily Wells, Ansley Baring, Benjamin Hatchett, Stephanie Hoekstra, Laura Sample McMeeking, Kyle Thiem, Zach Tolby and Jamie Vickery·Cooperative Institute for Research in the Atmosphere
+    - text: "Completed 2025 Fire cycle phase: Before · During · Long-term"
+    - heading "Abstract" [level=2]
+    - paragraph: In June 2024, the NOAA Fire Weather Testbed conducted a five-day evaluation of the Tactical Integrated Warning Team (IWT) for fire operations. First implemented in the Southern Great Plains, the Tactical IWT involves regular coordination between meteorologists and fire managers before and during wildland fire incidents to collaboratively assess fire risk, monitor ongoing fire activity, and, when necessary, issue Fire Warnings. Although the Tactical IWT approach has improved collaboration, situational awareness, and decision-making in the Southern Great Plains, understanding its broader applicability for wildfire response in other regions requires further study. Evaluation efforts focused on assessing the Tactical IWT organizational structure, how fire weather products are integrated for decision support, and how interagency collaboration can enable more effective fire management. Participating meteorologists and land managers were paired by state and worked together on displaced real-time simulations to mirror the Tactical IWT approach. Participants completed daily surveys and joined focus groups to evaluate overall impressions of the Tactical IWT approach, including regional applications. FWT facilitated two recorded focus group discussions—one for meteorologists and one for fire partners—allowing each group to focus on discipline-specific feedback to share with product teams.
+    - heading "Major takeaways" [level=2]
+    - list:
+      - listitem:
+        - paragraph: Participating meteorologists and land managers believed the Tactical IWT approach, both before and during wildland fire incidents, has the potential to improve communication, coordination, and situational awareness among meteorologists, land managers, and other fire/emergency response partners, thus enabling unified public messaging and coordinated response to wildland fire threats.
+      - listitem:
+        - paragraph: Participating meteorologists found value in and advocated for the real-time communication element of the Tactical IWT approach for fire operations. Participating meteorologists described the IWT as a “force multiplier” that can enhance inter-agency communication and public communication beyond annual meetings/tabletops.
+      - listitem:
+        - paragraph: Land managers had experience working in collaborative team structures with similarities to IWTs, which could help implement Tactical IWTs for fire operations. Land managers desired timely and accurate meteorological information to support operational response, planning, and preparedness decisions, sharing that interagency relationships established through Tactical IWTs could fill information gaps.
+      - listitem:
+        - paragraph: Both meteorologist and land manager participants expressed concerns in implementing and maintaining the Tactical IWT for fire operations.
+    - heading "End-user needs and recommendations" [level=2]
+    - list:
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: "Need for Integrated Warning Team implementation framework among meteorologists and land managers:"
+          - text: Participants foresaw challenges in building, implementing, and maintaining Tactical IWTs, driven by ambiguity regarding partner responsibilities, authority, and inclusion. Participants need pre-determined guidelines scaled locally.
+        - text: Recommendation
+        - paragraph: Recommend using the Southern Great Plains IWT approach to develop frameworks with clearly defined–yet locally adaptive/scaleable–partner roles and representation. Determine whether/how to formally institute (e.g., via state Annual Operating Plans).
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: "Need to address capacity constraints among meteorologists and land managers:"
+          - text: Both participant groups expressed a need to address workforce capacity constraints, as staffing/bandwidth constraints may present barriers to IWT implementation and maintenance.
+        - text: Recommendation
+        - paragraph: Recommendations include that Tactical IWT frameworks consider localized capacity and offer implementation strategies for varying levels of partner engagement.
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: "Need to address potential barriers to organizational “buy in” among land managers:"
+          - text: Participating land managers expressed a need to address potential barriers related acquiring organizational “buy in” (i.e., from those with “boots on the ground”). They shared the importance of demonstrating the value of Tactical IWTs for fire operations.
+        - text: Recommendation
+        - paragraph: Recommend framing Tactical IWTs as flexible decision support and situational awareness tools that fit partner needs, capacities, and workflows.
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: "Need for Tactical IWT flexibility and scalability among meteorologists and land managers:"
+          - text: Land managers need compatibility between Tactical IWTs and the National Incident Management System’s Incident Command System (ICS), which is scalable by design. Similarly, meteorologists need the framework to be adaptable and scalable on a regional basis to meet operational contexts.
+        - text: Recommendation
+        - paragraph: Recommend ensuring Tactical IWTs are customizable and scalable based on local needs while aligned with the ICS.
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: "Need for local IWT training, coordination, and relationship building between meteorologists and land managers:"
+          - text: Meteorologists and land managers need to establish collaborative, trusted relationships and operational procedures before interagency collaboration is required during an incident. Land managers felt this can help inter-agency and multi-jurisdiction alignment, building situational awareness and thus trust/confidence.
+        - text: Recommendation
+        - paragraph: Recommend consistent and coordinated training involving local meteorologists and fire partners.
+    - heading "Publications and resources" [level=2]
+    - list:
+      - listitem:
+        - 'link "Fire Weather Testbed Evaluations #002–004: An End-to-End Evaluation of NOAA''s Emerging Wildland Fire Detection and Warning Capabilities NOAA technical memorandum OAR GSL ; 71 · 2025 doi:10.25923/4pqf-7g49 (opens in a new tab)"':
+          - /url: https://doi.org/10.25923/4pqf-7g49
+    - region "Cite this project":
+      - heading "Cite this project" [level=2]
+      - tablist "Citation format":
+        - tab "APA 7" [selected]
+        - tab "Chicago"
+        - tab "BibTeX"
+      - tabpanel "APA 7": "Wells, E., Baring, A., Hatchett, B., Hoekstra, S., Laura Sample McMeeking, Thiem, K., Tolby, Z., & Vickery, J. (2025). Fire Weather Testbed Evaluations #003 - Interagency Collaboration: Tactical Integrated Warning Team (IWT) for Wildland Fire Operations. The Firehouse, NOAA Global Systems Laboratory. https://doi.org/10.25923/4pqf-7g49"
+      - button "Copy"
+      - status
+    - complementary "Project details":
+      - heading "At a glance" [level=2]
+      - term: Project type
+      - definition: Testbed Evaluation
+      - term: Completion year
+      - definition: "2025"
+      - term: Fire cycle phase
+      - definition:
+        - list:
+          - listitem:
+            - strong: Before
+            - text: Pre-fire planning, prevention, and mitigation
+          - listitem:
+            - strong: During
+            - text: Fire detection, active suppression, and downstream impacts
+          - listitem:
+            - strong: Long-term
+            - text: Planning, adaptation, and policy
+      - term: Data collection
+      - definition: Survey, Focus groups, Workshop/roundtable discussions
+      - term: Geographic areas
+      - definition: N. California ONCC S. California OSCC Rocky Mountain RMCC Southern Area SACC
+      - term: Organization
+      - definition: Cooperative Institute for Research in the Atmosphere
+      - paragraph:
+        - text: Takeaways, needs and recommendations on this page are reproduced as the researcher submitted them. The
+        - link "topic areas":
+          - /url: /#top-needs
+        - text: are an AI-assisted synthesis across all projects, so no single project is filed under one.
+    - navigation "Other projects":
+      - 'link "Previous Fire Weather Testbed Evaluations #002: Fire Detection and Dissemination - NESDIS Next Generation Fire System and NWS Hotspot Notification Tool"':
+        - /url: /projects/fire-weather-testbed-evaluations-002-fire-detection
+      - 'link "Next Igniting Insight: Evaluating NWS Fire Weather Products within a Fire Partner Decision Making Context"':
+        - /url: /projects/igniting-insight-evaluating-nws-fire-weather-products

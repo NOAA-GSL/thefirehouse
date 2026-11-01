@@ -1,0 +1,113 @@
+- link "Skip to main content":
+  - /url: "#main"
+- banner:
+  - link "The Firehouse, NOAA Global Systems Laboratory — home":
+    - /url: /
+    - text: The Firehouse
+  - navigation "Primary":
+    - link "Home":
+      - /url: /
+    - link "Explore Projects":
+      - /url: /projects
+    - link "About":
+      - /url: /about
+    - link "Submit a Finding":
+      - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths
+  - button "Switch to dark theme"
+  - link "Submit a Finding":
+    - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths
+- main:
+  - navigation "Breadcrumb":
+    - link "Home":
+      - /url: /
+    - link "Top needs":
+      - /url: /#top-needs
+    - text: Governance
+  - text: Governance
+  - heading "Strategic Adaptation and Institutional Governance" [level=1]
+  - region "Top 5 needs":
+    - heading "Top 5 needs" [level=2]
+    - paragraph:
+      - strong: AI-synthesized
+      - text: across all 4 projects.
+      - strong: Draft, pending team review
+      - text: · updated
+      - time: September 17, 2026
+      - text: .
+    - paragraph:
+      - text: Ranked by mentions — how many submitted needs and recommendations raise each one.
+      - link "How these needs are synthesized":
+        - /url: /#needs-source
+    - list:
+      - listitem:
+        - paragraph: Trusted local relationships and joint training before an incident
+        - paragraph: 3 mentions · from 3 projects
+        - list "Projects behind need 1":
+          - listitem:
+            - 'link "Fire Weather Testbed Evaluations #003 - Interagency Collaboration: Tactical Integrated Warning Team (IWT) for Wildland Fire Operations 2025"':
+              - /url: /projects/fire-weather-testbed-evaluations-003-interagency
+          - listitem:
+            - 'link "Igniting Insight: Evaluating NWS Fire Weather Products within a Fire Partner Decision Making Context 2025"':
+              - /url: /projects/igniting-insight-evaluating-nws-fire-weather-products
+          - listitem:
+            - 'link "Igniting Impact: Advancing Fire Weather Decision Support Services 2026"':
+              - /url: /projects/igniting-impact-advancing-fire-weather-decision-support
+      - listitem:
+        - paragraph: Integrated Warning Team frameworks with clear, locally scalable roles
+        - paragraph: 3 mentions · from 2 projects
+        - list "Projects behind need 2":
+          - listitem:
+            - 'link "Fire Weather Testbed Evaluations #003 - Interagency Collaboration: Tactical Integrated Warning Team (IWT) for Wildland Fire Operations 2025"':
+              - /url: /projects/fire-weather-testbed-evaluations-003-interagency
+          - listitem:
+            - 'link "Igniting Insight: Evaluating NWS Fire Weather Products within a Fire Partner Decision Making Context 2025"':
+              - /url: /projects/igniting-insight-evaluating-nws-fire-weather-products
+      - listitem:
+        - paragraph: Direct, two-way communication channels between forecasters and fire partners
+        - paragraph: 2 mentions · from 2 projects
+        - list "Projects behind need 3":
+          - listitem:
+            - 'link "Igniting Impact: Advancing Fire Weather Decision Support Services 2026"':
+              - /url: /projects/igniting-impact-advancing-fire-weather-decision-support
+          - listitem:
+            - 'link "Fire Weather Testbed Evaluations #002: Fire Detection and Dissemination - NESDIS Next Generation Fire System and NWS Hotspot Notification Tool 2025"':
+              - /url: /projects/fire-weather-testbed-evaluations-002-fire-detection
+      - listitem:
+        - paragraph: Regional flexibility to adopt or tailor Fire Warning workflows
+        - paragraph: 2 mentions · from 2 projects
+        - list "Projects behind need 4":
+          - listitem:
+            - 'link "Igniting Insight: Evaluating NWS Fire Weather Products within a Fire Partner Decision Making Context 2025"':
+              - /url: /projects/igniting-insight-evaluating-nws-fire-weather-products
+          - listitem:
+            - 'link "Fire Weather Testbed Evaluations #003 - Interagency Collaboration: Tactical Integrated Warning Team (IWT) for Wildland Fire Operations 2025"':
+              - /url: /projects/fire-weather-testbed-evaluations-003-interagency
+      - listitem:
+        - paragraph: Staffing capacity and organizational buy-in to sustain interagency teams
+        - paragraph: 2 mentions · from 1 project
+        - list "Projects behind need 5":
+          - listitem:
+            - 'link "Fire Weather Testbed Evaluations #003 - Interagency Collaboration: Tactical Integrated Warning Team (IWT) for Wildland Fire Operations 2025"':
+              - /url: /projects/fire-weather-testbed-evaluations-003-interagency
+  - complementary "What this area covers":
+    - heading "What this area covers" [level=2]
+    - list:
+      - listitem: Interagency roles, responsibilities, and coordination
+      - listitem: Program evaluation and measures of impact
+      - listitem: Workforce capacity, training, and institutional knowledge
+      - listitem: Policy, funding, and long-term adaptation planning
+    - paragraph: Have a finding that speaks to this area?
+    - link "Submit a Finding":
+      - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths
+  - navigation "Other topic areas":
+    - heading "Other topic areas" [level=2]
+    - list:
+      - listitem:
+        - link "Observations Observations and Monitoring":
+          - /url: /topics/observe
+      - listitem:
+        - link "Forecasts Forecasts and Modeling":
+          - /url: /topics/forecast
+      - listitem:
+        - link "Warnings Warnings and Immediate Response":
+          - /url: /topics/warning

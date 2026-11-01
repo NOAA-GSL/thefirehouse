@@ -1,0 +1,43 @@
+{
+  "$comment": "Cases for src/content/derive.ts, run against site.json. Each case calls `fn` with `args` and expects `expected`. `view` turns a result into JSON: `slugs` lists projects by slug, `slug` is one project's slug (or null), `cards` is each topic card's key and need texts. `sortByRecency` sorts its argument with `byRecency`.",
+  "cases": [
+    { "name": "drafts and IRB-excluded projects are not published", "fn": "publishedProjects", "args": ["@site"], "view": "slugs", "expected": ["smoke-alerts-for-evacuation", "national-outlook-study", "pacific-island-recovery", "alpha-fire-forecasting"] },
+
+    { "name": "the project count is live", "fn": "resolveStatValue", "args": [{ "id": "projects", "source": "publishedProjectCount", "label": "Projects" }, "@site"], "expected": "4" },
+    { "name": "the topic count is live", "fn": "resolveStatValue", "args": [{ "id": "topics", "source": "topicCount", "label": "Topic areas" }, "@site"], "expected": "4" },
+    { "name": "a static stat shows its value", "fn": "resolveStatValue", "args": [{ "id": "launch", "source": "static", "value": "2027", "label": "Launch" }, "@site"], "expected": "2027" },
+    { "name": "a static stat with no value is empty", "fn": "resolveStatValue", "args": [{ "id": "empty", "source": "static", "label": "Empty" }, "@site"], "expected": "" },
+
+    { "name": "topic cards follow topic order and cap the needs", "fn": "buildTopicCards", "args": ["@site", 2], "view": "cards", "expected": [
+      { "topic": "observe", "needs": ["Denser smoke sensor networks near communities", "Shared observation dashboards across agencies"] },
+      { "topic": "forecast", "needs": ["Longer-lead outlooks for planning beyond 72 hours"] },
+      { "topic": "warning", "needs": [] },
+      { "topic": "governance", "needs": [] }
+    ] },
+
+    { "name": "a project by slug", "fn": "findProjectBySlug", "args": ["@site", "pacific-island-recovery"], "view": "slug", "expected": "pacific-island-recovery" },
+    { "name": "a draft is found by slug too; the page decides whether to show it", "fn": "findProjectBySlug", "args": ["@site", "draft-fuel-study"], "view": "slug", "expected": "draft-fuel-study" },
+    { "name": "an IRB-excluded project can't be found", "fn": "findProjectBySlug", "args": ["@site", "no-irb-project"], "view": "slug", "expected": null },
+
+    { "name": "newest first, alphabetical within a year", "fn": "sortByRecency", "args": ["@published"], "view": "slugs", "expected": ["alpha-fire-forecasting", "smoke-alerts-for-evacuation", "national-outlook-study", "pacific-island-recovery"] },
+
+    { "name": "a stored count wins", "fn": "needMentions", "args": [{ "text": "x", "mentions": 3, "projects": ["a"] }], "expected": 3 },
+    { "name": "a stored zero still wins", "fn": "needMentions", "args": [{ "text": "x", "mentions": 0, "projects": ["a"] }], "expected": 0 },
+    { "name": "without a count, the number of projects", "fn": "needMentions", "args": [{ "text": "x", "projects": ["a", "b"] }], "expected": 2 },
+    { "name": "neither", "fn": "needMentions", "args": [{ "text": "x" }], "expected": 0 },
+
+    { "name": "synthesis provenance: latest date, largest source count, no reviewer unless every topic has one", "fn": "synthesisInfo", "args": ["@site"], "expected": { "model": "Test model", "updatedAt": "2026-10-27", "sourceCount": 4 } },
+
+    { "name": "a national study counts toward every GACC", "fn": "effectiveRegions", "args": [["NATIONAL"]], "expected": ["NATIONAL", "AICC", "NWCC", "ONCC", "OSCC", "NRCC", "GBCC", "SWCC", "RMCC", "EACC", "SACC"] },
+    { "name": "regions already listed keep their place", "fn": "effectiveRegions", "args": [["NWCC", "NATIONAL"]], "expected": ["NWCC", "NATIONAL", "AICC", "ONCC", "OSCC", "NRCC", "GBCC", "SWCC", "RMCC", "EACC", "SACC"] },
+    { "name": "Pacific, international and unknown don't expand", "fn": "effectiveRegions", "args": [["PACIFIC", "INTL", "UNKNOWN"]], "expected": ["PACIFIC", "INTL", "UNKNOWN"] },
+    { "name": "no regions", "fn": "effectiveRegions", "args": [], "expected": [] },
+
+    { "name": "a region lists its own projects and national ones, newest first", "fn": "projectsInRegion", "args": ["@site", "NWCC"], "view": "slugs", "expected": ["smoke-alerts-for-evacuation", "national-outlook-study"] },
+    { "name": "a draft doesn't count toward its region", "fn": "projectsInRegion", "args": ["@site", "GBCC"], "view": "slugs", "expected": ["national-outlook-study"] },
+    { "name": "Pacific is its own region", "fn": "projectsInRegion", "args": ["@site", "PACIFIC"], "view": "slugs", "expected": ["pacific-island-recovery"] },
+    { "name": "an empty region", "fn": "projectsInRegion", "args": ["@site", "INTL"], "view": "slugs", "expected": [] },
+
+    { "name": "region counts include every key, zeroes and all", "fn": "regionCounts", "args": ["@site"], "expected": { "AICC": 1, "NWCC": 2, "ONCC": 2, "OSCC": 1, "NRCC": 1, "GBCC": 1, "SWCC": 1, "RMCC": 2, "EACC": 1, "SACC": 1, "PACIFIC": 1, "NATIONAL": 1, "INTL": 0, "UNKNOWN": 0 } }
+  ]
+}

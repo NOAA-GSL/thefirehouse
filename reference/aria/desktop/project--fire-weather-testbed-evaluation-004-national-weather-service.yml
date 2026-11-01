@@ -1,0 +1,126 @@
+- link "Skip to main content":
+  - /url: "#main"
+- banner:
+  - link "The Firehouse, NOAA Global Systems Laboratory — home":
+    - /url: /
+    - text: The Firehouse
+  - navigation "Primary":
+    - link "Home":
+      - /url: /
+    - link "Explore Projects":
+      - /url: /projects
+    - link "About":
+      - /url: /about
+    - link "Submit a Finding":
+      - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths
+  - button "Switch to dark theme"
+  - link "Submit a Finding":
+    - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths
+- main:
+  - article:
+    - navigation "Breadcrumb":
+      - link "All projects":
+        - /url: /projects
+    - text: Testbed Evaluation
+    - 'heading "Fire Weather Testbed Evaluation #004 - National Weather Service Fire Warnings Using a Tactical Integrated Warning Team Approach" [level=1]'
+    - paragraph: Emily Wells, Ansley Baring, Benjamin Hatchett, Stephanie Hoekstra, Laura Sample McMeeking, Kyle Thiem, Zach Tolby and Jamie Vickery·Cooperative Institute for Research in the Atmosphere
+    - text: "Completed 2025 Fire cycle phase: Before · During · Long-term"
+    - heading "Abstract" [level=2]
+    - paragraph: In June 2024, the NOAA Fire Weather Testbed conducted a five-day evaluation of National Weather Service (NWS) Fire Warnings for wildland fire operations. Aligned with the NWS “science first responder” vision, the FWT evaluated meteorologist and land manager workflows and information sharing leading up to joint Fire Warning issuance using a Tactical IWT approach. The Tactical Integrated Warning Team (IWT) approach originated in the Southern Great Plains, where meteorologists and land managers have collaboratively assessed wildfire threats and jointly issued Fire Warnings to the public when fires threaten lives and property. Evaluation efforts centered on interagency coordination and situational awareness to evaluate broader applicability, decision authority, and public messaging mechanisms across diverse regions. Evaluation feedback addressed public risk communication and technological integration (e.g., warning platforms, fire spread modeling, Wireless Emergency Alerts (WEA), and polygon sharing). Participating meteorologists and land managers were paired by state and worked together on real-time simulations mirroring the Tactical IWT workflow. Participants completed daily surveys and joined focus group discussions—one for meteorologists and one for fire partners—providing discipline-specific feedback synthesized for product development teams.
+    - heading "Major takeaways" [level=2]
+    - list:
+      - listitem:
+        - paragraph: Fire Warnings were perceived to be a valuable collaborative wildland fire alerting tool capable of relaying critical information from the NWS and land managers to other emergency management partners and the public when wildland fire poses an imminent threat to life and property.
+      - listitem:
+        - paragraph: However, both land managers and NWS participants’ expressed concerns centering around determining warning authority and the potential public confusion with other products or directives (e.g., evacuation warnings and orders)
+    - heading "End-user needs and recommendations" [level=2]
+    - list:
+      - listitem:
+        - text: Need
+        - paragraph: "Need to explore transforming Fire Warning into a standalone warning product with Wireless Emency Alert (WEA) capabilities among land managers: At the time of the evaluation, Fire Warnings were a non-weather emergency product, and land managers shared that Fire Warnings may more effectively reach the public via WEA."
+        - text: Recommendation
+        - paragraph: Recommend exploring WEA and other dissemination capabilities for Fire Warnings.
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: "Need for timely satellite data availability among NWS meteorologists:"
+          - text: Participating meteorologists expressed concerns over potential delays in satellite data availability needed for Fire Warning issuance during active operations.
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: "Need for Fire Warning polygon training and capabilities among meteorologists and land managers:"
+          - text: Meteorologists expressed a need for training, guidance, and coordination on Fire Warning polygon determination (e.g., adding buffer zones), and land managers preferred Fire Warnings tailored to specific areas over county-wide.
+        - text: Recommendation
+        - paragraph: Recommend exploring technological capabilities including integrating in NWS warning software (Hazard Services) and enabling land managers and meteorologists to view proposed warning areas prior to issuance.
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: "Need for Fire Warning public education campaigns among meteorologists and land managers:"
+          - text: Land managers expressed a need for training/education of the public, who may confuse fire warnings with other NWS fire products (Red Flag Warnings, Fire Weather Watches) or evacuation warnings/orders. Meteorologists recommended public education campaigns and training explaining the purpose of Fire Warnings are made available so the public can discern NWS products and take protective actions.
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: "Need for defined delegation authority, joint messaging, and embedded links among meteorologists and land managers:"
+          - text: Participants foresaw a need to resolve inter-agency delays, decision-making complexities, and role authority for Fire Warning issuance.
+        - text: Recommendation
+        - paragraph: Recommend building Tactical Integrated Warning Teams aligning local needs/resources, clearly delegating decision authority, and including product wording that highlights co-creation, joint issuance, and links to other information sources (e.g., evacuation alerts) to enhance public trust.
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: "Need for comprehensive Fire Warning training and fire behavior guidance among meteorologists and land managers:"
+          - text: Participating meteorologists expressed a need for training/guidance to address their limited fire behavior expertise, as they were hesitant to rely on 'gut instincts' to suggest Fire Warnings (or not).
+        - text: Recommendation
+        - paragraph: Recommend implementing comprehensive Fire Warning training for NWS personnel, land management agencies, and emergency management agencies emphasizing collaborative processes for fire detection, monitoring, and response.
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: "Need for allowing NWS meteorologists to issue Fire Warnings among land managers:"
+          - text: At the time of the evaluation, Fire Warning issuance required secondary permission/input of land management agencies. Participating land managers recommended allowing NWS meteorologists to issue Fire Warnings without secondary permission/input of land management agencies.
+    - heading "Publications and resources" [level=2]
+    - list:
+      - listitem:
+        - 'link "Fire Weather Testbed Evaluations #002–004: An End-to-End Evaluation of NOAA''s Emerging Wildland Fire Detection and Warning Capabilities NOAA technical memorandum OAR GSL ; 71 · 2025 doi:10.25923/4pqf-7g49 (opens in a new tab)"':
+          - /url: https://doi.org/10.25923/4pqf-7g49
+    - region "Cite this project":
+      - heading "Cite this project" [level=2]
+      - tablist "Citation format":
+        - tab "APA 7" [selected]
+        - tab "Chicago"
+        - tab "BibTeX"
+      - tabpanel "APA 7": "Wells, E., Baring, A., Hatchett, B., Hoekstra, S., Laura Sample McMeeking, Thiem, K., Tolby, Z., & Vickery, J. (2025). Fire Weather Testbed Evaluation #004 - National Weather Service Fire Warnings Using a Tactical Integrated Warning Team Approach. The Firehouse, NOAA Global Systems Laboratory. https://doi.org/10.25923/4pqf-7g49"
+      - button "Copy"
+      - status
+    - complementary "Project details":
+      - heading "At a glance" [level=2]
+      - term: Project type
+      - definition: Testbed Evaluation
+      - term: Completion year
+      - definition: "2025"
+      - term: Fire cycle phase
+      - definition:
+        - list:
+          - listitem:
+            - strong: Before
+            - text: Pre-fire planning, prevention, and mitigation
+          - listitem:
+            - strong: During
+            - text: Fire detection, active suppression, and downstream impacts
+          - listitem:
+            - strong: Long-term
+            - text: Planning, adaptation, and policy
+      - term: Data collection
+      - definition: Survey, Focus groups, Workshop/roundtable discussions
+      - term: Geographic areas
+      - definition: N. California ONCC S. California OSCC Rocky Mountain RMCC Southern Area SACC
+      - term: Organization
+      - definition: Cooperative Institute for Research in the Atmosphere
+      - paragraph:
+        - text: Takeaways, needs and recommendations on this page are reproduced as the researcher submitted them. The
+        - link "topic areas":
+          - /url: /#top-needs
+        - text: are an AI-assisted synthesis across all projects, so no single project is filed under one.
+    - navigation "Other projects":
+      - link "Previous An Evaluation of the Next Generation Fire System (NGFS) for Predictive Services":
+        - /url: /projects/an-evaluation-of-the-next-generation-fire-system-ngfs
+      - 'link "Next Fire Weather Testbed Evaluations #002: Fire Detection and Dissemination - NESDIS Next Generation Fire System and NWS Hotspot Notification Tool"':
+        - /url: /projects/fire-weather-testbed-evaluations-002-fire-detection

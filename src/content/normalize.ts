@@ -64,7 +64,7 @@ function assertFirePhases(values: unknown, where: string) {
         if (!isFirePhase(value)) {
           throw new ContentError(
             `${where} references unknown fire cycle phase "${String(value)}". ` +
-              'Valid keys are listed in design-system/taxonomy.ts.',
+              'Valid keys are listed in wp-content/plugins/firehouse/shared/vocabulary.json.',
           );
         }
         return value;
@@ -82,7 +82,7 @@ function assertRegionKeys(values: unknown, where: string) {
           throw new ContentError(
             `${where} references unknown coordination region "${String(value)}". ` +
               'Valid values are the ten GACC codes plus PACIFIC, NATIONAL, INTL and ' +
-              'UNKNOWN — see design-system/taxonomy.ts.',
+              'UNKNOWN — see wp-content/plugins/firehouse/shared/vocabulary.json.',
           );
         }
         return value;

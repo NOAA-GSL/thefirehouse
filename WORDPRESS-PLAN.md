@@ -1,6 +1,6 @@
 # WordPress plan — The Firehouse as a GSL WordPress plugin
 
-> **Status: proposal for review, last updated 31 October 2026.** Only the empty plugin
+> **Status: proposal for review, last updated 1 November 2026.** Only the empty plugin
 > and a local WordPress are built (Phase 0). This document is the current plan: the
 > decisions made so far, the architecture they lead to, and a phased plan from the
 > current `main` branch to a plugin running on gsl.noaa.gov. It changes through pull
@@ -48,11 +48,11 @@ that produced it).
 | Place in GSL's menus | A Firehouse item under GSL's Research Portal menu, or failing that a tile on its Decision Support Systems page (Stephanie and Emily, 28 October). GSL's web team adds it. |
 | Fields | **WordPress built-in fields**: `register_post_meta`, the Settings API and block attributes. No ACF or Secure Custom Fields. |
 | SEO plugin | None installed. The plugin writes its own meta tags and defers to an SEO plugin if one is added later. |
-| Caching | Cloudflare. Whether it caches HTML, and how purges work, is still unknown (see [Caching](#caching)). |
+| Caching | **Cloudflare doesn't cache HTML** on either site (`cf-cache-status: DYNAMIC` on both, checked 1 November), so publishing shows up immediately and the plugin needs no purge step (see [Caching](#caching)). |
 | Install path | Security reviews each plugin release; developers install it. |
 | WP-CLI | **Not relied on.** Everything, including the first data load, is done in wp-admin. |
 | Outbound network | Believed allowed (doi.org). DOI lookups also reach api.crossref.org and data.crosscite.org, where doi.org forwards them. The AI service adds one more host. A Site Health check confirms them on the test site. |
-| Survey tool | **A form built into the plugin** (29 October), as a self-contained part of it (31 October). See [The survey form](#the-survey-form). Until the plugin launches, researchers submit through the **Google Form** that replaced Colorado State's Qualtrics. Its responses go into the site's files through the existing import script, as today, and reach WordPress in the seed bundle at launch (see [Importing the Google Form until launch](#importing-the-google-form-until-launch)). |
+| Survey tool | **A form built into the plugin** (29 October), as a self-contained part of it (31 October). See [The survey form](#the-survey-form). Until the plugin launches, researchers submit through the **Google Form** that replaced Colorado State's Qualtrics; it belongs to Emily's account in NOAA's Google Workspace. Its responses go into the site's files through the existing import script, as today, and reach WordPress in the seed bundle at launch (see [Importing the Google Form until launch](#importing-the-google-form-until-launch)). |
 | Responses so far | Qualtrics is closed, and every real submission was re-entered through the Google Form (28 October), so the form's Sheet is the complete record. |
 | Survey API sync | **Dropped** (29 October). With the form in the plugin there is no Sheet to sync. |
 | AI synthesis | **Runs from the plugin** (agreed with Stephanie and Emily, 28 October). An **Analyze results** button sends the published projects and the team's prompt to an approved AI service, and the result waits as a draft for review. Amazon Bedrock is proposed and needs approval under NOAA's AI policy (open question 7). Until then, and as the fallback, the synthesis screen takes NotebookLM's output by paste. See [The AI service](#the-ai-service). |
@@ -91,7 +91,7 @@ Analyze results (AI service) ───────▶ draft synthesis ──diff
 titles) on GSL's server and has a public form that writes to the database. Its
 security review is longer, and the form can't open on gsl.noaa.gov until a privacy
 review is done and the Paperwork Reduction Act question is answered in writing (open
-questions 12 and 15).
+questions 12 and 14).
 
 ---
 
@@ -207,7 +207,7 @@ wp-content/plugins/firehouse/
   templates/       project, explorer, topic and Firehouse page templates
   patterns/        landing and About layouts, locked to text-only edits
   assets/          tokens and component CSS, icons, logos, fonts, GACC boundaries
-  shared/          vocabulary.json and test cases, read by both the PHP and JS tests
+  shared/          vocabulary.json, project.schema.json and test cases, read by PHP and JS
   tests/           PHPUnit tests, run without WordPress through Brain Monkey
 ```
 
@@ -309,8 +309,10 @@ in a rewrite.
    through `the_content`, including block output. Left on, every project page would quietly rewrite what
    researchers submitted. Turn both off on Firehouse pages. Store survey text as
    plain-string meta, and give editors no rich-text control over it.
-2. **Private survey answers stay private.** Q2 (email), Q3 (job title) and Q10
-   (internal use only) are never shown on the site.
+2. **Private survey answers stay private.** Q2 (email) and Q3 (job title) are never
+   shown on the site. Nor is Q10 (how results were shared outside the research group),
+   which was marked internal-only in Qualtrics and stays private until Stephanie and
+   Emily say otherwise (open question 15).
    - **The import script drops them,** as today, along with Qualtrics' IP and location
      columns (Google Forms records neither). It runs on the developer's computer, so a
      response export never reaches GSL's server. The seed bundle it feeds holds no
@@ -319,7 +321,7 @@ in a rewrite.
      a submitter. They are stored apart from the survey fields, in meta that is never
      rendered, never sent through the REST API and never copied into revisions, and
      only the Firehouse roles can read them. How long they are kept is for the privacy
-     review (open question 15). The form records no IP address.
+     review (open question 14). The form records no IP address.
 3. **Unpublished records never leave the server.** Today `normalize.ts` keeps
    unpublished projects, and only the pages filter them out, so staged records ship in
    the JavaScript bundle. As WordPress drafts they are never rendered or sent to a
@@ -433,13 +435,21 @@ short:
 - **Secrets in `wp-config.php`, not the database.** The AI service key is a constant
   set by developers. It stays out of database backups, and editors never handle it.
 - **Personal data comes only from the form,** and stays private (rule 2): submitters'
-  emails, job titles and internal-only answers, readable by the Firehouse roles alone.
+  emails, job titles and Q10 answers, readable by the Firehouse roles alone.
   No IP addresses.
 - **One public endpoint writes to the database:** the form's submission handler. It
   checks a nonce, validates every field on the server, caps field lengths, accepts no
   files, and limits repeat submissions. Spam protection adds no third-party service
   unless the review accepts one.
-- **A one-page design summary goes to security in Phase 1:** data stored, endpoints,
+- **Repeat limits without recording addresses.** Limits on repeat submissions usually
+  key on the visitor's IP address, which the form doesn't record. Two options go to
+  security: a Cloudflare rate-limiting rule on the form's POST, which keeps addresses
+  out of WordPress entirely, or a salted hash of the address held for an hour in a
+  transient and never attached to the submission. Behind Cloudflare, PHP sees the
+  visitor's address only if the server restores it from Cloudflare's header; otherwise
+  every visitor shares a handful of Cloudflare addresses and one limit.
+- **No custom REST routes.** Nothing the pages or screens do needs one.
+- **A one-page design summary goes to security in Phase 0:** data stored, endpoints,
   capabilities, outbound hosts, secrets. Surprises at the final review are the
   expensive kind.
 - **Every release passes `PHPCS` (WordPress coding standards) and Plugin Check**
@@ -448,20 +458,19 @@ short:
 ### No WP-CLI: the Import screen
 
 One **Firehouse → Import** screen, available only to a separate import capability,
-loads the **seed bundle**: a zip of today's JSON files, the excluded responses' file
-(see below) and the About portraits. This is how test, and later prod, get their first
-load. A dry-run preview first lists what was parsed and any warnings, and nothing is
-written until the person confirms. It is repeatable: running it again updates the same
-posts rather than duplicating them. The zip is parsed from PHP's temporary upload and
-never stored.
+loads the **seed bundle**: a zip of today's JSON files and the About portraits. This is
+how test, and later prod, get their first load. A dry-run preview first lists what was
+parsed and any warnings, and nothing is written until the person confirms. It is
+repeatable: running it again updates the same posts rather than duplicating them. The
+zip is parsed from PHP's temporary upload and never stored.
 
 Survey responses don't come through this screen. Until launch the existing import
 script turns them into the JSON files (see
 [Importing the Google Form until launch](#importing-the-google-form-until-launch)),
-so the seed bundle holds every response collected before then. Projects arrive as they
-are on the site. Responses the script excludes, such as one without IRB approval or
-exemption, arrive as drafts marked with the reason, the same as a form submission the
-checks flag. After launch, responses arrive through the plugin's own form.
+so the seed bundle holds every response the site shows by then, and projects arrive as
+they are on the site. A response the script excludes, such as one without IRB approval
+or exemption, isn't in the bundle; the Sheet remains its record. After launch,
+responses arrive through the plugin's own form.
 
 WP-CLI commands may exist for developers, but nothing depends on them.
 
@@ -516,13 +525,21 @@ other GSL projects want a survey (see [Later phases](#later-phases)).
   the hosts in [Security review](#security-review). The draft lists links without a
   DOI, and an editor can type a title for one. Titles the site already shows carry
   over in the seed bundle.
-- **Email.** The Firehouse editors are told of each new submission, and the submitter
-  gets a confirmation, through GSL's own mail setup.
+- **Email,** through GSL's own mail setup. The Firehouse editors are told of each new
+  submission with a link to its draft; the message carries no private answers. The
+  submitter gets a confirmation in fixed text, with nothing they typed in it, so the
+  form can't be used to send spam to someone else's address.
+- **One box per entry.** The Google Form asks for takeaways, needs and links as
+  numbered or comma-separated lists in one box each. The plugin's form gives every
+  entry its own box: two to four takeaways, up to eight needs (each "Need for…" ending
+  in "Recommend…", as the form's guidance asks) and the links.
 - **Accessible.** Real fieldsets and labels, an error summary that links to each
-  problem, and up to ten repeated need entries that can be added and removed without
-  JavaScript. It is checked with a screen reader like the rest.
+  problem, and entries that can be added and removed without JavaScript. It is checked
+  with a screen reader like the rest.
+- **The same notices as the Google Form:** that submissions may be shown on the site,
+  and how AI is used on them, naming the approved AI service rather than NotebookLM.
 - **Before it opens on prod:** a privacy review, a written answer on the Paperwork
-  Reduction Act (open questions 12 and 15), and the security review's sign-off on the
+  Reduction Act (open questions 12 and 14), and the security review's sign-off on the
   submission handler (see [Security review](#security-review)).
 - **The switch.** At launch the Google Form closes, its last responses go through the
   import script into the seed bundle, and Submit a Finding moves to the Submit page.
@@ -547,16 +564,20 @@ proposed; it needs approval under NOAA's AI policy (open question 7).
 
 ### Caching
 
-Cloudflare sits in front of both sites. One check decides the work: open any
-gsl.noaa.gov page in the browser's developer tools and read the `cf-cache-status`
-response header.
+Cloudflare sits in front of both sites, and on both it **doesn't cache HTML**: pages
+come back with `cf-cache-status: DYNAMIC` (checked 1 November). Publishing shows up
+immediately, and the only job is versioned CSS and JS filenames, which WordPress
+already does.
 
-- **`DYNAMIC`.** HTML is not cached. Publishing shows up immediately. The only job is
-  versioned CSS and JS filenames, which WordPress already does.
-- **`HIT` or `MISS`.** HTML is cached, so a new project, a count or a synthesis update
-  stays stale until the cache expires. Publishing then has to purge. That means either
-  Cloudflare's own WordPress integration, or the plugin calling Cloudflare's purge API
-  with a token limited to purging. The token is a security-review item.
+If that changes (Phase 7b's Site Health check keeps reading the header), a new
+project, a count or a synthesis update would stay stale until the cache expired. Publishing would then have to purge, through
+Cloudflare's own WordPress integration or the plugin calling Cloudflare's purge API
+with a token limited to purging, and the token would be a security-review item.
+
+Whatever Cloudflare does with other pages, **the Submit page is never cached.** A cached copy would carry an expired
+nonce, and real submissions would start failing within a day. The page is sent with
+WordPress's no-cache headers, and if Cloudflare is set to ignore them, the web team
+adds a rule that bypasses the cache for that path.
 
 ### Page titles, descriptions and link previews
 
@@ -608,6 +629,9 @@ the screen.
    to submit through AMS, where the team's talk invites researchers to submit.
 6. **Remove the citation generator** from the project page, so the public site does
    not invite citations.
+7. **Stop the topic pages scrolling sideways on phones** (see the appendix).
+8. **Retake the reference** with `npm run reference` once these changes are in. That
+   set is what the plugin is built against.
 
 About 2–3 days of work, plus about a day for the test-site copy, not counted in the
 plugin estimate.
@@ -622,16 +646,25 @@ Until the plugin launches, researchers submit through the Google Form, and the
 developer's import script, `scripts/import-survey.mjs`, turns its response Sheet into
 the site's JSON files, as it did for Qualtrics. The plugin never reads the Sheet: the
 JSON reaches WordPress in the seed bundle, and the script retires at launch. It runs on
-the developer's computer and drops the email, job-title and internal-use answers
-before anything is written (rule 2).
+the developer's computer and drops the email, job-title and Q10 answers before
+anything is written (rule 2).
 
 The script was written for Qualtrics, so it needs these changes before the next import
-(about 1–2 days, using a test response downloaded from the live form):
+(about a day, using a test response from the live form or a made-up row in its
+format). They wait until the form has a genuinely new response: every response so far
+re-enters a Qualtrics submission the site already shows. The form's response count
+says when. The last Qualtrics export had 8 responses, so a count above 8 means
+something new has arrived.
 
 - **Columns by question title.** Google's header row is the question text, not a
   stable ID like Qualtrics' `Q13`, so the script finds each column by its title, and a
-  reworded question means updating its map. Takeaways, needs and papers are separate
-  numbered questions ("Key takeaway 1" to "Key takeaway 4"), gathered in order.
+  reworded question means updating its map.
+- **Lists in one box.** Takeaways (Q15, two to four) and needs (Q16, up to eight) are
+  each one box the respondent numbers, and links (Q17) are one box separated by commas,
+  where Qualtrics had a box per entry. The script splits numbered entries and commas.
+  Each need is asked to start "Need for…" and end "Recommend…", which also marks where
+  one entry ends. An answer that doesn't split cleanly is a warning, and its text is
+  kept whole for the person importing to split.
 - **The timestamp as the key.** There is no response ID. The Timestamp column holds
   still only while **"Allow response editing" stays off**: an edited response gets a
   new timestamp and would import as a new project. Two rows with the same timestamp, or
@@ -641,23 +674,22 @@ The script was written for Qualtrics, so it needs these changes before the next 
   labels end in their code ("Northern California (ONCC)"), which the script reads; the
   four other regions are matched by their full label in `shared/vocabulary.json`.
   Checkbox answers are matched against the known labels rather than split on commas,
-  because "Northwest — OR, WA (NWCC)" contains one.
-- **Pairing the re-entered submissions.** Every Qualtrics-era submission was re-entered
-  through the Google Form with a new timestamp. The first run pairs each with its
-  existing record, by title and submitter, so its slug and editorial fields carry
-  over.
-- **Keeping the excluded responses.** A response without IRB approval or exemption
-  stays out of the site's files, as today. The script also writes it, with the private
-  answers already dropped and the reason attached, to a separate file. That file is
-  never committed, because the repository is public, and never built into the bridge.
-  The seed bundle carries it, so each excluded response reaches WordPress as a flagged
-  draft. A row with no project title is still dropped outright: there is nothing to
-  make a project from.
+  because "Northwest -- OR, WA (NWCC)" contains one.
+- **Skipping the re-entered submissions.** Every Qualtrics-era submission was
+  re-entered through the Google Form with a new timestamp. The script skips those rows,
+  listed by timestamp, and the projects they duplicate keep their Qualtrics response
+  IDs as their key.
+- **Excluded responses stay in the Sheet.** A response without IRB approval or
+  exemption stays out of the site's files, as today, and the script lists it in its
+  report. There is one so far, and open question 13 may make it publishable (see the
+  appendix). If the team wants an excluded response in WordPress, an editor enters it
+  through the Submit page after launch, which flags it the same way. A row with no
+  project title is still dropped outright: there is nothing to make a project from.
 
-The form's settings that keep this working: "Allow response editing" off; open to
-respondents without a NOAA Google login (*confirmed*); no file-upload question, which
-would make every respondent sign in to Google (*confirmed*); and region and fire-phase
-options worded as in `shared/vocabulary.json`.
+The form's settings that keep this working, all confirmed: "Allow response editing"
+off; open to respondents without a NOAA Google login; no file-upload question, which
+would make every respondent sign in to Google; and region and fire-phase options worded
+as in `shared/vocabulary.json`, which takes its labels from the form.
 
 ---
 
@@ -667,19 +699,24 @@ options worded as in `shared/vocabulary.json`.
 
 - **Capture the reference.** Screenshots and accessibility-tree snapshots of every
   route from the React build, in each theme that will be kept. The React site is the
-  specification the plugin has to match.
+  specification the plugin has to match. *Done: `npm run reference` captures them (see
+  `reference/README.md`). The committed snapshots are a baseline from before the bridge
+  changes and are retaken with them (bridge step 8).*
 - **Add shared test cases.** Unit tests for `normalize`, `derive`, `search` and
   `format`, written as data files (input and expected output) that the PHP tests will
-  read later.
+  read later. *Done: 122 cases in `shared/cases/`, run by `npm test` and in CI.*
 - **Move the vocabularies** into `shared/vocabulary.json`, with each option's label as
-  the Google Form shows it, and generate a JSON Schema from `types.ts`.
+  the Google Form shows it, and generate a JSON Schema from `types.ts`. *Done: `npm run
+  schema` writes `shared/project.schema.json`, and CI fails if it is out of date.*
 - **Repair the seed data.** Fix the two double-encoded strings in `projects.json` (see
-  the appendix) before the seed bundle is built.
+  the appendix) before the seed bundle is built. *Done.*
 - **Scaffold the plugin** and a local WordPress for developers (see
   [Local development](#local-development)). *Done: the empty plugin passes PHPCS,
   PHPUnit and Plugin Check.*
-- **Check `cf-cache-status`** on gsl.noaa.gov.
-- **Send the design summary** to security.
+- **Check `cf-cache-status`** on gsl.noaa.gov and the test site. *Done: `DYNAMIC` on
+  both, so HTML isn't cached (see [Caching](#caching)).*
+- **Send the design summary** to security. *Sent 1 November. Its questions are in open
+  question 2.*
 
 **Done when:** the reference is captured, the shared cases pass in TypeScript, and an
 empty plugin passes PHPCS and Plugin Check.
@@ -768,7 +805,7 @@ behaves the same, and the accessibility snapshots match.
 - Drafts from submissions, private answers stored apart (rule 2), the import script's
   checks on submit, and DOI title lookups.
 - The submission handler's protections: nonce, server-side validation, length caps,
-  repeat-submission limits and spam protection.
+  repeat-submission limits and spam protection, with the Submit page never cached.
 - Editable question wording on the settings screen.
 - Emails to the editors and the submitter.
 
@@ -796,7 +833,7 @@ ships.
 ### Phase 8 — Review, launch, cutover (1.5–2 weeks)
 
 - Security review and fixes.
-- Cache purging, if the caching check calls for it.
+- Cache purging, only if Site Health shows Cloudflare has started caching HTML.
 - A screen-reader audit of the public pages and the admin screens.
 - CI that builds the versioned plugin zip.
 - A runbook for editors and for administrators.
@@ -858,10 +895,9 @@ Phases 6–7.
   route, compared against the reference captured in Phase 0.
 - **Logic parity.** PHP and TypeScript run the same shared test cases.
 - **Import script.** The adapted `import-survey.mjs` runs on a synthetic Google Forms
-  export (real exports contain submitters' emails) and produces the expected records,
-  including the paired re-entered submissions. Excluded responses land only in the
-  uncommitted file, never in the site's JSON, and the seed import turns each into a
-  flagged draft.
+  export (real exports contain submitters' emails) and produces the expected records.
+  Re-entered submissions are skipped, and excluded responses appear in its report,
+  never in the site's JSON.
 - **Migration parity.** After the seed import, the content WordPress renders must
   match `normalizeSiteContent()` run over today's JSON.
 - **Synthesis import.** Pasting the published synthesis back shows no changes. A need
@@ -911,8 +947,12 @@ Phases 6–7.
 
 1. Is the origin server Apache or nginx? This decides how the bridge is served.
 2. How long does a security review take, and what does a submission need to include?
-3. Does Cloudflare cache HTML (`cf-cache-status`), and who can purge? Does any other
-   cache sit in front of either site?
+   The design summary also asks how repeat submissions should be limited (see
+   [Security review](#security-review)), whether a honeypot and a minimum fill time are
+   enough spam protection, and whether the AI service needs a security review as well
+   as approval under NOAA's AI policy.
+3. Does any other cache sit in front of either site, such as a page cache on the
+   server? (Cloudflare caches neither site's HTML: see [Caching](#caching).)
 4. Can the bridge go on the test site, restricted to GSL staff, by mid-November?
 
 **For ITS**
@@ -950,19 +990,19 @@ Phases 6–7.
     it is.
 13. Should a project that answers "Project did not require IRB review" be published?
     The import script treats that answer as no approval, and the survey form flags it
-    the same way. Either way it reaches WordPress as a flagged draft, so the answer
-    decides only whether it can be published (see the appendix).
-14. Which Google account owns the Google Form and its response Sheet: NOAA's Google
-    Workspace, Colorado State's, or another? It decides where personal data lives until
-    launch, and who deletes the Sheet once its responses are imported. If it is NOAA's,
-    the intake documents should say so, because that settles the concern that the
-    survey sat outside NOAA. (The form is open to respondents outside NOAA.)
+    the same way. The Google Form itself accepts it: "No" ends the form with a note
+    that only IRB-approved studies are accepted, while "Project did not require IRB
+    review" carries on like "Yes". If the answer is no, such a project stays off the
+    site, recorded in the Sheet (see the appendix).
 
-**For the privacy review**
+**Privacy**
 
-15. What may the survey form keep, and for how long? It stores submitters' emails, job
-    titles and internal-only answers so the team can follow up (rule 2). The review
-    decides how long they are kept and when they are deleted.
+14. *(Privacy review)* What may the survey form keep, and for how long? It stores
+    submitters' emails and job titles, so the team can follow up, and their Q10 answers
+    (rule 2). The review decides how long they are kept and when they are deleted.
+15. *(Stephanie and Emily)* Can Q10, how results were shared outside the research
+    group, appear on the site? Qualtrics marked it internal-only; the Google Form
+    doesn't say. Until they decide, it stays private.
 
 **Settled**
 
@@ -970,15 +1010,21 @@ Phases 6–7.
   GSL's theme is classic, with PHP header and footer files (27 October).*
 - ~~Do administrators customize templates in the Site Editor?~~ *They can't: a
   classic theme has no Site Editor.*
+- ~~Does Cloudflare cache HTML?~~ *No, on either site (1 November): pages come back
+  with `cf-cache-status: DYNAMIC`, so publishing needs no purge.*
 - ~~Sync the survey through Google's API?~~ *No (29 October): with the form in the
   plugin there is no Sheet to sync.*
 - ~~Which counting rule is canonical?~~ *Once per project (28 October): a need
   mentioned several times in one project counts once. The prompt in
   `notebooklm/README.md` counts this way; the 17 September draft on the site doesn't,
   until the synthesis is rerun.*
+- ~~Which Google account owns the Google Form?~~ *NOAA's (31 October): it belongs to
+  Emily's account in NOAA's Google Workspace, and is open to respondents outside NOAA.
+  The intake documents should say so, which settles the concern that the survey sat
+  outside NOAA.*
 - ~~Is the Qualtrics survey closed?~~ *Yes (28 October). Every real submission was
   re-entered through the Google Form, so no last Qualtrics import is needed; the
-  re-entered rows are paired with their existing projects instead (see
+  import skips the re-entered rows, because the site already shows those projects (see
   [Importing the Google Form until launch](#importing-the-google-form-until-launch)).*
 
 ---
@@ -1000,9 +1046,12 @@ Phases 6–7.
   approval, so it is excluded. The question itself asks about "approval or exemption",
   so it may belong on the site (open question 13).
 - **Mis-encoded text in the export.** Some Qualtrics rows arrive double-encoded
-  (`NGFSâ€™s` for `NGFS’s`), and two strings in `projects.json` carry it today. Google
-  Forms exports are clean UTF-8, so rather than port a repair, fix the two strings
-  before the seed bundle is built (Phase 0).
+  (`NGFSâ€™s` for `NGFS’s`). Two strings in `projects.json` carried it and are fixed.
+  Google Forms exports are clean UTF-8, so no repair is ported.
 - **The live synthesis is out of date.** `topicSummaries.json` is a 17 September draft,
   written with Claude, that covers 4 of the 7 published projects. The landing page
   reports it as drawn from "4 projects today".
+- **Topic pages scroll sideways on phones.** The source chips under each need (a
+  project's title and year) don't shrink, so at 390 px wide the page is 463 px wide.
+  Every other page fits. The reference capture found it; the bridge fixes it, and the
+  plugin doesn't copy it.

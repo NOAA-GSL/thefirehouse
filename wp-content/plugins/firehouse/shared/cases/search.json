@@ -1,0 +1,55 @@
+{
+  "$comment": "Cases for src/content/search.ts, run against site.json. Each case calls `fn` with `args` and expects `expected`. A query string argument is a URL's query string. `@values:<facet>` stands for the values the explorer counts for that facet: a project's fire phases, its effective regions, its completion year, or its project type. `view: slugs` lists projects by slug; `view: string` is the serialized query string.",
+  "cases": [
+    { "name": "every parameter", "fn": "parseProjectQuery", "args": ["q=smoke&phase=during&region=NWCC&year=2025&type=Testbed%20Evaluation&sort=title"], "expected": { "q": "smoke", "phase": "during", "region": "NWCC", "year": 2025, "type": "Testbed Evaluation", "sort": "title" } },
+    { "name": "no parameters", "fn": "parseProjectQuery", "args": [""], "expected": { "q": "", "phase": null, "region": null, "year": null, "type": null, "sort": null } },
+    { "name": "unknown values are dropped, never an error", "fn": "parseProjectQuery", "args": ["phase=winter&region=XYZ&year=abc&sort=random&type=%20%20"], "expected": { "q": "", "phase": null, "region": null, "year": null, "type": null, "sort": null } },
+    { "name": "region codes are case-sensitive", "fn": "parseProjectQuery", "args": ["region=nwcc"], "expected": { "q": "", "phase": null, "region": null, "year": null, "type": null, "sort": null } },
+    { "name": "a year must be a positive whole number", "fn": "parseProjectQuery", "args": ["year=2025.5"], "expected": { "q": "", "phase": null, "region": null, "year": null, "type": null, "sort": null } },
+    { "name": "a negative year is dropped", "fn": "parseProjectQuery", "args": ["year=-2024"], "expected": { "q": "", "phase": null, "region": null, "year": null, "type": null, "sort": null } },
+    { "name": "the project type is trimmed", "fn": "parseProjectQuery", "args": ["type=%20Research%20Study%20"], "expected": { "q": "", "phase": null, "region": null, "year": null, "type": "Research Study", "sort": null } },
+    { "name": "a plus in the text is a space", "fn": "parseProjectQuery", "args": ["q=smoke+alerts"], "expected": { "q": "smoke alerts", "phase": null, "region": null, "year": null, "type": null, "sort": null } },
+    { "name": "the first value wins when a parameter repeats", "fn": "parseProjectQuery", "args": ["phase=during&phase=before"], "expected": { "q": "", "phase": "during", "region": null, "year": null, "type": null, "sort": null } },
+
+    { "name": "defaults make an empty query string", "fn": "serializeProjectQuery", "args": [{ "q": "", "phase": null, "region": null, "year": null, "type": null, "sort": null }], "view": "string", "expected": "" },
+    { "name": "every parameter, in a fixed order", "fn": "serializeProjectQuery", "args": [{ "q": "smoke alerts", "phase": "during", "region": "NWCC", "year": 2025, "type": "Testbed Evaluation", "sort": "title" }], "view": "string", "expected": "q=smoke+alerts&phase=during&region=NWCC&year=2025&type=Testbed+Evaluation&sort=title" },
+    { "name": "only what is set", "fn": "serializeProjectQuery", "args": [{ "q": "", "phase": null, "region": "PACIFIC", "year": null, "type": null, "sort": null }], "view": "string", "expected": "region=PACIFIC" },
+
+    { "name": "facets count, text and sort don't", "fn": "activeFacetCount", "args": [{ "q": "smoke", "phase": "during", "region": null, "year": 2025, "type": null, "sort": "title" }], "expected": 2 },
+
+    { "name": "no text and no sort: newest", "fn": "effectiveSort", "args": [{ "q": "", "phase": null, "region": null, "year": null, "type": null, "sort": null }], "expected": "newest" },
+    { "name": "text and no sort: relevance", "fn": "effectiveSort", "args": [{ "q": "smoke", "phase": null, "region": null, "year": null, "type": null, "sort": null }], "expected": "relevance" },
+    { "name": "relevance without text falls back to newest", "fn": "effectiveSort", "args": [{ "q": "", "phase": null, "region": null, "year": null, "type": null, "sort": "relevance" }], "expected": "newest" },
+    { "name": "spaces are not text", "fn": "effectiveSort", "args": [{ "q": "   ", "phase": null, "region": null, "year": null, "type": null, "sort": null }], "expected": "newest" },
+    { "name": "an explicit sort wins", "fn": "effectiveSort", "args": [{ "q": "smoke", "phase": null, "region": null, "year": null, "type": null, "sort": "oldest" }], "expected": "oldest" },
+
+    { "name": "no text matches everything", "fn": "scoreProject", "args": ["@project:smoke-alerts-for-evacuation", ""], "expected": 1 },
+    { "name": "a title word start counts double the title's weight", "fn": "scoreProject", "args": ["@project:smoke-alerts-for-evacuation", "smoke"], "expected": 12 },
+    { "name": "the start of a word is enough", "fn": "scoreProject", "args": ["@project:smoke-alerts-for-evacuation", "evac"], "expected": 12 },
+    { "name": "accents are folded", "fn": "scoreProject", "args": ["@project:smoke-alerts-for-evacuation", "Évacuation"], "expected": 12 },
+    { "name": "each term adds its best field", "fn": "scoreProject", "args": ["@project:smoke-alerts-for-evacuation", "smoke forecasts"], "expected": 16 },
+    { "name": "every term has to match", "fn": "scoreProject", "args": ["@project:smoke-alerts-for-evacuation", "smoke nowhere"], "expected": 0 },
+    { "name": "a mid-word hit counts the field's weight once", "fn": "scoreProject", "args": ["@project:smoke-alerts-for-evacuation", "ample"], "expected": 4 },
+    { "name": "a word one letter off counts half", "fn": "scoreProject", "args": ["@project:smoke-alerts-for-evacuation", "forcasts"], "expected": 1 },
+    { "name": "two swapped letters are two edits, so no match", "fn": "scoreProject", "args": ["@project:smoke-alerts-for-evacuation", "smoek"], "expected": 0 },
+
+    { "name": "no filters: newest first", "fn": "filterProjects", "args": ["@published", { "q": "", "phase": null, "region": null, "year": null, "type": null, "sort": null }], "view": "slugs", "expected": ["alpha-fire-forecasting", "smoke-alerts-for-evacuation", "national-outlook-study", "pacific-island-recovery"] },
+    { "name": "by fire phase", "fn": "filterProjects", "args": ["@published", { "q": "", "phase": "during", "region": null, "year": null, "type": null, "sort": null }], "view": "slugs", "expected": ["alpha-fire-forecasting", "smoke-alerts-for-evacuation"] },
+    { "name": "a GACC includes national studies", "fn": "filterProjects", "args": ["@published", { "q": "", "phase": null, "region": "NWCC", "year": null, "type": null, "sort": null }], "view": "slugs", "expected": ["smoke-alerts-for-evacuation", "national-outlook-study"] },
+    { "name": "National on its own", "fn": "filterProjects", "args": ["@published", { "q": "", "phase": null, "region": "NATIONAL", "year": null, "type": null, "sort": null }], "view": "slugs", "expected": ["national-outlook-study"] },
+    { "name": "by year", "fn": "filterProjects", "args": ["@published", { "q": "", "phase": null, "region": null, "year": 2024, "type": null, "sort": null }], "view": "slugs", "expected": ["national-outlook-study", "pacific-island-recovery"] },
+    { "name": "by project type", "fn": "filterProjects", "args": ["@published", { "q": "", "phase": null, "region": null, "year": null, "type": "Research Study", "sort": null }], "view": "slugs", "expected": ["national-outlook-study", "pacific-island-recovery"] },
+    { "name": "text sorts by relevance", "fn": "filterProjects", "args": ["@published", { "q": "study", "phase": null, "region": null, "year": null, "type": null, "sort": null }], "view": "slugs", "expected": ["national-outlook-study", "pacific-island-recovery", "smoke-alerts-for-evacuation"] },
+    { "name": "text with an explicit sort", "fn": "filterProjects", "args": ["@published", { "q": "study", "phase": null, "region": null, "year": null, "type": null, "sort": "newest" }], "view": "slugs", "expected": ["smoke-alerts-for-evacuation", "national-outlook-study", "pacific-island-recovery"] },
+    { "name": "title A–Z", "fn": "filterProjects", "args": ["@published", { "q": "", "phase": null, "region": null, "year": null, "type": null, "sort": "title" }], "view": "slugs", "expected": ["alpha-fire-forecasting", "national-outlook-study", "pacific-island-recovery", "smoke-alerts-for-evacuation"] },
+    { "name": "oldest first, alphabetical within a year", "fn": "filterProjects", "args": ["@published", { "q": "", "phase": null, "region": null, "year": null, "type": null, "sort": "oldest" }], "view": "slugs", "expected": ["national-outlook-study", "pacific-island-recovery", "alpha-fire-forecasting", "smoke-alerts-for-evacuation"] },
+    { "name": "text and a facet together", "fn": "filterProjects", "args": ["@published", { "q": "fire", "phase": "before", "region": null, "year": null, "type": null, "sort": null }], "view": "slugs", "expected": ["alpha-fire-forecasting"] },
+    { "name": "nothing matches", "fn": "filterProjects", "args": ["@published", { "q": "", "phase": null, "region": null, "year": null, "type": "Unknown type", "sort": null }], "view": "slugs", "expected": [] },
+
+    { "name": "fire phase counts", "fn": "facetCounts", "args": ["@published", { "q": "", "phase": null, "region": null, "year": null, "type": null, "sort": null }, "phase", "@values:phase"], "expected": { "during": 2, "long-term": 1, "after": 1, "before": 1 } },
+    { "name": "region counts include national studies in every GACC", "fn": "facetCounts", "args": ["@published", { "q": "", "phase": null, "region": null, "year": null, "type": null, "sort": null }, "region", "@values:region"], "expected": { "NWCC": 2, "ONCC": 2, "NATIONAL": 1, "AICC": 1, "OSCC": 1, "NRCC": 1, "GBCC": 1, "SWCC": 1, "RMCC": 2, "EACC": 1, "SACC": 1, "PACIFIC": 1 } },
+    { "name": "year counts hold the other filters", "fn": "facetCounts", "args": ["@published", { "q": "", "phase": "during", "region": null, "year": null, "type": null, "sort": null }, "year", "@values:year"], "expected": { "2025": 2 } },
+    { "name": "a facet's counts ignore its own filter", "fn": "facetCounts", "args": ["@published", { "q": "", "phase": null, "region": null, "year": null, "type": "Research Study", "sort": null }, "type", "@values:type"], "expected": { "Testbed Evaluation": 1, "Research Study": 2, "Program Evaluation": 1 } },
+    { "name": "counts follow the search text", "fn": "facetCounts", "args": ["@published", { "q": "study", "phase": null, "region": null, "year": null, "type": null, "sort": null }, "phase", "@values:phase"], "expected": { "during": 1, "long-term": 1, "after": 1 } }
+  ]
+}

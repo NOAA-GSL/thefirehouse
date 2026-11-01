@@ -1,0 +1,132 @@
+- link "Skip to main content":
+  - /url: "#main"
+- banner:
+  - link "The Firehouse, NOAA Global Systems Laboratory — home":
+    - /url: /
+    - text: The Firehouse
+  - navigation "Primary":
+    - link "Home":
+      - /url: /
+    - link "Explore Projects":
+      - /url: /projects
+    - link "About":
+      - /url: /about
+    - link "Submit a Finding":
+      - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths
+  - button "Switch to dark theme"
+  - link "Submit a Finding":
+    - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths
+- main:
+  - article:
+    - navigation "Breadcrumb":
+      - link "All projects":
+        - /url: /projects
+    - text: Research Study
+    - heading "California Tribal Advisors Share Contemporary Environmental Data and Information Needs" [level=1]
+    - paragraph: Emily Wells, Benjamin J. Hatchett, Laurie Monserrat, Shasta Gaughen, Bryce Lewis-Smith and Isabel Corcos·Cooperative Institute for Research in the Atmosphere
+    - text: "Completed 2026 Fire cycle phase: Before · During · After · Long-term"
+    - heading "Abstract" [level=2]
+    - paragraph: "Long-term environmental changes and extreme events negatively affect the human and ecosystem health of Indigenous and other rural communities. Mitigating the varied negative effects of hazards is critical for community adaptation and resiliency; however, there is a limited understanding of the specific, community-level information needed to support environmental adaptation and hazard management efforts. Our objective is to identify how external entities can collaborate with and provide accessible, usable, and useful environmental information to Tribes for adaptation and hazard management, according to Tribal perspectives. Ten semi-structured interviews were held with Tribal environmental professionals in California. Interview questions included: What current or future environmental conditions and hazards are you most concerned about? What information and resources do you use and need to adapt to and manage these concerns? Using a thematic analysis approach to analyze the exploratory interview data, seven identified themes highlight key needs pertaining to data sharing from public agencies, communication between agencies and communities, and training materials to support protective actions. Themes were distilled into recommendations for external entities to improve environmental information access and use while honoring Tribal self-determination, sovereignty, and worldviews."
+    - heading "Major takeaways" [level=2]
+    - list:
+      - listitem:
+        - paragraph: The environmental hazard-related concerns of Tribal environmental professionals (n = 10) centered on the wildfire and water nexus. Wildfire (n=10), water supply/quality (n=8), air quality (n=7), flooding (n=7), and drought (n=5) were the most prevalent, noting that participating Tribal Advisors were from more inland locations.
+      - listitem:
+        - paragraph: The most prevalent sources of environmental information included Tribal leadership, other Tribes, Tribal liaisons, and Elders, and all Advisors described the use and value of documented and archived observations of Tribal lands over time, including Tribal leadership’s documentation, especially of Tribal Chairmen.
+      - listitem:
+        - paragraph: To supplement Tribally-held knowledge, Tribal environmental professionals shared ways in which external entities (e.g., state and federal agencies, universities, NGOs) can provide weather information that is more accessible, readily usable, and useful for adaptation and hazard management. Their unmet needs and recommendations are documented below.
+    - heading "End-user needs and recommendations" [level=2]
+    - list:
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: "Need for projected weather-related cascading effects information among Tribal environmental professionals:"
+          - text: Participants expressed unmet information needs from external entities regarding observed and projected climate impacts on local ecosystems, cultural/economic sustainability, holistic health, and built infrastructure.
+        - text: Recommendation
+        - paragraph: Recommend establishing interagency working groups and participatory public processes to co-produce localized understandings of cascading weather effects on Tribal lands while systematically documenting events.
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: Need for consolidated and accessible approaches to document environmental adaptation planning and implementation efforts among Tribal environmental professionals.
+          - text: Participants described a need for approaches to document, consolidate, and readily access adaptation and hazard management efforts. These approaches could complement–rather than replace–Tribal ways of knowing.
+        - text: Recommendation
+        - paragraph: Recommend that external entities co-develop templates/guidance for tracking project progress with Tribal environmental professionals for Tribal use.
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: "Need for respectful information and knowledge sharing from neighboring jurisdictions to Tribes:"
+          - text: Insufficient information sharing from neighboring jurisdictions regarding land management activities (e.g., fuels conditions/treatments) creates uncertainty regarding fire ignition likelihood and behavior, perpetuating risk assessment challenges for Tribes.
+        - text: Recommendation
+        - paragraph: Recommend sharing accessible, usable information with Tribal leadership on land stewardship activities, co-producing data-sharing best practices, and fostering producer-user relationships to enable information co-generation.
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: "Need for training and templates for sharing environmental information among Tribal environmental professionals:"
+          - text: Nearly all participants (n=9) wanted accessible, standardized, interpretable environmental information and tools from external entities for Tribal leadership to use when communicating with Tribal members.
+        - text: Recommendation
+        - paragraph: Recommend co-producing training materials, standardized outreach templates, and After Action Review guidance with Tribal leaders to effectively document environmental extremes, ensure iterative community feedback, and communicate risk.
+      - listitem:
+        - text: Need
+        - paragraph: Need environmental information at actionable scales among Tribal environmental professionals. Nearly all participants (n=9) expressed a need for more accessible, localized historical and projected environmental data from external entities to supplement hazard management and adaptation. Key gaps in externally-provided information include geographic resolution for interpretable, shareable outreach materials.
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: Need for timely, localized hazard warning/alerting systems from external entities to Tribal leadership.
+          - text: Five participants called for other agencies to provide timely, localized weather and hazard alerts (e.g., wildfire, smoke, flood) to Tribal leadership, such as through phone calls/texts.
+        - text: Recommendation
+        - paragraph: Recommend that external entities consider if, how, and when weather-related warnings are communicated to Tribes via notification systems, particularly for Tribes on rural lands with dispersed populations.
+      - listitem:
+        - text: Recommendation
+        - paragraph: Recommend considering the full, long-term life cycle of environmental adaptation needs in project/proposal planning and allocation (e.g., training, data collection, analysis, storage, maintenance).
+      - listitem:
+        - text: Need
+        - paragraph: Honor TEK and Tribal stewardship and cultural practices in government-to-government relationships and agreements. Inquire with Tribes while in the incipient phase of potential projects to learn about their preference and process for consultation and subsequent collaboration. Develop and formalize agreements that respect Tribal knowledge and integrate it into co-management activities to collectively shape objectives and implementation.
+    - heading "Publications and resources" [level=2]
+    - list:
+      - listitem:
+        - link "California Tribal Advisors Share Contemporary Environmental Data and Information Needs Zenodo · 2026 doi:10.5281/zenodo.20799480 (opens in a new tab)":
+          - /url: https://doi.org/10.5281/zenodo.20799480
+    - region "Cite this project":
+      - heading "Cite this project" [level=2]
+      - tablist "Citation format":
+        - tab "APA 7" [selected]
+        - tab "Chicago"
+        - tab "BibTeX"
+      - tabpanel "APA 7": Wells, E., Benjamin J. Hatchett, Monserrat, L., Gaughen, S., Lewis-Smith, B., & Corcos, I. (2026). California Tribal Advisors Share Contemporary Environmental Data and Information Needs. The Firehouse, NOAA Global Systems Laboratory. https://doi.org/10.5281/zenodo.20799480
+      - button "Copy"
+      - status
+    - complementary "Project details":
+      - heading "At a glance" [level=2]
+      - term: Project type
+      - definition: Research Study
+      - term: Completion year
+      - definition: "2026"
+      - term: Fire cycle phase
+      - definition:
+        - list:
+          - listitem:
+            - strong: Before
+            - text: Pre-fire planning, prevention, and mitigation
+          - listitem:
+            - strong: During
+            - text: Fire detection, active suppression, and downstream impacts
+          - listitem:
+            - strong: After
+            - text: Postfire recovery and rehabilitation
+          - listitem:
+            - strong: Long-term
+            - text: Planning, adaptation, and policy
+      - term: Data collection
+      - definition: Interviews
+      - term: Geographic areas
+      - definition: N. California ONCC S. California OSCC
+      - term: Organization
+      - definition: Cooperative Institute for Research in the Atmosphere
+      - paragraph:
+        - text: Takeaways, needs and recommendations on this page are reproduced as the researcher submitted them. The
+        - link "topic areas":
+          - /url: /#top-needs
+        - text: are an AI-assisted synthesis across all projects, so no single project is filed under one.
+    - navigation "Other projects":
+      - 'link "Next Igniting Impact: Advancing Fire Weather Decision Support Services"':
+        - /url: /projects/igniting-impact-advancing-fire-weather-decision-support

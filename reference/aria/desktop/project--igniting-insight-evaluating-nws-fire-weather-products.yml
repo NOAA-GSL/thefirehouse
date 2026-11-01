@@ -1,0 +1,141 @@
+- link "Skip to main content":
+  - /url: "#main"
+- banner:
+  - link "The Firehouse, NOAA Global Systems Laboratory — home":
+    - /url: /
+    - text: The Firehouse
+  - navigation "Primary":
+    - link "Home":
+      - /url: /
+    - link "Explore Projects":
+      - /url: /projects
+    - link "About":
+      - /url: /about
+    - link "Submit a Finding":
+      - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths
+  - button "Switch to dark theme"
+  - link "Submit a Finding":
+    - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths
+- main:
+  - article:
+    - navigation "Breadcrumb":
+      - link "All projects":
+        - /url: /projects
+    - text: Research Study
+    - 'heading "Igniting Insight: Evaluating NWS Fire Weather Products within a Fire Partner Decision Making Context" [level=1]'
+    - paragraph: Stephanie Hoekstra, Benjamin Hatchett and Jamie Vickery·Cooperative Institute for Research in the Atmosphere
+    - text: "Completed 2025 Fire cycle phase: Before · During"
+    - heading "Abstract" [level=2]
+    - paragraph: This study evaluates how National Weather Service (NWS) partners (Fire Chiefs, Fire Analysts, Emergency Managers, etc.) utilize fire weather sources across the decision timeline—from long-range planning weeks in advance to tactical response during active events—focusing mostly on Red Flag Warnings (RFWs) and Fire Warnings. Based on 19 focus groups with 85 participants across six NWS regions, RFWs are widely trusted throughout the planning timeline to build situational awareness, validate decisions, and justify resources, serving a supportive rather than initiating role. Conversely, tactical Fire Warnings face partner skepticism during rapid-onset events, with untrained partners citing fears of bureaucratic delays and jurisdictional friction. To improve utility across all decision phases, participants recommended RFW refinements—incorporating localized fuel data, cross-office consistency, and trend information—alongside a flexible framework for Fire Warnings.
+    - heading "Major takeaways" [level=2]
+    - list:
+      - listitem:
+        - paragraph: Red Flag Warnings validate existing decisions, elevate situational awareness, and justify resources, but they serve a supportive rather than initiating role in operational fire management.
+      - listitem:
+        - paragraph: Enhancing Red Flag Warning utility requires incorporating localized fuel data, increasing cross-office forecasting consistency, and delivering clear trend information to support complex decision timelines.
+      - listitem:
+        - paragraph: Untrained partners view NWS Fire Warnings with skepticism—fearing administrative delays and jurisdictional friction—highlighting the need for modular training and clear implementation frameworks.
+      - listitem:
+        - paragraph: Rapidly escalating wildfires create persistent lead-time and redundancy challenges for Fire Warnings, necessitating Tactical Integrated Warning Teams and WEA integration to improve public alerts.
+    - heading "End-user needs and recommendations" [level=2]
+    - list:
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: Need for clear and detailed forecast discussions.
+          - text: Forecast discussions are highly valued for providing insight into forecaster reasoning, allowing fire partners to interpret confidence levels, trends, and nuances not captured in standard forecasts.
+        - text: Recommendation
+        - paragraph: Recommend expanding the deliberate use of Forecast Discussions during critical fire weather periods to explicitly highlight forecaster confidence, forecast rationale, and key weather trends (particularly whether a Red Flag Warning is expected in upcoming days).
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: Need for consistent and transparent incorporation of fuels data in RFWs.
+          - text: There is a clear inconsistent use of fuels in Red Flag Warning issuance. Fire partners want clear, documented incorporation of fuel receptiveness into warning decisions.
+        - text: Recommendation
+        - paragraph: Recommend incorporating fuels data into RFW issuance more systematically and develop clearer national guidance on fuel integration.
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: Need for better cross-office coordination in product issuance.
+          - text: Jurisdictional boundaries can lead to mismatches in warnings (whether issued at all/criteria/lead time) across neighboring areas. Fire partners want greater alignment across WFOs to ensure cohesive messaging and decision-making.
+        - text: Recommendation
+        - paragraph: Recommend encouraging greater coordination between adjacent WFOs to align timing and criteria—especially in overlapping CWAs or regions with prescribed fire operations.
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: Need for inclusion of trend and duration information in RFWs.
+          - text: Fire partners are planning around when conditions will peak, how long they’ll last, and whether a warning spans multiple days. Current RFWs sometimes lack this critical trend detail.
+        - text: Recommendation
+        - paragraph: Recommend that forecasters indicate how long critical conditions are expected to last, when they will peak, and whether a multi-day event is likely.
+      - listitem:
+        - text: Recommendation
+        - paragraph: Recommend hosting regular (biannual or annual to align with Annual Operating Plans) fire partner-forecaster coordination meetings that focus on evaluating and refining RFW/Fire Weather Watch criteria based on real-world impacts.
+      - listitem:
+        - text: Recommendation
+        - paragraph: Recommend acknowledging that RFWs serve public communication, validation, and legitimacy roles—even if they are not the initial trigger for decisions. This has changed from their original intent and this description should be updated in official NWS communications and documentation.
+      - listitem:
+        - text: Need
+        - paragraph: Need for clearer differentiation and dissemination of Fire Warnings among public safety partners Confusion over how Fire Warnings relate to Red Flag Warnings and evacuation orders raises concerns about public misunderstanding.
+        - text: Recommendation
+        - paragraph: Recommend clarifying alert distinctions and transitioning Fire Warnings to Wireless Emergency Alerts (WEA)—leveraging geofenced mobile reach to deliver critical protective actions to mobile populations during imminent threats where traditional Emergency Alert System channels fail to reach them.
+      - listitem:
+        - text: Need
+        - paragraph: Need for consistent authority and decision-making protocols for Fire Warnings among multi-agency partners Jurisdictional complexities create uncertainty over who initiates Fire Warnings during multi-agency incidents.
+        - text: Recommendation
+        - paragraph: Recommend establishing frameworks that define clear issuance roles among NWS, fire management, and law enforcement, potentially via Integrated Warnings Teams—supported by interagency training—and developing automated request processes to reduce cognitive burden and operational delays during high-stress events.
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: Need for regional flexibility in Fire Warning implementation.
+          - text: Fire partners emphasized that Fire Warnings may not be appropriate in all areas, especially where effective local systems are already in place or fire risk is lower.
+        - text: Recommendation
+        - paragraph: Recommend establishing flexible regional implementation guidelines that allow NWS offices and local public safety agencies to opt into or customize Fire Warning workflows based on existing local capabilities and risk profiles.
+    - heading "Publications and resources" [level=2]
+    - list:
+      - listitem:
+        - 'link "Igniting Insight: Evaluating NWS Red Flag Warnings within a Fire Partner Decision-Making Context Bulletin of the American Meteorological Society · 2026 doi:10.1175/BAMS-D-25-0036.1 (opens in a new tab)"':
+          - /url: https://doi.org/10.1175/BAMS-D-25-0036.1
+      - listitem:
+        - 'link "Operationalizing the Fire Warning: distinguishing structural constraints from training-sensitive perceptions npj Natural Hazards · 2026 doi:10.1038/s44304-026-00247-y (opens in a new tab)"':
+          - /url: https://doi.org/10.1038/s44304-026-00247-y
+      - listitem:
+        - 'link "From Data to Decisions: Producing Actionable and Accessible Earth Information Systems II AMS - 105th AMS Annual Meeting ams.confex.com/ams/105ANNUAL/meetingapp.cgi/Session/69350 (opens in a new tab)"':
+          - /url: https://ams.confex.com/ams/105ANNUAL/meetingapp.cgi/Session/69350
+    - region "Cite this project":
+      - heading "Cite this project" [level=2]
+      - tablist "Citation format":
+        - tab "APA 7" [selected]
+        - tab "Chicago"
+        - tab "BibTeX"
+      - tabpanel "APA 7": "Hoekstra, S., Hatchett, B., & Vickery, J. (2025). Igniting Insight: Evaluating NWS Fire Weather Products within a Fire Partner Decision Making Context. The Firehouse, NOAA Global Systems Laboratory. https://doi.org/10.1175/BAMS-D-25-0036.1"
+      - button "Copy"
+      - status
+    - complementary "Project details":
+      - heading "At a glance" [level=2]
+      - term: Project type
+      - definition: Research Study
+      - term: Completion year
+      - definition: "2025"
+      - term: Fire cycle phase
+      - definition:
+        - list:
+          - listitem:
+            - strong: Before
+            - text: Pre-fire planning, prevention, and mitigation
+          - listitem:
+            - strong: During
+            - text: Fire detection, active suppression, and downstream impacts
+      - term: Data collection
+      - definition: Focus groups
+      - term: Geographic areas
+      - definition: National
+      - term: Organization
+      - definition: Cooperative Institute for Research in the Atmosphere
+      - paragraph:
+        - text: Takeaways, needs and recommendations on this page are reproduced as the researcher submitted them. The
+        - link "topic areas":
+          - /url: /#top-needs
+        - text: are an AI-assisted synthesis across all projects, so no single project is filed under one.
+    - navigation "Other projects":
+      - 'link "Previous Fire Weather Testbed Evaluations #003 - Interagency Collaboration: Tactical Integrated Warning Team (IWT) for Wildland Fire Operations"':
+        - /url: /projects/fire-weather-testbed-evaluations-003-interagency
