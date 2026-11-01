@@ -131,7 +131,7 @@ export interface Paper {
   /**
    * Bare DOI (`10.1175/WCAS-D-21-0042.1`), not a URL — the `https://doi.org/`
    * prefix is added at render time. Storing it bare keeps one canonical form, so
-   * the same value can be a link, a citation field, and a dedupe key.
+   * the same value can be a link and a dedupe key.
    */
   doi?: string;
 }
@@ -158,9 +158,8 @@ export interface NeedEntry {
  * One credited researcher.
  *
  * `name` is the only guaranteed field: the survey may capture a free-text byline
- * ("DESI research team") rather than structured names. When `family` is present the
- * citation builder can render a proper APA author string; when it isn't, it falls
- * back to `name` verbatim rather than guessing where a surname ends.
+ * ("DESI research team") rather than structured names. `name` is what the site
+ * shows, verbatim; nothing guesses where a surname ends.
  * See PLAN.md, open question 3.
  */
 export interface Author {
@@ -216,7 +215,7 @@ export interface Project {
   abstract?: string;
   authors: Author[];
   org?: string;
-  /** *Survey (Q7).* Year the project was completed — a primary filter and a citation field. */
+  /** *Survey (Q7).* Year the project was completed — a primary filter. */
   completionYear: number;
   /** *Survey (Q9).* Where in the fire cycle the work sits. A primary filter. */
   firePhases: FirePhase[];
