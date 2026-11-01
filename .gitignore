@@ -52,8 +52,10 @@ Thumbs.db
 *.swo
 *~
 
-# Agents / AI tooling (local state & configs)
-.claude/
+# Agents / AI tooling (local state & configs). The review team in .claude/agents/ is
+# shared: CLAUDE.md routes changes to it.
+.claude/*
+!.claude/agents/
 Claude outputs/
 .impeccable/
 .agents/
