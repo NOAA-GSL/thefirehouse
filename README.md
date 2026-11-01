@@ -6,10 +6,16 @@ July 2026 creative brief.
 
 ```bash
 npm install
-npm run dev      # http://localhost:5173
-npm run build    # typecheck + production build to dist/
-npm run preview  # serve the production build
+npm run dev        # http://localhost:5173
+npm run build      # typecheck + production build to dist/
+npm run preview    # serve the production build
+npm test           # shared test cases for normalize, derive, search and format
+npm run schema     # regenerate the project schema from types.ts
+npm run reference  # capture the reference the plugin matches (reference/README.md)
 ```
+
+The test cases live in `wp-content/plugins/firehouse/shared/cases/` as plain JSON, so
+the plugin's PHP versions will run the same ones.
 
 ---
 
@@ -208,8 +214,6 @@ Named so it's clear these are gaps, not oversights:
   sets its own `<title>` and description at runtime, so deep links work and index
   correctly — but a *shared* link still previews with the site-level card. Fixing it
   means emitting a per-project HTML shell at build time (`PLAN.md` §2.2).
-- **Tests.** None. Worth adding around `normalize.ts` and `derive.ts` first — they're
-  pure functions and they're what stands between a bad CMS edit and a broken page.
 
 ## The WordPress plugin
 
