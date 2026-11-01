@@ -19,11 +19,11 @@
     - /url: /projects
   - list "Hub statistics":
     - listitem: 7 Projects analyzed Completed DESI and testbed research
-    - listitem: 4 Topic areas Observations, forecasts, warnings, governance
+    - listitem: 42 End-user needs Submitted across all projects
     - listitem: Open For submissions Researchers can contribute findings any time
-  - region "The top 5 needs in fire weather social science":
+  - region "The top needs in fire weather social science":
     - text: Synthesized across every project
-    - heading "The top 5 needs in fire weather social science" [level=2]
+    - heading "The top needs in fire weather social science" [level=2]
     - paragraph: Forecasters, land managers, and emergency managers keep telling researchers what they need. Here, every completed fire weather social science project in The Firehouse is read together as one body of evidence, and the needs its researchers recorded are distilled into the five most pressing in each of four topic areas — in one place, ranked, with how often each one came up.
     - paragraph:
       - strong: AI-synthesized
@@ -74,10 +74,7 @@
         - listitem: Staffing capacity and organizational buy-in to sustain interagency teams 2 mentions
     - complementary "Where these needs come from":
       - heading "Where these needs come from" [level=3]
-      - paragraph:
-        - text: Topic areas are not assigned project by project. Every completed project in The Firehouse — 4 projects today — is read together, with Claude, and the end-user needs its researchers recorded are grouped into the four areas above and ranked by how often they come up. A
-        - emphasis: mention
-        - text: "is one need or recommendation a researcher submitted; the same one can count in more than one area. This pass is a draft: the team reviews each synthesis before it is final. Open a topic area to see which projects each need draws on; each project page keeps the researchers’ own words."
+      - paragraph: Topic areas are not assigned project by project. Every project in The Firehouse is read together, with Claude. The end-user needs its researchers recorded are grouped into the four areas above and ranked by how often they come up. This pass serves as an initial draft that our team reviews and refines before finalizing each synthesis. Open any topic area to see which specific projects each need draws on; each project page preserves the researchers’ own words.
       - link "Explore all projects":
         - /url: /projects
   - region "Where the research comes from":

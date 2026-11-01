@@ -13,8 +13,6 @@
       - /url: /projects
     - link "About":
       - /url: /about
-    - link "Submit a Finding":
-      - /url: https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform
   - button "Switch to dark theme"
   - link "Submit a Finding":
     - /url: https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform
