@@ -202,7 +202,8 @@ wp-content/plugins/firehouse/
   includes/        post types, meta schemas, settings, roles and permissions,
                    validation, the seed import screen, the AI service client
   survey/          the survey form, self-contained (see The survey form)
-  domain/          PHP versions of the vocabularies, derive, format, search
+  domain/          PHP versions of the vocabularies, validation (normalize), derive,
+                   format and search
   blocks/<name>/   block.json · render.php · editor preview · view script (Interactivity API)
   templates/       project, explorer, topic and Firehouse page templates
   patterns/        landing and About layouts, locked to text-only edits
@@ -726,7 +727,7 @@ as in `shared/vocabulary.json`, which takes its labels from the form.
   changes and are retaken with them (bridge step 8).*
 - **Add shared test cases.** Unit tests for `normalize`, `derive`, `search` and
   `format`, written as data files (input and expected output) that the PHP tests will
-  read later. *Done: 122 cases in `shared/cases/`, run by `npm test` and in CI.*
+  read later. *Done: 139 cases in `shared/cases/`, run by `npm test` and in CI.*
 - **Move the vocabularies** into `shared/vocabulary.json`, with each option's label as
   the Google Form shows it, and generate a JSON Schema from `types.ts`. *Done: `npm run
   schema` writes `shared/project.schema.json`, and CI fails if it is out of date.*
@@ -760,7 +761,11 @@ editor role cannot edit anything outside Firehouse.
 ### Phase 2 — Logic in PHP (1.5–2 weeks)
 
 PHP versions of derive (counts, region expansion for national studies, synthesis
-info), format, validation and search/filter.
+info), format, validation and search/filter. *Derive, format and validation are in
+`domain/` and pass their shared cases (started before Phase 1, on 1 November, while
+Phase 0's security answers were pending). Where the TypeScript would crash on a
+missing or malformed block, the PHP refuses it with a clear error. Search waits on
+open question 11.*
 
 **Done when:** the PHP versions pass the same shared test cases as the TypeScript
 ones.
