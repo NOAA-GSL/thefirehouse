@@ -51,11 +51,23 @@ const PAGES = [
 
 const WIDTHS = { desktop: { width: 1280, height: 900 }, phone: { width: 390, height: 844 } };
 const THEMES = ['light', 'dark'];
+// WCAG 1.4.10 sets reflow at 320 CSS px, narrower than any width above. Pages are
+// only measured there, not captured.
+const REFLOW = { width: 320, height: 640 };
 
 const server = await preview({ root: ROOT, logLevel: 'warn', preview: { port: 4317, strictPort: true } });
 const origin = server.resolvedUrls.local[0].replace(/\/$/, '');
 const browser = await chromium.launch({ channel: process.env.REFERENCE_BROWSER ?? 'msedge' });
 const tooWide = [];
+
+/** Records a page that scrolls sideways. clientWidth, so a classic scrollbar can't hide it. */
+async function measure(page, label, path) {
+  const [scroll, client] = await page.evaluate(() => [
+    document.documentElement.scrollWidth,
+    document.documentElement.clientWidth,
+  ]);
+  if (scroll > client) tooWide.push(`${label} ${path}: ${scroll}px wide in a ${client}px window`);
+}
 
 try {
   rmSync(resolve(OUT, 'aria'), { recursive: true, force: true });
@@ -83,12 +95,24 @@ try {
         }
 
         // In both themes: dark mode has its own styles, and could overflow on its own.
-        const width = await page.evaluate(() => document.documentElement.scrollWidth);
-        if (width > viewport.width) tooWide.push(`${widthName} ${theme} ${path}: ${width}px wide`);
+        await measure(page, `${widthName} ${theme}`, path);
         console.log(`${widthName} ${theme} ${path}`);
       }
       await context.close();
     }
+  }
+
+  for (const theme of THEMES) {
+    const context = await browser.newContext({ viewport: REFLOW, reducedMotion: 'reduce' });
+    await context.addInitScript((value) => localStorage.setItem('firehouse-theme', value), theme);
+    const page = await context.newPage();
+    for (const [, path] of PAGES) {
+      await page.goto(`${origin}${path}`, { waitUntil: 'networkidle' });
+      await page.evaluate(() => document.fonts.ready);
+      await measure(page, `${REFLOW.width}px ${theme}`, path);
+    }
+    console.log(`measured ${PAGES.length} pages at ${REFLOW.width}px, ${theme}`);
+    await context.close();
   }
 } finally {
   await browser.close();

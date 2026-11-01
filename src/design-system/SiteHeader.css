@@ -200,3 +200,12 @@
     font-size: 17px;
   }
 }
+
+/* Reflow at 320px (WCAG 1.4.10): the lockup and the two buttons miss fitting by a
+   few pixels, so the gaps between them close up. */
+@media (max-width: 360px) {
+  .fh-header__bar,
+  .fh-header__actions {
+    gap: var(--space-xs);
+  }
+}

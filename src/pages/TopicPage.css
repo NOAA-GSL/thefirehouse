@@ -182,8 +182,8 @@
   gap: var(--space-2xs);
 }
 
-/* Lets a chip shrink below its title's width, so a long title ellipsizes inside a
-   narrow card instead of pushing the page wider than a phone screen. */
+/* Lets a chip shrink below its title's width, so a long title wraps inside a narrow
+   card instead of pushing the page wider than a phone screen. */
 .fh-need__sources > li {
   min-width: 0;
   max-width: 100%;
@@ -195,7 +195,9 @@
   gap: 6px;
   max-width: 100%;
   padding: 5px 12px;
-  border-radius: var(--radius-full);
+  /* Not fully round: a title that wraps to two or three lines would turn a pill into
+     a blob. */
+  border-radius: var(--radius-xl);
   border: 1px solid var(--color-border-strong);
   background: var(--color-bg-surface);
   color: var(--color-text-secondary);
@@ -213,12 +215,12 @@
   color: var(--color-text-tertiary);
 }
 
+/* The whole title, wrapped. Cut short, projects whose titles share a long opening
+   ("Fire Weather Testbed Evaluations 002…" and "…003…") read the same. */
 .fh-need__source-title {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   max-width: 34ch;
+  overflow-wrap: anywhere;
 }
 
 .fh-need__source-year {

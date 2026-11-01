@@ -10,8 +10,8 @@ import { useTheme } from './ThemeProvider';
  * GSL's header and footer take their place.
  *
  * The skip link is the first focusable thing on the page — a Section 508 baseline,
- * and a practical one here, because the header carries nine links before the content
- * starts.
+ * and a practical one here, because the banner and header put seven controls ahead
+ * of the content.
  */
 export function Layout({ children }: { children: ReactNode }) {
   const { settings } = useContent();

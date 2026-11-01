@@ -105,6 +105,7 @@ export function Button(props: ButtonProps) {
         {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
       >
         {content}
+        {external && <span className="fh-visually-hidden"> (opens in a new tab)</span>}
       </a>
     );
   }

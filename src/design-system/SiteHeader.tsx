@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import gslLogo from '../assets/logos/gsl-logo.svg';
 import noaaLogo from '../assets/logos/noaa-logo.svg';
@@ -45,6 +45,7 @@ export function SiteHeader({
 }: SiteHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuId = useId();
+  const menuButton = useRef<HTMLButtonElement>(null);
   const { pathname } = useLocation();
 
   // Close the mobile menu whenever the route changes.
@@ -53,11 +54,15 @@ export function SiteHeader({
   useEffect(() => {
     if (!menuOpen) return;
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') setMenuOpen(false);
+      if (event.key !== 'Escape') return;
+      // Focus inside the drawer would fall to <body> when it unmounts, so it goes back
+      // to the button that opened it.
+      if (document.getElementById(menuId)?.contains(document.activeElement)) menuButton.current?.focus();
+      setMenuOpen(false);
     }
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [menuOpen]);
+  }, [menuOpen, menuId]);
 
   function navLinkFor(link: NavItem) {
     if (link.href) {
@@ -70,6 +75,7 @@ export function SiteHeader({
           rel="noopener noreferrer"
         >
           {link.label}
+          <span className="fh-visually-hidden"> (opens in a new tab)</span>
         </a>
       );
     }
@@ -143,6 +149,7 @@ export function SiteHeader({
           </span>
 
           <button
+            ref={menuButton}
             type="button"
             className="fh-header__icon-btn fh-header__menu-btn"
             aria-expanded={menuOpen}

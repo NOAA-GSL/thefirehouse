@@ -71,10 +71,14 @@ function RouteFocusManager() {
     // In-page anchors ("/#top-needs"). Client-side routing doesn't scroll to a `#hash`
     // the way a full page load does — and on a cold load the browser can't either,
     // because the target doesn't exist yet when the document is parsed.
+    // Focus goes with the scroll, so the next Tab and a screen reader carry on from
+    // the section rather than from the link that pointed at it.
     if (hash) {
-      const target = document.querySelector(hash);
+      const target = document.querySelector<HTMLElement>(hash);
       if (target) {
         target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
+        target.focus({ preventScroll: true });
         return;
       }
     }
