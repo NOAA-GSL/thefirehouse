@@ -715,7 +715,8 @@ as in `shared/vocabulary.json`, which takes its labels from the form.
   PHPUnit and Plugin Check.*
 - **Check `cf-cache-status`** on gsl.noaa.gov and the test site. *Done: `DYNAMIC` on
   both, so HTML isn't cached (see [Caching](#caching)).*
-- **Send the design summary** to security. *Drafted, not yet sent.*
+- **Send the design summary** to security. *Sent 1 November. Its questions are in open
+  question 2.*
 
 **Done when:** the reference is captured, the shared cases pass in TypeScript, and an
 empty plugin passes PHPCS and Plugin Check.
