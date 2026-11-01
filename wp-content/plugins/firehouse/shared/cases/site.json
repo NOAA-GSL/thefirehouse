@@ -1,0 +1,192 @@
+{
+  "$comment": "A small, made-up site in the shape of today's JSON content files: the input for the shared test cases. Each project exercises something the code handles on purpose: a national study, a Pacific one, a draft, one without IRB approval, a legacy author string, bare-string needs, a repeated fire phase, and an accented word.",
+  "settings": {
+    "siteName": "The Firehouse",
+    "nav": [
+      { "label": "Home", "to": "/" },
+      { "label": "Explore Projects", "to": "/projects" },
+      { "label": "About", "to": "/about" },
+      { "label": "Submit a Finding", "href": "" }
+    ],
+    "submitLabel": "Submit a Finding",
+    "submitFormUrl": "https://forms.example.org/firehouse",
+    "footerBlurb": "A made-up footer for tests.",
+    "footerGroups": [
+      {
+        "heading": "Explore",
+        "links": [
+          { "label": "All projects", "to": "/projects" },
+          { "label": "Submit a finding", "href": "" }
+        ]
+      }
+    ],
+    "agencyLine": "An official website of the United States government",
+    "usaGovUrl": "https://www.usa.gov"
+  },
+  "topics": [
+    { "key": "governance", "label": "Strategic Adaptation and Institutional Governance", "short": "Governance", "order": 4 },
+    { "key": "observe", "label": "Observations and Monitoring", "short": "Observations", "order": 1 },
+    { "key": "warning", "label": "Warnings and Immediate Response", "short": "Warnings", "order": 3 },
+    { "key": "forecast", "label": "Forecasts and Modeling", "short": "Forecasts", "order": 2 }
+  ],
+  "topicSummaries": [
+    {
+      "topic": "observe",
+      "updatedAt": "2026-09-17",
+      "sourceCount": 3,
+      "model": "Test model",
+      "reviewedBy": "Reviewer One",
+      "topNeeds": [
+        { "text": "Denser smoke sensor networks near communities", "mentions": 3, "projects": ["smoke-alerts-for-evacuation", "draft-fuel-study", "no-such-project"] },
+        { "text": "Shared observation dashboards across agencies", "mentions": 2, "projects": ["smoke-alerts-for-evacuation", "national-outlook-study"] },
+        { "text": "Faster satellite fire detection", "projects": ["alpha-fire-forecasting"] }
+      ]
+    },
+    {
+      "topic": "forecast",
+      "updatedAt": "2026-10-27",
+      "sourceCount": 4,
+      "reviewedBy": "Reviewer Two",
+      "topNeeds": ["Longer-lead outlooks for planning beyond 72 hours"]
+    },
+    {
+      "topic": "warning",
+      "updatedAt": "2026-09-17",
+      "topNeeds": []
+    }
+  ],
+  "projects": [
+    {
+      "id": "p1",
+      "slug": "smoke-alerts-for-evacuation",
+      "title": "Smoke alerts for evacuation decisions",
+      "summary": "How emergency managers use smoke alerts when ordering evacuations.",
+      "abstract": "A study of Évacuation timing and smoke forecasts in the Pacific Northwest.",
+      "authors": [{ "name": "Ada Example", "family": "Example", "given": "Ada" }, { "name": "Ben Sample" }],
+      "org": "Example University",
+      "completionYear": 2025,
+      "firePhases": ["during", "during"],
+      "publicationStatus": "published",
+      "projectType": "Testbed Evaluation",
+      "methods": ["Interviews", "Survey"],
+      "irbApproved": true,
+      "geo": { "regions": ["NWCC", "ONCC"] },
+      "takeaways": ["Managers trust local smoke forecasts more than national ones."],
+      "needs": [{ "need": "Need for hourly smoke forecasts among emergency managers.", "recommendation": "Recommend an hourly product." }],
+      "papers": [{ "title": "Smoke and evacuation", "url": "https://doi.org/10.0000/example.1", "doi": "10.0000/example.1", "year": 2025 }],
+      "published": true
+    },
+    {
+      "id": "p2",
+      "slug": "national-outlook-study",
+      "title": "National outlook study",
+      "summary": "A nationally representative survey of fire weather outlook users.",
+      "authors": [{ "name": "Cara Placeholder" }],
+      "completionYear": 2024,
+      "firePhases": ["long-term"],
+      "projectType": "Research Study",
+      "methods": ["Survey"],
+      "irbApproved": true,
+      "geo": { "regions": ["NATIONAL"] },
+      "takeaways": [],
+      "needs": [],
+      "papers": [],
+      "published": true
+    },
+    {
+      "id": "p3",
+      "slug": "pacific-island-recovery",
+      "title": "Pacific island recovery after wildfire",
+      "summary": "Recovery planning on Pacific islands after wildfire.",
+      "author": "Dee Legacy",
+      "completionYear": 2024,
+      "firePhases": ["after"],
+      "projectType": "Research Study",
+      "methods": [],
+      "irbApproved": true,
+      "geo": { "regions": ["PACIFIC"], "note": "Maui County" },
+      "takeaways": [],
+      "needs": [],
+      "papers": [],
+      "published": true
+    },
+    {
+      "id": "p4",
+      "slug": "draft-fuel-study",
+      "title": "Draft fuel management study",
+      "summary": "Not yet published.",
+      "authors": [{ "name": "Eve Draft" }],
+      "completionYear": 2025,
+      "firePhases": ["before"],
+      "methods": [],
+      "irbApproved": true,
+      "geo": { "regions": ["GBCC"] },
+      "takeaways": [],
+      "needs": [],
+      "papers": [],
+      "published": false
+    },
+    {
+      "id": "p5",
+      "slug": "no-irb-project",
+      "title": "Project without IRB approval",
+      "summary": "Must never reach a page.",
+      "authors": [{ "name": "Finn Excluded" }],
+      "completionYear": 2023,
+      "firePhases": ["before"],
+      "methods": [],
+      "irbApproved": false,
+      "takeaways": [],
+      "needs": [],
+      "papers": [],
+      "published": true
+    },
+    {
+      "id": "p6",
+      "slug": "alpha-fire-forecasting",
+      "title": "Alpha fire forecasting program",
+      "summary": "An evaluation of a fire forecasting program.",
+      "authors": [{ "name": "Gus Forecaster" }],
+      "completionYear": 2025,
+      "firePhases": ["before", "during"],
+      "projectType": "Program Evaluation",
+      "methods": ["Focus groups"],
+      "irbApproved": true,
+      "geo": { "regions": ["RMCC"] },
+      "takeaways": ["Forecasters want longer lead times."],
+      "needs": ["Need for longer lead times among incident meteorologists."],
+      "papers": [],
+      "published": true
+    }
+  ],
+  "landing": {
+    "hero": {
+      "eyebrow": "Test",
+      "heading": "The Firehouse",
+      "body": "A made-up hero.",
+      "primaryCta": { "label": "Submit a Finding", "href": "" },
+      "secondaryCta": { "label": "Explore", "to": "/projects" },
+      "imageAlt": ""
+    },
+    "stats": [
+      { "id": "projects", "source": "publishedProjectCount", "label": "Projects" },
+      { "id": "topics", "source": "topicCount", "label": "Topic areas" },
+      { "id": "launch", "source": "static", "value": "2027", "label": "Launch" }
+    ],
+    "topicSection": { "heading": "Top needs" },
+    "needsPerCard": 2,
+    "submitBand": { "heading": "Submit", "body": "Share your findings.", "cta": { "label": "Submit a Finding", "href": "" } }
+  },
+  "about": {
+    "hero": { "heading": "About" },
+    "mission": { "heading": "Mission", "paragraphs": ["A made-up mission."] },
+    "audiences": { "heading": "Who it is for", "items": [{ "icon": "radar", "title": "Forecasters", "body": "People who forecast." }] },
+    "process": {
+      "heading": "Process",
+      "steps": [{ "title": "Submit", "body": "Researchers submit." }],
+      "links": [{ "label": "Submit a finding", "href": "" }, { "label": "Projects", "to": "/projects" }]
+    },
+    "team": { "heading": "Team", "members": [{ "name": "Hal Member", "bio": "A one-paragraph biography." }] },
+    "cta": { "heading": "Submit", "body": "Share your findings.", "cta": { "label": "Submit a Finding", "href": "" } }
+  }
+}

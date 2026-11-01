@@ -1,0 +1,25 @@
+{
+  "$comment": "Cases for src/content/format.ts. Each case calls `fn` with `args` and expects `expected`.",
+  "cases": [
+    { "name": "a date-only string is the same day everywhere", "fn": "formatReviewDate", "args": ["2026-09-17"], "expected": "September 17, 2026" },
+    { "name": "the first of the month does not slip back a day", "fn": "formatReviewDate", "args": ["2026-01-01"], "expected": "January 1, 2026" },
+    { "name": "a full timestamp is read in UTC", "fn": "formatReviewDate", "args": ["2026-10-27T23:30:00Z"], "expected": "October 27, 2026" },
+
+    { "name": "no authors", "fn": "formatByline", "args": [[]], "expected": "Unattributed" },
+    { "name": "one author", "fn": "formatByline", "args": [[{ "name": "Ada Example" }]], "expected": "Ada Example" },
+    { "name": "two authors", "fn": "formatByline", "args": [[{ "name": "Ada Example" }, { "name": "Ben Sample" }]], "expected": "Ada Example and Ben Sample" },
+    { "name": "three authors", "fn": "formatByline", "args": [[{ "name": "A" }, { "name": "B" }, { "name": "C" }]], "expected": "A, B and C" },
+    { "name": "past three, the rest become et al.", "fn": "formatByline", "args": [[{ "name": "A" }, { "name": "B" }, { "name": "C" }, { "name": "D" }]], "expected": "A, B, C et al." },
+    { "name": "max 0 shows everyone", "fn": "formatByline", "args": [[{ "name": "A" }, { "name": "B" }, { "name": "C" }, { "name": "D" }], 0], "expected": "A, B, C and D" },
+    { "name": "a custom maximum", "fn": "formatByline", "args": [[{ "name": "A" }, { "name": "B" }, { "name": "C" }], 2], "expected": "A, B et al." },
+
+    { "name": "a need with its lead", "fn": "splitNeedLead", "args": ["Need for hourly smoke forecasts among emergency managers: forecasts arrive too late. Recommend an hourly product."], "expected": { "lead": "Need for hourly smoke forecasts among emergency managers:", "rest": "forecasts arrive too late. Recommend an hourly product." } },
+    { "name": "\"Need to\" opens a lead too", "fn": "splitNeedLead", "args": ["Need to share data across agencies. Recommend a shared portal."], "expected": { "lead": "Need to share data across agencies.", "rest": "Recommend a shared portal." } },
+    { "name": "no lead when the entry doesn't open with the phrase", "fn": "splitNeedLead", "args": ["Forecasters want longer lead times."], "expected": { "rest": "Forecasters want longer lead times." } },
+    { "name": "no lead when it would swallow most of a paragraph", "fn": "splitNeedLead", "args": ["Need for a much better and more reliable way for every single emergency manager in every county across the whole western region to see smoke: details follow."], "expected": { "rest": "Need for a much better and more reliable way for every single emergency manager in every county across the whole western region to see smoke: details follow." } },
+
+    { "name": "a DOI link", "fn": "linkLabel", "args": ["https://doi.org/10.1175/WAF-D-24-0001.1"], "expected": "doi.org/10.1175/WAF-D-24-0001.1" },
+    { "name": "www. and a trailing slash are dropped", "fn": "linkLabel", "args": ["https://www.example.org/reports/smoke/"], "expected": "example.org/reports/smoke" },
+    { "name": "something that isn't a URL comes back unchanged", "fn": "linkLabel", "args": ["not a url"], "expected": "not a url" }
+  ]
+}
