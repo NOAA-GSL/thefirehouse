@@ -1,6 +1,6 @@
 # WordPress plan — The Firehouse as a GSL WordPress plugin
 
-> **Status: proposal for review, last updated 31 October 2026.** Only the empty plugin
+> **Status: proposal for review, last updated 1 November 2026.** Only the empty plugin
 > and a local WordPress are built (Phase 0). This document is the current plan: the
 > decisions made so far, the architecture they lead to, and a phased plan from the
 > current `main` branch to a plugin running on gsl.noaa.gov. It changes through pull
@@ -441,6 +441,14 @@ short:
   checks a nonce, validates every field on the server, caps field lengths, accepts no
   files, and limits repeat submissions. Spam protection adds no third-party service
   unless the review accepts one.
+- **Repeat limits without recording addresses.** Limits on repeat submissions usually
+  key on the visitor's IP address, which the form doesn't record. Two options go to
+  security: a Cloudflare rate-limiting rule on the form's POST, which keeps addresses
+  out of WordPress entirely, or a salted hash of the address held for an hour in a
+  transient and never attached to the submission. Behind Cloudflare, PHP sees the
+  visitor's address only if the server restores it from Cloudflare's header; otherwise
+  every visitor shares a handful of Cloudflare addresses and one limit.
+- **No custom REST routes.** Nothing the pages or screens do needs one.
 - **A one-page design summary goes to security in Phase 0:** data stored, endpoints,
   capabilities, outbound hosts, secrets. Surprises at the final review are the
   expensive kind.
@@ -518,8 +526,10 @@ other GSL projects want a survey (see [Later phases](#later-phases)).
   the hosts in [Security review](#security-review). The draft lists links without a
   DOI, and an editor can type a title for one. Titles the site already shows carry
   over in the seed bundle.
-- **Email.** The Firehouse editors are told of each new submission, and the submitter
-  gets a confirmation, through GSL's own mail setup.
+- **Email,** through GSL's own mail setup. The Firehouse editors are told of each new
+  submission with a link to its draft; the message carries no private answers. The
+  submitter gets a confirmation in fixed text, with nothing they typed in it, so the
+  form can't be used to send spam to someone else's address.
 - **One box per entry.** The Google Form asks for takeaways, needs and links as
   numbered or comma-separated lists in one box each. The plugin's form gives every
   entry its own box: two to four takeaways, up to eight needs (each "Need for…" ending
@@ -565,6 +575,11 @@ response header.
   stays stale until the cache expires. Publishing then has to purge. That means either
   Cloudflare's own WordPress integration, or the plugin calling Cloudflare's purge API
   with a token limited to purging. The token is a security-review item.
+
+Either way, **the Submit page is never cached.** A cached copy would carry an expired
+nonce, and real submissions would start failing within a day. The page is sent with
+WordPress's no-cache headers, and if Cloudflare is set to ignore them, the web team
+adds a rule that bypasses the cache for that path.
 
 ### Page titles, descriptions and link previews
 
@@ -698,7 +713,7 @@ as in `shared/vocabulary.json`, which takes its labels from the form.
   [Local development](#local-development)). *Done: the empty plugin passes PHPCS,
   PHPUnit and Plugin Check.*
 - **Check `cf-cache-status`** on gsl.noaa.gov.
-- **Send the design summary** to security.
+- **Send the design summary** to security. *Drafted, not yet sent.*
 
 **Done when:** the reference is captured, the shared cases pass in TypeScript, and an
 empty plugin passes PHPCS and Plugin Check.
@@ -787,7 +802,7 @@ behaves the same, and the accessibility snapshots match.
 - Drafts from submissions, private answers stored apart (rule 2), the import script's
   checks on submit, and DOI title lookups.
 - The submission handler's protections: nonce, server-side validation, length caps,
-  repeat-submission limits and spam protection.
+  repeat-submission limits and spam protection, with the Submit page never cached.
 - Editable question wording on the settings screen.
 - Emails to the editors and the submitter.
 
@@ -930,6 +945,10 @@ Phases 6–7.
 
 1. Is the origin server Apache or nginx? This decides how the bridge is served.
 2. How long does a security review take, and what does a submission need to include?
+   The design summary also asks how repeat submissions should be limited (see
+   [Security review](#security-review)), whether a honeypot and a minimum fill time are
+   enough spam protection, and whether the AI service needs a security review as well
+   as approval under NOAA's AI policy.
 3. Does Cloudflare cache HTML (`cf-cache-status`), and who can purge? Does any other
    cache sit in front of either site?
 4. Can the bridge go on the test site, restricted to GSL staff, by mid-November?
