@@ -52,7 +52,7 @@ that produced it).
 | Install path | Security reviews each plugin release; developers install it. |
 | WP-CLI | **Not relied on.** Everything, including the first data load, is done in wp-admin. |
 | Outbound network | Believed allowed (doi.org). DOI lookups also reach api.crossref.org and data.crosscite.org, where doi.org forwards them. The AI service adds one more host. A Site Health check confirms them on the test site. |
-| Survey tool | **A form built into the plugin** (29 October), as a self-contained part of it (31 October). See [The survey form](#the-survey-form). Until the plugin launches, researchers submit through the **Google Form** that replaced Colorado State's Qualtrics. Its responses go into the site's files through the existing import script, as today, and reach WordPress in the seed bundle at launch (see [Importing the Google Form until launch](#importing-the-google-form-until-launch)). |
+| Survey tool | **A form built into the plugin** (29 October), as a self-contained part of it (31 October). See [The survey form](#the-survey-form). Until the plugin launches, researchers submit through the **Google Form** that replaced Colorado State's Qualtrics; it belongs to Emily's account in NOAA's Google Workspace. Its responses go into the site's files through the existing import script, as today, and reach WordPress in the seed bundle at launch (see [Importing the Google Form until launch](#importing-the-google-form-until-launch)). |
 | Responses so far | Qualtrics is closed, and every real submission was re-entered through the Google Form (28 October), so the form's Sheet is the complete record. |
 | Survey API sync | **Dropped** (29 October). With the form in the plugin there is no Sheet to sync. |
 | AI synthesis | **Runs from the plugin** (agreed with Stephanie and Emily, 28 October). An **Analyze results** button sends the published projects and the team's prompt to an approved AI service, and the result waits as a draft for review. Amazon Bedrock is proposed and needs approval under NOAA's AI policy (open question 7). Until then, and as the fallback, the synthesis screen takes NotebookLM's output by paste. See [The AI service](#the-ai-service). |
@@ -91,7 +91,7 @@ Analyze results (AI service) ───────▶ draft synthesis ──diff
 titles) on GSL's server and has a public form that writes to the database. Its
 security review is longer, and the form can't open on gsl.noaa.gov until a privacy
 review is done and the Paperwork Reduction Act question is answered in writing (open
-questions 12 and 15).
+questions 12 and 14).
 
 ---
 
@@ -309,8 +309,10 @@ in a rewrite.
    through `the_content`, including block output. Left on, every project page would quietly rewrite what
    researchers submitted. Turn both off on Firehouse pages. Store survey text as
    plain-string meta, and give editors no rich-text control over it.
-2. **Private survey answers stay private.** Q2 (email), Q3 (job title) and Q10
-   (internal use only) are never shown on the site.
+2. **Private survey answers stay private.** Q2 (email) and Q3 (job title) are never
+   shown on the site. Nor is Q10 (how results were shared outside the research group),
+   which was marked internal-only in Qualtrics and stays private until Stephanie and
+   Emily say otherwise (open question 15).
    - **The import script drops them,** as today, along with Qualtrics' IP and location
      columns (Google Forms records neither). It runs on the developer's computer, so a
      response export never reaches GSL's server. The seed bundle it feeds holds no
@@ -319,7 +321,7 @@ in a rewrite.
      a submitter. They are stored apart from the survey fields, in meta that is never
      rendered, never sent through the REST API and never copied into revisions, and
      only the Firehouse roles can read them. How long they are kept is for the privacy
-     review (open question 15). The form records no IP address.
+     review (open question 14). The form records no IP address.
 3. **Unpublished records never leave the server.** Today `normalize.ts` keeps
    unpublished projects, and only the pages filter them out, so staged records ship in
    the JavaScript bundle. As WordPress drafts they are never rendered or sent to a
@@ -433,7 +435,7 @@ short:
 - **Secrets in `wp-config.php`, not the database.** The AI service key is a constant
   set by developers. It stays out of database backups, and editors never handle it.
 - **Personal data comes only from the form,** and stays private (rule 2): submitters'
-  emails, job titles and internal-only answers, readable by the Firehouse roles alone.
+  emails, job titles and Q10 answers, readable by the Firehouse roles alone.
   No IP addresses.
 - **One public endpoint writes to the database:** the form's submission handler. It
   checks a nonce, validates every field on the server, caps field lengths, accepts no
@@ -518,11 +520,17 @@ other GSL projects want a survey (see [Later phases](#later-phases)).
   over in the seed bundle.
 - **Email.** The Firehouse editors are told of each new submission, and the submitter
   gets a confirmation, through GSL's own mail setup.
+- **One box per entry.** The Google Form asks for takeaways, needs and links as
+  numbered or comma-separated lists in one box each. The plugin's form gives every
+  entry its own box: two to four takeaways, up to eight needs (each "Need for…" ending
+  in "Recommend…", as the form's guidance asks) and the links.
 - **Accessible.** Real fieldsets and labels, an error summary that links to each
-  problem, and up to ten repeated need entries that can be added and removed without
-  JavaScript. It is checked with a screen reader like the rest.
+  problem, and entries that can be added and removed without JavaScript. It is checked
+  with a screen reader like the rest.
+- **The same notices as the Google Form:** that submissions may be shown on the site,
+  and how AI is used on them, naming the approved AI service rather than NotebookLM.
 - **Before it opens on prod:** a privacy review, a written answer on the Paperwork
-  Reduction Act (open questions 12 and 15), and the security review's sign-off on the
+  Reduction Act (open questions 12 and 14), and the security review's sign-off on the
   submission handler (see [Security review](#security-review)).
 - **The switch.** At launch the Google Form closes, its last responses go through the
   import script into the seed bundle, and Submit a Finding moves to the Submit page.
@@ -622,16 +630,21 @@ Until the plugin launches, researchers submit through the Google Form, and the
 developer's import script, `scripts/import-survey.mjs`, turns its response Sheet into
 the site's JSON files, as it did for Qualtrics. The plugin never reads the Sheet: the
 JSON reaches WordPress in the seed bundle, and the script retires at launch. It runs on
-the developer's computer and drops the email, job-title and internal-use answers
-before anything is written (rule 2).
+the developer's computer and drops the email, job-title and Q10 answers before
+anything is written (rule 2).
 
 The script was written for Qualtrics, so it needs these changes before the next import
 (about 1–2 days, using a test response downloaded from the live form):
 
 - **Columns by question title.** Google's header row is the question text, not a
   stable ID like Qualtrics' `Q13`, so the script finds each column by its title, and a
-  reworded question means updating its map. Takeaways, needs and papers are separate
-  numbered questions ("Key takeaway 1" to "Key takeaway 4"), gathered in order.
+  reworded question means updating its map.
+- **Lists in one box.** Takeaways (Q15, two to four) and needs (Q16, up to eight) are
+  each one box the respondent numbers, and links (Q17) are one box separated by commas,
+  where Qualtrics had a box per entry. The script splits numbered entries and commas.
+  Each need is asked to start "Need for…" and end "Recommend…", which also marks where
+  one entry ends. An answer that doesn't split cleanly is a warning, and its text is
+  kept whole for the person importing to split.
 - **The timestamp as the key.** There is no response ID. The Timestamp column holds
   still only while **"Allow response editing" stays off**: an edited response gets a
   new timestamp and would import as a new project. Two rows with the same timestamp, or
@@ -641,7 +654,7 @@ The script was written for Qualtrics, so it needs these changes before the next 
   labels end in their code ("Northern California (ONCC)"), which the script reads; the
   four other regions are matched by their full label in `shared/vocabulary.json`.
   Checkbox answers are matched against the known labels rather than split on commas,
-  because "Northwest — OR, WA (NWCC)" contains one.
+  because "Northwest -- OR, WA (NWCC)" contains one.
 - **Pairing the re-entered submissions.** Every Qualtrics-era submission was re-entered
   through the Google Form with a new timestamp. The first run pairs each with its
   existing record, by title and submitter, so its slug and editorial fields carry
@@ -654,10 +667,10 @@ The script was written for Qualtrics, so it needs these changes before the next 
   draft. A row with no project title is still dropped outright: there is nothing to
   make a project from.
 
-The form's settings that keep this working: "Allow response editing" off; open to
-respondents without a NOAA Google login (*confirmed*); no file-upload question, which
-would make every respondent sign in to Google (*confirmed*); and region and fire-phase
-options worded as in `shared/vocabulary.json`.
+The form's settings that keep this working, all confirmed: "Allow response editing"
+off; open to respondents without a NOAA Google login; no file-upload question, which
+would make every respondent sign in to Google; and region and fire-phase options worded
+as in `shared/vocabulary.json`, which takes its labels from the form.
 
 ---
 
@@ -674,7 +687,7 @@ options worded as in `shared/vocabulary.json`.
 - **Move the vocabularies** into `shared/vocabulary.json`, with each option's label as
   the Google Form shows it, and generate a JSON Schema from `types.ts`.
 - **Repair the seed data.** Fix the two double-encoded strings in `projects.json` (see
-  the appendix) before the seed bundle is built.
+  the appendix) before the seed bundle is built. *Done.*
 - **Scaffold the plugin** and a local WordPress for developers (see
   [Local development](#local-development)). *Done: the empty plugin passes PHPCS,
   PHPUnit and Plugin Check.*
@@ -950,19 +963,19 @@ Phases 6–7.
     it is.
 13. Should a project that answers "Project did not require IRB review" be published?
     The import script treats that answer as no approval, and the survey form flags it
-    the same way. Either way it reaches WordPress as a flagged draft, so the answer
-    decides only whether it can be published (see the appendix).
-14. Which Google account owns the Google Form and its response Sheet: NOAA's Google
-    Workspace, Colorado State's, or another? It decides where personal data lives until
-    launch, and who deletes the Sheet once its responses are imported. If it is NOAA's,
-    the intake documents should say so, because that settles the concern that the
-    survey sat outside NOAA. (The form is open to respondents outside NOAA.)
+    the same way. The Google Form itself accepts it: "No" ends the form with a note
+    that only IRB-approved studies are accepted, while "Project did not require IRB
+    review" carries on like "Yes". Either way the project reaches WordPress as a flagged
+    draft, so the answer decides only whether it can be published (see the appendix).
 
-**For the privacy review**
+**Privacy**
 
-15. What may the survey form keep, and for how long? It stores submitters' emails, job
-    titles and internal-only answers so the team can follow up (rule 2). The review
-    decides how long they are kept and when they are deleted.
+14. *(Privacy review)* What may the survey form keep, and for how long? It stores
+    submitters' emails and job titles, so the team can follow up, and their Q10 answers
+    (rule 2). The review decides how long they are kept and when they are deleted.
+15. *(Stephanie and Emily)* Can Q10, how results were shared outside the research
+    group, appear on the site? Qualtrics marked it internal-only; the Google Form
+    doesn't say. Until they decide, it stays private.
 
 **Settled**
 
@@ -976,6 +989,10 @@ Phases 6–7.
   mentioned several times in one project counts once. The prompt in
   `notebooklm/README.md` counts this way; the 17 September draft on the site doesn't,
   until the synthesis is rerun.*
+- ~~Which Google account owns the Google Form?~~ *NOAA's (31 October): it belongs to
+  Emily's account in NOAA's Google Workspace, and is open to respondents outside NOAA.
+  The intake documents should say so, which settles the concern that the survey sat
+  outside NOAA.*
 - ~~Is the Qualtrics survey closed?~~ *Yes (28 October). Every real submission was
   re-entered through the Google Form, so no last Qualtrics import is needed; the
   re-entered rows are paired with their existing projects instead (see
@@ -1000,9 +1017,8 @@ Phases 6–7.
   approval, so it is excluded. The question itself asks about "approval or exemption",
   so it may belong on the site (open question 13).
 - **Mis-encoded text in the export.** Some Qualtrics rows arrive double-encoded
-  (`NGFSâ€™s` for `NGFS’s`), and two strings in `projects.json` carry it today. Google
-  Forms exports are clean UTF-8, so rather than port a repair, fix the two strings
-  before the seed bundle is built (Phase 0).
+  (`NGFSâ€™s` for `NGFS’s`). Two strings in `projects.json` carried it and are fixed.
+  Google Forms exports are clean UTF-8, so no repair is ported.
 - **The live synthesis is out of date.** `topicSummaries.json` is a 17 September draft,
   written with Claude, that covers 4 of the 7 published projects. The landing page
   reports it as drawn from "4 projects today".

@@ -203,8 +203,8 @@ only needed for code changes. Until an AI service is approved, you paste Noteboo
 output in instead.
 
 **For ITS:** Stored on GSL's server: project text, editorial fields, the syntheses and
-their revision history, and from the form, submitters' emails, job titles and
-internal-only answers. Those are readable only by the Firehouse roles, never shown on a
+their revision history, and from the form, submitters' emails, job titles and how they
+shared their results. Those are readable only by the Firehouse roles, never shown on a
 page, and kept as long as the privacy review allows. No IP addresses or uploaded files.
 One public form writes to the database, with server-side validation and spam
 protection. Logins are a Firehouse Editor role that can change Firehouse content and
