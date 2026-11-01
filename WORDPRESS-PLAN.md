@@ -207,7 +207,7 @@ wp-content/plugins/firehouse/
   templates/       project, explorer, topic and Firehouse page templates
   patterns/        landing and About layouts, locked to text-only edits
   assets/          tokens and component CSS, icons, logos, fonts, GACC boundaries
-  shared/          vocabulary.json and test cases, read by both the PHP and JS tests
+  shared/          vocabulary.json, project.schema.json and test cases, read by PHP and JS
   tests/           PHPUnit tests, run without WordPress through Brain Monkey
 ```
 
@@ -441,7 +441,7 @@ short:
   checks a nonce, validates every field on the server, caps field lengths, accepts no
   files, and limits repeat submissions. Spam protection adds no third-party service
   unless the review accepts one.
-- **A one-page design summary goes to security in Phase 1:** data stored, endpoints,
+- **A one-page design summary goes to security in Phase 0:** data stored, endpoints,
   capabilities, outbound hosts, secrets. Surprises at the final review are the
   expensive kind.
 - **Every release passes `PHPCS` (WordPress coding standards) and Plugin Check**
@@ -616,6 +616,9 @@ the screen.
    to submit through AMS, where the team's talk invites researchers to submit.
 6. **Remove the citation generator** from the project page, so the public site does
    not invite citations.
+7. **Stop the topic pages scrolling sideways on phones** (see the appendix).
+8. **Retake the reference** with `npm run reference` once these changes are in. That
+   set is what the plugin is built against.
 
 About 2–3 days of work, plus about a day for the test-site copy, not counted in the
 plugin estimate.
@@ -680,12 +683,15 @@ as in `shared/vocabulary.json`, which takes its labels from the form.
 
 - **Capture the reference.** Screenshots and accessibility-tree snapshots of every
   route from the React build, in each theme that will be kept. The React site is the
-  specification the plugin has to match.
+  specification the plugin has to match. *Done: `npm run reference` captures them (see
+  `reference/README.md`). The committed snapshots are a baseline from before the bridge
+  changes and are retaken with them (bridge step 8).*
 - **Add shared test cases.** Unit tests for `normalize`, `derive`, `search` and
   `format`, written as data files (input and expected output) that the PHP tests will
-  read later.
+  read later. *Done: 122 cases in `shared/cases/`, run by `npm test` and in CI.*
 - **Move the vocabularies** into `shared/vocabulary.json`, with each option's label as
-  the Google Form shows it, and generate a JSON Schema from `types.ts`.
+  the Google Form shows it, and generate a JSON Schema from `types.ts`. *Done: `npm run
+  schema` writes `shared/project.schema.json`, and CI fails if it is out of date.*
 - **Repair the seed data.** Fix the two double-encoded strings in `projects.json` (see
   the appendix) before the seed bundle is built. *Done.*
 - **Scaffold the plugin** and a local WordPress for developers (see
@@ -1022,3 +1028,7 @@ Phases 6–7.
 - **The live synthesis is out of date.** `topicSummaries.json` is a 17 September draft,
   written with Claude, that covers 4 of the 7 published projects. The landing page
   reports it as drawn from "4 projects today".
+- **Topic pages scroll sideways on phones.** The source chips under each need (a
+  project's title and year) don't shrink, so at 390 px wide the page is 463 px wide.
+  Every other page fits. The reference capture found it; the bridge fixes it, and the
+  plugin doesn't copy it.
