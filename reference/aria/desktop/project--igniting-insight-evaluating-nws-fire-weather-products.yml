@@ -42,13 +42,6 @@
       - listitem:
         - text: Need
         - paragraph:
-          - strong: Need for clear and detailed forecast discussions.
-          - text: Forecast discussions are highly valued for providing insight into forecaster reasoning, allowing fire partners to interpret confidence levels, trends, and nuances not captured in standard forecasts.
-        - text: Recommendation
-        - paragraph: Recommend expanding the deliberate use of Forecast Discussions during critical fire weather periods to explicitly highlight forecaster confidence, forecast rationale, and key weather trends (particularly whether a Red Flag Warning is expected in upcoming days).
-      - listitem:
-        - text: Need
-        - paragraph:
           - strong: Need for consistent and transparent incorporation of fuels data in RFWs.
           - text: There is a clear inconsistent use of fuels in Red Flag Warning issuance. Fire partners want clear, documented incorporation of fuel receptiveness into warning decisions.
         - text: Recommendation
@@ -63,10 +56,10 @@
       - listitem:
         - text: Need
         - paragraph:
-          - strong: Need for inclusion of trend and duration information in RFWs.
+          - strong: Need for inclusion of trend and duration information in RFWs and Forecast Discussions.
           - text: Fire partners are planning around when conditions will peak, how long they’ll last, and whether a warning spans multiple days. Current RFWs sometimes lack this critical trend detail.
         - text: Recommendation
-        - paragraph: Recommend that forecasters indicate how long critical conditions are expected to last, when they will peak, and whether a multi-day event is likely.
+        - paragraph: Recommend that forecasters indicate how long critical conditions are expected to last, when they will peak, whether a multi-day event is likely, and overall forecaster confidence/rationale.
       - listitem:
         - text: Recommendation
         - paragraph: Recommend hosting regular (biannual or annual to align with Annual Operating Plans) fire partner-forecaster coordination meetings that focus on evaluating and refining RFW/Fire Weather Watch criteria based on real-world impacts.
@@ -130,6 +123,8 @@
     - navigation "Other projects":
       - 'link "Previous Fire Weather Testbed Evaluations #003 - Interagency Collaboration: Tactical Integrated Warning Team (IWT) for Wildland Fire Operations"':
         - /url: /projects/fire-weather-testbed-evaluations-003-interagency
+      - link "Next FWT Evaluation 001. WoFS-Smoke":
+        - /url: /projects/fwt-evaluation-001-wofs-smoke
 - contentinfo:
   - img "NOAA"
   - img "GSL"

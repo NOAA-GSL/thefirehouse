@@ -18,8 +18,8 @@
   - link "Explore Projects":
     - /url: /projects
   - list "Hub statistics":
-    - listitem: 7 Projects analyzed Completed DESI and testbed research
-    - listitem: 42 End-user needs Submitted across all projects
+    - listitem: 8 Projects analyzed Completed DESI and testbed research
+    - listitem: 46 End-user needs Submitted across all projects
     - listitem: Open For submissions Researchers can contribute findings any time
   - region "The top needs in fire weather social science":
     - text: Synthesized across every project
@@ -83,37 +83,37 @@
     - button "GACC labels" [pressed]
     - paragraph: "Boundaries: NIFC National GACC Boundaries. Basemap: Esri, HERE, Garmin, © OpenStreetMap contributors."
     - heading "Coverage by Geographic Area Coordination Center" [level=3]
-    - paragraph: 7 submissions
-    - paragraph: GACC counts include 3 national studies, counted once in every area.
+    - paragraph: 8 submissions
+    - paragraph: GACC counts include 4 national studies, counted once in every area.
     - list "Coverage by Geographic Area Coordination Center":
       - listitem:
-        - button "All submissions 7" [pressed]
+        - button "All submissions 8" [pressed]
       - listitem:
-        - button "Alaska AICC 3"
+        - button "Alaska AICC 4"
       - listitem:
-        - button "Northwest NWCC 3"
+        - button "Northwest NWCC 4"
       - listitem:
-        - button "N. California ONCC 7"
+        - button "N. California ONCC 8"
       - listitem:
-        - button "S. California OSCC 7"
+        - button "S. California OSCC 8"
       - listitem:
-        - button "N. Rockies NRCC 3"
+        - button "N. Rockies NRCC 4"
       - listitem:
-        - button "Great Basin GBCC 3"
+        - button "Great Basin GBCC 4"
       - listitem:
-        - button "Southwest SWCC 3"
+        - button "Southwest SWCC 4"
       - listitem:
-        - button "Rocky Mountain RMCC 6"
+        - button "Rocky Mountain RMCC 7"
       - listitem:
-        - button "Eastern Area EACC 3"
+        - button "Eastern Area EACC 4"
       - listitem:
-        - button "Southern Area SACC 6"
+        - button "Southern Area SACC 7"
     - heading "Not on the map" [level=4]
     - list:
       - listitem:
         - button "Hawaii / Pacific 0"
       - listitem:
-        - button "National 3"
+        - button "National 4"
       - listitem:
         - button "International 0"
       - listitem:

@@ -18,7 +18,7 @@
     - text: Searches titles, authors, abstracts, and findings. Results update as you type. Press Escape to clear.
     - button "Filters and sort"
   - status:
-    - strong: "7"
+    - strong: "8"
     - text: projects
   - article:
     - text: Research Study
@@ -76,6 +76,14 @@
     - paragraph: This study evaluates how National Weather Service (NWS) partners (Fire Chiefs, Fire Analysts, Emergency Managers, etc.) utilize fire weather sources across the decision timeline—from long-range planning weeks in advance to tactical…
     - text: Stephanie Hoekstra, Benjamin Hatchett and Jamie Vickery · 2025 Before During
     - 'button "Quick look at Igniting Insight: Evaluating NWS Fire Weather Products within a Fire Partner Decision Making Context"'
+  - article:
+    - text: Testbed Evaluation
+    - heading "FWT Evaluation 001. WoFS-Smoke" [level=3]:
+      - link "FWT Evaluation 001. WoFS-Smoke":
+        - /url: /projects/fwt-evaluation-001-wofs-smoke
+    - paragraph: On 30 November 2023, the NOAA Global System Laboratory's Fire Weather Testbed facilitated a one-day virtual training and evaluation of WoFS-Smoke.
+    - text: Benjamin Hatchett, Jamie L. Vickery, Zach T. Tolby et al. · 2024 Before During After
+    - button "Quick look at FWT Evaluation 001. WoFS-Smoke"
 - contentinfo:
   - img "NOAA"
   - img "GSL"
