@@ -1,5 +1,8 @@
 - link "Skip to main content":
   - /url: "#main"
+- region "Official website of the United States government":
+  - text: An official website of the United States government
+  - button "Here’s how you know"
 - banner:
   - link "The Firehouse, NOAA Global Systems Laboratory — home":
     - /url: /
@@ -11,21 +14,21 @@
   - text: NOAA / Global Systems Laboratory
   - heading "A shared home for fire weather social science" [level=1]
   - paragraph: The Firehouse centralizes the needs and recommendations learned across completed fire weather research, so forecasters, researchers, and decision-makers can find what's already known — and add to it.
-  - link "Submit a Finding":
-    - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths
+  - link "Submit a Finding (opens in a new tab)":
+    - /url: https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform
   - link "Explore Projects":
     - /url: /projects
   - list "Hub statistics":
-    - listitem: 7 Projects analyzed Completed DESI and testbed research
-    - listitem: 4 Topic areas Observations, forecasts, warnings, governance
+    - listitem: 8 Projects analyzed Completed DESI and testbed research
+    - listitem: 46 End-user needs Submitted across all projects
     - listitem: Open For submissions Researchers can contribute findings any time
-  - region "The top 5 needs in fire weather social science":
+  - region "The top needs in fire weather social science":
     - text: Synthesized across every project
-    - heading "The top 5 needs in fire weather social science" [level=2]
+    - heading "The top needs in fire weather social science" [level=2]
     - paragraph: Forecasters, land managers, and emergency managers keep telling researchers what they need. Here, every completed fire weather social science project in The Firehouse is read together as one body of evidence, and the needs its researchers recorded are distilled into the five most pressing in each of four topic areas — in one place, ranked, with how often each one came up.
     - paragraph:
       - strong: AI-synthesized
-      - text: across all 4 projects.
+      - text: across 4 of 8 projects.
     - article:
       - text: Observations
       - heading "Observations and Monitoring" [level=3]:
@@ -72,10 +75,7 @@
         - listitem: Staffing capacity and organizational buy-in to sustain interagency teams 2 mentions
     - complementary "Where these needs come from":
       - heading "Where these needs come from" [level=3]
-      - paragraph:
-        - text: Topic areas are not assigned project by project. Every completed project in The Firehouse — 4 projects today — is read together, with Claude, and the end-user needs its researchers recorded are grouped into the four areas above and ranked by how often they come up. A
-        - emphasis: mention
-        - text: "is one need or recommendation a researcher submitted; the same one can count in more than one area. This pass is a draft: the team reviews each synthesis before it is final. Open a topic area to see which projects each need draws on; each project page keeps the researchers’ own words."
+      - paragraph: Topic areas are not assigned project by project. Every project in The Firehouse is read together, with Claude. The end-user needs its researchers recorded are grouped into the four areas above and ranked by how often they come up. This pass serves as an initial draft that our team reviews and refines before finalizing each synthesis. Open any topic area to see which specific projects each need draws on; each project page preserves the researchers’ own words.
       - link "Explore all projects":
         - /url: /projects
   - region "Where the research comes from":
@@ -84,37 +84,37 @@
     - button "GACC labels" [pressed]
     - paragraph: "Boundaries: NIFC National GACC Boundaries. Basemap: Esri, HERE, Garmin, © OpenStreetMap contributors."
     - heading "Coverage by Geographic Area Coordination Center" [level=3]
-    - paragraph: 7 submissions
-    - paragraph: GACC counts include 3 national studies, counted once in every area.
+    - paragraph: 8 submissions
+    - paragraph: GACC counts include 4 national studies, counted once in every area.
     - list "Coverage by Geographic Area Coordination Center":
       - listitem:
-        - button "All submissions 7" [pressed]
+        - button "All submissions 8" [pressed]
       - listitem:
-        - button "Alaska AICC 3"
+        - button "Alaska AICC 4"
       - listitem:
-        - button "Northwest NWCC 3"
+        - button "Northwest NWCC 4"
       - listitem:
-        - button "N. California ONCC 7"
+        - button "N. California ONCC 8"
       - listitem:
-        - button "S. California OSCC 7"
+        - button "S. California OSCC 8"
       - listitem:
-        - button "N. Rockies NRCC 3"
+        - button "N. Rockies NRCC 4"
       - listitem:
-        - button "Great Basin GBCC 3"
+        - button "Great Basin GBCC 4"
       - listitem:
-        - button "Southwest SWCC 3"
+        - button "Southwest SWCC 4"
       - listitem:
-        - button "Rocky Mountain RMCC 6"
+        - button "Rocky Mountain RMCC 7"
       - listitem:
-        - button "Eastern Area EACC 3"
+        - button "Eastern Area EACC 4"
       - listitem:
-        - button "Southern Area SACC 6"
+        - button "Southern Area SACC 7"
     - heading "Not on the map" [level=4]
     - list:
       - listitem:
         - button "Hawaii / Pacific 0"
       - listitem:
-        - button "National 3"
+        - button "National 4"
       - listitem:
         - button "International 0"
       - listitem:
@@ -124,5 +124,51 @@
   - region "Have a finding to share?":
     - heading "Have a finding to share?" [level=2]
     - paragraph: Describe what you learned in your own words. Submissions are reviewed and folded into the four topic areas above.
-    - link "Submit a Finding":
-      - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths
+    - link "Submit a Finding (opens in a new tab)":
+      - /url: https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform
+- contentinfo:
+  - img "NOAA"
+  - img "GSL"
+  - text: The Firehouse
+  - paragraph: A project of NOAA's Global Systems Laboratory (GSL), Earth Prediction Innovation Center. Part of the National Oceanic and Atmospheric Administration.
+  - navigation "Explore":
+    - heading "Explore" [level=2]
+    - link "About The Firehouse":
+      - /url: /about
+    - link "All projects":
+      - /url: /projects
+    - link "Top needs":
+      - /url: /#top-needs
+    - link "Submit a finding (opens in a new tab)":
+      - /url: https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform
+  - navigation "About GSL":
+    - heading "About GSL" [level=2]
+    - link "gsl.noaa.gov (opens in a new tab)":
+      - /url: https://gsl.noaa.gov
+    - link "Research programs (opens in a new tab)":
+      - /url: https://gsl.noaa.gov/research
+    - link "Contact GSL (opens in a new tab)":
+      - /url: https://gsl.noaa.gov/contact
+    - link "Careers (opens in a new tab)":
+      - /url: https://gsl.noaa.gov/careers
+  - navigation "Federal resources":
+    - heading "Federal resources" [level=2]
+    - link "NOAA.gov (opens in a new tab)":
+      - /url: https://www.noaa.gov
+    - link "Department of Commerce (opens in a new tab)":
+      - /url: https://www.commerce.gov
+    - link "USA.gov (opens in a new tab)":
+      - /url: https://www.usa.gov
+    - link "No FEAR Act (opens in a new tab)":
+      - /url: https://www.noaa.gov/organization/no-fear-act
+    - link "Privacy policy (opens in a new tab)":
+      - /url: https://www.noaa.gov/protecting-your-privacy
+    - link "Accessibility (opens in a new tab)":
+      - /url: https://www.noaa.gov/accessibility
+    - link "FOIA (opens in a new tab)":
+      - /url: https://www.noaa.gov/information-technology/foia
+    - link "Information quality (opens in a new tab)":
+      - /url: https://www.noaa.gov/organization/information-technology/information-quality
+  - text: U.S. Department of Commerce | National Oceanic and Atmospheric Administration
+  - link "usa.gov (opens in a new tab)":
+    - /url: https://www.usa.gov

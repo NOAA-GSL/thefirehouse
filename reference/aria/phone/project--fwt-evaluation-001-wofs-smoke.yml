@@ -1,0 +1,147 @@
+- link "Skip to main content":
+  - /url: "#main"
+- region "Official website of the United States government":
+  - text: An official website of the United States government
+  - button "Here’s how you know"
+- banner:
+  - link "The Firehouse, NOAA Global Systems Laboratory — home":
+    - /url: /
+    - text: The Firehouse
+  - button "Switch to dark theme"
+  - button "Open menu"
+- main:
+  - article:
+    - navigation "Breadcrumb":
+      - link "All projects":
+        - /url: /projects
+    - text: Testbed Evaluation
+    - heading "FWT Evaluation 001. WoFS-Smoke" [level=1]
+    - paragraph: Benjamin Hatchett, Jamie L. Vickery, Zach T. Tolby, Thomas A. Jones, Patrick S. Skinner, Emily M. Wells and Kyle J. Thiem·Cooperative Institute for Research in the Atmosphere
+    - text: "Completed 2024 Fire cycle phase: Before · During · After"
+    - heading "Abstract" [level=2]
+    - paragraph: "On 30 November 2023, the NOAA Global System Laboratory's Fire Weather Testbed facilitated a one-day virtual training and evaluation of WoFS-Smoke. The primary goal was to “Determine how useful WoFS-Smoke products are to both pre- and active fire decision making processes, and use that information to motivate future WoFS-Smoke development. The evaluation included seven National Weather Service (NWS) participants, four of whom are active Incident Meteorologists representing the Eastern, Central, Western, Southern, and Alaska Regions. The evaluation began with a short training, followed by three scenarios highlighting key capabilities of WoFS-Smoke: (i) a probability of smoke situation based on a prescribed fire, (ii) a Red Flag Threat Index scenario, and (iii) a rapidly changing fire environment scenario. The evaluation concluded with a focus group discussion that included an additional scenario applying WoFS-Smoke to a short-duration, high-intensity postfire rainfall event."
+    - heading "Major takeaways" [level=2]
+    - list:
+      - listitem:
+        - paragraph: WoFS-Smoke provides actionable probabilistic information to support a range of fire-related management aspects in rapidly changing environments during the main phases of wildland fire including the pre-fire phase (e.g., onset and cessation time, magnitude, and spatial extent of extreme fire weather conditions), the during-fire phase (e.g., alerting fire suppression personnel to wind shifts and providing timing of smoke plume arrival and departure to partners), and the post-fire phase (e.g., guidance regarding short-duration high-intensity precipitation capable of initiating post-fire flooding and debris flows).
+      - listitem:
+        - paragraph: WoFS-Smoke complements existing operational products (e.g., the NOAA High-Resolution Rapid Refresh Smoke and the National Blend of Models) by providing rapidly-refreshing, high resolution probabilistic guidance.
+      - listitem:
+        - paragraph: WoFS-Smoke requires additional computational resources and a well-defined prioritization system in order to achieve reliability for operational use and further improving horizontal resolution for applications in complex terrain.
+      - listitem:
+        - paragraph: Participants noted the importance for the information to be displayed on a visualization platform that allows more interactivity of the user, such as gaining the ability to zoom into the forecast region(s) of concern, inclusion of additional map variables such as topography and critical assets, and the ability to display particulate matter concentrations using air quality index or visibility values.
+    - heading "End-user needs and recommendations" [level=2]
+    - list:
+      - listitem:
+        - text: Need
+        - paragraph: Need for prioritization system among all users.
+        - text: Recommendation
+        - paragraph: Recommend assessing if the current system is working or how to improve it.
+      - listitem:
+        - text: Need
+        - paragraph: Need for output to be visualized in platform allowing zooming and displaying other geographic information.
+        - text: Recommendation
+        - paragraph: Recommend developing pipeline to deliver WoFS output to platforms like AWIPS, DESI, or other common operating platforms
+      - listitem:
+        - text: Need
+        - paragraph: Need for additional computational resources to increase availability.
+        - text: Recommendation
+        - paragraph: Recommend securing funding for additional domains/repeating domains during high impact weather.
+      - listitem:
+        - text: Need
+        - paragraph: Need for ensemble smoke output in AQI units.
+        - text: Recommendation
+        - paragraph: Recommend assessing relationships between output variables and AQI to create an AQI parameterization or direct output.
+      - listitem:
+        - text: Need
+        - paragraph: Need for additional impact-based verification.
+        - text: Recommendation
+        - paragraph: Recommend targeting verification efforts on fire-relevant output such as lightning, air quality, temperature/relative humidity/wind, and high intensity/short duration precipitation.
+      - listitem:
+        - text: Need
+        - paragraph: Need for end-to-end training materials involving case studies to highlight capabilities and train users on how to use/interpret output in varied environments.
+        - text: Recommendation
+        - paragraph: Recommend developing several cases for training such as Ruidoso fire-to-flood in 2024, McKinney Fire with flooding in 2022, and a southern Great Plains spring wind shift case.
+    - heading "Publications and resources" [level=2]
+    - list:
+      - listitem:
+        - 'link "Fire Weather Testbed Evaluation #001: The Warn-on-Forecast System for Smoke doi:10.25923/nd0m-4j95 (opens in a new tab)"':
+          - /url: https://doi.org/10.25923/nd0m-4j95
+    - complementary "Project details":
+      - heading "At a glance" [level=2]
+      - term: Project type
+      - definition: Testbed Evaluation
+      - term: Completion year
+      - definition: "2024"
+      - term: Fire cycle phase
+      - definition:
+        - list:
+          - listitem:
+            - strong: Before
+            - text: Pre-fire planning, prevention, and mitigation
+          - listitem:
+            - strong: During
+            - text: Fire detection, active suppression, and downstream impacts
+          - listitem:
+            - strong: After
+            - text: Postfire recovery and rehabilitation
+      - term: Data collection
+      - definition: Focus groups, Other (Notes during evaluation)
+      - term: Geographic areas
+      - definition: Alaska AICC Northwest NWCC Rocky Mountain RMCC Eastern Area EACC Southern Area SACC National
+      - term: Organization
+      - definition: Cooperative Institute for Research in the Atmosphere
+      - paragraph:
+        - text: Takeaways, needs and recommendations on this page are reproduced as the researcher submitted them. The
+        - link "topic areas":
+          - /url: /#top-needs
+        - text: are an AI-assisted synthesis across all projects, so no single project is filed under one.
+    - navigation "Other projects":
+      - 'link "Previous Igniting Insight: Evaluating NWS Fire Weather Products within a Fire Partner Decision Making Context"':
+        - /url: /projects/igniting-insight-evaluating-nws-fire-weather-products
+- contentinfo:
+  - img "NOAA"
+  - img "GSL"
+  - text: The Firehouse
+  - paragraph: A project of NOAA's Global Systems Laboratory (GSL), Earth Prediction Innovation Center. Part of the National Oceanic and Atmospheric Administration.
+  - navigation "Explore":
+    - heading "Explore" [level=2]
+    - link "About The Firehouse":
+      - /url: /about
+    - link "All projects":
+      - /url: /projects
+    - link "Top needs":
+      - /url: /#top-needs
+    - link "Submit a finding (opens in a new tab)":
+      - /url: https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform
+  - navigation "About GSL":
+    - heading "About GSL" [level=2]
+    - link "gsl.noaa.gov (opens in a new tab)":
+      - /url: https://gsl.noaa.gov
+    - link "Research programs (opens in a new tab)":
+      - /url: https://gsl.noaa.gov/research
+    - link "Contact GSL (opens in a new tab)":
+      - /url: https://gsl.noaa.gov/contact
+    - link "Careers (opens in a new tab)":
+      - /url: https://gsl.noaa.gov/careers
+  - navigation "Federal resources":
+    - heading "Federal resources" [level=2]
+    - link "NOAA.gov (opens in a new tab)":
+      - /url: https://www.noaa.gov
+    - link "Department of Commerce (opens in a new tab)":
+      - /url: https://www.commerce.gov
+    - link "USA.gov (opens in a new tab)":
+      - /url: https://www.usa.gov
+    - link "No FEAR Act (opens in a new tab)":
+      - /url: https://www.noaa.gov/organization/no-fear-act
+    - link "Privacy policy (opens in a new tab)":
+      - /url: https://www.noaa.gov/protecting-your-privacy
+    - link "Accessibility (opens in a new tab)":
+      - /url: https://www.noaa.gov/accessibility
+    - link "FOIA (opens in a new tab)":
+      - /url: https://www.noaa.gov/information-technology/foia
+    - link "Information quality (opens in a new tab)":
+      - /url: https://www.noaa.gov/organization/information-technology/information-quality
+  - text: U.S. Department of Commerce | National Oceanic and Atmospheric Administration
+  - link "usa.gov (opens in a new tab)":
+    - /url: https://www.usa.gov

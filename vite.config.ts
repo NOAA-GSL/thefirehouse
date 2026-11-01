@@ -27,13 +27,26 @@ function spaFallback(): Plugin {
 }
 
 /**
- * Injects the link-preview tags that have to carry an absolute URL.
+ * Injects the link-preview image, which has to carry an absolute URL.
  *
- * `og:image`, `og:url` and `rel=canonical` are only meaningful as absolute URLs, and
- * the final address is still open (creative brief §8). So they're injected from
- * `VITE_SITE_URL` and simply omitted when it isn't set — a missing og:image degrades
+ * `og:image` is only meaningful as an absolute URL, so it's injected from
+ * `VITE_SITE_URL` and simply omitted when that isn't set — a missing og:image degrades
  * to a title-and-description preview, whereas a guessed one would point at a domain
- * that may never exist. Set VITE_SITE_URL once Matt confirms placement.
+ * that may never exist.
+ *
+ * There is no `rel=canonical` or `og:url`. Every route is served the same index.html
+ * and nothing rewrites the head at runtime, so either tag would tell search engines
+ * and link previews that each project and topic page is the home page.
+ *
+ * `VITE_NOINDEX=1` also asks search engines not to index any page, for a copy that
+ * isn't the public site, such as the one on GSL's test site. A `robots.txt` can't do
+ * that job here: under a sub-path like `/firehouse/` it isn't at the site's root, so
+ * crawlers never read it. `1`, `true` and `yes` turn it on; empty, `0`, `false` and
+ * `no` leave it off; anything else stops the build, so a value meant to say "off"
+ * can't take the public site out of search. The build prints which tags it added.
+ *
+ * Both are read from the shell's environment at build time, not from `.env` files,
+ * which Vite loads for the app's code but not for this config.
  */
 function siteMeta(): Plugin {
   return {
@@ -41,18 +54,26 @@ function siteMeta(): Plugin {
     transformIndexHtml: {
       order: 'post',
       handler(html) {
-        const site = process.env.VITE_SITE_URL?.trim().replace(/\/+$/, '');
-        if (!site) return html;
+        const tags: string[] = [];
+        const noindex = process.env.VITE_NOINDEX?.trim() ?? '';
+        if (/^(1|true|yes)$/i.test(noindex)) tags.push('<meta name="robots" content="noindex" />');
+        else if (!/^(|0|false|no)$/i.test(noindex)) {
+          throw new Error(`VITE_NOINDEX="${noindex}" is neither on (1, true, yes) nor off (0, false, no).`);
+        }
 
-        const base = (process.env.VITE_BASE_PATH ?? '/').replace(/\/+$/, '');
-        const root = `${site}${base}`;
-        const tags = [
-          `<link rel="canonical" href="${root}/" />`,
-          `<meta property="og:url" content="${root}/" />`,
-          `<meta property="og:image" content="${root}/og-image.png" />`,
-          `<meta name="twitter:image" content="${root}/og-image.png" />`,
-        ];
-        return html.replace('</head>', `${tags.map((t) => `    ${t}`).join('\n')}\n  </head>`);
+        const site = process.env.VITE_SITE_URL?.trim().replace(/\/+$/, '');
+        if (site) {
+          const base = (process.env.VITE_BASE_PATH ?? '/').replace(/\/+$/, '');
+          const image = `${site}${base}/og-image.png`;
+          tags.push(
+            `<meta property="og:image" content="${image}" />`,
+            `<meta name="twitter:image" content="${image}" />`,
+          );
+        }
+
+        if (tags.length === 0) return html;
+        console.log(`\nfirehouse-site-meta added:\n${tags.map((t) => `  ${t}`).join('\n')}`);
+        return html.replace('</head>', () => `${tags.map((t) => `    ${t}`).join('\n')}\n  </head>`);
       },
     },
   };

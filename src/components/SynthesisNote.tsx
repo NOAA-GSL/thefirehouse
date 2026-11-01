@@ -1,3 +1,5 @@
+import { useContent } from '../content/ContentProvider';
+import { publishedProjects } from '../content/derive';
 import { formatReviewDate } from '../content/format';
 import './SynthesisNote.css';
 
@@ -18,6 +20,9 @@ export interface SynthesisNoteProps {
  * and a federal site presenting model-derived synthesis has to say so plainly —
  * including when a pass has not been reviewed yet. Shared by the landing page and
  * the topic pages so the wording can't drift between them.
+ *
+ * It says "all" only while the pass covers every published project. Projects
+ * published since the last pass make it "4 of 8", until the next pass catches up.
  */
 export function SynthesisNote({
   model,
@@ -27,7 +32,11 @@ export function SynthesisNote({
   showStatus = true,
   className = '',
 }: SynthesisNoteProps) {
-  const projects = `${sourceCount} ${sourceCount === 1 ? 'project' : 'projects'}`;
+  const published = publishedProjects(useContent()).length;
+  const projects =
+    sourceCount < published
+      ? `${sourceCount} of ${published} projects`
+      : `all ${sourceCount} ${sourceCount === 1 ? 'project' : 'projects'}`;
   const date = updatedAt && (
     <time dateTime={updatedAt}>{formatReviewDate(updatedAt)}</time>
   );
@@ -38,7 +47,7 @@ export function SynthesisNote({
     <p className={['fh-synthesis-note', draft && 'fh-synthesis-note--draft', className].filter(Boolean).join(' ')}>
       <span className="fh-synthesis-note__dot" aria-hidden="true" />
       <span>
-        <strong>{model ? 'AI-synthesized' : 'Synthesized'}</strong> across all {projects}.
+        <strong>{model ? 'AI-synthesized' : 'Synthesized'}</strong> across {projects}.
         {showStatus &&
           (reviewedBy ? (
             <>

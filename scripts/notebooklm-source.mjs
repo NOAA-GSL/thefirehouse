@@ -28,7 +28,7 @@
  *
  * Labels are imported from the site's own `taxonomy.ts` so the document can never
  * describe a region or phase differently from the page. That uses Node's built-in
- * TypeScript support, which needs Node 23.6 or newer.
+ * TypeScript support, which needs Node 22.18 or newer.
  */
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';

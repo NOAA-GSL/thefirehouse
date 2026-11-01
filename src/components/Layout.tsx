@@ -1,15 +1,17 @@
 import type { ReactNode } from 'react';
-import { SiteHeader } from '../design-system';
+import { GovBanner, SiteFooter, SiteHeader } from '../design-system';
 import { useContent } from '../content/ContentProvider';
 import { useTheme } from './ThemeProvider';
 
 /**
- * Site shell: header and main landmark. The federal banner (GovBanner) and footer
- * (SiteFooter) are hidden for now; both still live in the design system.
+ * Site shell: federal banner, header, main landmark, footer.
+ *
+ * The banner and footer are this static build's own. Under the WordPress plugin,
+ * GSL's header and footer take their place.
  *
  * The skip link is the first focusable thing on the page — a Section 508 baseline,
- * and a practical one here, because the header carries nine links before the content
- * starts.
+ * and a practical one here, because the banner and header put seven controls ahead
+ * of the content.
  */
 export function Layout({ children }: { children: ReactNode }) {
   const { settings } = useContent();
@@ -20,6 +22,7 @@ export function Layout({ children }: { children: ReactNode }) {
       <a className="fh-skip-link" href="#main">
         Skip to main content
       </a>
+      <GovBanner />
       <SiteHeader
         siteName={settings.siteName}
         links={settings.nav}
@@ -31,6 +34,13 @@ export function Layout({ children }: { children: ReactNode }) {
       <main id="main" tabIndex={-1}>
         {children}
       </main>
+      <SiteFooter
+        siteName={settings.siteName}
+        blurb={settings.footerBlurb}
+        groups={settings.footerGroups}
+        agencyLine={settings.agencyLine}
+        usaGovUrl={settings.usaGovUrl}
+      />
     </>
   );
 }

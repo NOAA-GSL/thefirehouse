@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Button, CitationBlock, Icon } from '../design-system';
+import { Button, Icon } from '../design-system';
 import type { IconName } from '../design-system/Icon';
 import { FIRE_PHASES, PUBLICATION_STATUSES, REGIONS } from '../design-system/taxonomy';
 import { useContent } from '../content/ContentProvider';
 import { byRecency, publishedProjects } from '../content/derive';
-import { CITATION_FORMATS, buildCitation, type CitationFormat } from '../content/citation';
 import { formatByline, linkLabel, splitNeedLead } from '../content/format';
 import type { NeedEntry, Paper, Project } from '../content/types';
 import { NotFoundPage } from './NotFoundPage';
@@ -15,9 +14,9 @@ import './ProjectPage.css';
  * The "X-ray screen" — one completed research project, at its own URL.
  *
  * Replaces the modal that used to serve this content. A modal cannot be linked,
- * cited, bookmarked, opened in a new tab, or shared into a conference slide, and
- * every one of those is something this page is *for* (walkthrough: "each project
- * opens on its own unique URL page for citability").
+ * bookmarked, opened in a new tab, or shared into a conference slide, and every one
+ * of those is something this page is *for*. It is not offered as something to cite:
+ * the site isn't a permanent archive, and pages may be withdrawn.
  *
  * ---------------------------------------------------------------------------
  * The rule that governs this page
@@ -237,7 +236,7 @@ export function ProjectPage() {
     if (!project) return;
     document.title = `${project.title} — ${content.settings.siteName}`;
 
-    // A citable page needs a real description for link previews and search results;
+    // A shared page needs a real description for link previews and search results;
     // the site-level one in index.html describes the hub, not this project.
     const meta = document.querySelector('meta[name="description"]');
     const previous = meta?.getAttribute('content') ?? null;
@@ -256,15 +255,6 @@ export function ProjectPage() {
   const regions = project.geo?.regions ?? [];
   const previous = index > 0 ? projects[index - 1] : null;
   const next = index < projects.length - 1 ? projects[index + 1] : null;
-
-  const citation = (format: string) =>
-    buildCitation(format as CitationFormat, {
-      project,
-      // The live address is always correct, including on a preview deploy or a
-      // sub-path build — better than reconstructing it from an env var that may
-      // not be set yet (hosting is still open; creative brief §8).
-      url: typeof window === 'undefined' ? '' : window.location.href,
-    });
 
   return (
     <article className="fh-project">
@@ -345,8 +335,6 @@ export function ProjectPage() {
               </ul>
             </Section>
           )}
-
-          <CitationBlock formats={CITATION_FORMATS} render={citation} defaultFormat="apa" />
         </div>
 
         {/* ---- Sidebar ---- */}

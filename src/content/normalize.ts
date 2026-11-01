@@ -109,9 +109,7 @@ function normalizeNeeds(raw: unknown, where: string): NeedEntry[] {
  * Accepts either the structured author list or a legacy single `author` string.
  *
  * The survey may hand us a free-text byline rather than parsed names, and the
- * pre-survey `projects.json` used one string. Both normalise to the same shape;
- * only the structured path can produce a strict APA citation, which is exactly the
- * distinction the citation builder needs to make.
+ * pre-survey `projects.json` used one string. Both normalise to the same shape.
  */
 function normalizeAuthors(raw: unknown, legacy: unknown, where: string): Author[] {
   if (Array.isArray(raw) && raw.length > 0) {
@@ -243,7 +241,7 @@ export function normalizeSiteContent(raw: RawSiteContent): SiteContent {
 
       if (typeof project.completionYear !== 'number' || Number.isNaN(project.completionYear)) {
         throw new ContentError(
-          `${where} has no completion year. It is a primary filter and a citation field.`,
+          `${where} has no completion year. It is a primary filter.`,
         );
       }
 

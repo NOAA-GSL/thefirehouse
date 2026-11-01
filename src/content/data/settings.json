@@ -12,14 +12,10 @@
     {
       "label": "About",
       "to": "/about"
-    },
-    {
-      "label": "Submit a Finding",
-      "href": ""
     }
   ],
   "submitLabel": "Submit a Finding",
-  "submitFormUrl": "https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths",
+  "submitFormUrl": "https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform",
   "footerBlurb": "A project of NOAA's Global Systems Laboratory (GSL), Earth Prediction Innovation Center. Part of the National Oceanic and Atmospheric Administration.",
   "footerGroups": [
     {

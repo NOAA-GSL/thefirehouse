@@ -20,6 +20,13 @@ export function resolveStatValue(stat: StatContent, content: SiteContent): strin
       return String(publishedProjects(content).length);
     case 'topicCount':
       return String(content.topics.length);
+    case 'needCount':
+      return String(
+        publishedProjects(content).reduce(
+          (count, project) => count + project.needs.filter((entry) => entry.need).length,
+          0,
+        ),
+      );
     case 'static':
       return stat.value ?? '';
   }

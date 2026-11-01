@@ -55,7 +55,7 @@ that produced it).
 | Survey tool | **A form built into the plugin** (29 October), as a self-contained part of it (31 October). See [The survey form](#the-survey-form). Until the plugin launches, researchers submit through the **Google Form** that replaced Colorado State's Qualtrics; it belongs to Emily's account in NOAA's Google Workspace. Its responses go into the site's files through the existing import script, as today, and reach WordPress in the seed bundle at launch (see [Importing the Google Form until launch](#importing-the-google-form-until-launch)). |
 | Responses so far | Qualtrics is closed, and every real submission was re-entered through the Google Form (28 October), so the form's Sheet is the complete record. |
 | Survey API sync | **Dropped** (29 October). With the form in the plugin there is no Sheet to sync. |
-| AI synthesis | **Runs from the plugin** (agreed with Stephanie and Emily, 28 October). An **Analyze results** button sends the published projects and the team's prompt to an approved AI service, and the result waits as a draft for review. Amazon Bedrock is proposed and needs approval under NOAA's AI policy (open question 7). Until then, and as the fallback, the synthesis screen takes NotebookLM's output by paste. See [The AI service](#the-ai-service). |
+| AI synthesis | **Runs from the plugin** (agreed with Stephanie and Emily, 28 October). An **Analyze results** button sends the published projects and the team's prompt to an approved AI service, and the result waits as a draft for review. The service will likely be Cloudflare Workers AI or Amazon Bedrock, and either needs approval under NOAA's AI policy (open question 7). The model is still open (1 November) and is chosen by checking its output. Until then, and as the fallback, the synthesis screen takes NotebookLM's output by paste. See [The AI service](#the-ai-service). |
 | Need counts | **Once per project** (28 October): a need mentioned several times in one project counts once. |
 | Link previews through Cloudflare | Found out during testing (see [Link previews](#page-titles-descriptions-and-link-previews)). |
 | AMS bridge | Probably possible, and recommended, starting on the test site for the mid-November WPO meeting (see [The AMS bridge](#the-ams-bridge)). |
@@ -244,10 +244,10 @@ bridge resolves unchanged under the plugin. The Submit page is new.
 - **Settings.** A Firehouse → Settings screen holds the site name, the submit label, the
   submit address, the navigation labels, the survey's question wording, the AI prompt
   and who is emailed about new submissions.
-- **Navigation.** The four nav items are fixed in code, because the routes are
-  structural; only their labels are editable. GSL's menus are edited under
-  Appearance → Menus, which needs a capability that opens every menu on the site, so
-  the Firehouse Editor role doesn't get it.
+- **Navigation.** The three nav items (Home, Explore Projects, About) and the Submit
+  button are fixed in code, because the routes are structural; only their labels are
+  editable. GSL's menus are edited under Appearance → Menus, which needs a capability
+  that opens every menu on the site, so the Firehouse Editor role doesn't get it.
 
 ### Blocks
 
@@ -256,7 +256,7 @@ handled:
 
 | Block | Renders | Interactive |
 | --- | --- | --- |
-| `firehouse/subnav` | FireHouse mark, the four nav items, Submit button | Mobile menu |
+| `firehouse/subnav` | FireHouse mark, the three nav items, Submit button | Mobile menu |
 | `firehouse/hero` | Landing hero (eyebrow, heading and body are editable) | — |
 | `firehouse/stats` | Live counts. The editor picks the source and writes the label; the number is always computed. | — |
 | `firehouse/top-needs` | Four topic cards, the synthesis note, "Where these needs come from" | — |
@@ -549,8 +549,11 @@ other GSL projects want a survey (see [Later phases](#later-phases)).
 ### The AI service
 
 The synthesis runs from the plugin. NotebookLM is not believed to offer an API inside
-the NOAA enterprise, so the plugin calls an approved AI service. Amazon Bedrock is
-proposed; it needs approval under NOAA's AI policy (open question 7).
+the NOAA enterprise, so the plugin calls an approved AI service. It will likely be
+Cloudflare Workers AI or Amazon Bedrock, and either needs approval under NOAA's AI
+policy (open question 7). The model isn't chosen yet (1 November): Llama 4, another
+open model, or a commercial one. Either service fits the client as planned: one
+host, and one key in `wp-config.php`.
 
 - **Analyze results** sends the published projects' text and the team's prompt, and
   the reply lands on the synthesis screen as a draft, with the same validation,
@@ -558,9 +561,15 @@ proposed; it needs approval under NOAA's AI policy (open question 7).
   settings screen, so Stephanie and Emily can refine it without a release. It runs
   when an editor presses the button; running it on its own each time a project is
   published can come later.
-- **Before NotebookLM is retired,** both run on the same published projects, and
-  Stephanie and Emily judge whether the new output matches in substance and nuance.
-  Changing tools halfway through would otherwise change the results.
+- **The model is chosen by its output.** Before NotebookLM is retired, each
+  candidate runs the team's prompt on the same published projects as the reviewed
+  NotebookLM synthesis, and Stephanie and Emily judge whether it matches in substance
+  and nuance. Each draft also gets the checks any synthesis gets: every need traced
+  to the entries it cites, its count equal to the projects it names, and wording no
+  stronger than the entries. A model may need the prompt adjusted, and the old and
+  new prompts run on the same projects before switching. Changing tools or models
+  halfway through would otherwise change the results, so each synthesis records the
+  model that wrote it, and the site's AI notice names it.
 - **The fallback stays.** Until the service is approved, and whenever it is
   unavailable, the team runs the prompt in NotebookLM and pastes the result in.
 
@@ -605,13 +614,15 @@ map. Launching it at `gsl.noaa.gov/firehouse/` for AMS means links shared there 
 working after the cutover.
 
 **Mid-November first, on the test site.** The same build serves the WPO meeting from
-GSL's test site, restricted to GSL staff by login or by network, whichever ITS prefers.
-A demo opened with Stephanie and Emily's own accounts is enough for that meeting. It
+GSL's test site, which is visible only on GSL's internal network (VPN or in the office;
+28 October). Stephanie and Emily can open it on the VPN, which is enough for that
+meeting. It
 also keeps the demo on GSL's infrastructure, the only place the site may run: hosting
 outside GSL is not allowed (see [Decisions so far](#decisions-so-far)).
-Build that copy with the test site's address as `VITE_SITE_URL`. If the test site isn't
-ready in time, the fallback is running the build on the presenter's laptop and sharing
-the screen.
+Build that copy with the test site's address as `VITE_SITE_URL` and with
+`VITE_NOINDEX=1`, which marks every page `noindex` (the README's Hosting section has
+both build commands). If the test site isn't ready in time, the fallback is running
+the build on the presenter's laptop and sharing the screen.
 
 1. Build with `VITE_BASE_PATH=/firehouse/` and `VITE_SITE_URL=https://gsl.noaa.gov`.
 2. Serve the build as a static directory at `/firehouse`.
@@ -620,20 +631,21 @@ the screen.
    - If it is **nginx**, a `try_files` block in the server configuration does the same
      job.
 3. **Turn the gov banner and footer back on.** A static page does not receive GSL's
-   header and footer. `GovBanner` and `SiteFooter` still exist; they were hidden in
-   `1593473`.
+   header and footer. *Done.*
 4. Finish the remaining items in the README's "Before this goes public" list: hero
-   image, synthesis review, `robots.txt` and the sitemap. The synthesis review matters
-   most: today's draft covers 4 of the 7 published projects, so it has to be rerun
-   across all of them and reviewed before anyone outside the team sees it.
-5. **Point Submit a Finding at the Google Form.** `submitFormUrl` in `settings.json`
-   still links to the Qualtrics survey, which is closed. The Google Form stays the way
-   to submit through AMS, where the team's talk invites researchers to submit.
+   image, synthesis review and a sitemap. The synthesis review matters most: today's
+   draft covers 4 of the 8 published projects. Stephanie and Emily reran it across all
+   8 on 27 October; it goes onto the site once their reviewed table arrives. A `robots.txt` in the build
+   can't help: under `/firehouse/` crawlers never read it, so the test-site copy uses
+   the `noindex` tag instead.
+5. **Point Submit a Finding at the Google Form,** the way to submit through AMS, where
+   the team's talk invites researchers to submit. *Done.*
 6. **Remove the citation generator** from the project page, so the public site does
-   not invite citations.
-7. **Stop the topic pages scrolling sideways on phones** (see the appendix).
+   not invite citations. *Done.*
+7. **Stop the topic pages scrolling sideways on phones** (see the appendix). *Done.*
 8. **Retake the reference** with `npm run reference` once these changes are in. That
-   set is what the plugin is built against.
+   set is what the plugin is built against. *Retaken with steps 3, 5, 6 and 7; retaken
+   again once the rerun synthesis is in, since it changes the topic pages.*
 
 About 2–3 days of work, plus about a day for the test-site copy, not counted in the
 plugin estimate.
@@ -687,6 +699,14 @@ something new has arrived.
   appendix). If the team wants an excluded response in WordPress, an editor enters it
   through the Submit page after launch, which flags it the same way. A row with no
   project title is still dropped outright: there is nothing to make a project from.
+- **Tests first, and a check in CI.** The import already stops on two columns that
+  claim one question, two rows that land on one record, a missing title, IRB or year
+  column, and anything shaped like an email address (the PR #6 reviews). Tests with
+  made-up rows pin those stops before the rewrite, so none is lost in it. A column
+  whose title asks for an email, a job title or how results were shared is refused
+  rather than mapped. CI also checks `src/content/data/projects.json` and
+  `notebooklm/` for email-shaped text, which catches a hand edit or a merge the
+  script never saw.
 
 The form's settings that keep this working, all confirmed: "Allow response editing"
 off; open to respondents without a NOAA Google login; no file-upload question, which
@@ -964,10 +984,12 @@ Phases 6–7.
 6. Is The Firehouse's own design approved for the pages between GSL's header and
    footer, in place of GSL's standard page styles (see
    [Look and feel](#look-and-feel))? Stephanie and Emily chose it.
-7. Which AI service is approved for the synthesis? Amazon Bedrock is proposed. A
-   colleague of Stephanie's received OAR clearance for similar work, and she has the
-   contacts that colleague worked with. Until a service is approved, the synthesis is
-   pasted in from NotebookLM (see [The AI service](#the-ai-service)).
+7. Which AI service and model are approved for the synthesis? Cloudflare Workers AI
+   or Amazon Bedrock is likely; the model (Llama 4, another open model, or a
+   commercial one) is picked after its output is checked. A colleague of Stephanie's
+   received OAR clearance for similar work, and she has the contacts that colleague
+   worked with. Until a service is approved, the synthesis is pasted in from
+   NotebookLM (see [The AI service](#the-ai-service)).
 
 **For the team**
 
@@ -990,12 +1012,11 @@ Phases 6–7.
     question more pointed. The current view (29 October) is that clearance isn't
     needed, but that isn't confirmed in writing, and the form can't open on prod until
     it is.
-13. Should a project that answers "Project did not require IRB review" be published?
-    The import script treats that answer as no approval, and the survey form flags it
-    the same way. The Google Form itself accepts it: "No" ends the form with a note
-    that only IRB-approved studies are accepted, while "Project did not require IRB
-    review" carries on like "Yes". If the answer is no, such a project stays off the
-    site, recorded in the Sheet (see the appendix).
+13. ~~Should a project that answers "Project did not require IRB review" be
+    published?~~ *Yes (Stephanie and Emily, late October): only "No" ends the form, so a
+    project that didn't need review is published like one that was approved. The
+    import script accepts the answer, the plugin's form will too, and WoFS-Smoke, the
+    one project it affected, is on the site.*
 
 **Privacy**
 
@@ -1034,26 +1055,35 @@ Phases 6–7.
 ## Appendix — found during the analysis
 
 - **Unpublished projects ship in the bundle today.** `normalize.ts` drops only records
-  without IRB approval; the pages filter unpublished ones out. All seven current
+  without IRB approval; the pages filter unpublished ones out. All eight current
   records are published, so nothing is exposed yet, but the next import stages new
   records as unpublished and they would ship with the next deploy.
 - **Documentation drift.** `README.md` and `PRODUCT.md` still describe nine placeholder
-  projects. `projects.json` holds seven survey-imported records, all published. The
+  projects. `projects.json` holds eight survey-imported records, all published. The
   migration treats them as real.
 - **The Sanity and Strapi adapters** were never run against a live backend. They
   retire with this plan.
-- **A submission missing from the site.** The latest export has eight responses; the
-  site has seven. `R_3e9GnZYuWAjuZM5` (FWT Evaluation 001, WoFS-Smoke) answered Q8
-  with "Project did not require IRB review", which `import-survey.mjs` counts as no
-  approval, so it is excluded. The question itself asks about "approval or exemption",
-  so it may belong on the site (open question 13).
+- **A submission was missing from the site.** `R_3e9GnZYuWAjuZM5` (FWT Evaluation 001,
+  WoFS-Smoke) answered Q8 with "Project did not require IRB review", which the import
+  counted as no approval. Stephanie and Emily publish it (open question 13), and it is
+  on the site.
+- **The team's sheet is the corrected record.** The eight projects now come from
+  Stephanie and Emily's "Submission Data" sheet, their checked copy of the Qualtrics
+  responses, rather than a raw export. It has no ResponseId column, so the import
+  matches each row to its record by title. It also carries their corrections: one need
+  in Testbed 002 is gone, two in Igniting Insight are merged into one, and the NGFS
+  abstract and first takeaway have straight apostrophes where the export had curly
+  ones. Stephanie and Emily are confirming all three (pull request #6). Its
+  timestamps aren't unique (two rows share one), so they can't serve as its key.
 - **Mis-encoded text in the export.** Some Qualtrics rows arrive double-encoded
-  (`NGFSâ€™s` for `NGFS’s`). Two strings in `projects.json` carried it and are fixed.
-  Google Forms exports are clean UTF-8, so no repair is ported.
+  (`NGFSâ€™s` for `NGFS’s`). The import now repairs it and lists each cell it
+  repaired. Google Forms exports are clean UTF-8, so no repair is ported to the
+  plugin.
 - **The live synthesis is out of date.** `topicSummaries.json` is a 17 September draft,
-  written with Claude, that covers 4 of the 7 published projects. The landing page
+  written with Claude, that covers 4 of the 8 published projects. The landing page
   reports it as drawn from "4 projects today".
-- **Topic pages scroll sideways on phones.** The source chips under each need (a
-  project's title and year) don't shrink, so at 390 px wide the page is 463 px wide.
-  Every other page fits. The reference capture found it; the bridge fixes it, and the
-  plugin doesn't copy it.
+- **Topic pages scrolled sideways on phones.** The source chips under each need (a
+  project's title and year) didn't shrink, so at 390 px wide the page was 463 px wide.
+  The reference capture found it, and the bridge fixed it: the chips' titles now
+  shorten with an ellipsis. `npm run reference` fails if any page is wider than the
+  window, so the plugin's pages get the same check.

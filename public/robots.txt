@@ -2,7 +2,8 @@
 User-agent: *
 Allow: /
 
-# NOTE: if this build is put on a staging or preview URL before the January 2027
-# launch, swap the line above for "Disallow: /" so the preview isn't indexed.
+# Crawlers only read robots.txt at a site's root, so under /firehouse/ this file does
+# nothing. A copy that isn't the public site is kept out of search by building it with
+# VITE_NOINDEX=1 (README.md, Hosting).
 #
 # A Sitemap: line belongs here once hosting placement is settled (creative brief §8).

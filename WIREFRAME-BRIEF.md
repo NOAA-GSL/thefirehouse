@@ -139,10 +139,10 @@ address the WordPress version will keep.
 | Zone | Who | Box | What happens there | Markers |
 | --- | --- | --- | --- | --- |
 | Outside GSL | Same as today | Survey, quality check, edit requests | The Google Form and its Sheet; a Google Doc | Personal data, "NOAA Google Workspace" |
-| Outside GSL | Steph & Emily | AI synthesis, rerun | Across all 7 published projects, reviewed before the WPO meeting | Review step |
+| Outside GSL | Steph & Emily | AI synthesis, rerun | Across all 8 published projects, reviewed before the WPO meeting | Review step |
 | Developer | Developer | Import and site files | The same files as today; the import script learns the Google Form's format | — |
 | Developer | Developer | Build for /firehouse/ | Gov banner and footer back on; Submit a Finding opens the Google Form; no citation generator | — |
-| GSL web servers | Mid-November · WPO | Test site copy | GSL staff only, not indexed by search engines | Open question: "Login or network restriction?" |
+| GSL web servers | Mid-November · WPO | Test site copy | GSL staff only (internal network or VPN), not indexed by search engines | — |
 | GSL web servers | January · AMS | gsl.noaa.gov/firehouse/ | Public, on the same addresses the WordPress version will use | — |
 
 **Arrows:** survey and edits → Import and site files: "export and edits sent over"
@@ -154,7 +154,7 @@ copied" (dashed).
 **Open question on the GSL web servers zone:** "Apache or nginx?"
 
 **For Steph and Emily:** Nothing changes in how you work yet. Before the WPO meeting,
-the top needs have to be rerun across all seven projects and signed off by you: the
+the top needs have to be rerun across all eight projects and signed off by you: the
 live draft covers four of them.
 
 **For ITS:** Static files only: no database, no logins, no forms and no personal data.
@@ -284,5 +284,5 @@ current design."
 - The public address is `gsl.noaa.gov/firehouse/`. The test site's address is not
   given here; label it "Test site".
 - Open questions to mark with "?" where they appear: Apache or nginx on GSL's
-  servers; login or network restriction for the test copy; which AI service is
-  approved; the Paperwork Reduction Act answer in writing.
+  servers; which AI service is approved; the Paperwork Reduction Act answer in
+  writing.

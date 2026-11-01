@@ -1,5 +1,8 @@
 - link "Skip to main content":
   - /url: "#main"
+- region "Official website of the United States government":
+  - text: An official website of the United States government
+  - button "Here’s how you know"
 - banner:
   - link "The Firehouse, NOAA Global Systems Laboratory — home":
     - /url: /
@@ -11,11 +14,9 @@
       - /url: /projects
     - link "About":
       - /url: /about
-    - link "Submit a Finding":
-      - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths
   - button "Switch to dark theme"
-  - link "Submit a Finding":
-    - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths
+  - link "Submit a Finding (opens in a new tab)":
+    - /url: https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform
 - main:
   - article:
     - navigation "Breadcrumb":
@@ -100,15 +101,6 @@
       - listitem:
         - 'link "Igniting Impact: Advancing Fire Weather DSS Zenodo · 2026 doi:10.5281/zenodo.21229534 (opens in a new tab)"':
           - /url: https://doi.org/10.5281/zenodo.21229534
-    - region "Cite this project":
-      - heading "Cite this project" [level=2]
-      - tablist "Citation format":
-        - tab "APA 7" [selected]
-        - tab "Chicago"
-        - tab "BibTeX"
-      - tabpanel "APA 7": "Hoekstra, S. (2026). Igniting Impact: Advancing Fire Weather Decision Support Services. The Firehouse, NOAA Global Systems Laboratory. https://doi.org/10.5281/zenodo.21229534"
-      - button "Copy"
-      - status
     - complementary "Project details":
       - heading "At a glance" [level=2]
       - term: Project type
@@ -143,3 +135,49 @@
         - /url: /projects/california-tribal-advisors-share-contemporary-environmental
       - link "Next An Evaluation of the Next Generation Fire System (NGFS) for Predictive Services":
         - /url: /projects/an-evaluation-of-the-next-generation-fire-system-ngfs
+- contentinfo:
+  - img "NOAA"
+  - img "GSL"
+  - text: The Firehouse
+  - paragraph: A project of NOAA's Global Systems Laboratory (GSL), Earth Prediction Innovation Center. Part of the National Oceanic and Atmospheric Administration.
+  - navigation "Explore":
+    - heading "Explore" [level=2]
+    - link "About The Firehouse":
+      - /url: /about
+    - link "All projects":
+      - /url: /projects
+    - link "Top needs":
+      - /url: /#top-needs
+    - link "Submit a finding (opens in a new tab)":
+      - /url: https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform
+  - navigation "About GSL":
+    - heading "About GSL" [level=2]
+    - link "gsl.noaa.gov (opens in a new tab)":
+      - /url: https://gsl.noaa.gov
+    - link "Research programs (opens in a new tab)":
+      - /url: https://gsl.noaa.gov/research
+    - link "Contact GSL (opens in a new tab)":
+      - /url: https://gsl.noaa.gov/contact
+    - link "Careers (opens in a new tab)":
+      - /url: https://gsl.noaa.gov/careers
+  - navigation "Federal resources":
+    - heading "Federal resources" [level=2]
+    - link "NOAA.gov (opens in a new tab)":
+      - /url: https://www.noaa.gov
+    - link "Department of Commerce (opens in a new tab)":
+      - /url: https://www.commerce.gov
+    - link "USA.gov (opens in a new tab)":
+      - /url: https://www.usa.gov
+    - link "No FEAR Act (opens in a new tab)":
+      - /url: https://www.noaa.gov/organization/no-fear-act
+    - link "Privacy policy (opens in a new tab)":
+      - /url: https://www.noaa.gov/protecting-your-privacy
+    - link "Accessibility (opens in a new tab)":
+      - /url: https://www.noaa.gov/accessibility
+    - link "FOIA (opens in a new tab)":
+      - /url: https://www.noaa.gov/information-technology/foia
+    - link "Information quality (opens in a new tab)":
+      - /url: https://www.noaa.gov/organization/information-technology/information-quality
+  - text: U.S. Department of Commerce | National Oceanic and Atmospheric Administration
+  - link "usa.gov (opens in a new tab)":
+    - /url: https://www.usa.gov

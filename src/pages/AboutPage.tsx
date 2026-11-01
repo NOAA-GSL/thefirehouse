@@ -207,7 +207,14 @@ export function AboutPage() {
                         </span>
                       )}
                     </div>
-                    <h3 className="fh-person__name">{member.name}</h3>
+                    <div className="fh-person__id">
+                      <h3 className="fh-person__name">{member.name}</h3>
+                      {member.email && (
+                        <a className="fh-person__email" href={`mailto:${member.email}`}>
+                          {member.email}
+                        </a>
+                      )}
+                    </div>
                   </div>
                   <div className="fh-person__bio">
                     {member.bio.map((paragraph, i) => (

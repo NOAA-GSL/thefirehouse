@@ -1,5 +1,8 @@
 - link "Skip to main content":
   - /url: "#main"
+- region "Official website of the United States government":
+  - text: An official website of the United States government
+  - button "Here’s how you know"
 - banner:
   - link "The Firehouse, NOAA Global Systems Laboratory — home":
     - /url: /
@@ -9,12 +12,11 @@
 - main:
   - text: About The Firehouse
   - heading "What this hub is, and who it is for" [level=1]
-  - paragraph: The Firehouse is NOAA Global Systems Laboratory's public hub for fire weather social science. It gathers what completed research has already established about end-user needs and recommendations, so the next project, product or conversation can start from what is known instead of rediscovering the same gaps.
+  - paragraph: The Firehouse is NOAA's Global Systems Laboratory's public hub for fire weather social science. It gathers what completed research has already established about end-user needs and recommendations, so the next project, product or conversation can start from known unmet needs instead of rediscovering the same gaps.
   - region "Why it exists":
     - heading "Why it exists" [level=2]
-    - paragraph: Fire weather social science asks what forecasters, incident staff and land managers actually need from weather information, and what would make that information more usable when a decision cannot wait. A great deal of this work has been done — through DESI, through testbed evaluations, and through studies run by individual teams — and its findings have tended to stay inside the report that carried them.
-    - paragraph: "The Firehouse collects those completed projects into one record. Each project keeps its researchers' own words: their takeaways, the end-user needs they recorded, and the recommendations they paired with them. Read together across the whole collection, those needs are distilled into the five most pressing in each of four topic areas — observations, forecasts, warnings and governance — and ranked by how often they come up."
-    - paragraph: The counts on this site are derived from published content rather than written by hand, every synthesis pass is reviewed by a person before it is published, and each need names the projects it draws on. Where the hub paraphrases a researcher, it says so; everywhere else it quotes.
+    - paragraph: Fire weather social science asks what partners and the public actually need from weather information when decisions can't wait. A lot of great research exists, but its findings usually stay trapped inside individual reports.
+    - paragraph: The Firehouse pulls those completed projects into a single collection—preserving the researchers' exact words, end-user needs, and recommendations. Then, analyzed collectively, these needs are distilled into the five most pressing issues across four core areas—observations, forecasts, warnings, and governance—and ranked by frequency. Every count comes directly from published work, every synthesis is human-reviewed, and every need names the projects that backed it.
   - region "Built for the people who use fire weather information":
     - text: Who it serves
     - heading "Built for the people who use fire weather information" [level=2]
@@ -25,20 +27,20 @@
         - paragraph: See what the people receiving a forecast have said they need from it — timing, framing, lead time, delivery — and what has already been recommended about how it reaches them.
       - listitem:
         - heading "Researchers" [level=3]
-        - paragraph: See which needs are already well documented and which rest on a single study, so a new project adds to the record rather than repeating it. Every need links back to the work behind it.
+        - paragraph: Make your grant proposals bulletproof. Ground your next proposal in real, documented user needs rather than guesses or unintentional retreads. Easily see which topics are thoroughly supported and where the evidence is still thin, so you can clearly justify fresh research or a deliberate replication study.
       - listitem:
-        - heading "Decision-makers and land managers" [level=3]
-        - paragraph: Point to evidence when making the case for a tool, a product change or a different way of working — with the study, the year and the researchers named.
+        - heading "Decision makers and land managers" [level=3]
+        - paragraph: Back up your pitch with real data. When you're pushing for a new tool, a product tweak, or a better way of working, point straight to the evidence—complete with the exact study, the year, and the researchers behind it.
   - region "From a completed project to a published need":
     - text: How it works
     - heading "From a completed project to a published need" [level=2]
     - list:
       - listitem:
         - heading "Researchers submit completed work" [level=3]
-        - paragraph: A short survey collects what was studied, where, at which point in the fire cycle, the major takeaways, the end-user needs and recommendations, and links to anything published. Submissions are open at any time.
+        - paragraph: A short survey collects what was studied, where, at which point in the fire cycle, the major takeaways, the end-user needs and recommendations, and links to anything published. Submissions are open at any time. Each new submission will be reviewed before it is published to the website.
       - listitem:
         - heading "The findings are synthesized and reviewed" [level=3]
-        - paragraph: The needs recorded across every project are read together, grouped into the four topic areas and ranked by mentions. A person on the team reviews each pass before it is published; until then the site labels it a draft.
+        - paragraph: The needs recorded across every project are read together, grouped into the four topic areas and ranked by mentions. Each updated pass of the synthesis is reviewed as new projects roll in, before it is published.
       - listitem:
         - heading "Everything stays traceable" [level=3]
         - paragraph: Each published need names the projects it draws on, and each project keeps a page of its own with the researchers' verbatim takeaways, needs and papers.
@@ -49,16 +51,66 @@
   - region "Who is behind it":
     - text: The team
     - heading "Who is behind it" [level=2]
-    - paragraph: Stephanie and Emily run the surveys, review every synthesis pass before it is published, and keep the project records current.
+    - paragraph: This whole thing is the brainchild of Stephanie and Emily. They run the surveys, personally review every synthesis pass before it gets published, and keep the records up to date.
     - list:
       - listitem:
         - heading "Dr. Stephanie Hoekstra" [level=3]
+        - link "stephanie.hoekstra@noaa.gov":
+          - /url: mailto:stephanie.hoekstra@noaa.gov
         - paragraph: By day, Dr. Stephanie Hoekstra studies the human side of extreme weather—translating how people interpret risk and make high-stakes decisions when nature gets wild. Her current focus is all about fire weather, partnering directly with National Weather Service forecasters and wildland fire professionals to make sure decision-support tools are actually, genuinely useful in the heat of the moment. By night (and weekend), she trades risk communication for refereeing her three kids, playing ice hockey, endlessly scrolling Zillow floorplans she has no intention of buying, and pursuing a lifelong mission of finding the absolute best cannoli on Earth.
       - listitem:
         - heading "Dr. Emily Wells" [level=3]
+        - link "emily.wells@noaa.gov":
+          - /url: mailto:emily.wells@noaa.gov
         - paragraph: "Dr. Emily Wells is a social and decision scientist with a deep curiosity about how wildland fire operational professionals make decisions under uncertainty, particularly when it comes to if and how they use advanced technologies. What motivates her most is engaging with practitioners: listening to their stories, learning from their perspectives, and translating their operational realities and needs back to researchers and model developers. Emily is a proud, born and raised Yinzer (here we go Steelers!). When her laptop is closed, you can find her swimming laps, hiking in the Rockies, or tuning into her guilty pleasure - reality TV."
   - region "Add your work to the record":
     - heading "Add your work to the record" [level=2]
-    - paragraph: If you have completed fire weather social science research, submit it — your findings join the same record, and the same synthesis, as everything else here.
-    - link "Submit a Finding":
-      - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths
+    - paragraph: If you've wrapped up fire weather social science research, send it over. Your work will join the master record and inform our cross-project syntheses.
+    - link "Submit a Finding (opens in a new tab)":
+      - /url: https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform
+- contentinfo:
+  - img "NOAA"
+  - img "GSL"
+  - text: The Firehouse
+  - paragraph: A project of NOAA's Global Systems Laboratory (GSL), Earth Prediction Innovation Center. Part of the National Oceanic and Atmospheric Administration.
+  - navigation "Explore":
+    - heading "Explore" [level=2]
+    - link "About The Firehouse":
+      - /url: /about
+    - link "All projects":
+      - /url: /projects
+    - link "Top needs":
+      - /url: /#top-needs
+    - link "Submit a finding (opens in a new tab)":
+      - /url: https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform
+  - navigation "About GSL":
+    - heading "About GSL" [level=2]
+    - link "gsl.noaa.gov (opens in a new tab)":
+      - /url: https://gsl.noaa.gov
+    - link "Research programs (opens in a new tab)":
+      - /url: https://gsl.noaa.gov/research
+    - link "Contact GSL (opens in a new tab)":
+      - /url: https://gsl.noaa.gov/contact
+    - link "Careers (opens in a new tab)":
+      - /url: https://gsl.noaa.gov/careers
+  - navigation "Federal resources":
+    - heading "Federal resources" [level=2]
+    - link "NOAA.gov (opens in a new tab)":
+      - /url: https://www.noaa.gov
+    - link "Department of Commerce (opens in a new tab)":
+      - /url: https://www.commerce.gov
+    - link "USA.gov (opens in a new tab)":
+      - /url: https://www.usa.gov
+    - link "No FEAR Act (opens in a new tab)":
+      - /url: https://www.noaa.gov/organization/no-fear-act
+    - link "Privacy policy (opens in a new tab)":
+      - /url: https://www.noaa.gov/protecting-your-privacy
+    - link "Accessibility (opens in a new tab)":
+      - /url: https://www.noaa.gov/accessibility
+    - link "FOIA (opens in a new tab)":
+      - /url: https://www.noaa.gov/information-technology/foia
+    - link "Information quality (opens in a new tab)":
+      - /url: https://www.noaa.gov/organization/information-technology/information-quality
+  - text: U.S. Department of Commerce | National Oceanic and Atmospheric Administration
+  - link "usa.gov (opens in a new tab)":
+    - /url: https://www.usa.gov

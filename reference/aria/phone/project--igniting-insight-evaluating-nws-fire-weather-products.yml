@@ -1,5 +1,8 @@
 - link "Skip to main content":
   - /url: "#main"
+- region "Official website of the United States government":
+  - text: An official website of the United States government
+  - button "Here’s how you know"
 - banner:
   - link "The Firehouse, NOAA Global Systems Laboratory — home":
     - /url: /
@@ -32,13 +35,6 @@
       - listitem:
         - text: Need
         - paragraph:
-          - strong: Need for clear and detailed forecast discussions.
-          - text: Forecast discussions are highly valued for providing insight into forecaster reasoning, allowing fire partners to interpret confidence levels, trends, and nuances not captured in standard forecasts.
-        - text: Recommendation
-        - paragraph: Recommend expanding the deliberate use of Forecast Discussions during critical fire weather periods to explicitly highlight forecaster confidence, forecast rationale, and key weather trends (particularly whether a Red Flag Warning is expected in upcoming days).
-      - listitem:
-        - text: Need
-        - paragraph:
           - strong: Need for consistent and transparent incorporation of fuels data in RFWs.
           - text: There is a clear inconsistent use of fuels in Red Flag Warning issuance. Fire partners want clear, documented incorporation of fuel receptiveness into warning decisions.
         - text: Recommendation
@@ -53,10 +49,10 @@
       - listitem:
         - text: Need
         - paragraph:
-          - strong: Need for inclusion of trend and duration information in RFWs.
+          - strong: Need for inclusion of trend and duration information in RFWs and Forecast Discussions.
           - text: Fire partners are planning around when conditions will peak, how long they’ll last, and whether a warning spans multiple days. Current RFWs sometimes lack this critical trend detail.
         - text: Recommendation
-        - paragraph: Recommend that forecasters indicate how long critical conditions are expected to last, when they will peak, and whether a multi-day event is likely.
+        - paragraph: Recommend that forecasters indicate how long critical conditions are expected to last, when they will peak, whether a multi-day event is likely, and overall forecaster confidence/rationale.
       - listitem:
         - text: Recommendation
         - paragraph: Recommend hosting regular (biannual or annual to align with Annual Operating Plans) fire partner-forecaster coordination meetings that focus on evaluating and refining RFW/Fire Weather Watch criteria based on real-world impacts.
@@ -91,15 +87,6 @@
       - listitem:
         - 'link "From Data to Decisions: Producing Actionable and Accessible Earth Information Systems II AMS - 105th AMS Annual Meeting ams.confex.com/ams/105ANNUAL/meetingapp.cgi/Session/69350 (opens in a new tab)"':
           - /url: https://ams.confex.com/ams/105ANNUAL/meetingapp.cgi/Session/69350
-    - region "Cite this project":
-      - heading "Cite this project" [level=2]
-      - tablist "Citation format":
-        - tab "APA 7" [selected]
-        - tab "Chicago"
-        - tab "BibTeX"
-      - tabpanel "APA 7": "Hoekstra, S., Hatchett, B., & Vickery, J. (2025). Igniting Insight: Evaluating NWS Fire Weather Products within a Fire Partner Decision Making Context. The Firehouse, NOAA Global Systems Laboratory. https://doi.org/10.1175/BAMS-D-25-0036.1"
-      - button "Copy"
-      - status
     - complementary "Project details":
       - heading "At a glance" [level=2]
       - term: Project type
@@ -129,3 +116,51 @@
     - navigation "Other projects":
       - 'link "Previous Fire Weather Testbed Evaluations #003 - Interagency Collaboration: Tactical Integrated Warning Team (IWT) for Wildland Fire Operations"':
         - /url: /projects/fire-weather-testbed-evaluations-003-interagency
+      - link "Next FWT Evaluation 001. WoFS-Smoke":
+        - /url: /projects/fwt-evaluation-001-wofs-smoke
+- contentinfo:
+  - img "NOAA"
+  - img "GSL"
+  - text: The Firehouse
+  - paragraph: A project of NOAA's Global Systems Laboratory (GSL), Earth Prediction Innovation Center. Part of the National Oceanic and Atmospheric Administration.
+  - navigation "Explore":
+    - heading "Explore" [level=2]
+    - link "About The Firehouse":
+      - /url: /about
+    - link "All projects":
+      - /url: /projects
+    - link "Top needs":
+      - /url: /#top-needs
+    - link "Submit a finding (opens in a new tab)":
+      - /url: https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform
+  - navigation "About GSL":
+    - heading "About GSL" [level=2]
+    - link "gsl.noaa.gov (opens in a new tab)":
+      - /url: https://gsl.noaa.gov
+    - link "Research programs (opens in a new tab)":
+      - /url: https://gsl.noaa.gov/research
+    - link "Contact GSL (opens in a new tab)":
+      - /url: https://gsl.noaa.gov/contact
+    - link "Careers (opens in a new tab)":
+      - /url: https://gsl.noaa.gov/careers
+  - navigation "Federal resources":
+    - heading "Federal resources" [level=2]
+    - link "NOAA.gov (opens in a new tab)":
+      - /url: https://www.noaa.gov
+    - link "Department of Commerce (opens in a new tab)":
+      - /url: https://www.commerce.gov
+    - link "USA.gov (opens in a new tab)":
+      - /url: https://www.usa.gov
+    - link "No FEAR Act (opens in a new tab)":
+      - /url: https://www.noaa.gov/organization/no-fear-act
+    - link "Privacy policy (opens in a new tab)":
+      - /url: https://www.noaa.gov/protecting-your-privacy
+    - link "Accessibility (opens in a new tab)":
+      - /url: https://www.noaa.gov/accessibility
+    - link "FOIA (opens in a new tab)":
+      - /url: https://www.noaa.gov/information-technology/foia
+    - link "Information quality (opens in a new tab)":
+      - /url: https://www.noaa.gov/organization/information-technology/information-quality
+  - text: U.S. Department of Commerce | National Oceanic and Atmospheric Administration
+  - link "usa.gov (opens in a new tab)":
+    - /url: https://www.usa.gov

@@ -131,7 +131,7 @@ export interface Paper {
   /**
    * Bare DOI (`10.1175/WCAS-D-21-0042.1`), not a URL — the `https://doi.org/`
    * prefix is added at render time. Storing it bare keeps one canonical form, so
-   * the same value can be a link, a citation field, and a dedupe key.
+   * the same value can be a link and a dedupe key.
    */
   doi?: string;
 }
@@ -158,9 +158,8 @@ export interface NeedEntry {
  * One credited researcher.
  *
  * `name` is the only guaranteed field: the survey may capture a free-text byline
- * ("DESI research team") rather than structured names. When `family` is present the
- * citation builder can render a proper APA author string; when it isn't, it falls
- * back to `name` verbatim rather than guessing where a surname ends.
+ * ("DESI research team") rather than structured names. `name` is what the site
+ * shows, verbatim; nothing guesses where a surname ends.
  * See PLAN.md, open question 3.
  */
 export interface Author {
@@ -216,7 +215,7 @@ export interface Project {
   abstract?: string;
   authors: Author[];
   org?: string;
-  /** *Survey (Q7).* Year the project was completed — a primary filter and a citation field. */
+  /** *Survey (Q7).* Year the project was completed — a primary filter. */
   completionYear: number;
   /** *Survey (Q9).* Where in the fire cycle the work sits. A primary filter. */
   firePhases: FirePhase[];
@@ -231,8 +230,9 @@ export interface Project {
   /** *Survey (Q12).* Data collection instruments, e.g. "Focus groups". */
   methods: string[];
   /**
-   * *Survey (Q8).* IRB approval. Records where this is false never reach the UI —
-   * `normalize.ts` drops them at the boundary, implementing the survey's own skip
+   * *Survey (Q8).* IRB approval or exemption; also true for "Project did not require
+   * IRB review", which the team publishes too. Records where this is false never
+   * reach the UI — `normalize.ts` drops them at the boundary, implementing the survey's own skip
    * logic in the one place it cannot be forgotten by a future page.
    */
   irbApproved: boolean;
@@ -280,9 +280,11 @@ export interface HeroContent {
  * `source` decides where the number comes from. `derived` values are computed from
  * live content at render time (brief §5.1: "live, auto-updating stats") — an editor
  * controls the wording but cannot desync the count from reality. `static` is for
- * non-numeric slots like the "Open / For submissions" tile.
+ * non-numeric slots like the "Open / For submissions" tile. `needCount` counts the
+ * end-user needs in published projects; a recommendation submitted without a need
+ * isn't one.
  */
-export type StatSource = 'publishedProjectCount' | 'topicCount' | 'static';
+export type StatSource = 'publishedProjectCount' | 'topicCount' | 'needCount' | 'static';
 
 export interface StatContent {
   id: string;
@@ -326,6 +328,8 @@ export interface LandingPageContent {
  */
 export interface TeamMember {
   name: string;
+  /** Work email, shown under the name as a mailto link. */
+  email?: string;
   /**
    * Basename (no extension) of a portrait in `src/assets/people/`, e.g.
    * "stephanie-hoekstra". Resolved at build time by `AboutPage.tsx`; when the file
