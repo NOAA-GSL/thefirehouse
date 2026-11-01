@@ -199,8 +199,9 @@ The plugin sits in this repository at the path it has in a WordPress install:
 ```
 wp-content/plugins/firehouse/
   firehouse.php
-  includes/        post types, meta schemas, settings, roles and permissions,
-                   validation, the seed import screen, the AI service client
+  includes/        post types, meta schemas, settings, roles and permissions, the
+                   checks at save and import (which call domain/), the seed import
+                   screen, the AI service client
   survey/          the survey form, self-contained (see The survey form)
   domain/          PHP versions of the vocabularies, validation (normalize), derive,
                    format and search
@@ -727,7 +728,7 @@ as in `shared/vocabulary.json`, which takes its labels from the form.
   changes and are retaken with them (bridge step 8).*
 - **Add shared test cases.** Unit tests for `normalize`, `derive`, `search` and
   `format`, written as data files (input and expected output) that the PHP tests will
-  read later. *Done: 139 cases in `shared/cases/`, run by `npm test` and in CI.*
+  read later. *Done: 145 cases in `shared/cases/`, run by `npm test` and in CI.*
 - **Move the vocabularies** into `shared/vocabulary.json`, with each option's label as
   the Google Form shows it, and generate a JSON Schema from `types.ts`. *Done: `npm run
   schema` writes `shared/project.schema.json`, and CI fails if it is out of date.*

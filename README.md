@@ -237,9 +237,11 @@ registers nothing yet: `firehouse.php` loads `domain/`, which adds no hooks.
 - `Normalize::site_content()` checks the raw content files and returns them in the
   JSON shape of `src/content/types.ts`. When it refuses content, it throws a
   `Content_Error` whose message starts `[content] ` and is already escaped for HTML.
-- `Derive` expects that normalized content; `Format` takes single values.
-- `Vocabulary` reads the keys from `shared/vocabulary.json`, and `Js` holds the few
-  JavaScript rules PHP doesn't share, such as what counts as true or as whitespace.
+- `Derive` expects that normalized content; `Format` works on one field at a time: a
+  date, a byline's authors, a need, a link.
+- `Vocabulary` reads the keys and icon names from `shared/vocabulary.json`, and `Js`
+  holds the few JavaScript rules PHP doesn't share, such as what counts as true or as
+  whitespace.
 
 They pass the cases in `shared/cases/derive.json`, `format.json` and `normalize.json`,
 the same ones `npm test` runs. Search isn't ported yet: whether the explorer needs a
