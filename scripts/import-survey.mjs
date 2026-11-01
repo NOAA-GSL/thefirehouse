@@ -183,11 +183,18 @@ function parseCsv(text) {
  * strings, and plain numbers.
  */
 function readXlsx(buffer) {
-  const files = unzip(buffer);
-  const sheetName = [...files.keys()]
+  const entries = unzip(buffer);
+  const sheetName = [...entries.keys()]
     .filter((name) => /^xl\/worksheets\/sheet\d+\.xml$/.test(name))
     .sort()[0];
   if (!sheetName) throw new Error('No worksheet found in the .xlsx file.');
+  // Two entries are inflated, each capped, so a malformed or hostile file can't ask
+  // for more memory than that however many entries it lists.
+  const files = new Map(
+    [sheetName, 'xl/sharedStrings.xml']
+      .filter((name) => entries.has(name))
+      .map((name) => [name, inflate(entries.get(name))]),
+  );
 
   const text = (xml) =>
     [...xml.matchAll(/<t\b[^>]*>([\s\S]*?)<\/t>/g)].map((m) => decodeXml(m[1])).join('');
@@ -238,6 +245,10 @@ function decodeXml(value) {
 }
 
 /** Just enough of the zip format to read an .xlsx: the central directory, stored or deflated. */
+const inflate = ({ method, data }) =>
+  (method === 8 ? inflateRawSync(data, { maxOutputLength: 64 << 20 }) : data).toString('utf8');
+
+/** The zip's entries by name, each still compressed. */
 function unzip(buffer) {
   let end = buffer.length - 22;
   while (end >= 0 && buffer.readUInt32LE(end) !== 0x06054b50) end -= 1;
@@ -254,12 +265,7 @@ function unzip(buffer) {
     const name = buffer.toString('utf8', offset + 46, offset + 46 + nameLength);
 
     const start = local + 30 + buffer.readUInt16LE(local + 26) + buffer.readUInt16LE(local + 28);
-    const data = buffer.subarray(start, start + size);
-    // Only the parts readXlsx uses, and each capped, so a malformed or hostile file
-    // can't inflate into more memory than the machine has.
-    if (name === 'xl/sharedStrings.xml' || /^xl\/worksheets\/sheet\d+\.xml$/.test(name)) {
-      files.set(name, (method === 8 ? inflateRawSync(data, { maxOutputLength: 64 << 20 }) : data).toString('utf8'));
-    }
+    files.set(name, { method, data: buffer.subarray(start, start + size) });
     offset += 46 + skip;
   }
   return files;
@@ -274,16 +280,19 @@ function unzip(buffer) {
  * reversal is valid UTF-8, so text that merely contains "â" (pâte) is left alone.
  * Every repaired cell is listed in the import's report.
  *
- * Any lead byte of a multi-byte character (Â to ô) is a reason to try, so "MichaÅ‚"
- * and emoji are repaired as well as curly quotes. A C1 control character is taken as
- * the byte it stands for, which is how a Latin-1 misread (rather than Windows-1252)
- * leaves them.
+ * A cell is tried only when it carries a signature of the round trip: a lead byte
+ * that common text double-encodes to (Â Ã â Å Ä Ð Ñ) followed by a continuation
+ * byte, or the "ðŸ" an emoji starts with. That covers "MichaÅ‚" and emoji as well
+ * as curly quotes, and leaves text such as "CAFÉ’s" alone, so a cell repaired once
+ * isn't "repaired" again on its next pass through clean(). A C1 control character
+ * is taken as the byte it stands for, which is how a Latin-1 misread leaves them.
  */
 const CP1252_HIGH = '€\u0081‚ƒ„…†‡ˆ‰Š‹Œ\u008DŽ\u008F\u0090‘’“”•–—˜™š›œ\u009DžŸ';
+const DOUBLE_ENCODED = new RegExp(`[ÂÃâÅÄÐÑ][\\u0080-\\u00BF${CP1252_HIGH}]|ðŸ`);
 const repairedCells = new Set();
 
 function repairEncoding(text) {
-  if (!/[Â-ô]/.test(text)) return text;
+  if (!DOUBLE_ENCODED.test(text)) return text;
   const bytes = [];
   for (const char of text) {
     const code = char.codePointAt(0);
@@ -334,7 +343,9 @@ const tidy = (value) => clean(value).replace(/\s+/g, ' ');
  * sit beside the @, so "https://medium.com/@name.surname/post" isn't one.
  */
 const EMAIL = /[^\s@<>()/:,;"']+@[^\s@<>()/:,;"']+\.[a-z]{2,}/gi;
-const mask = (line) => line.replace(EMAIL, '[email]');
+// The report masks more widely: any token with an @, since a value cut to 40
+// characters can end mid-address ("jane.doe@noaa.g").
+const mask = (line) => line.replace(/[^\s"'(),;<>]*@[^\s"'(),;<>]*/g, '[email]');
 
 /**
  * One box holding several links, as the team's sheet has for Q17, split into one
@@ -343,7 +354,7 @@ const mask = (line) => line.replace(EMAIL, '[email]');
  */
 const splitLinks = (value) =>
   value
-    .split(/[\s,;]+(?=https?:\/\/|doi:|10\.\d{4,9}\/)/i)
+    .split(/(?<!doi:)[\s,;]+(?=https?:\/\/|doi:|10\.\d{4,9}\/)/i)
     .map((part) => part.trim().replace(/[,;]+$/, ''));
 
 /**
@@ -613,15 +624,15 @@ async function main() {
       .filter(([id]) => new RegExp(`^${prefix}\\d+$`).test(id))
       .map(([, i]) => i)
       .sort((a, b) => a - b);
-  // The team's sheet puts every link in one `Q17` box. Only links are split out of a
-  // single box; a takeaway or a need can hold commas of its own.
+  // The team's sheet puts every link in one `Q17` box, and a researcher may put two
+  // in one of the numbered boxes. Only links are split; a takeaway or a need can hold
+  // commas of its own.
   const linkBox = column[MULTI_COLUMN.papers.replace(/_$/, '')];
   const series = (row, prefix) => {
-    const cells = numbered(prefix).map((i) => clean(row[i]));
-    if (cells.length === 0 && prefix === MULTI_COLUMN.papers && linkBox !== undefined) {
-      cells.push(...splitLinks(clean(row[linkBox])));
-    }
-    return cells.filter(Boolean);
+    const boxes = numbered(prefix);
+    if (prefix !== MULTI_COLUMN.papers) return boxes.map((i) => clean(row[i])).filter(Boolean);
+    const linkBoxes = boxes.length > 0 ? boxes : linkBox === undefined ? [] : [linkBox];
+    return linkBoxes.flatMap((i) => splitLinks(clean(row[i]))).filter(Boolean);
   };
 
   // Without a ResponseId column, rows are recognised by having a title.
@@ -677,6 +688,9 @@ async function main() {
   // resolve: otherwise the second would go live under the first one's decision.
   const rowFor = new Map();
   const duplicates = [];
+  // Without ResponseIds, which record each row was matched to, so a new row whose
+  // title matches a published project can't take it over unnoticed.
+  const matched = [];
 
   for (const row of responses) {
     const responseId = keyFor(row);
@@ -693,6 +707,9 @@ async function main() {
       continue;
     }
     rowFor.set(responseId, title);
+    if (!hasResponseIds) {
+      matched.push(`"${title.slice(0, 40)}" → ${responseId} (${edit.published === true ? 'published' : 'staged'})`);
+    }
 
     // ---- Rule 2: exclusions are reported, never silent. ----------------------
     if (!title) {
@@ -786,6 +803,7 @@ async function main() {
     console.log(`\n${heading}`);
     for (const line of lines) console.log(`  · ${mask(line)}`);
   };
+  report('Matched by title:', matched);
   report(`Excluded ${excluded.length} response(s):`, excluded);
   report(`⚠ ${warnings.length} warning(s):`, warnings);
   report(`Repaired ${repairedCells.size} double-encoded cell(s):`, [...repairedCells]);
