@@ -230,8 +230,9 @@ export interface Project {
   /** *Survey (Q12).* Data collection instruments, e.g. "Focus groups". */
   methods: string[];
   /**
-   * *Survey (Q8).* IRB approval. Records where this is false never reach the UI —
-   * `normalize.ts` drops them at the boundary, implementing the survey's own skip
+   * *Survey (Q8).* IRB approval or exemption; also true for "Project did not require
+   * IRB review", which the team publishes too. Records where this is false never
+   * reach the UI — `normalize.ts` drops them at the boundary, implementing the survey's own skip
    * logic in the one place it cannot be forgotten by a future page.
    */
   irbApproved: boolean;

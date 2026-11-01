@@ -164,7 +164,7 @@ overrides are isolated so a re-sync doesn't lose them.
 
 - [x] **Point `submitFormUrl` at the survey** in `src/content/data/settings.json`: now
       the FireHouse Google Form (Qualtrics is closed). Every submit CTA reads from it.
-- [x] **Replace the placeholder projects.** `projects.json` holds the seven projects
+- [x] **Replace the placeholder projects.** `projects.json` holds the eight projects
       imported from the survey, all published.
 - [x] **Turn the gov banner and footer back on.**
 - [x] **Remove the citation generator.** The site isn't a permanent archive and pages
@@ -177,10 +177,10 @@ overrides are isolated so a re-sync doesn't lose them.
       picked up automatically; until then the hero renders a gradient stand-in. See
       `src/assets/imagery/README.md`.
 - [ ] **Rerun and review the "top needs" synthesis** in `topicSummaries.json`. The
-      draft on the site was made from four of the seven published projects, with every
+      draft on the site was made from four of the eight published projects, with every
       need traced to the survey entries it counts in
       `notebooklm/draft-synthesis-2026-09-17.md`. Nothing is reviewed yet, so the site
-      labels it a draft on every surface that shows it — rerun it across all seven
+      labels it a draft on every surface that shows it — rerun it across all eight
       with the prompt in `notebooklm/README.md`, edit the wording, then set
       `reviewedBy` to clear the label.
 - [ ] **Review the topic-area `covers` copy** in `topics.json` — the bullet list in
@@ -280,12 +280,18 @@ carries its count as a number.
 
 ## Survey import
 
-`scripts/import-survey.mjs` turns a Qualtrics CSV export into
-`src/content/data/projects.json`:
+`scripts/import-survey.mjs` turns the survey responses into
+`src/content/data/projects.json`. Today they come from Stephanie and Emily's
+"Submission Data" sheet, their checked copy of the Qualtrics responses, downloaded as
+`.xlsx`. A Qualtrics `.xlsx` or `.csv` export works too.
 
 ```bash
-node scripts/import-survey.mjs ~/Downloads/firehouse-survey.csv --dry
+node scripts/import-survey.mjs ~/Downloads/"Submission Data.xlsx" --dry
 ```
+
+Download it outside this repository and delete it afterwards: it holds submitters'
+emails, the repository is public, and `.gitignore` ignores spreadsheets only as a
+backstop.
 
 `--dry` parses and reports without writing — use it first. The script is the seam
 where survey data becomes site content, and it is plain dependency-free Node so it
@@ -295,17 +301,22 @@ CSV read with an API call and writes the same file. Nothing downstream changes.
 Two rules it enforces that the UI cannot:
 
 - **Q10 (how results were communicated) never enters the JSON.** It is internal-use
-  only, and a field that is merely not rendered still ships in the bundle.
-- **Rows without IRB approval are reported, not silently dropped** — a silent drop
-  looks exactly like a parsing bug. `normalize.ts` filters them again at runtime as
-  a backstop.
+  only, and a field that is merely not rendered still ships in the bundle. Nor do Q2
+  (email) and Q3 (job title).
+- **Rows answering "No" to the IRB question are reported, not silently dropped** — a
+  silent drop looks exactly like a parsing bug. "Project did not require IRB review"
+  is published like "Yes". `normalize.ts` filters ineligible records again at runtime
+  as a backstop.
 
 Imported records stage as `published: false`, so running the script can never put
 unreviewed research on a live site as a side effect.
 
-`QUESTION_MAP` at the top of the script is keyed to *guessed* Qualtrics column
-names, pending the mapped question list from Emily and Steph. It is the only thing
-that should need editing when that arrives.
+`QUESTION_MAP` at the top of the script maps each field to its question id (`Q5`).
+A column is found by the id its header starts with, so both Qualtrics' bare ids and
+the team's sheet's "Q5. Project Title" work. The sheet has no ResponseId column, so
+each row is matched to its record by title (see `keyFor` in the script). The script
+also repairs text Qualtrics double-encoded (`NGFSâ€™s`) and lists every cell it
+changed.
 
 ## Accessibility
 

@@ -72,6 +72,10 @@ const VOCABULARY = JSON.parse(
  * Numbered columns (`Q15_1`…) are one text box each. They are listed as prefixes and
  * gathered in column order, so adding a fifth takeaway box to the survey needs no
  * change here.
+ *
+ * The team's own copy of the responses (the "Submission Data" sheet) labels its
+ * columns "Q5. Project Title" rather than `Q5`, so a column is found by the question
+ * id its header starts with. That sheet has no ResponseId column; see `keyFor`.
  */
 const QUESTION_MAP = {
   responseId: 'ResponseId',
@@ -254,7 +258,35 @@ function unzip(buffer) {
 
 /* ----------------------------------------------------------------- helpers -- */
 
-const clean = (value) => String(value ?? '').trim();
+/**
+ * Some Qualtrics cells arrive double-encoded: their UTF-8 bytes were read as
+ * Windows-1252 and encoded again, so "NGFS’s" arrives as "NGFSâ€™s". Reversing that
+ * round trip restores the researcher's own text. A cell changes only when the
+ * reversal is valid UTF-8, so text that merely contains "â" (pâte) is left alone.
+ * Every repaired cell is listed in the import's report.
+ */
+const CP1252_HIGH = '€\u0081‚ƒ„…†‡ˆ‰Š‹Œ\u008DŽ\u008F\u0090‘’“”•–—˜™š›œ\u009DžŸ';
+const repairedCells = new Set();
+
+function repairEncoding(text) {
+  if (!/[ÂÃâ]/.test(text)) return text;
+  const bytes = [];
+  for (const char of text) {
+    const code = char.codePointAt(0);
+    if (code < 0x80 || (code >= 0xa0 && code <= 0xff)) bytes.push(code);
+    else if (CP1252_HIGH.includes(char)) bytes.push(0x80 + CP1252_HIGH.indexOf(char));
+    else return text;
+  }
+  try {
+    const repaired = new TextDecoder('utf-8', { fatal: true }).decode(Uint8Array.from(bytes));
+    if (repaired !== text) repairedCells.add(`"${text.slice(0, 50)}" → "${repaired.slice(0, 50)}"`);
+    return repaired;
+  } catch {
+    return text;
+  }
+}
+
+const clean = (value) => repairEncoding(String(value ?? '').trim());
 
 /**
  * Splits a Qualtrics multi-select answer.
@@ -473,7 +505,18 @@ async function parsePaper(raw, where, warnings, offline, known) {
   return paper;
 }
 
-const TRUTHY = new Set(['yes', 'y', 'true', '1', 'approved', 'irb approved']);
+// Q8 answers that let a project onto the site. "Project did not require IRB review"
+// counts: the form carries on for it as it does for "Yes", and Stephanie and Emily
+// publish both (late October 2026). Only "No" ends the form.
+const IRB_ELIGIBLE = new Set([
+  'yes',
+  'y',
+  'true',
+  '1',
+  'approved',
+  'irb approved',
+  'project did not require irb review',
+]);
 
 /* -------------------------------------------------------------------- main -- */
 
@@ -505,46 +548,87 @@ async function main() {
   // Row 0 holds the column ids QUESTION_MAP is keyed to. Qualtrics then writes one or
   // two more header rows (question text, an import-id blob) depending on export
   // settings, so responses are found by their ResponseId rather than by counting.
-  const header = rows[0].map(clean);
+  // A header such as "Q15_3. Takeaway 3 (optional)" is read as its id, `Q15_3`.
+  const questionId = (name) => name.match(/^(Q\d+(?:_\d+)?(?:_TEXT)?)(?=$|[.\s])/)?.[1] ?? name;
+  const header = rows[0].map(clean).map(questionId);
   const column = Object.fromEntries(header.map((name, i) => [name, i]));
   const at = (row, field) => {
     const index = column[QUESTION_MAP[field]];
     return index === undefined ? '' : clean(row[index]);
   };
-  const series = (row, prefix) =>
-    header
+  const series = (row, prefix) => {
+    const cells = header
       .map((name, i) => [name, i])
       .filter(([name]) => new RegExp(`^${prefix}\\d+$`).test(name))
-      .map(([, i]) => clean(row[i]))
-      .filter(Boolean);
+      .map(([, i]) => clean(row[i]));
+    // One box for the whole list (the team's sheet puts every link in `Q17`,
+    // separated by commas) is split into entries.
+    const single = column[prefix.replace(/_$/, '')];
+    if (cells.length === 0 && single !== undefined) cells.push(...clean(row[single]).split(/\s*,\s*/));
+    return cells.filter(Boolean);
+  };
 
+  // Without a ResponseId column, rows are recognised by having a title.
+  const hasResponseIds = column[QUESTION_MAP.responseId] !== undefined;
   const missing = [
-    ...Object.entries(QUESTION_MAP).filter(([, col]) => column[col] === undefined),
-    ...Object.entries(MULTI_COLUMN).filter(([, prefix]) => !header.some((h) => h.startsWith(prefix))),
+    ...Object.entries(QUESTION_MAP).filter(
+      ([field, col]) => column[col] === undefined && !(field === 'responseId' && !hasResponseIds),
+    ),
+    ...Object.entries(MULTI_COLUMN).filter(
+      ([, prefix]) => !header.some((h) => h.startsWith(prefix)) && column[prefix.replace(/_$/, '')] === undefined,
+    ),
   ].map(([field, col]) => `${field} (${col})`);
   if (missing.length) {
     console.warn(`⚠ Columns not found in the export: ${missing.join(', ')}`);
     console.warn('  Update QUESTION_MAP at the top of this script.\n');
   }
+  if (!hasResponseIds) {
+    console.log('No ResponseId column: each row is matched to its record by title (see keyFor).\n');
+  }
 
-  const responses = rows.slice(1).filter((row) => /^R_\w+$/.test(at(row, 'responseId')));
+  /**
+   * The ResponseId a row belongs to. An export carries it; the team's sheet doesn't,
+   * so a row is matched by title instead: first to an editorial entry that records
+   * its `title`, then to a project already in projects.json. A row matching neither
+   * is reported and skipped, never given a made-up id.
+   */
+  const previous = existsSync(OUT) ? JSON.parse(readFileSync(OUT, 'utf8')) : [];
+  const sameTitle = (a, b) =>
+    a.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim() === b.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const keyFor = (row) => {
+    if (hasResponseIds) return at(row, 'responseId');
+    const title = tidy(at(row, 'title'));
+    const fromEditorial = Object.entries(editorial).find(
+      ([id, edit]) => /^R_/.test(id) && edit.title && sameTitle(edit.title, title),
+    );
+    return fromEditorial?.[0] ?? previous.find((p) => sameTitle(p.title, title))?.id ?? '';
+  };
+
+  const responses = rows
+    .slice(1)
+    .filter((row) => (hasResponseIds ? /^R_\w+$/.test(at(row, 'responseId')) : at(row, 'title')));
   const warnings = [];
   const excluded = [];
   const taken = new Set();
   const projects = [];
 
   for (const row of responses) {
-    const responseId = at(row, 'responseId');
+    const responseId = keyFor(row);
     const title = tidy(at(row, 'title'));
-    const where = `${responseId} ("${title.slice(0, 40)}")`;
+    const where = `${responseId || 'no ResponseId'} ("${title.slice(0, 40)}")`;
     const edit = editorial[responseId] ?? {};
+
+    if (!responseId) {
+      excluded.push(`${where} — no ResponseId, and its title matches no project or editorial entry`);
+      continue;
+    }
 
     // ---- Rule 2: exclusions are reported, never silent. ----------------------
     if (!title) {
       excluded.push(`${where} — no project title`);
       continue;
     }
-    if (!TRUTHY.has(at(row, 'irbApproved').toLowerCase())) {
+    if (!IRB_ELIGIBLE.has(at(row, 'irbApproved').toLowerCase())) {
       excluded.push(`${where} — no IRB approval or exemption`);
       continue;
     }
@@ -633,6 +717,10 @@ async function main() {
   if (warnings.length) {
     console.log(`\n⚠ ${warnings.length} warning(s):`);
     for (const line of warnings) console.log(`  · ${line}`);
+  }
+  if (repairedCells.size) {
+    console.log(`\nRepaired ${repairedCells.size} double-encoded cell(s):`);
+    for (const line of repairedCells) console.log(`  · ${line}`);
   }
 
   if (flags.includes('--dry')) {
