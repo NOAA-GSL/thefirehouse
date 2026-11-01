@@ -258,11 +258,30 @@
   place-items: center;
 }
 
+.fh-person__id {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  min-width: 0;
+}
+
 .fh-person__name {
   margin: 0;
   font: var(--text-h3);
   color: var(--color-text-primary);
   text-wrap: balance;
+}
+
+/* An address has no spaces to break at, so it may break anywhere rather than push
+   the card wider than a phone screen. */
+.fh-person__email {
+  font: var(--text-body-sm);
+  color: var(--color-link);
+  overflow-wrap: anywhere;
+}
+
+.fh-person__email:hover {
+  color: var(--color-link-hover);
 }
 
 /* Below roughly 400px the portrait and the name stop fitting side by side without

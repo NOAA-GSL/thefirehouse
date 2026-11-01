@@ -327,6 +327,8 @@ export interface LandingPageContent {
  */
 export interface TeamMember {
   name: string;
+  /** Work email, shown under the name as a mailto link. */
+  email?: string;
   /**
    * Basename (no extension) of a portrait in `src/assets/people/`, e.g.
    * "stephanie-hoekstra". Resolved at build time by `AboutPage.tsx`; when the file
