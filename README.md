@@ -162,34 +162,40 @@ overrides are isolated so a re-sync doesn't lose them.
 
 ## Before this goes public
 
-- [x] **Replace `submitFormUrl`** in `src/content/data/settings.json` — now the
-      FireHouse Qualtrics survey. Every submit CTA reads from it.
-- [ ] **Replace `projects.json` wholesale** from the FireHouse 1.0 report. The nine
-      records there are placeholders — see `src/content/data/README.md`. Their
-      takeaways and recommendations say "Placeholder" on purpose, and `papers` is
-      empty everywhere because no citation was invented.
+- [x] **Point `submitFormUrl` at the survey** in `src/content/data/settings.json`: now
+      the FireHouse Google Form (Qualtrics is closed). Every submit CTA reads from it.
+- [x] **Replace the placeholder projects.** `projects.json` holds the seven projects
+      imported from the survey, all published.
+- [x] **Turn the gov banner and footer back on.**
+- [x] **Remove the citation generator.** The site isn't a permanent archive and pages
+      may be withdrawn, so project pages don't offer a citation.
+- [x] **Stop the topic pages scrolling sideways on phones.** `npm run reference` now
+      fails if any page is wider than the window.
 - [ ] **Add the hero image.** `src/assets/imagery/fire-weather-hero.png` is missing —
       it's a binary asset in the design project and couldn't come across the
       design-sync API, which returns text. Drop the file in that directory and it's
       picked up automatically; until then the hero renders a gradient stand-in. See
       `src/assets/imagery/README.md`.
-- [ ] **Review the draft "top needs" synthesis** in `topicSummaries.json`. It was
-      drafted with Claude from the four published projects, with every need traced to
-      the survey entries it counts in `notebooklm/draft-synthesis-2026-09-17.md`.
-      Nothing is reviewed yet, so the site labels it a draft on every surface that
-      shows it — run the NotebookLM pass in `notebooklm/README.md`, edit the wording,
-      then set `reviewedBy` to clear the label.
+- [ ] **Rerun and review the "top needs" synthesis** in `topicSummaries.json`. The
+      draft on the site was made from four of the seven published projects, with every
+      need traced to the survey entries it counts in
+      `notebooklm/draft-synthesis-2026-09-17.md`. Nothing is reviewed yet, so the site
+      labels it a draft on every surface that shows it — rerun it across all seven
+      with the prompt in `notebooklm/README.md`, edit the wording, then set
+      `reviewedBy` to clear the label.
 - [ ] **Review the topic-area `covers` copy** in `topics.json` — the bullet list in
       the callout, and now the only area copy on `/topics/…`. The longer `intro`
       paragraphs are no longer rendered (September 2026 review) but are kept in the
       data. Stephanie or Emily should own the wording.
-- [ ] **Set `VITE_SITE_URL`** once hosting is settled, so `canonical`, `og:url` and
-      `og:image` are emitted. Until then shared links preview without the image card.
+- [ ] **Build with the right variables** for each copy (see [Hosting](#hosting)), so
+      `canonical`, `og:url` and `og:image` are emitted and the test-site copy isn't
+      indexed.
 - [ ] **Confirm the SPA fallback with Matt** — which of `.htaccess` / `_redirects` /
       `404.html` actually applies on GSL's host, and drop the two that don't.
-- [ ] **Add a `Sitemap:` line to `public/robots.txt`** and generate `sitemap.xml`;
-      both need the final URL. If the build goes on a staging URL before launch, flip
-      `robots.txt` to `Disallow: /` so the preview isn't indexed.
+- [ ] **Decide on a sitemap.** Under `/firehouse/`, `public/robots.txt` isn't at the
+      site's root, so crawlers never read it, and a `Sitemap:` line there does
+      nothing. A `sitemap.xml` of the project pages would have to be listed in GSL's
+      own `robots.txt` or submitted to search engines directly.
 - [ ] **Decide on self-hosted fonts.** Archivo and Public Sans load from Google
       Fonts. Some agencies prohibit third-party CDN calls; swapping the `@import` in
       `tokens/typography.css` for local `@font-face` is the only change needed.
@@ -335,10 +341,22 @@ both fallback states.
 
 ## Hosting
 
-Placement is still open (brief §8). The build is fully static and needs no server.
-If it lands on a sub-path, set `VITE_BASE_PATH=/firehouse/` — Vite's `base` and the
-router's `basename` are already wired to it, and the icon links in `index.html` use
-`%BASE_URL%` so they resolve there too.
+Until the WordPress plugin replaces it, the static build serves `/firehouse/`: first as
+a copy on GSL's test site for the WPO meeting, then on gsl.noaa.gov for AMS (see "The
+AMS bridge" in `WORDPRESS-PLAN.md`). It needs no server. `VITE_BASE_PATH` sets the
+sub-path: Vite's `base` and the router's `basename` are wired to it, and the icon
+links in `index.html` use `%BASE_URL%` so they resolve there too.
+
+```bash
+# The copy on GSL's test site: its own address, and kept out of search results
+VITE_BASE_PATH=/firehouse/ VITE_SITE_URL=https://<test site> VITE_NOINDEX=1 npm run build
+
+# The public site
+VITE_BASE_PATH=/firehouse/ VITE_SITE_URL=https://gsl.noaa.gov npm run build
+```
+
+In Git Bash on Windows, start each with `MSYS_NO_PATHCONV=1`. Otherwise Git Bash
+rewrites `/firehouse/` into a Windows path, and every asset link in the build breaks.
 
 **Client routing needs the host to serve the app shell for unknown paths.** `/projects`
 and `/topics/observe` have no file behind them, so without this a direct hit, a refresh,
@@ -361,8 +379,8 @@ The three that must be absolute URLs — `canonical`, `og:url`, `og:image` — a
 at build time by the `firehouse-site-meta` plugin from **`VITE_SITE_URL`**, and are
 omitted entirely when it isn't set. That's deliberate: a shared link still previews with
 its title and description, whereas a guessed domain would point at a URL that may never
-exist. Set it once Matt confirms placement and the card at `public/og-image.png` starts
-appearing in Slack, email and social unfurls.
+exist. With it set (see the build commands above), the card at `public/og-image.png`
+appears in Slack, email and social unfurls.
 
 The card (1200×630, the FireHouse wordmark on white) and the icons (`favicon.ico`,
 `favicon-32.png`, `icon-192/512.png`, `apple-touch-icon.png`) are generated from the

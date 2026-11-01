@@ -607,9 +607,10 @@ GSL's test site, restricted to GSL staff by login or by network, whichever ITS p
 A demo opened with Stephanie and Emily's own accounts is enough for that meeting. It
 also keeps the demo on GSL's infrastructure, the only place the site may run: hosting
 outside GSL is not allowed (see [Decisions so far](#decisions-so-far)).
-Build that copy with the test site's address as `VITE_SITE_URL`. If the test site isn't
-ready in time, the fallback is running the build on the presenter's laptop and sharing
-the screen.
+Build that copy with the test site's address as `VITE_SITE_URL` and with
+`VITE_NOINDEX=1`, which marks every page `noindex` (the README's Hosting section has
+both build commands). If the test site isn't ready in time, the fallback is running
+the build on the presenter's laptop and sharing the screen.
 
 1. Build with `VITE_BASE_PATH=/firehouse/` and `VITE_SITE_URL=https://gsl.noaa.gov`.
 2. Serve the build as a static directory at `/firehouse`.
@@ -618,20 +619,21 @@ the screen.
    - If it is **nginx**, a `try_files` block in the server configuration does the same
      job.
 3. **Turn the gov banner and footer back on.** A static page does not receive GSL's
-   header and footer. `GovBanner` and `SiteFooter` still exist; they were hidden in
-   `1593473`.
+   header and footer. *Done.*
 4. Finish the remaining items in the README's "Before this goes public" list: hero
-   image, synthesis review, `robots.txt` and the sitemap. The synthesis review matters
-   most: today's draft covers 4 of the 7 published projects, so it has to be rerun
-   across all of them and reviewed before anyone outside the team sees it.
-5. **Point Submit a Finding at the Google Form.** `submitFormUrl` in `settings.json`
-   still links to the Qualtrics survey, which is closed. The Google Form stays the way
-   to submit through AMS, where the team's talk invites researchers to submit.
+   image, synthesis review and a sitemap. The synthesis review matters most: today's
+   draft covers 4 of the 7 published projects, so it has to be rerun across all of them
+   and reviewed before anyone outside the team sees it. A `robots.txt` in the build
+   can't help: under `/firehouse/` crawlers never read it, so the test-site copy uses
+   the `noindex` tag instead.
+5. **Point Submit a Finding at the Google Form,** the way to submit through AMS, where
+   the team's talk invites researchers to submit. *Done.*
 6. **Remove the citation generator** from the project page, so the public site does
-   not invite citations.
-7. **Stop the topic pages scrolling sideways on phones** (see the appendix).
+   not invite citations. *Done.*
+7. **Stop the topic pages scrolling sideways on phones** (see the appendix). *Done.*
 8. **Retake the reference** with `npm run reference` once these changes are in. That
-   set is what the plugin is built against.
+   set is what the plugin is built against. *Retaken with steps 3, 5, 6 and 7; retaken
+   again once the rerun synthesis is in, since it changes the topic pages.*
 
 About 2–3 days of work, plus about a day for the test-site copy, not counted in the
 plugin estimate.
@@ -1051,7 +1053,8 @@ Phases 6–7.
 - **The live synthesis is out of date.** `topicSummaries.json` is a 17 September draft,
   written with Claude, that covers 4 of the 7 published projects. The landing page
   reports it as drawn from "4 projects today".
-- **Topic pages scroll sideways on phones.** The source chips under each need (a
-  project's title and year) don't shrink, so at 390 px wide the page is 463 px wide.
-  Every other page fits. The reference capture found it; the bridge fixes it, and the
-  plugin doesn't copy it.
+- **Topic pages scrolled sideways on phones.** The source chips under each need (a
+  project's title and year) didn't shrink, so at 390 px wide the page was 463 px wide.
+  The reference capture found it, and the bridge fixed it: the chips' titles now
+  shorten with an ellipsis. `npm run reference` fails if any page is wider than the
+  window, so the plugin's pages get the same check.
