@@ -19,10 +19,12 @@
  * Rules this script enforces that the UI cannot
  * ---------------------------------------------------------------------------
  * 1. **Private answers never leave this file.** Q2 (email), Q3 (job title) and Q10
- *    (how results were shared — internal use only) are not read at all, and neither
- *    are Qualtrics' own IP address and location columns. They are dropped here rather
- *    than hidden in the UI, because a field that is merely not rendered still ships
- *    inside projects.json for anyone to read.
+ *    (how results were shared — internal use only) are never mapped to a field, and
+ *    neither are Qualtrics' own IP address and location columns. They are dropped here
+ *    rather than hidden in the UI, because a field that is merely not rendered still
+ *    ships inside projects.json for anyone to read. As a backstop, an import whose
+ *    output holds anything shaped like an email address stops before writing, and the
+ *    report masks addresses in the lines it prints.
  * 2. **Excluded rows are reported, not silently dropped.** `normalize.ts` filters
  *    non-IRB records at runtime as a backstop, but a row that is excluded should be
  *    *visible* to the person running the import — a silent drop looks identical to a
@@ -47,7 +49,8 @@
  * skips that; the links still render, just labelled by host.
  *
  * It then regenerates `notebooklm/firehouse-findings.md`, the source document for the
- * topic-area synthesis (see scripts/notebooklm-source.mjs). Needs Node 23.6+.
+ * topic-area synthesis (see scripts/notebooklm-source.mjs). It imports TypeScript
+ * directly, so it needs Node 22.18+.
  */
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -208,7 +211,11 @@ function readXlsx(buffer) {
       else if (type === 'inlineStr') value = text(inner);
       else if (raw !== undefined) value = decodeXml(raw);
 
-      row[ref ? columnIndex(ref) : row.length] = value;
+      const index = ref ? columnIndex(ref) : row.length;
+      // Past Excel's last column (XFD) the file isn't a real export, and an index in
+      // the billions would make the row array exhaust memory.
+      if (index >= 16384) throw new Error(`Cell reference "${ref}" is beyond Excel's last column.`);
+      row[index] = value;
     }
     rows.push(Array.from(row, (value) => value ?? ''));
   }
@@ -248,8 +255,10 @@ function unzip(buffer) {
 
     const start = local + 30 + buffer.readUInt16LE(local + 26) + buffer.readUInt16LE(local + 28);
     const data = buffer.subarray(start, start + size);
-    if (name.endsWith('.xml')) {
-      files.set(name, (method === 8 ? inflateRawSync(data) : data).toString('utf8'));
+    // Only the parts readXlsx uses, and each capped, so a malformed or hostile file
+    // can't inflate into more memory than the machine has.
+    if (name === 'xl/sharedStrings.xml' || /^xl\/worksheets\/sheet\d+\.xml$/.test(name)) {
+      files.set(name, (method === 8 ? inflateRawSync(data, { maxOutputLength: 64 << 20 }) : data).toString('utf8'));
     }
     offset += 46 + skip;
   }
@@ -264,16 +273,21 @@ function unzip(buffer) {
  * round trip restores the researcher's own text. A cell changes only when the
  * reversal is valid UTF-8, so text that merely contains "â" (pâte) is left alone.
  * Every repaired cell is listed in the import's report.
+ *
+ * Any lead byte of a multi-byte character (Â to ô) is a reason to try, so "MichaÅ‚"
+ * and emoji are repaired as well as curly quotes. A C1 control character is taken as
+ * the byte it stands for, which is how a Latin-1 misread (rather than Windows-1252)
+ * leaves them.
  */
 const CP1252_HIGH = '€\u0081‚ƒ„…†‡ˆ‰Š‹Œ\u008DŽ\u008F\u0090‘’“”•–—˜™š›œ\u009DžŸ';
 const repairedCells = new Set();
 
 function repairEncoding(text) {
-  if (!/[ÂÃâ]/.test(text)) return text;
+  if (!/[Â-ô]/.test(text)) return text;
   const bytes = [];
   for (const char of text) {
     const code = char.codePointAt(0);
-    if (code < 0x80 || (code >= 0xa0 && code <= 0xff)) bytes.push(code);
+    if (code <= 0xff) bytes.push(code);
     else if (CP1252_HIGH.includes(char)) bytes.push(0x80 + CP1252_HIGH.indexOf(char));
     else return text;
   }
@@ -316,12 +330,30 @@ function splitChoices(value) {
 const tidy = (value) => clean(value).replace(/\s+/g, ' ');
 
 /**
+ * Anything shaped like an email address (Rule 1's backstop). A slash or colon can't
+ * sit beside the @, so "https://medium.com/@name.surname/post" isn't one.
+ */
+const EMAIL = /[^\s@<>()/:,;"']+@[^\s@<>()/:,;"']+\.[a-z]{2,}/gi;
+const mask = (line) => line.replace(EMAIL, '[email]');
+
+/**
+ * One box holding several links, as the team's sheet has for Q17, split into one
+ * entry per link. A break comes only before something that starts a link or a DOI,
+ * so a DOI with a semicolon of its own stays whole.
+ */
+const splitLinks = (value) =>
+  value
+    .split(/[\s,;]+(?=https?:\/\/|doi:|10\.\d{4,9}\/)/i)
+    .map((part) => part.trim().replace(/[,;]+$/, ''));
+
+/**
  * "First Last" names -> structured authors, where that can be done honestly.
  *
  * The survey asks for "First Last", so a two-word name splits cleanly. A longer one
  * does not: "Laura Sample McMeeking" has a two-word surname, which a last-space
- * split would render as "McMeeking, L. S." in a citation — confidently wrong. Those
- * are kept verbatim as `name`, and the citation builder prints them as written.
+ * split would get confidently wrong. Those are kept verbatim as `name` only.
+ * Nothing reads `given` and `family` since the citation generator was removed;
+ * whether the plugin keeps them is still open.
  */
 function toAuthor(name) {
   const parts = tidy(name).split(' ');
@@ -548,23 +580,47 @@ async function main() {
   // Row 0 holds the column ids QUESTION_MAP is keyed to. Qualtrics then writes one or
   // two more header rows (question text, an import-id blob) depending on export
   // settings, so responses are found by their ResponseId rather than by counting.
-  // A header such as "Q15_3. Takeaway 3 (optional)" is read as its id, `Q15_3`.
+  // A header such as "Q15_3. Takeaway 3 (optional)" is read as its id, `Q15_3`. A
+  // header that is exactly an id wins over one shortened to it, so Qualtrics' own
+  // extra columns ("Q14 - Topics") can't stand in for the answer they annotate. Two
+  // columns that still claim one id stop the import: picking one could publish the
+  // wrong answer, or a private one.
   const questionId = (name) => name.match(/^(Q\d+(?:_\d+)?(?:_TEXT)?)(?=$|[.\s])/)?.[1] ?? name;
-  const header = rows[0].map(clean).map(questionId);
-  const column = Object.fromEntries(header.map((name, i) => [name, i]));
+  const labels = rows[0].map(clean);
+  const read = new Set(Object.values(QUESTION_MAP));
+  const isRead = (id) =>
+    read.has(id) ||
+    Object.values(MULTI_COLUMN).some((prefix) => id === prefix.replace(/_$/, '') || new RegExp(`^${prefix}\\d+$`).test(id));
+  const column = {};
+  const clashes = [];
+  labels.forEach((label, i) => {
+    if (!label) return;
+    const id = questionId(label);
+    const held = column[id];
+    if (held === undefined || (label === id && labels[held] !== id)) column[id] = i;
+    else if (isRead(id) && !(label !== id && labels[held] === id)) clashes.push(`"${labels[held]}" and "${label}"`);
+  });
+  if (clashes.length) {
+    throw new Error(`Columns that claim the same question: ${clashes.join('; ')}. Rename or remove one.`);
+  }
+
   const at = (row, field) => {
     const index = column[QUESTION_MAP[field]];
     return index === undefined ? '' : clean(row[index]);
   };
+  const numbered = (prefix) =>
+    Object.entries(column)
+      .filter(([id]) => new RegExp(`^${prefix}\\d+$`).test(id))
+      .map(([, i]) => i)
+      .sort((a, b) => a - b);
+  // The team's sheet puts every link in one `Q17` box. Only links are split out of a
+  // single box; a takeaway or a need can hold commas of its own.
+  const linkBox = column[MULTI_COLUMN.papers.replace(/_$/, '')];
   const series = (row, prefix) => {
-    const cells = header
-      .map((name, i) => [name, i])
-      .filter(([name]) => new RegExp(`^${prefix}\\d+$`).test(name))
-      .map(([, i]) => clean(row[i]));
-    // One box for the whole list (the team's sheet puts every link in `Q17`,
-    // separated by commas) is split into entries.
-    const single = column[prefix.replace(/_$/, '')];
-    if (cells.length === 0 && single !== undefined) cells.push(...clean(row[single]).split(/\s*,\s*/));
+    const cells = numbered(prefix).map((i) => clean(row[i]));
+    if (cells.length === 0 && prefix === MULTI_COLUMN.papers && linkBox !== undefined) {
+      cells.push(...splitLinks(clean(row[linkBox])));
+    }
     return cells.filter(Boolean);
   };
 
@@ -575,12 +631,17 @@ async function main() {
       ([field, col]) => column[col] === undefined && !(field === 'responseId' && !hasResponseIds),
     ),
     ...Object.entries(MULTI_COLUMN).filter(
-      ([, prefix]) => !header.some((h) => h.startsWith(prefix)) && column[prefix.replace(/_$/, '')] === undefined,
+      ([field, prefix]) => numbered(prefix).length === 0 && !(field === 'papers' && linkBox !== undefined),
     ),
-  ].map(([field, col]) => `${field} (${col})`);
+  ];
   if (missing.length) {
-    console.warn(`⚠ Columns not found in the export: ${missing.join(', ')}`);
+    console.warn(`⚠ Columns not found in the export: ${missing.map(([field, col]) => `${field} (${col})`).join(', ')}`);
     console.warn('  Update QUESTION_MAP at the top of this script.\n');
+  }
+  // Without these every row is excluded, and writing would empty projects.json.
+  const required = missing.filter(([field]) => ['title', 'irbApproved', 'completionYear'].includes(field));
+  if (required.length) {
+    throw new Error(`Required columns missing: ${required.map(([field]) => field).join(', ')}. Nothing written.`);
   }
   if (!hasResponseIds) {
     console.log('No ResponseId column: each row is matched to its record by title (see keyFor).\n');
@@ -611,6 +672,11 @@ async function main() {
   const excluded = [];
   const taken = new Set();
   const projects = [];
+  // Which row each ResponseId came from. Two rows on one id (a resubmission, or a
+  // title that matches one already on the site) stop the import for a person to
+  // resolve: otherwise the second would go live under the first one's decision.
+  const rowFor = new Map();
+  const duplicates = [];
 
   for (const row of responses) {
     const responseId = keyFor(row);
@@ -622,6 +688,11 @@ async function main() {
       excluded.push(`${where} — no ResponseId, and its title matches no project or editorial entry`);
       continue;
     }
+    if (rowFor.has(responseId)) {
+      duplicates.push(`${responseId}: "${rowFor.get(responseId).slice(0, 40)}" and "${title.slice(0, 40)}"`);
+      continue;
+    }
+    rowFor.set(responseId, title);
 
     // ---- Rule 2: exclusions are reported, never silent. ----------------------
     if (!title) {
@@ -710,17 +781,45 @@ async function main() {
   }
 
   console.log(`Parsed ${projects.length} project(s) from ${responses.length} response(s).`);
-  if (excluded.length) {
-    console.log(`\nExcluded ${excluded.length} response(s):`);
-    for (const line of excluded) console.log(`  · ${line}`);
+  const report = (heading, lines) => {
+    if (lines.length === 0) return;
+    console.log(`\n${heading}`);
+    for (const line of lines) console.log(`  · ${mask(line)}`);
+  };
+  report(`Excluded ${excluded.length} response(s):`, excluded);
+  report(`⚠ ${warnings.length} warning(s):`, warnings);
+  report(`Repaired ${repairedCells.size} double-encoded cell(s):`, [...repairedCells]);
+  // Rule 2 for the records already on the site: one that this import would drop is
+  // listed, so a renamed title or a missing row can't remove a project unnoticed.
+  const kept = new Set(projects.map((p) => p.id));
+  report(
+    'In projects.json now, but not in what this import writes:',
+    previous.filter((p) => !kept.has(p.id)).map((p) => `${p.id} ("${p.title.slice(0, 40)}")`),
+  );
+
+  if (duplicates.length) {
+    report('✖ Rows that resolve to the same record:', duplicates);
+    console.error('\nNothing written. Give each row its own `title` in survey-editorial.json, or remove the extra one.');
+    process.exitCode = 1;
+    return;
   }
-  if (warnings.length) {
-    console.log(`\n⚠ ${warnings.length} warning(s):`);
-    for (const line of warnings) console.log(`  · ${line}`);
-  }
-  if (repairedCells.size) {
-    console.log(`\nRepaired ${repairedCells.size} double-encoded cell(s):`);
-    for (const line of repairedCells) console.log(`  · ${line}`);
+
+  // Rule 1's backstop: an address in any field stops the import, and the report names
+  // only where it is.
+  const leaks = [];
+  const scan = (value, path) => {
+    if (typeof value === 'string') {
+      if (value.search(EMAIL) !== -1) leaks.push(path);
+    } else if (value && typeof value === 'object') {
+      for (const [key, inner] of Object.entries(value)) scan(inner, `${path}.${key}`);
+    }
+  };
+  for (const project of projects) scan(project, project.id);
+  if (leaks.length) {
+    report('✖ Fields holding something shaped like an email address:', leaks);
+    console.error('\nNothing written. Check those answers in the export before importing.');
+    process.exitCode = 1;
+    return;
   }
 
   if (flags.includes('--dry')) {
