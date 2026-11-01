@@ -137,7 +137,7 @@
       "methods": [],
       "irbApproved": false,
       "takeaways": [],
-      "needs": [],
+      "needs": [{ "need": "Need that must never be counted." }],
       "papers": [],
       "published": true
     },
