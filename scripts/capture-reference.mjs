@@ -80,10 +80,11 @@ try {
           const aria = resolve(OUT, 'aria', widthName);
           mkdirSync(aria, { recursive: true });
           writeFileSync(resolve(aria, `${name}.yml`), `${await page.locator('body').ariaSnapshot()}\n`);
-
-          const width = await page.evaluate(() => document.documentElement.scrollWidth);
-          if (width > viewport.width) tooWide.push(`${widthName} ${path}: ${width}px wide`);
         }
+
+        // In both themes: dark mode has its own styles, and could overflow on its own.
+        const width = await page.evaluate(() => document.documentElement.scrollWidth);
+        if (width > viewport.width) tooWide.push(`${widthName} ${theme} ${path}: ${width}px wide`);
         console.log(`${widthName} ${theme} ${path}`);
       }
       await context.close();
