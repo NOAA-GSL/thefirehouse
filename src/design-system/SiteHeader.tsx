@@ -158,12 +158,7 @@ export function SiteHeader({
       {menuOpen && (
         <div id={menuId} className="fh-header__drawer">
           <nav className="fh-container fh-header__drawer-nav" aria-label="Primary, mobile">
-            {/* The submit CTA below already covers the "Submit a Finding" nav item, and
-                stacked vertically the two sit next to each other — so it's dropped here.
-                On desktop they're far apart and both stay. */}
-            {links
-              .filter((link) => link.href !== submitUrl)
-              .map((link) => navLinkFor(link))}
+            {links.map((link) => navLinkFor(link))}
             <Button variant="accent" size="md" iconLeft="plus" href={submitUrl}>
               {submitLabel}
             </Button>

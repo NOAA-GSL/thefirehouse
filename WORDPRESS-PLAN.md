@@ -244,10 +244,10 @@ bridge resolves unchanged under the plugin. The Submit page is new.
 - **Settings.** A Firehouse → Settings screen holds the site name, the submit label, the
   submit address, the navigation labels, the survey's question wording, the AI prompt
   and who is emailed about new submissions.
-- **Navigation.** The four nav items are fixed in code, because the routes are
-  structural; only their labels are editable. GSL's menus are edited under
-  Appearance → Menus, which needs a capability that opens every menu on the site, so
-  the Firehouse Editor role doesn't get it.
+- **Navigation.** The three nav items (Home, Explore Projects, About) and the Submit
+  button are fixed in code, because the routes are structural; only their labels are
+  editable. GSL's menus are edited under Appearance → Menus, which needs a capability
+  that opens every menu on the site, so the Firehouse Editor role doesn't get it.
 
 ### Blocks
 
@@ -256,7 +256,7 @@ handled:
 
 | Block | Renders | Interactive |
 | --- | --- | --- |
-| `firehouse/subnav` | FireHouse mark, the four nav items, Submit button | Mobile menu |
+| `firehouse/subnav` | FireHouse mark, the three nav items, Submit button | Mobile menu |
 | `firehouse/hero` | Landing hero (eyebrow, heading and body are editable) | — |
 | `firehouse/stats` | Live counts. The editor picks the source and writes the label; the number is always computed. | — |
 | `firehouse/top-needs` | Four topic cards, the synthesis note, "Where these needs come from" | — |

@@ -12,10 +12,6 @@
     {
       "label": "About",
       "to": "/about"
-    },
-    {
-      "label": "Submit a Finding",
-      "href": ""
     }
   ],
   "submitLabel": "Submit a Finding",
