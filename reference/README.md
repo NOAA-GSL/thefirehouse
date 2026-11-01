@@ -13,6 +13,11 @@ npm run build
 npm run reference
 ```
 
+Build without `VITE_BASE_PATH`: the capture serves `dist/` at the root, so a build for
+`/firehouse/` would record blank pages. Besides the two captured widths, every page is
+measured at 320px, where WCAG's reflow criterion sets the bar; a page wider than its
+window at any of them fails the run.
+
 `scripts/capture-reference.mjs` explains what it does. It uses Edge by default; set
 `REFERENCE_BROWSER=chrome` to use Chrome.
 

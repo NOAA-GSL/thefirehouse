@@ -1052,7 +1052,9 @@ Phases 6–7.
   Stephanie and Emily's "Submission Data" sheet, their checked copy of the Qualtrics
   responses, rather than a raw export. It has no ResponseId column, so the import
   matches each row to its record by title. It also carries their corrections: one need
-  in Testbed 002 is gone, and two in Igniting Insight are merged into one. Its
+  in Testbed 002 is gone, two in Igniting Insight are merged into one, and the NGFS
+  abstract and first takeaway have straight apostrophes where the export had curly
+  ones. Stephanie and Emily are confirming all three (pull request #6). Its
   timestamps aren't unique (two rows share one), so they can't serve as its key.
 - **Mis-encoded text in the export.** Some Qualtrics rows arrive double-encoded
   (`NGFSâ€™s` for `NGFS’s`). The import now repairs it and lists each cell it

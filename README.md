@@ -42,21 +42,23 @@ src/
   styles/tokens/    colors / typography / spacing, ported byte-faithfully.
   styles/           global.css, a11y-overrides.css
   content/          CMS-agnostic content layer (see below)
-  pages/            LandingPage, ProjectsPage, NotFoundPage
-  components/       Layout, ThemeProvider
+  pages/            Landing, Projects, Project, Topic, About and NotFound pages
+  components/       Layout, ThemeProvider, SynthesisNote
   assets/           NOAA + GSL logos; hero imagery (see caveat)
 
-public/             Served verbatim at the site root: icons, the link-preview card,
-                    robots.txt, and the two host-level SPA fallbacks (see Hosting)
+public/             Copied as-is to the build's base path (the site root, or /firehouse/):
+                    icons, the link-preview card, robots.txt, and the two host-level
+                    SPA fallbacks (see Hosting)
 
 wp-content/plugins/firehouse/
                     The WordPress plugin that will replace this app (see
-                    The WordPress plugin, below). Empty so far.
+                    The WordPress plugin, below). So far: its header, the shared
+                    vocabularies and test cases, and their PHP tests.
 ```
 
 ### The design system
 
-Thirteen components from
+Eleven components from
 `_ds/the-firehouse-design-system-a05f43c6-bfb5-47a4-b052-1f16fdeac42a/_ds_bundle.js`
 were ported to typed React: `Button`, `Icon`, `TopicTag`, `StatCounter`,
 `ProjectTile`, `ProjectDetailModal`, `TextField`, `TextArea`, `GovBanner`,
@@ -73,7 +75,7 @@ Three deliberate changes to how they're built, none to how they look:
   third-party script (which some agencies restrict outright), no layout shift, and
   an unknown icon name is a compile error rather than an empty box.
 - **`Button` is polymorphic.** Renders `<button>`, a router `<Link>`, or an `<a>`.
-  "Submit a Finding" goes off-site to the Qualtrics survey and has to be a real link.
+  "Submit a Finding" goes off-site to the Google Form and has to be a real link.
 
 ### The content layer
 
@@ -93,12 +95,12 @@ Strapi later doesn't change the dependency tree.
 `src/content/types.ts` is the contract every adapter meets. `normalize.ts` runs on
 all of them: it rejects unknown topic keys and duplicate slugs loudly, and resolves
 the "empty `href` inherits `settings.submitFormUrl`" convention so the submission survey
-address lives in exactly one field even though five controls point at it.
+address lives in exactly one field even though several controls point at it.
 
-**Live stats are computed, not stored.** `landing.json` never contains the number 9.
+**Live stats are computed, not stored.** `landing.json` never contains the project count.
 Each stat declares a `source` (`publishedProjectCount` / `needCount` / `topicCount` /
 `static`) and `derive.ts` counts live content. Editors control the wording; they can't put the
-count out of step with what's published. Publishing a tenth project moves the
+count out of step with what's published. Publishing another project moves the
 counter on its own — brief §5.1.
 
 Structural things stay in code on purpose: the four topic keys (`observe`,
@@ -151,8 +153,9 @@ overrides are isolated so a re-sync doesn't lose them.
   so shipping the landing page alone would have left a dead button.
 - **Topic area pages built** (`/topics/:topicKey`), and the landing cards now link
   to them. The design left the four cards inert; they read as the entry point to an
-  area but went nowhere. Each page carries the introduction the card has no room
-  for, the full needs list rather than the top two, and every project in that area.
+  area but went nowhere. Each page carries the area's top five needs, each linked to
+  the projects it draws on, and a "what this area covers" callout the card has no
+  room for.
   The route key is the `TopicKey` itself, not a CMS slug — the keys are structural,
   so a published URL can't be broken by renaming a topic in the CMS.
 - **Two new topic fields**, `intro` (paragraphs) and `covers` (a "what this area
@@ -170,7 +173,7 @@ overrides are isolated so a re-sync doesn't lose them.
 - [x] **Remove the citation generator.** The site isn't a permanent archive and pages
       may be withdrawn, so project pages don't offer a citation.
 - [x] **Stop the topic pages scrolling sideways on phones.** `npm run reference` now
-      fails if any page is wider than the window.
+      fails if any page is wider than the window, at 390px or at WCAG's 320px.
 - [ ] **Add the hero image.** `src/assets/imagery/fire-weather-hero.png` is missing —
       it's a binary asset in the design project and couldn't come across the
       design-sync API, which returns text. Drop the file in that directory and it's
@@ -188,8 +191,7 @@ overrides are isolated so a re-sync doesn't lose them.
       paragraphs are no longer rendered (September 2026 review) but are kept in the
       data. Stephanie or Emily should own the wording.
 - [ ] **Build with the right variables** for each copy (see [Hosting](#hosting)), so
-      `canonical`, `og:url` and `og:image` are emitted and the test-site copy isn't
-      indexed.
+      `og:image` is emitted and the test-site copy isn't indexed.
 - [ ] **Confirm the SPA fallback with Matt** — which of `.htaccess` / `_redirects` /
       `404.html` actually applies on GSL's host, and drop the two that don't.
 - [ ] **Decide on a sitemap.** Under `/firehouse/`, `public/robots.txt` isn't at the
@@ -210,15 +212,15 @@ Named so it's clear these are gaps, not oversights:
 - **CMS.** The content layer is ready and two adapters are written, but no Sanity or
   Strapi instance exists and neither adapter has been run against a live backend.
   A matching schema still has to be authored on whichever is chosen.
-- **Submission pipeline.** The Qualtrics survey is an outbound link. Nothing yet moves a
+- **Submission pipeline.** The Google Form is an outbound link. Nothing yet moves a
   processed submission into `topicSummaries.json` — brief §9.1 allows this to be
   manual at first, and the brief's own risk list recommends a human review step.
 - **The rest of explorer search.** Search and filters are in (`src/content/search.ts`);
   still open from `PLAN.md` §1.2–1.3 are highlighting matched words in results and
   multi-select facets (each facet is currently single-select).
 - **Build-time link previews for project pages.** Each project has its own URL and
-  sets its own `<title>` and description at runtime, so deep links work and index
-  correctly — but a *shared* link still previews with the site-level card. Fixing it
+  sets its own `<title>` and description at runtime, so deep links work and a search
+  engine that runs scripts sees each page's own title — but a *shared* link still previews with the site-level card. Fixing it
   means emitting a per-project HTML shell at build time (`PLAN.md` §2.2).
 
 ## The WordPress plugin
@@ -306,20 +308,38 @@ Two rules it enforces that the UI cannot:
 - **Q10 (how results were communicated) never enters the JSON.** It is internal-use
   only, and a field that is merely not rendered still ships in the bundle. Nor do Q2
   (email) and Q3 (job title).
-- **Rows answering "No" to the IRB question are reported, not silently dropped** — a
-  silent drop looks exactly like a parsing bug. "Project did not require IRB review"
+- **Rows whose IRB answer isn't "Yes" or "Project did not require IRB review" are
+  reported, not silently dropped**: a "No", a blank, or wording the script doesn't
+  know. A silent drop looks exactly like a parsing bug. "Project did not require IRB review"
   is published like "Yes". `normalize.ts` filters ineligible records again at runtime
   as a backstop.
 
-Imported records stage as `published: false`, so running the script can never put
-unreviewed research on a live site as a side effect.
+A record new to `survey-editorial.json` stages as `published: false`, so the site
+doesn't show it until Stephanie or Emily publish it. It is still in `projects.json`,
+though, and so in this public repository and the site's JavaScript once it's committed
+and built: staging hides a record, it doesn't keep it private.
 
 `QUESTION_MAP` at the top of the script maps each field to its question id (`Q5`).
 A column is found by the id its header starts with, so both Qualtrics' bare ids and
-the team's sheet's "Q5. Project Title" work. The sheet has no ResponseId column, so
-each row is matched to its record by title (see `keyFor` in the script). The script
-also repairs text Qualtrics double-encoded (`NGFSâ€™s`) and lists every cell it
-changed.
+the team's sheet's "Q5. Project Title" work. Two columns that claim one id stop the
+import, except that a header that is exactly the id beats one like "Q14 - Topics". A
+missing title, IRB or completion-year column stops it too, rather than writing an
+empty file. Only the links box (`Q17`) may hold several entries in one cell, split
+before each link or DOI; takeaways and needs have to come one per column.
+
+The sheet has no ResponseId column, so each row is matched to its record by title
+(see `keyFor`): first to a `title` in `survey-editorial.json`, then to a title already
+in `projects.json`. A row matching neither is skipped and listed under Excluded. To
+add a row, or after a title changes in the sheet, give its ResponseId a `title` in
+`survey-editorial.json`, as WoFS-Smoke has. Two rows that land on one record stop the
+import, and the report lists any record in `projects.json` the import would drop.
+
+The script stops before writing if any field holds something shaped like an email
+address, naming only the record and field, and its report masks addresses. It
+repairs text Qualtrics double-encoded (`NGFSâ€™s`) and lists every cell it changed.
+It reads only the workbook's first sheet, and besides `projects.json` it rewrites
+`notebooklm/firehouse-findings.md`. It imports TypeScript directly, so it needs Node
+22.18 or later.
 
 ## Accessibility
 
@@ -369,6 +389,10 @@ VITE_BASE_PATH=/firehouse/ VITE_SITE_URL=https://<test site> VITE_NOINDEX=1 npm 
 VITE_BASE_PATH=/firehouse/ VITE_SITE_URL=https://gsl.noaa.gov npm run build
 ```
 
+Set these in the shell, as above: `vite.config.ts` reads them from the environment,
+and Vite doesn't give it `.env` files. Leave `VITE_NOINDEX` unset for the public build;
+`0`, `false` and `no` also leave it off. The build prints the tags it added.
+
 In Git Bash on Windows, start each with `MSYS_NO_PATHCONV=1`. Otherwise Git Bash
 rewrites `/firehouse/` into a Windows path, and every asset link in the build breaks.
 
@@ -389,12 +413,15 @@ block.
 ### Link previews
 
 `index.html` carries the Open Graph and Twitter tags that don't depend on the domain.
-The three that must be absolute URLs — `canonical`, `og:url`, `og:image` — are injected
-at build time by the `firehouse-site-meta` plugin from **`VITE_SITE_URL`**, and are
-omitted entirely when it isn't set. That's deliberate: a shared link still previews with
-its title and description, whereas a guessed domain would point at a URL that may never
-exist. With it set (see the build commands above), the card at `public/og-image.png`
-appears in Slack, email and social unfurls.
+`og:image` has to be an absolute URL, so the `firehouse-site-meta` plugin injects it at
+build time from **`VITE_SITE_URL`**, and leaves it out when that isn't set: a shared
+link still previews with its title and description, whereas a guessed domain would
+point at a URL that may never exist. With it set (see the build commands above), the
+card at `public/og-image.png` appears in Slack, email and social unfurls.
+
+There is no `canonical` link or `og:url`. Every route gets the same `index.html`, and
+nothing rewrites the head at runtime, so either would tell search engines and link
+previews that every project and topic page is the home page.
 
 The card (1200×630, the FireHouse wordmark on white) and the icons (`favicon.ico`,
 `favicon-32.png`, `icon-192/512.png`, `apple-touch-icon.png`) are generated from the
