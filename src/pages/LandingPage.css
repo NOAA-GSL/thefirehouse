@@ -287,8 +287,9 @@
 
 .fh-topics {
   padding-block: var(--space-3xl) var(--space-2xl);
-  /* Clears the sticky header (65px) when reached from "/#top-needs". */
-  scroll-margin-top: 65px;
+  /* Clears the sticky header (65px) when reached from "/#top-needs", with room for
+     the focus ring the section then takes. */
+  scroll-margin-top: calc(65px + var(--space-xs));
 }
 
 @media (max-width: 768px) {
@@ -496,6 +497,12 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: var(--space-md) var(--space-xl);
+}
+
+/* It takes focus when reached by link; the global ring's 3px radius would square
+   its corners. */
+.fh-source:focus-visible {
+  border-radius: var(--radius-xl);
 }
 
 .fh-source__copy {
