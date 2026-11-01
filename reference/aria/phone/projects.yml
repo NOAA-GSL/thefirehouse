@@ -1,0 +1,76 @@
+- link "Skip to main content":
+  - /url: "#main"
+- banner:
+  - link "The Firehouse, NOAA Global Systems Laboratory — home":
+    - /url: /
+    - text: The Firehouse
+  - button "Switch to dark theme"
+  - button "Open menu"
+- main:
+  - text: Project explorer
+  - heading "Completed research projects" [level=1]
+  - paragraph: Every project analyzed for The Firehouse. Search or filter, then open one to read its takeaways, end-user needs, recommendations, and related papers.
+  - search "Search and filter projects":
+    - text: Search projects
+    - searchbox "Search projects"
+    - text: Searches titles, authors, abstracts, and findings. Results update as you type. Press Escape to clear.
+    - button "Filters and sort"
+  - status:
+    - strong: "7"
+    - text: projects
+  - article:
+    - text: Research Study
+    - heading "California Tribal Advisors Share Contemporary Environmental Data and Information Needs" [level=3]:
+      - link "California Tribal Advisors Share Contemporary Environmental Data and Information Needs":
+        - /url: /projects/california-tribal-advisors-share-contemporary-environmental
+    - paragraph: Long-term environmental changes and extreme events negatively affect the human and ecosystem health of Indigenous and other rural communities.
+    - text: Emily Wells, Benjamin J. Hatchett, Laurie Monserrat et al. · 2026 Before During After Long-term
+    - button "Quick look at California Tribal Advisors Share Contemporary Environmental Data and Information Needs"
+  - article:
+    - text: Research Study
+    - 'heading "Igniting Impact: Advancing Fire Weather Decision Support Services" [level=3]':
+      - 'link "Igniting Impact: Advancing Fire Weather Decision Support Services"':
+        - /url: /projects/igniting-impact-advancing-fire-weather-decision-support
+    - paragraph: This study evaluates how wildland fire management professionals access, perceive, and utilize meteorological decision-support information across the wildfire lifecycle.
+    - text: Stephanie Hoekstra · 2026 Before During Long-term
+    - 'button "Quick look at Igniting Impact: Advancing Fire Weather Decision Support Services"'
+  - article:
+    - text: Testbed Evaluation
+    - heading "An Evaluation of the Next Generation Fire System (NGFS) for Predictive Services" [level=3]:
+      - link "An Evaluation of the Next Generation Fire System (NGFS) for Predictive Services":
+        - /url: /projects/an-evaluation-of-the-next-generation-fire-system-ngfs
+    - paragraph: This evaluation by the NOAA Fire Weather Testbed assesses the Next Generation Fire System (NGFS) for wildland fire Predictive Services personnel.
+    - text: Laura McMeeking, Ansley Baring, Benjamin J. Hatchett et al. · 2025 Before During
+    - button "Quick look at An Evaluation of the Next Generation Fire System (NGFS) for Predictive Services"
+  - article:
+    - text: Testbed Evaluation
+    - 'heading "Fire Weather Testbed Evaluation #004 - National Weather Service Fire Warnings Using a Tactical Integrated Warning Team Approach" [level=3]':
+      - 'link "Fire Weather Testbed Evaluation #004 - National Weather Service Fire Warnings Using a Tactical Integrated Warning Team Approach"':
+        - /url: /projects/fire-weather-testbed-evaluation-004-national-weather-service
+    - paragraph: In June 2024, the NOAA Fire Weather Testbed conducted a five-day evaluation of National Weather Service (NWS) Fire Warnings for wildland fire operations.
+    - text: Emily Wells, Ansley Baring, Benjamin Hatchett et al. · 2025 Before During Long-term
+    - 'button "Quick look at Fire Weather Testbed Evaluation #004 - National Weather Service Fire Warnings Using a Tactical Integrated Warning Team Approach"'
+  - article:
+    - text: Testbed Evaluation
+    - 'heading "Fire Weather Testbed Evaluations #002: Fire Detection and Dissemination - NESDIS Next Generation Fire System and NWS Hotspot Notification Tool" [level=3]':
+      - 'link "Fire Weather Testbed Evaluations #002: Fire Detection and Dissemination - NESDIS Next Generation Fire System and NWS Hotspot Notification Tool"':
+        - /url: /projects/fire-weather-testbed-evaluations-002-fire-detection
+    - paragraph: In June 2024, the NOAA Fire Weather Testbed conducted a five-day, in-person evaluation of the National Environmental Satellite, Data, and Information Service (NESDIS) Next Generation Fire System (NGFS) and NWS Hotspot Notification Tool…
+    - text: Emily Wells, Ansley Baring, Benjamin Hatchett et al. · 2025 Before During Long-term
+    - 'button "Quick look at Fire Weather Testbed Evaluations #002: Fire Detection and Dissemination - NESDIS Next Generation Fire System and NWS Hotspot Notification Tool"'
+  - article:
+    - text: Testbed Evaluation
+    - 'heading "Fire Weather Testbed Evaluations #003 - Interagency Collaboration: Tactical Integrated Warning Team (IWT) for Wildland Fire Operations" [level=3]':
+      - 'link "Fire Weather Testbed Evaluations #003 - Interagency Collaboration: Tactical Integrated Warning Team (IWT) for Wildland Fire Operations"':
+        - /url: /projects/fire-weather-testbed-evaluations-003-interagency
+    - paragraph: In June 2024, the NOAA Fire Weather Testbed conducted a five-day evaluation of the Tactical Integrated Warning Team (IWT) for fire operations.
+    - text: Emily Wells, Ansley Baring, Benjamin Hatchett et al. · 2025 Before During Long-term
+    - 'button "Quick look at Fire Weather Testbed Evaluations #003 - Interagency Collaboration: Tactical Integrated Warning Team (IWT) for Wildland Fire Operations"'
+  - article:
+    - text: Research Study
+    - 'heading "Igniting Insight: Evaluating NWS Fire Weather Products within a Fire Partner Decision Making Context" [level=3]':
+      - 'link "Igniting Insight: Evaluating NWS Fire Weather Products within a Fire Partner Decision Making Context"':
+        - /url: /projects/igniting-insight-evaluating-nws-fire-weather-products
+    - paragraph: This study evaluates how National Weather Service (NWS) partners (Fire Chiefs, Fire Analysts, Emergency Managers, etc.) utilize fire weather sources across the decision timeline—from long-range planning weeks in advance to tactical…
+    - text: Stephanie Hoekstra, Benjamin Hatchett and Jamie Vickery · 2025 Before During
+    - 'button "Quick look at Igniting Insight: Evaluating NWS Fire Weather Products within a Fire Partner Decision Making Context"'

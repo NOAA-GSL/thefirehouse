@@ -1,0 +1,145 @@
+- link "Skip to main content":
+  - /url: "#main"
+- banner:
+  - link "The Firehouse, NOAA Global Systems Laboratory — home":
+    - /url: /
+    - text: The Firehouse
+  - navigation "Primary":
+    - link "Home":
+      - /url: /
+    - link "Explore Projects":
+      - /url: /projects
+    - link "About":
+      - /url: /about
+    - link "Submit a Finding":
+      - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths
+  - button "Switch to dark theme"
+  - link "Submit a Finding":
+    - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths
+- main:
+  - article:
+    - navigation "Breadcrumb":
+      - link "All projects":
+        - /url: /projects
+    - text: Research Study
+    - 'heading "Igniting Impact: Advancing Fire Weather Decision Support Services" [level=1]'
+    - paragraph: Stephanie Hoekstra·Cooperative Institute for Research in the Atmosphere
+    - text: "Completed 2026 Fire cycle phase: Before · During · Long-term"
+    - heading "Abstract" [level=2]
+    - paragraph: This study evaluates how wildland fire management professionals access, perceive, and utilize meteorological decision-support information across the wildfire lifecycle. Based on a comprehensive national mixed-methods survey (n = 475), the study examined a variety of fire weather sources, prioritizing local National Weather Service (NWS) offices. Findings reveal that fire professional informational needs vary significantly by geographic region and operational role. Professionals expressed demand for extended Red Flag Warning (RFW) lead times (48 hours), dynamic two-way digital communication platforms, and probabilistic risk messaging. Notably, collaborative fuel verification prior to warning issuance correlated with a 31% increase in product trust. Overall, results indicate that fire weather support can be optimized by incorporating more fuels data into product issuance workflows, transitioning to visual probabilistic frameworks, and adopting high-touch communication protocols to enhance risk management.
+    - heading "Major takeaways" [level=2]
+    - list:
+      - listitem:
+        - paragraph: Information utility varies by region and function across diverse fire weather sources. Forecasters must engage their local partners to align specific technical tools with operational roles throughout the wildfire lifecycle.
+      - listitem:
+        - paragraph: Incorporating partner-provided ground-truth fuel data prior to warning issuance increases RFW trust by 31%, demonstrating that collaborative data verification substantially improves product credibility and operational relevance.
+      - listitem:
+        - paragraph: Fire professionals favor probabilistic visual metrics—specifically a combination of text and graphics—and tiered "Particularly Dangerous Situation" (PDS) headers over binary forecasts, enabling more nuanced risk assessments and scalable operational decision making.
+      - listitem:
+        - paragraph: Fire professionals prioritize concise, event-driven updates delivered via two-way digital channels over static briefings, highlighting a shift toward dynamic, high-touch operational communication protocols.
+    - heading "End-user needs and recommendations" [level=2]
+    - list:
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: Need for role-tailored information among fire professionals.
+          - text: Product utility varies significantly by geographic region and operational role.
+        - text: Recommendation
+        - paragraph: Recommend NWS forecasters consult local fire professionals directly to identify their specific tool preferences and tailor weather products to match end-user operational workflows.
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: Need for collaborative fuel verification among fire professionals and NWS forecasters.
+          - text: Forecast products lack integration of local ground-truth fuel conditions, reducing user buy-in.
+        - text: Recommendation
+        - paragraph: Recommend NWS forecasters consult local fire professionals on fuel conditions prior to issuing Red Flag Warnings to increase forecast trust and local relevance.
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: Need for high-confidence wind and relative humidity metrics fire professionals.
+          - text: Operational decisions from pre-planning through active suppression rely heavily on stable, highly accurate wind speed and relative humidity forecasts.
+        - text: Recommendation
+        - paragraph: Recommend NWS forecasters prioritize maximum reliability for these core variables across all product types throughout the incident lifecycle.
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: Need for earlier signals of critical conditions among emergency managers and fire professionals.
+          - text: Standard 12–24 hour Red Flag Warning lead times limit proactive operational scaling before major weather events.
+        - text: Recommendation
+        - paragraph: Recommend NWS forecasters utilize Fire Weather Watches and other early planning products to convey trend information and explicitly indicate the likelihood of subsequent Red Flag Warning issuance at least 48 hours in advance.
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: Need for dynamic two-way communication between fire professionals and forecasters.
+          - text: Fire professionals require increased communication across all formats, especially channels that enable direct, interactive dialogue to stay ahead of rapid situational changes.
+        - text: Recommendation
+        - paragraph: Recommend NWS forecasters use more direct messaging platforms to facilitate frequent, real-time interactions.
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: Need for visual probabilistic risk data among fire professionals.
+          - text: Simple binary forecasts do not capture operational uncertainty or support complex risk management.
+        - text: Recommendation
+        - paragraph: Recommend NWS forecasters integrate combined text-and-graphic probabilistic visual summaries into core warning products for faster scanning in the field and improved decision making.
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: Need for tiered threat messaging among fire partners.
+          - text: Standard warnings fail to distinguish routine critical weather from rare, catastrophic threats.
+        - text: Recommendation
+        - paragraph: Recommend NWS forecasters implement "Particularly Dangerous Situation" (PDS) headers during high-end Red Flag Warnings to signal extreme urgency.
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: Need for discretionary warning issuance in marginal Red Flag Warning cases for fire professionals.
+          - text: Strict adherence to strict criteria can prevent coordination roles from obtaining the administrative cover needed to scale operations during critical events.
+        - text: Recommendation
+        - paragraph: Recommend NWS forecasters exercise professional discretion to issue warnings during near-criteria events when secondary parameters indicate heightened risk, applying "marginal" or "borderline" labels to maintain credibility.
+    - heading "Publications and resources" [level=2]
+    - list:
+      - listitem:
+        - 'link "Igniting Impact: Advancing Fire Weather DSS Zenodo · 2026 doi:10.5281/zenodo.21229534 (opens in a new tab)"':
+          - /url: https://doi.org/10.5281/zenodo.21229534
+    - region "Cite this project":
+      - heading "Cite this project" [level=2]
+      - tablist "Citation format":
+        - tab "APA 7" [selected]
+        - tab "Chicago"
+        - tab "BibTeX"
+      - tabpanel "APA 7": "Hoekstra, S. (2026). Igniting Impact: Advancing Fire Weather Decision Support Services. The Firehouse, NOAA Global Systems Laboratory. https://doi.org/10.5281/zenodo.21229534"
+      - button "Copy"
+      - status
+    - complementary "Project details":
+      - heading "At a glance" [level=2]
+      - term: Project type
+      - definition: Research Study
+      - term: Completion year
+      - definition: "2026"
+      - term: Fire cycle phase
+      - definition:
+        - list:
+          - listitem:
+            - strong: Before
+            - text: Pre-fire planning, prevention, and mitigation
+          - listitem:
+            - strong: During
+            - text: Fire detection, active suppression, and downstream impacts
+          - listitem:
+            - strong: Long-term
+            - text: Planning, adaptation, and policy
+      - term: Data collection
+      - definition: Survey
+      - term: Geographic areas
+      - definition: National
+      - term: Organization
+      - definition: Cooperative Institute for Research in the Atmosphere
+      - paragraph:
+        - text: Takeaways, needs and recommendations on this page are reproduced as the researcher submitted them. The
+        - link "topic areas":
+          - /url: /#top-needs
+        - text: are an AI-assisted synthesis across all projects, so no single project is filed under one.
+    - navigation "Other projects":
+      - link "Previous California Tribal Advisors Share Contemporary Environmental Data and Information Needs":
+        - /url: /projects/california-tribal-advisors-share-contemporary-environmental
+      - link "Next An Evaluation of the Next Generation Fire System (NGFS) for Predictive Services":
+        - /url: /projects/an-evaluation-of-the-next-generation-fire-system-ngfs

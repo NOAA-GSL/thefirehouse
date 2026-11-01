@@ -1,0 +1,104 @@
+- link "Skip to main content":
+  - /url: "#main"
+- banner:
+  - link "The Firehouse, NOAA Global Systems Laboratory — home":
+    - /url: /
+    - text: The Firehouse
+  - navigation "Primary":
+    - link "Home":
+      - /url: /
+    - link "Explore Projects":
+      - /url: /projects
+    - link "About":
+      - /url: /about
+    - link "Submit a Finding":
+      - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths
+  - button "Switch to dark theme"
+  - link "Submit a Finding":
+    - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths
+- main:
+  - navigation "Breadcrumb":
+    - link "Home":
+      - /url: /
+    - link "Top needs":
+      - /url: /#top-needs
+    - text: Forecasts
+  - text: Forecasts
+  - heading "Forecasts and Modeling" [level=1]
+  - region "Top 5 needs":
+    - heading "Top 5 needs" [level=2]
+    - paragraph:
+      - strong: AI-synthesized
+      - text: across all 4 projects.
+      - strong: Draft, pending team review
+      - text: · updated
+      - time: September 17, 2026
+      - text: .
+    - paragraph:
+      - text: Ranked by mentions — how many submitted needs and recommendations raise each one.
+      - link "How these needs are synthesized":
+        - /url: /#needs-source
+    - list:
+      - listitem:
+        - paragraph: Earlier signals of critical fire weather, at least 48 hours ahead
+        - paragraph: 2 mentions · from 2 projects
+        - list "Projects behind need 1":
+          - listitem:
+            - 'link "Igniting Impact: Advancing Fire Weather Decision Support Services 2026"':
+              - /url: /projects/igniting-impact-advancing-fire-weather-decision-support
+          - listitem:
+            - 'link "Igniting Insight: Evaluating NWS Fire Weather Products within a Fire Partner Decision Making Context 2025"':
+              - /url: /projects/igniting-insight-evaluating-nws-fire-weather-products
+      - listitem:
+        - paragraph: "Trend and duration detail: when conditions peak and how long they last"
+        - paragraph: 2 mentions · from 2 projects
+        - list "Projects behind need 2":
+          - listitem:
+            - 'link "Igniting Insight: Evaluating NWS Fire Weather Products within a Fire Partner Decision Making Context 2025"':
+              - /url: /projects/igniting-insight-evaluating-nws-fire-weather-products
+          - listitem:
+            - 'link "Igniting Impact: Advancing Fire Weather Decision Support Services 2026"':
+              - /url: /projects/igniting-impact-advancing-fire-weather-decision-support
+      - listitem:
+        - paragraph: Forecast discussions that state forecaster confidence and reasoning
+        - paragraph: 1 mention · from 1 project
+        - list "Projects behind need 3":
+          - listitem:
+            - 'link "Igniting Insight: Evaluating NWS Fire Weather Products within a Fire Partner Decision Making Context 2025"':
+              - /url: /projects/igniting-insight-evaluating-nws-fire-weather-products
+      - listitem:
+        - paragraph: Probabilistic forecasts shown as combined text and graphics
+        - paragraph: 1 mention · from 1 project
+        - list "Projects behind need 4":
+          - listitem:
+            - 'link "Igniting Impact: Advancing Fire Weather Decision Support Services 2026"':
+              - /url: /projects/igniting-impact-advancing-fire-weather-decision-support
+      - listitem:
+        - paragraph: Highly reliable wind and relative humidity forecasts throughout an incident
+        - paragraph: 1 mention · from 1 project
+        - list "Projects behind need 5":
+          - listitem:
+            - 'link "Igniting Impact: Advancing Fire Weather Decision Support Services 2026"':
+              - /url: /projects/igniting-impact-advancing-fire-weather-decision-support
+  - complementary "What this area covers":
+    - heading "What this area covers" [level=2]
+    - list:
+      - listitem: Model guidance, ensembles, and forecast skill for fire weather
+      - listitem: Lead times and how they line up with planning windows
+      - listitem: Downscaling and local adaptation of national products
+      - listitem: Uncertainty, probability, and how guidance is communicated
+    - paragraph: Have a finding that speaks to this area?
+    - link "Submit a Finding":
+      - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths
+  - navigation "Other topic areas":
+    - heading "Other topic areas" [level=2]
+    - list:
+      - listitem:
+        - link "Observations Observations and Monitoring":
+          - /url: /topics/observe
+      - listitem:
+        - link "Warnings Warnings and Immediate Response":
+          - /url: /topics/warning
+      - listitem:
+        - link "Governance Strategic Adaptation and Institutional Governance":
+          - /url: /topics/governance

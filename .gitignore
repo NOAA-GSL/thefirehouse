@@ -36,6 +36,9 @@ pnpm-debug.log*
 coverage/
 *.lcov
 
+# Reference screenshots (scripts/capture-reference.mjs); the ARIA snapshots are committed
+reference/screenshots/
+
 # OS
 .DS_Store
 Thumbs.db

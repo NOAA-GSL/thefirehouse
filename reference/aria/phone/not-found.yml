@@ -1,0 +1,34 @@
+- link "Skip to main content":
+  - /url: "#main"
+- banner:
+  - link "The Firehouse, NOAA Global Systems Laboratory — home":
+    - /url: /
+    - text: The Firehouse
+  - button "Switch to dark theme"
+  - button "Open menu"
+- main:
+  - text: Error 404
+  - heading "Page not found" [level=1]
+  - paragraph: That page doesn’t exist, or it may have moved. Everything on the hub is reachable from here.
+  - paragraph:
+    - text: Requested address
+    - code: /no-such-page
+  - link "Back to The Firehouse":
+    - /url: /
+  - link "Explore projects":
+    - /url: /projects
+  - navigation "The four topic areas":
+    - heading "The four topic areas" [level=2]
+    - list:
+      - listitem:
+        - link "Observations Observations and Monitoring":
+          - /url: /topics/observe
+      - listitem:
+        - link "Forecasts Forecasts and Modeling":
+          - /url: /topics/forecast
+      - listitem:
+        - link "Warnings Warnings and Immediate Response":
+          - /url: /topics/warning
+      - listitem:
+        - link "Governance Strategic Adaptation and Institutional Governance":
+          - /url: /topics/governance

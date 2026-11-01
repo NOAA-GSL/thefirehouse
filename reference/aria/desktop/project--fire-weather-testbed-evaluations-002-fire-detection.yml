@@ -1,0 +1,127 @@
+- link "Skip to main content":
+  - /url: "#main"
+- banner:
+  - link "The Firehouse, NOAA Global Systems Laboratory — home":
+    - /url: /
+    - text: The Firehouse
+  - navigation "Primary":
+    - link "Home":
+      - /url: /
+    - link "Explore Projects":
+      - /url: /projects
+    - link "About":
+      - /url: /about
+    - link "Submit a Finding":
+      - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths
+  - button "Switch to dark theme"
+  - link "Submit a Finding":
+    - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths
+- main:
+  - article:
+    - navigation "Breadcrumb":
+      - link "All projects":
+        - /url: /projects
+    - text: Testbed Evaluation
+    - 'heading "Fire Weather Testbed Evaluations #002: Fire Detection and Dissemination - NESDIS Next Generation Fire System and NWS Hotspot Notification Tool" [level=1]'
+    - paragraph: Emily Wells, Ansley Baring, Benjamin Hatchett, Stephanie Hoekstra, Laura Sample McMeeking, Kyle Thiem, Zach Tolby and Jamie Vickery·Cooperative Institute for Research in the Atmosphere
+    - text: "Completed 2025 Fire cycle phase: Before · During · Long-term"
+    - heading "Abstract" [level=2]
+    - paragraph: In June 2024, the NOAA Fire Weather Testbed conducted a five-day, in-person evaluation of the National Environmental Satellite, Data, and Information Service (NESDIS) Next Generation Fire System (NGFS) and NWS Hotspot Notification Tool (HSNT). NGFS is a satellite-based AI algorithm utilizing NOAA’s geostationary and low Earth-orbiting satellites to detect and monitor wildland fires, highlighting potential new ignitions. It is developed jointly by NESDIS and the University of Wisconsin Space Science and Engineering Center’s Cooperative Institute for Meteorological Satellite Studies. HSNT, developed by NWS Norman, Oklahoma, disseminates fire detection locations and weather forecasts from NWS meteorologists to land management partners via text or email notifications. Four meteorologists and five state fire partners participated in the evaluation. After receiving NGFS and HSNT training, meteorologist–land manager pairs worked together on displaced real-time simulations. Participants completed daily surveys regarding NGFS usage during simulations and joined a final focus group to evaluate overall usability and utility. FWT facilitated two recorded focus group discussions—one for meteorologists and one for fire partners—allowing each group to focus on discipline-specific applications and feedback. The FWT analyzed their feedback to share with the product development team.
+    - heading "Major takeaways" [level=2]
+    - list:
+      - listitem:
+        - paragraph: The publicly accessible NGFS provides utility as a fire detection and monitoring tool. It enhances situational awareness, serving as a safety net for forecasters. By incorporating NGFS detections, the HSNT adds capabilities for the NWS to alert partner agencies. The NGFS and HSNT should integrate effectively into NWS operational environments.
+      - listitem:
+        - paragraph: By incorporating NGFS detections, the HSNT adds capabilities for the NWS to alert partner agencies. Evaluation findings suggested that the NGFS and HSNT can integrate effectively into NWS operational environments.
+      - listitem:
+        - paragraph: The publicly available NGFS/HSNT notification tools were perceived as not resource intensive and therefore capable of filling needs, especially for resource-limited land management jurisdictions. Because it is publicly available, land management agencies could integrate NGFS into their own operational environments or GIS platforms.
+      - listitem:
+        - paragraph: Participating meteorologists and land managers found that the NGFS’ high temporal resolution enhanced situational awareness for monitoring wildland fires (wildfire and prescribed).
+    - heading "End-user needs and recommendations" [level=2]
+    - list:
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: "Need for “safety net” tools among meteorologists:"
+          - text: Automated "safety net" tools (like NGFS) are needed to monitor active fires and prevent missed detections, reducing cognitive overload during operations.
+        - text: Recommendation
+        - paragraph: Recommend ingesting NGFS into NWS Advanced Weather Interactive Processing System (AWIPS) with customizable display capabilities (e.g., hotspot detections overlaid with base satellite, meteorological, geographical data) and fire radiative power color-coding to help meteorologists differentiate new ignitions from known/older thermal activity.
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: "Need for adjustable alert thresholds among meteorologists:"
+          - text: The capability for meteorologists’ to adjust and customize hotspot alert thresholds is needed to stay informed on emerging hotspots without becoming inundated during high-activity fire periods.
+        - text: Recommendation
+        - paragraph: Recommend integrating confidence/uncertainty flags and customizable local alert thresholds pre-determined with local land management partners.
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: "Need for contextual data and weather overlays among land managers:"
+          - text: Land managers need contextual data, confidence indicators, and representative weather observations alongside hotspot detections to validate thermal anomalies and reduce concerns over false positive detections.
+        - text: Recommendation
+        - paragraph: Recommend training materials and documentation that explain the NGFS process (e.g., how it detects fires, integrates known wildland fire information, and incorporates uncertainty) to support land managers in validating detections with other sources.
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: "Need for controlled fire detection information flows among meteorologists and land managers:"
+          - text: Both groups need information flows to notify land management partners about critical hotspot detections without overwhelming them with unnecessary data.
+        - text: Recommendation
+        - paragraph: Recommend adding a confirmation mechanism to “close the loop” between meteorologists and partner agencies to confirm receipt of NWS-provided hotspot notification(s).
+      - listitem:
+        - text: Need
+        - paragraph:
+          - strong: "Need for multi-modal communication options between meteorologists and land managers:"
+          - text: Land managers need flexible, multi-modal communication options (including via text message) to ensure time-sensitive hotspot alerts reach field partners reliably despite internet connectivity constraints.
+        - text: Recommendation
+        - paragraph: Recommend ensuring multiple communication pathways are available for agency partners to use to send and receive NGFS/HSNT as needed.
+    - heading "Publications and resources" [level=2]
+    - list:
+      - listitem:
+        - 'link "Fire Weather Testbed Evaluations #002–004: An End-to-End Evaluation of NOAA''s Emerging Wildland Fire Detection and Warning Capabilities NOAA technical memorandum OAR GSL ; 71 · 2025 doi:10.25923/4pqf-7g49 (opens in a new tab)"':
+          - /url: https://doi.org/10.25923/4pqf-7g49
+      - listitem:
+        - link "cimss.ssec.wisc.edu/ngfs (opens in a new tab)":
+          - /url: https://cimss.ssec.wisc.edu/ngfs/
+    - region "Cite this project":
+      - heading "Cite this project" [level=2]
+      - tablist "Citation format":
+        - tab "APA 7" [selected]
+        - tab "Chicago"
+        - tab "BibTeX"
+      - tabpanel "APA 7": "Wells, E., Baring, A., Hatchett, B., Hoekstra, S., Laura Sample McMeeking, Thiem, K., Tolby, Z., & Vickery, J. (2025). Fire Weather Testbed Evaluations #002: Fire Detection and Dissemination - NESDIS Next Generation Fire System and NWS Hotspot Notification Tool. The Firehouse, NOAA Global Systems Laboratory. https://doi.org/10.25923/4pqf-7g49"
+      - button "Copy"
+      - status
+    - complementary "Project details":
+      - heading "At a glance" [level=2]
+      - term: Project type
+      - definition: Testbed Evaluation
+      - term: Completion year
+      - definition: "2025"
+      - term: Fire cycle phase
+      - definition:
+        - list:
+          - listitem:
+            - strong: Before
+            - text: Pre-fire planning, prevention, and mitigation
+          - listitem:
+            - strong: During
+            - text: Fire detection, active suppression, and downstream impacts
+          - listitem:
+            - strong: Long-term
+            - text: Planning, adaptation, and policy
+      - term: Data collection
+      - definition: Survey, Focus groups, Workshop/roundtable discussions
+      - term: Geographic areas
+      - definition: N. California ONCC S. California OSCC Rocky Mountain RMCC Southern Area SACC
+      - term: Organization
+      - definition: Cooperative Institute for Research in the Atmosphere
+      - paragraph:
+        - text: Takeaways, needs and recommendations on this page are reproduced as the researcher submitted them. The
+        - link "topic areas":
+          - /url: /#top-needs
+        - text: are an AI-assisted synthesis across all projects, so no single project is filed under one.
+    - navigation "Other projects":
+      - 'link "Previous Fire Weather Testbed Evaluation #004 - National Weather Service Fire Warnings Using a Tactical Integrated Warning Team Approach"':
+        - /url: /projects/fire-weather-testbed-evaluation-004-national-weather-service
+      - 'link "Next Fire Weather Testbed Evaluations #003 - Interagency Collaboration: Tactical Integrated Warning Team (IWT) for Wildland Fire Operations"':
+        - /url: /projects/fire-weather-testbed-evaluations-003-interagency
