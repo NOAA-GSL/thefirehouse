@@ -39,6 +39,11 @@ coverage/
 # Reference screenshots (scripts/capture-reference.mjs); the ARIA snapshots are committed
 reference/screenshots/
 
+# Survey downloads hold submitters' emails and never belong in this public repository.
+# Keep them outside it; this is only a backstop.
+*.xlsx
+*.csv
+
 # OS
 .DS_Store
 Thumbs.db

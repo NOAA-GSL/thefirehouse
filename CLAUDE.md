@@ -23,14 +23,14 @@ change.
   there rather than in code, and keep the test cases language-neutral.
 - **Before reporting a change done,** run the checks it touches: `npm run typecheck`,
   `npm test`, `npm run schema:check` and `npm run build` for the site; `composer lint`
-  and `composer test` for the plugin; `npm run reference` when a page changes (it also
-  fails on a page wider than the window).
+  and `composer test` for the plugin; `npm run reference` when a page changes.
 
 ## Review agents
 
 `.claude/agents/` holds a review team of 13 agents from the
 [agency-agents catalog](https://github.com/Hackshaven/agency-agents) (`hackshaven`
-branch, commit `e42f947`). Firehouse has one developer at a time, and the person who
+branch, commit `e42f947`), under the catalog's MIT license, which is copied beside them
+in `.claude/agents/LICENSE`. Firehouse has one developer at a time, and the person who
 prompts a change is the person who approves it. This team is a second reader, not an
 independent one: it runs on the same model family that writes most commits here. It
 doesn't replace GSL's security review, the privacy review, or Stephanie and Emily's
