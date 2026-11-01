@@ -21,17 +21,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class Format {
 
 	/**
-	 * An ISO date, or a date and time with or without a zone. Nothing looser counts,
-	 * so "tomorrow" can't become a "Last reviewed" date.
+	 * An ISO date, or a date and time with or without a zone, captured in parts so the
+	 * calendar can be checked. Nothing looser counts, so "tomorrow" can't become a
+	 * "Last reviewed" date.
 	 */
-	private const ISO_DATE = '/^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})?)?$/D';
+	private const ISO_DATE = '/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})?)?$/D';
 
 	/**
-	 * A link: a scheme, then the host (after any user and before any port), then the
-	 * path. The label is built from them as written, so a SICI DOI keeps its angle
-	 * brackets and an international host keeps its letters.
+	 * A link: a scheme, then the host (after any user, up to the last "@", and before
+	 * any port; an IPv6 host in brackets), then the path. The label is built from them
+	 * as written, so a SICI DOI keeps its angle brackets and an international host
+	 * keeps its letters.
 	 */
-	private const LINK = '/^[a-z][a-z0-9+.-]*:\/\/(?:[^@\/?#]*@)?([^:\/?#]*)(?::[^\/?#]*)?([^?#]*)/i';
+	private const LINK = '/^[a-z][a-z0-9+.-]*:\/\/(?:[^\/?#]*@)?(\[[^\]\/?#]*\]|[^:\/?#]*)(?::[^\/?#]*)?([^?#]*)/i';
 
 	/**
 	 * Formats an ISO date for the "Last reviewed" lines: "September 17, 2026".
@@ -40,11 +42,19 @@ final class Format {
 	 * stores date-only strings, which mean that day everywhere; read in a local zone
 	 * west of Greenwich, they would show the day before, including in every NOAA office.
 	 *
+	 * A date that isn't on the calendar (February 30, month 00, second 60) comes back
+	 * unchanged too, rather than rolled over into a date nobody wrote.
+	 *
 	 * @param string $iso A date ("2026-09-17") or a date and time.
 	 * @return string The date in words, or the input unchanged if it isn't an ISO date.
 	 */
 	public static function review_date( string $iso ): string {
-		if ( ! preg_match( self::ISO_DATE, $iso ) ) {
+		if ( ! preg_match( self::ISO_DATE, $iso, $parts ) ) {
+			return $iso;
+		}
+		$on_calendar = checkdate( (int) $parts[2], (int) $parts[3], (int) $parts[1] );
+		$on_clock    = (int) ( $parts[4] ?? 0 ) < 24 && (int) ( $parts[5] ?? 0 ) < 60 && (int) ( $parts[6] ?? 0 ) < 60;
+		if ( ! $on_calendar || ! $on_clock ) {
 			return $iso;
 		}
 		try {
@@ -53,7 +63,9 @@ final class Format {
 		} catch ( \Exception $e ) {
 			return $iso;
 		}
-		return $date->setTimezone( $utc )->format( 'F j, Y' );
+		// The year unpadded, as JavaScript prints it: 99, not 0099.
+		$date = $date->setTimezone( $utc );
+		return $date->format( 'F j, ' ) . (int) $date->format( 'Y' );
 	}
 
 	/**

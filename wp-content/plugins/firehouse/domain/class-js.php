@@ -49,6 +49,8 @@ final class Js {
 	 * @param string $text The text, as valid UTF-8.
 	 */
 	public static function trim( string $text ): string {
-		return (string) preg_replace( '/^[' . self::SPACE . ']+|[' . self::SPACE . ']+$/uD', '', $text );
+		// Unchanged rather than emptied if the text isn't valid UTF-8, which the u
+		// modifier refuses.
+		return preg_replace( '/^[' . self::SPACE . ']+|[' . self::SPACE . ']+$/uD', '', $text ) ?? $text;
 	}
 }
