@@ -20,6 +20,14 @@
 
     { "name": "a DOI link", "fn": "linkLabel", "args": ["https://doi.org/10.1175/WAF-D-24-0001.1"], "expected": "doi.org/10.1175/WAF-D-24-0001.1" },
     { "name": "www. and a trailing slash are dropped", "fn": "linkLabel", "args": ["https://www.example.org/reports/smoke/"], "expected": "example.org/reports/smoke" },
-    { "name": "something that isn't a URL comes back unchanged", "fn": "linkLabel", "args": ["not a url"], "expected": "not a url" }
+    { "name": "something that isn't a URL comes back unchanged", "fn": "linkLabel", "args": ["not a url"], "expected": "not a url" },
+
+    { "name": "something that isn't a date comes back unchanged", "fn": "formatReviewDate", "args": ["soon"], "expected": "soon" },
+    { "name": "a relative date isn't a date", "fn": "formatReviewDate", "args": ["tomorrow"], "expected": "tomorrow" },
+    { "name": "an impossible month isn't a date", "fn": "formatReviewDate", "args": ["2026-13-01"], "expected": "2026-13-01" },
+    { "name": "a time written without a zone is read in UTC", "fn": "formatReviewDate", "args": ["2026-09-17T23:30:00"], "expected": "September 17, 2026" },
+    { "name": "a line break inside the lead means no lead", "fn": "splitNeedLead", "args": ["Need for maps\r: details follow."], "expected": { "rest": "Need for maps\r: details follow." } },
+    { "name": "an older DOI keeps its characters as written", "fn": "linkLabel", "args": ["https://doi.org/10.1175/1520-0434(1998)013<0377:TACFAS>2.0.CO;2"], "expected": "doi.org/10.1175/1520-0434(1998)013<0377:TACFAS>2.0.CO;2" },
+    { "name": "the host is lowercased, and a port and query are dropped", "fn": "linkLabel", "args": ["HTTPS://WWW.Example.ORG:8443/Reports/?page=2"], "expected": "example.org/Reports" }
   ]
 }
