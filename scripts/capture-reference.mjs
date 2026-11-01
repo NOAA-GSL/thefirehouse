@@ -20,6 +20,9 @@
  * nothing is downloaded. Motion is reduced so no screenshot lands mid-animation. The
  * map's basemap tiles still come from Esri, so screenshots of the map can differ
  * slightly between runs; the ARIA snapshots don't.
+ *
+ * It also reports any page wider than the window, which scrolls sideways on a phone,
+ * and exits with an error if it finds one.
  */
 
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -52,6 +55,7 @@ const THEMES = ['light', 'dark'];
 const server = await preview({ root: ROOT, logLevel: 'warn', preview: { port: 4317, strictPort: true } });
 const origin = server.resolvedUrls.local[0].replace(/\/$/, '');
 const browser = await chromium.launch({ channel: process.env.REFERENCE_BROWSER ?? 'msedge' });
+const tooWide = [];
 
 try {
   rmSync(resolve(OUT, 'aria'), { recursive: true, force: true });
@@ -76,6 +80,9 @@ try {
           const aria = resolve(OUT, 'aria', widthName);
           mkdirSync(aria, { recursive: true });
           writeFileSync(resolve(aria, `${name}.yml`), `${await page.locator('body').ariaSnapshot()}\n`);
+
+          const width = await page.evaluate(() => document.documentElement.scrollWidth);
+          if (width > viewport.width) tooWide.push(`${widthName} ${path}: ${width}px wide`);
         }
         console.log(`${widthName} ${theme} ${path}`);
       }
@@ -85,4 +92,9 @@ try {
 } finally {
   await browser.close();
   await new Promise((done) => server.httpServer.close(done));
+}
+
+if (tooWide.length > 0) {
+  console.error(`\nWider than the window, so they scroll sideways:\n  ${tooWide.join('\n  ')}`);
+  process.exitCode = 1;
 }
