@@ -1,7 +1,8 @@
 - link "Skip to main content":
   - /url: "#main"
-- text: An official website of the United States government
-- button "Here’s how you know"
+- region "Official website of the United States government":
+  - text: An official website of the United States government
+  - button "Here’s how you know"
 - banner:
   - link "The Firehouse, NOAA Global Systems Laboratory — home":
     - /url: /
@@ -14,7 +15,7 @@
     - link "About":
       - /url: /about
   - button "Switch to dark theme"
-  - link "Submit a Finding":
+  - link "Submit a Finding (opens in a new tab)":
     - /url: https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform
 - main:
   - article:
@@ -107,36 +108,36 @@
       - /url: /projects
     - link "Top needs":
       - /url: /#top-needs
-    - link "Submit a finding":
+    - link "Submit a finding (opens in a new tab)":
       - /url: https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform
   - navigation "About GSL":
     - heading "About GSL" [level=2]
-    - link "gsl.noaa.gov":
+    - link "gsl.noaa.gov (opens in a new tab)":
       - /url: https://gsl.noaa.gov
-    - link "Research programs":
+    - link "Research programs (opens in a new tab)":
       - /url: https://gsl.noaa.gov/research
-    - link "Contact GSL":
+    - link "Contact GSL (opens in a new tab)":
       - /url: https://gsl.noaa.gov/contact
-    - link "Careers":
+    - link "Careers (opens in a new tab)":
       - /url: https://gsl.noaa.gov/careers
   - navigation "Federal resources":
     - heading "Federal resources" [level=2]
-    - link "NOAA.gov":
+    - link "NOAA.gov (opens in a new tab)":
       - /url: https://www.noaa.gov
-    - link "Department of Commerce":
+    - link "Department of Commerce (opens in a new tab)":
       - /url: https://www.commerce.gov
-    - link "USA.gov":
+    - link "USA.gov (opens in a new tab)":
       - /url: https://www.usa.gov
-    - link "No FEAR Act":
+    - link "No FEAR Act (opens in a new tab)":
       - /url: https://www.noaa.gov/organization/no-fear-act
-    - link "Privacy policy":
+    - link "Privacy policy (opens in a new tab)":
       - /url: https://www.noaa.gov/protecting-your-privacy
-    - link "Accessibility":
+    - link "Accessibility (opens in a new tab)":
       - /url: https://www.noaa.gov/accessibility
-    - link "FOIA":
+    - link "FOIA (opens in a new tab)":
       - /url: https://www.noaa.gov/information-technology/foia
-    - link "Information quality":
+    - link "Information quality (opens in a new tab)":
       - /url: https://www.noaa.gov/organization/information-technology/information-quality
   - text: U.S. Department of Commerce | National Oceanic and Atmospheric Administration
-  - link "usa.gov":
+  - link "usa.gov (opens in a new tab)":
     - /url: https://www.usa.gov

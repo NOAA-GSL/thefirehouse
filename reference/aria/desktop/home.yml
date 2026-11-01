@@ -1,7 +1,8 @@
 - link "Skip to main content":
   - /url: "#main"
-- text: An official website of the United States government
-- button "Here’s how you know"
+- region "Official website of the United States government":
+  - text: An official website of the United States government
+  - button "Here’s how you know"
 - banner:
   - link "The Firehouse, NOAA Global Systems Laboratory — home":
     - /url: /
@@ -14,14 +15,14 @@
     - link "About":
       - /url: /about
   - button "Switch to dark theme"
-  - link "Submit a Finding":
+  - link "Submit a Finding (opens in a new tab)":
     - /url: https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform
 - main:
   - img "FireHouse — Fire Weather Research Hub"
   - text: NOAA / Global Systems Laboratory
   - heading "A shared home for fire weather social science" [level=1]
   - paragraph: The Firehouse centralizes the needs and recommendations learned across completed fire weather research, so forecasters, researchers, and decision-makers can find what's already known — and add to it.
-  - link "Submit a Finding":
+  - link "Submit a Finding (opens in a new tab)":
     - /url: https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform
   - link "Explore Projects":
     - /url: /projects
@@ -35,7 +36,7 @@
     - paragraph: Forecasters, land managers, and emergency managers keep telling researchers what they need. Here, every completed fire weather social science project in The Firehouse is read together as one body of evidence, and the needs its researchers recorded are distilled into the five most pressing in each of four topic areas — in one place, ranked, with how often each one came up.
     - paragraph:
       - strong: AI-synthesized
-      - text: across all 4 projects.
+      - text: across 4 of 8 projects.
     - article:
       - text: Observations
       - heading "Observations and Monitoring" [level=3]:
@@ -131,7 +132,7 @@
   - region "Have a finding to share?":
     - heading "Have a finding to share?" [level=2]
     - paragraph: Describe what you learned in your own words. Submissions are reviewed and folded into the four topic areas above.
-    - link "Submit a Finding":
+    - link "Submit a Finding (opens in a new tab)":
       - /url: https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform
 - contentinfo:
   - img "NOAA"
@@ -146,36 +147,36 @@
       - /url: /projects
     - link "Top needs":
       - /url: /#top-needs
-    - link "Submit a finding":
+    - link "Submit a finding (opens in a new tab)":
       - /url: https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform
   - navigation "About GSL":
     - heading "About GSL" [level=2]
-    - link "gsl.noaa.gov":
+    - link "gsl.noaa.gov (opens in a new tab)":
       - /url: https://gsl.noaa.gov
-    - link "Research programs":
+    - link "Research programs (opens in a new tab)":
       - /url: https://gsl.noaa.gov/research
-    - link "Contact GSL":
+    - link "Contact GSL (opens in a new tab)":
       - /url: https://gsl.noaa.gov/contact
-    - link "Careers":
+    - link "Careers (opens in a new tab)":
       - /url: https://gsl.noaa.gov/careers
   - navigation "Federal resources":
     - heading "Federal resources" [level=2]
-    - link "NOAA.gov":
+    - link "NOAA.gov (opens in a new tab)":
       - /url: https://www.noaa.gov
-    - link "Department of Commerce":
+    - link "Department of Commerce (opens in a new tab)":
       - /url: https://www.commerce.gov
-    - link "USA.gov":
+    - link "USA.gov (opens in a new tab)":
       - /url: https://www.usa.gov
-    - link "No FEAR Act":
+    - link "No FEAR Act (opens in a new tab)":
       - /url: https://www.noaa.gov/organization/no-fear-act
-    - link "Privacy policy":
+    - link "Privacy policy (opens in a new tab)":
       - /url: https://www.noaa.gov/protecting-your-privacy
-    - link "Accessibility":
+    - link "Accessibility (opens in a new tab)":
       - /url: https://www.noaa.gov/accessibility
-    - link "FOIA":
+    - link "FOIA (opens in a new tab)":
       - /url: https://www.noaa.gov/information-technology/foia
-    - link "Information quality":
+    - link "Information quality (opens in a new tab)":
       - /url: https://www.noaa.gov/organization/information-technology/information-quality
   - text: U.S. Department of Commerce | National Oceanic and Atmospheric Administration
-  - link "usa.gov":
+  - link "usa.gov (opens in a new tab)":
     - /url: https://www.usa.gov
