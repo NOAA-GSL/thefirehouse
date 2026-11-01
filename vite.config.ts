@@ -34,6 +34,11 @@ function spaFallback(): Plugin {
  * `VITE_SITE_URL` and simply omitted when it isn't set — a missing og:image degrades
  * to a title-and-description preview, whereas a guessed one would point at a domain
  * that may never exist. Set VITE_SITE_URL once Matt confirms placement.
+ *
+ * `VITE_NOINDEX=1` also asks search engines not to index any page, for a copy that
+ * isn't the public site, such as the one on GSL's test site. A `robots.txt` can't do
+ * that job here: under a sub-path like `/firehouse/` it isn't at the site's root, so
+ * crawlers never read it.
  */
 function siteMeta(): Plugin {
   return {
@@ -41,17 +46,22 @@ function siteMeta(): Plugin {
     transformIndexHtml: {
       order: 'post',
       handler(html) {
-        const site = process.env.VITE_SITE_URL?.trim().replace(/\/+$/, '');
-        if (!site) return html;
+        const tags: string[] = [];
+        if (process.env.VITE_NOINDEX) tags.push('<meta name="robots" content="noindex" />');
 
-        const base = (process.env.VITE_BASE_PATH ?? '/').replace(/\/+$/, '');
-        const root = `${site}${base}`;
-        const tags = [
-          `<link rel="canonical" href="${root}/" />`,
-          `<meta property="og:url" content="${root}/" />`,
-          `<meta property="og:image" content="${root}/og-image.png" />`,
-          `<meta name="twitter:image" content="${root}/og-image.png" />`,
-        ];
+        const site = process.env.VITE_SITE_URL?.trim().replace(/\/+$/, '');
+        if (site) {
+          const base = (process.env.VITE_BASE_PATH ?? '/').replace(/\/+$/, '');
+          const root = `${site}${base}`;
+          tags.push(
+            `<link rel="canonical" href="${root}/" />`,
+            `<meta property="og:url" content="${root}/" />`,
+            `<meta property="og:image" content="${root}/og-image.png" />`,
+            `<meta name="twitter:image" content="${root}/og-image.png" />`,
+          );
+        }
+
+        if (tags.length === 0) return html;
         return html.replace('</head>', `${tags.map((t) => `    ${t}`).join('\n')}\n  </head>`);
       },
     },
