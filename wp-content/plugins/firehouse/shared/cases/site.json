@@ -89,7 +89,7 @@
       "irbApproved": true,
       "geo": { "regions": ["NATIONAL"] },
       "takeaways": [],
-      "needs": [],
+      "needs": [{ "recommendation": "Recommend quarterly briefings for state partners." }],
       "papers": [],
       "published": true
     },
@@ -122,7 +122,7 @@
       "irbApproved": true,
       "geo": { "regions": ["GBCC"] },
       "takeaways": [],
-      "needs": [],
+      "needs": [{ "need": "Need for fuel moisture maps." }],
       "papers": [],
       "published": false
     },

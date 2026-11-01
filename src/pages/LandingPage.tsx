@@ -242,20 +242,16 @@ export function LandingPage() {
             <h3 id="source-heading" className="fh-source__heading">
               Where these needs come from
             </h3>
+            {/* The tool's name comes from the synthesis itself, so it stays right when
+                the synthesis moves from NotebookLM to the plugin's AI service. */}
             <p className="fh-source__body">
-              Topic areas are not assigned project by project. Every completed project
-              in The Firehouse — {synthesis.sourceCount}{' '}
-              {synthesis.sourceCount === 1 ? 'project' : 'projects'} today — is read
-              together{synthesis.model ? `, with ${synthesis.model},` : ''} and the
-              end-user needs its researchers recorded are grouped into the four areas
-              above and ranked by how often they come up. A <em>mention</em> is one
-              need or recommendation a researcher submitted; the same one can count in
-              more than one area.
-              {synthesis.reviewedBy
-                ? ` The ${synthesis.reviewedBy} reviews every pass before it is published.`
-                : ' This pass is a draft: the team reviews each synthesis before it is final.'}{' '}
-              Open a topic area to see which projects each need draws on; each project
-              page keeps the researchers’ own words.
+              Topic areas are not assigned project by project. Every project in The
+              Firehouse is read together{synthesis.model ? `, with ${synthesis.model}` : ''}.
+              The end-user needs its researchers recorded are grouped into the four areas
+              above and ranked by how often they come up. This pass serves as an initial
+              draft that our team reviews and refines before finalizing each synthesis.
+              Open any topic area to see which specific projects each need draws on; each
+              project page preserves the researchers’ own words.
             </p>
           </div>
           <Button variant="secondary" size="md" iconRight="arrow-right" to="/projects">

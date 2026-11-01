@@ -279,9 +279,11 @@ export interface HeroContent {
  * `source` decides where the number comes from. `derived` values are computed from
  * live content at render time (brief §5.1: "live, auto-updating stats") — an editor
  * controls the wording but cannot desync the count from reality. `static` is for
- * non-numeric slots like the "Open / For submissions" tile.
+ * non-numeric slots like the "Open / For submissions" tile. `needCount` counts the
+ * end-user needs in published projects; a recommendation submitted without a need
+ * isn't one.
  */
-export type StatSource = 'publishedProjectCount' | 'topicCount' | 'static';
+export type StatSource = 'publishedProjectCount' | 'topicCount' | 'needCount' | 'static';
 
 export interface StatContent {
   id: string;

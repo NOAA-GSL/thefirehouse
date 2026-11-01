@@ -15,10 +15,10 @@
       "caption": "Completed DESI and testbed research"
     },
     {
-      "id": "topics",
-      "source": "topicCount",
-      "label": "Topic areas",
-      "caption": "Observations, forecasts, warnings, governance"
+      "id": "needs",
+      "source": "needCount",
+      "label": "End-user needs",
+      "caption": "Submitted across all projects"
     },
     {
       "id": "submissions",
@@ -31,7 +31,7 @@
   ],
   "topicSection": {
     "eyebrow": "Synthesized across every project",
-    "heading": "The top 5 needs in fire weather social science",
+    "heading": "The top needs in fire weather social science",
     "body": "Forecasters, land managers, and emergency managers keep telling researchers what they need. Here, every completed fire weather social science project in The Firehouse is read together as one body of evidence, and the needs its researchers recorded are distilled into the five most pressing in each of four topic areas — in one place, ranked, with how often each one came up."
   },
   "needsPerCard": 5,

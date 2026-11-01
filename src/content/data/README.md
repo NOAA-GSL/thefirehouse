@@ -20,7 +20,7 @@ Re-import with `node scripts/import-survey.mjs path/to/export.xlsx` (add `--dry`
 ## The "live stats" contract
 
 `landing.json` never stores the project count. Stats declare a `source`
-(`publishedProjectCount`, `topicCount`, or `static`) and the number is computed from
-live content in `../derive.ts`. An editor controls the label and caption; they cannot
+(`publishedProjectCount`, `needCount`, `topicCount`, or `static`) and the number is
+computed from live content in `../derive.ts`. An editor controls the label and caption; they cannot
 put the count out of step with the projects actually published. Adding a tenth
 project to the CMS moves the landing page counter on its own.

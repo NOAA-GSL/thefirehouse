@@ -96,8 +96,8 @@ the "empty `href` inherits `settings.submitFormUrl`" convention so the submissio
 address lives in exactly one field even though five controls point at it.
 
 **Live stats are computed, not stored.** `landing.json` never contains the number 9.
-Each stat declares a `source` (`publishedProjectCount` / `topicCount` / `static`) and
-`derive.ts` counts live content. Editors control the wording; they can't put the
+Each stat declares a `source` (`publishedProjectCount` / `needCount` / `topicCount` /
+`static`) and `derive.ts` counts live content. Editors control the wording; they can't put the
 count out of step with what's published. Publishing a tenth project moves the
 counter on its own — brief §5.1.
 
