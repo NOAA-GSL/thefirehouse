@@ -458,20 +458,19 @@ short:
 ### No WP-CLI: the Import screen
 
 One **Firehouse → Import** screen, available only to a separate import capability,
-loads the **seed bundle**: a zip of today's JSON files, the excluded responses' file
-(see below) and the About portraits. This is how test, and later prod, get their first
-load. A dry-run preview first lists what was parsed and any warnings, and nothing is
-written until the person confirms. It is repeatable: running it again updates the same
-posts rather than duplicating them. The zip is parsed from PHP's temporary upload and
-never stored.
+loads the **seed bundle**: a zip of today's JSON files and the About portraits. This is
+how test, and later prod, get their first load. A dry-run preview first lists what was
+parsed and any warnings, and nothing is written until the person confirms. It is
+repeatable: running it again updates the same posts rather than duplicating them. The
+zip is parsed from PHP's temporary upload and never stored.
 
 Survey responses don't come through this screen. Until launch the existing import
 script turns them into the JSON files (see
 [Importing the Google Form until launch](#importing-the-google-form-until-launch)),
-so the seed bundle holds every response collected before then. Projects arrive as they
-are on the site. Responses the script excludes, such as one without IRB approval or
-exemption, arrive as drafts marked with the reason, the same as a form submission the
-checks flag. After launch, responses arrive through the plugin's own form.
+so the seed bundle holds every response the site shows by then, and projects arrive as
+they are on the site. A response the script excludes, such as one without IRB approval
+or exemption, isn't in the bundle; the Sheet remains its record. After launch,
+responses arrive through the plugin's own form.
 
 WP-CLI commands may exist for developers, but nothing depends on them.
 
@@ -651,7 +650,11 @@ the developer's computer and drops the email, job-title and Q10 answers before
 anything is written (rule 2).
 
 The script was written for Qualtrics, so it needs these changes before the next import
-(about 1–2 days, using a test response downloaded from the live form):
+(about a day, using a test response from the live form or a made-up row in its
+format). They wait until the form has a genuinely new response: every response so far
+re-enters a Qualtrics submission the site already shows. The form's response count
+says when. The last Qualtrics export had 8 responses, so a count above 8 means
+something new has arrived.
 
 - **Columns by question title.** Google's header row is the question text, not a
   stable ID like Qualtrics' `Q13`, so the script finds each column by its title, and a
@@ -672,17 +675,16 @@ The script was written for Qualtrics, so it needs these changes before the next 
   four other regions are matched by their full label in `shared/vocabulary.json`.
   Checkbox answers are matched against the known labels rather than split on commas,
   because "Northwest -- OR, WA (NWCC)" contains one.
-- **Pairing the re-entered submissions.** Every Qualtrics-era submission was re-entered
-  through the Google Form with a new timestamp. The first run pairs each with its
-  existing record, by title and submitter, so its slug and editorial fields carry
-  over.
-- **Keeping the excluded responses.** A response without IRB approval or exemption
-  stays out of the site's files, as today. The script also writes it, with the private
-  answers already dropped and the reason attached, to a separate file. That file is
-  never committed, because the repository is public, and never built into the bridge.
-  The seed bundle carries it, so each excluded response reaches WordPress as a flagged
-  draft. A row with no project title is still dropped outright: there is nothing to
-  make a project from.
+- **Skipping the re-entered submissions.** Every Qualtrics-era submission was
+  re-entered through the Google Form with a new timestamp. The script skips those rows,
+  listed by timestamp, and the projects they duplicate keep their Qualtrics response
+  IDs as their key.
+- **Excluded responses stay in the Sheet.** A response without IRB approval or
+  exemption stays out of the site's files, as today, and the script lists it in its
+  report. There is one so far, and open question 13 may make it publishable (see the
+  appendix). If the team wants an excluded response in WordPress, an editor enters it
+  through the Submit page after launch, which flags it the same way. A row with no
+  project title is still dropped outright: there is nothing to make a project from.
 
 The form's settings that keep this working, all confirmed: "Allow response editing"
 off; open to respondents without a NOAA Google login; no file-upload question, which
@@ -892,10 +894,9 @@ Phases 6–7.
   route, compared against the reference captured in Phase 0.
 - **Logic parity.** PHP and TypeScript run the same shared test cases.
 - **Import script.** The adapted `import-survey.mjs` runs on a synthetic Google Forms
-  export (real exports contain submitters' emails) and produces the expected records,
-  including the paired re-entered submissions. Excluded responses land only in the
-  uncommitted file, never in the site's JSON, and the seed import turns each into a
-  flagged draft.
+  export (real exports contain submitters' emails) and produces the expected records.
+  Re-entered submissions are skipped, and excluded responses appear in its report,
+  never in the site's JSON.
 - **Migration parity.** After the seed import, the content WordPress renders must
   match `normalizeSiteContent()` run over today's JSON.
 - **Synthesis import.** Pasting the published synthesis back shows no changes. A need
@@ -990,8 +991,8 @@ Phases 6–7.
     The import script treats that answer as no approval, and the survey form flags it
     the same way. The Google Form itself accepts it: "No" ends the form with a note
     that only IRB-approved studies are accepted, while "Project did not require IRB
-    review" carries on like "Yes". Either way the project reaches WordPress as a flagged
-    draft, so the answer decides only whether it can be published (see the appendix).
+    review" carries on like "Yes". If the answer is no, such a project stays off the
+    site, recorded in the Sheet (see the appendix).
 
 **Privacy**
 
@@ -1022,7 +1023,7 @@ Phases 6–7.
   outside NOAA.*
 - ~~Is the Qualtrics survey closed?~~ *Yes (28 October). Every real submission was
   re-entered through the Google Form, so no last Qualtrics import is needed; the
-  re-entered rows are paired with their existing projects instead (see
+  import skips the re-entered rows, because the site already shows those projects (see
   [Importing the Google Form until launch](#importing-the-google-form-until-launch)).*
 
 ---
