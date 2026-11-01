@@ -603,8 +603,9 @@ map. Launching it at `gsl.noaa.gov/firehouse/` for AMS means links shared there 
 working after the cutover.
 
 **Mid-November first, on the test site.** The same build serves the WPO meeting from
-GSL's test site, restricted to GSL staff by login or by network, whichever ITS prefers.
-A demo opened with Stephanie and Emily's own accounts is enough for that meeting. It
+GSL's test site, which is visible only on GSL's internal network (VPN or in the office;
+28 October). Stephanie and Emily can open it on the VPN, which is enough for that
+meeting. It
 also keeps the demo on GSL's infrastructure, the only place the site may run: hosting
 outside GSL is not allowed (see [Decisions so far](#decisions-so-far)).
 Build that copy with the test site's address as `VITE_SITE_URL` and with
@@ -622,8 +623,8 @@ the build on the presenter's laptop and sharing the screen.
    header and footer. *Done.*
 4. Finish the remaining items in the README's "Before this goes public" list: hero
    image, synthesis review and a sitemap. The synthesis review matters most: today's
-   draft covers 4 of the 7 published projects, so it has to be rerun across all of them
-   and reviewed before anyone outside the team sees it. A `robots.txt` in the build
+   draft covers 4 of the 8 published projects. Stephanie and Emily reran it across all
+   8 on 27 October; it goes onto the site once their reviewed table arrives. A `robots.txt` in the build
    can't help: under `/firehouse/` crawlers never read it, so the test-site copy uses
    the `noindex` tag instead.
 5. **Point Submit a Finding at the Google Form,** the way to submit through AMS, where
@@ -990,12 +991,11 @@ Phases 6–7.
     question more pointed. The current view (29 October) is that clearance isn't
     needed, but that isn't confirmed in writing, and the form can't open on prod until
     it is.
-13. Should a project that answers "Project did not require IRB review" be published?
-    The import script treats that answer as no approval, and the survey form flags it
-    the same way. The Google Form itself accepts it: "No" ends the form with a note
-    that only IRB-approved studies are accepted, while "Project did not require IRB
-    review" carries on like "Yes". If the answer is no, such a project stays off the
-    site, recorded in the Sheet (see the appendix).
+13. ~~Should a project that answers "Project did not require IRB review" be
+    published?~~ *Yes (Stephanie and Emily, late October): only "No" ends the form, so a
+    project that didn't need review is published like one that was approved. The
+    import script accepts the answer, the plugin's form will too, and WoFS-Smoke, the
+    one project it affected, is on the site.*
 
 **Privacy**
 
@@ -1034,24 +1034,30 @@ Phases 6–7.
 ## Appendix — found during the analysis
 
 - **Unpublished projects ship in the bundle today.** `normalize.ts` drops only records
-  without IRB approval; the pages filter unpublished ones out. All seven current
+  without IRB approval; the pages filter unpublished ones out. All eight current
   records are published, so nothing is exposed yet, but the next import stages new
   records as unpublished and they would ship with the next deploy.
 - **Documentation drift.** `README.md` and `PRODUCT.md` still describe nine placeholder
-  projects. `projects.json` holds seven survey-imported records, all published. The
+  projects. `projects.json` holds eight survey-imported records, all published. The
   migration treats them as real.
 - **The Sanity and Strapi adapters** were never run against a live backend. They
   retire with this plan.
-- **A submission missing from the site.** The latest export has eight responses; the
-  site has seven. `R_3e9GnZYuWAjuZM5` (FWT Evaluation 001, WoFS-Smoke) answered Q8
-  with "Project did not require IRB review", which `import-survey.mjs` counts as no
-  approval, so it is excluded. The question itself asks about "approval or exemption",
-  so it may belong on the site (open question 13).
+- **A submission was missing from the site.** `R_3e9GnZYuWAjuZM5` (FWT Evaluation 001,
+  WoFS-Smoke) answered Q8 with "Project did not require IRB review", which the import
+  counted as no approval. Stephanie and Emily publish it (open question 13), and it is
+  on the site.
+- **The team's sheet is the corrected record.** The eight projects now come from
+  Stephanie and Emily's "Submission Data" sheet, their checked copy of the Qualtrics
+  responses, rather than a raw export. It has no ResponseId column, so the import
+  matches each row to its record by title. It also carries their corrections: one need
+  in Testbed 002 is gone, and two in Igniting Insight are merged into one. Its
+  timestamps aren't unique (two rows share one), so they can't serve as its key.
 - **Mis-encoded text in the export.** Some Qualtrics rows arrive double-encoded
-  (`NGFSâ€™s` for `NGFS’s`). Two strings in `projects.json` carried it and are fixed.
-  Google Forms exports are clean UTF-8, so no repair is ported.
+  (`NGFSâ€™s` for `NGFS’s`). The import now repairs it and lists each cell it
+  repaired. Google Forms exports are clean UTF-8, so no repair is ported to the
+  plugin.
 - **The live synthesis is out of date.** `topicSummaries.json` is a 17 September draft,
-  written with Claude, that covers 4 of the 7 published projects. The landing page
+  written with Claude, that covers 4 of the 8 published projects. The landing page
   reports it as drawn from "4 projects today".
 - **Topic pages scrolled sideways on phones.** The source chips under each need (a
   project's title and year) didn't shrink, so at 390 px wide the page was 463 px wide.
