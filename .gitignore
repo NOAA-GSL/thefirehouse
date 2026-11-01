@@ -39,6 +39,11 @@ coverage/
 # Reference screenshots (scripts/capture-reference.mjs); the ARIA snapshots are committed
 reference/screenshots/
 
+# Survey downloads hold submitters' emails and never belong in this public repository.
+# Keep them outside it; this is only a backstop.
+*.xlsx
+*.csv
+
 # OS
 .DS_Store
 Thumbs.db
@@ -52,8 +57,10 @@ Thumbs.db
 *.swo
 *~
 
-# Agents / AI tooling (local state & configs)
-.claude/
+# Agents / AI tooling (local state & configs). The review team in .claude/agents/ is
+# shared: CLAUDE.md routes changes to it.
+.claude/*
+!.claude/agents/
 Claude outputs/
 .impeccable/
 .agents/
