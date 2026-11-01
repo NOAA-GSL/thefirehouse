@@ -1,15 +1,19 @@
+import vocabulary from '../../wp-content/plugins/firehouse/shared/vocabulary.json' with { type: 'json' };
+
 /**
- * Structural vocabularies that came out of the Qualtrics survey.
+ * Structural vocabularies that came out of the survey.
  *
- * Same rule as `topics.ts`: these keys are the contract between the survey export,
- * the import script, the URL query string and the UI, so they live in code. Only the
- * human-readable labels are display concerns, and they live here too because —
- * unlike topic areas — there is no CMS record behind them to override.
+ * The values live in `wp-content/plugins/firehouse/shared/vocabulary.json`, which the
+ * WordPress plugin reads too, so the two can never disagree about a key. The types
+ * stay here, and `vocabulary.test.ts` checks that the file and the unions match.
  *
- * The `FIRE_PHASES` values are the survey's own Q9 choices (export of 2026-09-14).
- * "After" first appeared in the export of 2026-09-18. If the survey gains another
- * phase, the import script warns on it and it gets added to the array below —
- * nothing else moves except `projects.json`.
+ * These keys are the contract between the survey export, the import script, the URL
+ * query string and the UI. Only the labels are display concerns. Each option also
+ * carries `formLabel`, exactly as the Google Form shows it, for reading its exports.
+ *
+ * If the survey gains another fire phase, the import script warns on it and it gets
+ * added to the JSON file and the union below — nothing else moves except
+ * `projects.json`.
  */
 
 /* ---------------------------------------------------------------- fire cycle -- */
@@ -24,36 +28,15 @@ export interface FirePhaseDefinition {
   label: string;
   /** The survey's examples, where it gives them. */
   description?: string;
+  /** The option exactly as the Google Form shows it. */
+  formLabel: string;
 }
 
 /**
  * Ordered by where they sit in the fire cycle, not alphabetically — the order is
  * the point. Filter UIs and metadata rows both render straight from this array.
  */
-export const FIRE_PHASE_LIST: FirePhaseDefinition[] = [
-  {
-    key: 'before',
-    short: 'Before',
-    label: 'Pre-fire planning, prevention, and mitigation',
-    description: 'e.g., community wildfire prevention plans, fuel management, communication',
-  },
-  {
-    key: 'during',
-    short: 'During',
-    label: 'Fire detection, active suppression, and downstream impacts',
-    description: 'e.g., tactical/strategic operations, smoke, evacuations',
-  },
-  {
-    key: 'after',
-    short: 'After',
-    label: 'Postfire recovery and rehabilitation',
-  },
-  {
-    key: 'long-term',
-    short: 'Long-term',
-    label: 'Planning, adaptation, and policy',
-  },
-];
+export const FIRE_PHASE_LIST = vocabulary.firePhases as FirePhaseDefinition[];
 
 export const FIRE_PHASES: Record<FirePhase, FirePhaseDefinition> = Object.fromEntries(
   FIRE_PHASE_LIST.map((phase) => [phase.key, phase]),
@@ -80,12 +63,8 @@ export interface PublicationStatusDefinition {
   tone: 'positive' | 'info' | 'neutral';
 }
 
-export const PUBLICATION_STATUS_LIST: PublicationStatusDefinition[] = [
-  { key: 'published', label: 'Published', tone: 'positive' },
-  { key: 'in-review', label: 'In review', tone: 'info' },
-  { key: 'in-preparation', label: 'In preparation', tone: 'info' },
-  { key: 'unpublished', label: 'Unpublished', tone: 'neutral' },
-];
+export const PUBLICATION_STATUS_LIST =
+  vocabulary.publicationStatuses as PublicationStatusDefinition[];
 
 export const PUBLICATION_STATUSES: Record<PublicationStatus, PublicationStatusDefinition> =
   Object.fromEntries(
@@ -101,11 +80,10 @@ export function isPublicationStatus(value: unknown): value is PublicationStatus 
 /**
  * Coordination regions, exactly as specified in `FirehouseFormAdditions.pdf`.
  *
- * These string values ARE the Qualtrics recode values — the export reads `ONCC`,
- * not `Northern California (ONCC)`. That is the spec's first setting, and its
- * reasoning is worth keeping in view: display text gets reworded over time, and if
- * the code travelled with the label then every rewording would silently break the
- * map. So the code is the contract and the label is free to change.
+ * The keys are the codes, never the labels. Display text gets reworded over time,
+ * and if the code travelled with the label then every rewording would silently break
+ * the map. So the code is the contract and the label is free to change. The ten GACC
+ * labels on the Google Form end in their code, which is how an export is read.
  *
  * The ten GACCs have boundaries on the map. The four values below them do not, and
  * that is the point of having them:
@@ -139,49 +117,33 @@ export type RegionKey = GaccKey | NonGaccRegion;
 
 export interface RegionDefinition {
   key: RegionKey;
-  /** Exactly what the respondent sees in Qualtrics. */
+  /** The site's label for the region. */
   label: string;
   /** Short form for map labels, badges and dense metadata rows. */
   short: string;
+  /** The option exactly as the Google Form shows it. */
+  formLabel: string;
   /**
    * Whether this region has a boundary polygon. `false` regions are real answers
    * that simply cannot be drawn — they are listed beside the map rather than
    * dropped, because a submission count that silently excludes them is wrong.
    */
   mapped: boolean;
-  /** [lat, lng] anchor for the heat marker. Only meaningful when `mapped`. */
+  /**
+   * [lat, lng] anchor for the heat marker. `PACIFIC` has one although it has no
+   * boundary, because it can honestly be pinned to a place; NATIONAL, INTL and
+   * UNKNOWN cannot be pinned anywhere without inventing a location, so they have
+   * none and are rendered only in the list beside the map.
+   */
   center?: [number, number];
 }
 
-export const GACC_LIST: RegionDefinition[] = [
-  { key: 'AICC', label: 'Alaska (AICC)', short: 'Alaska', mapped: true, center: [64.5, -152.5] },
-  { key: 'NWCC', label: 'Northwest — OR, WA (NWCC)', short: 'Northwest', mapped: true, center: [45.6, -120.5] },
-  { key: 'ONCC', label: 'Northern California (ONCC)', short: 'N. California', mapped: true, center: [40.2, -121.5] },
-  { key: 'OSCC', label: 'Southern California (OSCC)', short: 'S. California', mapped: true, center: [34.6, -118.3] },
-  { key: 'NRCC', label: 'Northern Rockies — MT, N. ID, ND (NRCC)', short: 'N. Rockies', mapped: true, center: [46.9, -108.5] },
-  { key: 'GBCC', label: 'Great Basin — UT, NV, S. ID (GBCC)', short: 'Great Basin', mapped: true, center: [40.2, -114.5] },
-  { key: 'SWCC', label: 'Southwest — AZ, NM (SWCC)', short: 'Southwest', mapped: true, center: [34.2, -108.5] },
-  { key: 'RMCC', label: 'Rocky Mountain — CO, WY, SD, NE, KS (RMCC)', short: 'Rocky Mountain', mapped: true, center: [41.5, -102.5] },
-  { key: 'EACC', label: 'Eastern Area (EACC)', short: 'Eastern Area', mapped: true, center: [42.5, -84.0] },
-  { key: 'SACC', label: 'Southern Area — incl. PR & USVI (SACC)', short: 'Southern Area', mapped: true, center: [33.0, -88.0] },
-];
+export const REGION_LIST = vocabulary.regions as RegionDefinition[];
 
-/**
- * The four non-GACC answers.
- *
- * `PACIFIC` carries a centre because it can honestly be pinned to a place even
- * though the boundary file has no polygon for it. The other three cannot be pinned
- * anywhere at all without inventing a location, so they have none and are rendered
- * only in the list beside the map.
- */
-export const NON_GACC_LIST: RegionDefinition[] = [
-  { key: 'PACIFIC', label: 'Hawaii / Pacific Islands', short: 'Hawaii / Pacific', mapped: false, center: [20.8, -156.9] },
-  { key: 'NATIONAL', label: 'National / not region-specific', short: 'National', mapped: false },
-  { key: 'INTL', label: 'Outside the U.S.', short: 'International', mapped: false },
-  { key: 'UNKNOWN', label: 'Not sure', short: 'Not sure', mapped: false },
-];
+export const GACC_LIST: RegionDefinition[] = REGION_LIST.filter((region) => region.mapped);
 
-export const REGION_LIST: RegionDefinition[] = [...GACC_LIST, ...NON_GACC_LIST];
+/** The four non-GACC answers. */
+export const NON_GACC_LIST: RegionDefinition[] = REGION_LIST.filter((region) => !region.mapped);
 
 export const REGIONS: Record<RegionKey, RegionDefinition> = Object.fromEntries(
   REGION_LIST.map((region) => [region.key, region]),

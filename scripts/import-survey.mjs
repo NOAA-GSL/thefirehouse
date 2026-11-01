@@ -59,6 +59,10 @@ import { NOTEBOOK_SOURCE, writeNotebookSource } from './notebooklm-source.mjs';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(HERE, '../src/content/data/projects.json');
 const EDITORIAL = resolve(HERE, 'survey-editorial.json');
+// The keys shared with the site and the WordPress plugin.
+const VOCABULARY = JSON.parse(
+  readFileSync(resolve(HERE, '../wp-content/plugins/firehouse/shared/vocabulary.json'), 'utf8'),
+);
 
 /* ------------------------------------------------------------------ mapping -- */
 
@@ -99,22 +103,14 @@ const MULTI_COLUMN = {
  *
  * Matched on the word before the parenthetical ("Before (Pre-fire Planning, …)"),
  * so the examples in the survey wording can be edited without breaking the import.
- * An unmatched answer is warned about — which is how a new survey option shows up.
+ * Each key is that word, lower-cased. An unmatched answer is warned about — which is
+ * how a new survey option shows up.
  */
-const FIRE_PHASE_MAP = {
-  before: 'before',
-  during: 'during',
-  after: 'after',
-  'long-term': 'long-term',
-};
+const FIRE_PHASE_MAP = Object.fromEntries(VOCABULARY.firePhases.map(({ key }) => [key, key]));
 
-const REGION_CODES = [
-  'AICC', 'NWCC', 'ONCC', 'OSCC', 'NRCC',
-  'GBCC', 'SWCC', 'RMCC', 'EACC', 'SACC',
-  'PACIFIC', 'NATIONAL', 'INTL', 'UNKNOWN',
-];
+const REGION_CODES = VOCABULARY.regions.map(({ key }) => key);
 
-const PUBLICATION_STATUSES = ['published', 'in-review', 'in-preparation', 'unpublished'];
+const PUBLICATION_STATUSES = VOCABULARY.publicationStatuses.map(({ key }) => key);
 
 /* ------------------------------------------------------------ export files -- */
 

@@ -1,0 +1,223 @@
+{
+  "$comment": "The keys that tie the survey, the URL query string, the React site and the WordPress plugin together, read by both JavaScript and PHP. `label` and `short` are what the site shows; `formLabel` is the option exactly as the Google Form shows it, for reading its exports. Adding a key is a code change: the TypeScript unions in src/design-system must match (src/design-system/vocabulary.test.ts checks).",
+  "firePhases": [
+    {
+      "key": "before",
+      "short": "Before",
+      "label": "Pre-fire planning, prevention, and mitigation",
+      "description": "e.g., community wildfire prevention plans, fuel management, communication",
+      "formLabel": "Before (Pre-fire Planning, Prevention, and Mitigation (e.g, community wildfire prevention plans, fuel management, communication))"
+    },
+    {
+      "key": "during",
+      "short": "During",
+      "label": "Fire detection, active suppression, and downstream impacts",
+      "description": "e.g., tactical/strategic operations, smoke, evacuations",
+      "formLabel": "During (Fire Detection, Suppression (e.g., tactical/strategic operations), and Downstream Impacts (e.g., smoke, evacuations))"
+    },
+    {
+      "key": "after",
+      "short": "After",
+      "label": "Postfire recovery and rehabilitation",
+      "formLabel": "After (Postfire Recovery and Rehabilitation)"
+    },
+    {
+      "key": "long-term",
+      "short": "Long-term",
+      "label": "Planning, adaptation, and policy",
+      "formLabel": "Long-Term (Planning, Adaptation, and Policy)"
+    }
+  ],
+  "publicationStatuses": [
+    {
+      "key": "published",
+      "label": "Published",
+      "tone": "positive"
+    },
+    {
+      "key": "in-review",
+      "label": "In review",
+      "tone": "info"
+    },
+    {
+      "key": "in-preparation",
+      "label": "In preparation",
+      "tone": "info"
+    },
+    {
+      "key": "unpublished",
+      "label": "Unpublished",
+      "tone": "neutral"
+    }
+  ],
+  "regions": [
+    {
+      "key": "AICC",
+      "label": "Alaska (AICC)",
+      "short": "Alaska",
+      "mapped": true,
+      "center": [
+        64.5,
+        -152.5
+      ],
+      "formLabel": "Alaska (AICC)"
+    },
+    {
+      "key": "NWCC",
+      "label": "Northwest — OR, WA (NWCC)",
+      "short": "Northwest",
+      "mapped": true,
+      "center": [
+        45.6,
+        -120.5
+      ],
+      "formLabel": "Northwest -- OR, WA (NWCC)"
+    },
+    {
+      "key": "ONCC",
+      "label": "Northern California (ONCC)",
+      "short": "N. California",
+      "mapped": true,
+      "center": [
+        40.2,
+        -121.5
+      ],
+      "formLabel": "Northern California (ONCC)"
+    },
+    {
+      "key": "OSCC",
+      "label": "Southern California (OSCC)",
+      "short": "S. California",
+      "mapped": true,
+      "center": [
+        34.6,
+        -118.3
+      ],
+      "formLabel": "Southern California (OSCC)"
+    },
+    {
+      "key": "NRCC",
+      "label": "Northern Rockies — MT, N. ID, ND (NRCC)",
+      "short": "N. Rockies",
+      "mapped": true,
+      "center": [
+        46.9,
+        -108.5
+      ],
+      "formLabel": "Northern Rockies - MT, N. ID, ND (NRCC)"
+    },
+    {
+      "key": "GBCC",
+      "label": "Great Basin — UT, NV, S. ID (GBCC)",
+      "short": "Great Basin",
+      "mapped": true,
+      "center": [
+        40.2,
+        -114.5
+      ],
+      "formLabel": "Great Basin -- UT, NV, S. ID (GBCC)"
+    },
+    {
+      "key": "SWCC",
+      "label": "Southwest — AZ, NM (SWCC)",
+      "short": "Southwest",
+      "mapped": true,
+      "center": [
+        34.2,
+        -108.5
+      ],
+      "formLabel": "Southwest -- AZ, NM (SWCC)"
+    },
+    {
+      "key": "RMCC",
+      "label": "Rocky Mountain — CO, WY, SD, NE, KS (RMCC)",
+      "short": "Rocky Mountain",
+      "mapped": true,
+      "center": [
+        41.5,
+        -102.5
+      ],
+      "formLabel": "Rocky Mountain -- CO, WY, SD, NE, KS (RMCC)"
+    },
+    {
+      "key": "EACC",
+      "label": "Eastern Area (EACC)",
+      "short": "Eastern Area",
+      "mapped": true,
+      "center": [
+        42.5,
+        -84
+      ],
+      "formLabel": "Eastern Area (EACC)"
+    },
+    {
+      "key": "SACC",
+      "label": "Southern Area — incl. PR & USVI (SACC)",
+      "short": "Southern Area",
+      "mapped": true,
+      "center": [
+        33,
+        -88
+      ],
+      "formLabel": "Southern Area -- incl. PR & USVI (SACC)"
+    },
+    {
+      "key": "PACIFIC",
+      "label": "Hawaii / Pacific Islands",
+      "short": "Hawaii / Pacific",
+      "mapped": false,
+      "center": [
+        20.8,
+        -156.9
+      ],
+      "formLabel": "Hawaii / Pacific Islands"
+    },
+    {
+      "key": "NATIONAL",
+      "label": "National / not region-specific",
+      "short": "National",
+      "mapped": false,
+      "formLabel": "National / not region-specific"
+    },
+    {
+      "key": "INTL",
+      "label": "Outside the U.S.",
+      "short": "International",
+      "mapped": false,
+      "formLabel": "Outside the U.S."
+    },
+    {
+      "key": "UNKNOWN",
+      "label": "Not sure",
+      "short": "Not sure",
+      "mapped": false,
+      "formLabel": "Not sure"
+    }
+  ],
+  "topics": [
+    {
+      "key": "observe",
+      "label": "Observations and Monitoring",
+      "short": "Observations",
+      "icon": "radar"
+    },
+    {
+      "key": "forecast",
+      "label": "Forecasts and Modeling",
+      "short": "Forecasts",
+      "icon": "waves"
+    },
+    {
+      "key": "warning",
+      "label": "Warnings and Immediate Response",
+      "short": "Warnings",
+      "icon": "flame"
+    },
+    {
+      "key": "governance",
+      "label": "Strategic Adaptation and Institutional Governance",
+      "short": "Governance",
+      "icon": "landmark"
+    }
+  ]
+}
