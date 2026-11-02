@@ -12,9 +12,10 @@
  * License URI:       https://www.apache.org/licenses/LICENSE-2.0
  * Text Domain:       firehouse
  *
- * Registers nothing yet: it loads the domain logic in domain/, plain PHP that adds no
- * hooks. WORDPRESS-PLAN.md in the repository describes what this plugin becomes,
- * phase by phase.
+ * Registers the project and topic post types, their fields, the Firehouse Editor
+ * role and the Firehouse addresses. domain/ holds the content logic, plain PHP that
+ * adds no hooks; includes/ holds what does. WORDPRESS-PLAN.md in the repository
+ * describes what this plugin becomes, phase by phase.
  *
  * @package Firehouse
  */
@@ -40,3 +41,16 @@ require_once __DIR__ . '/domain/class-vocabulary.php';
 require_once __DIR__ . '/domain/class-format.php';
 require_once __DIR__ . '/domain/class-derive.php';
 require_once __DIR__ . '/domain/class-normalize.php';
+
+require_once __DIR__ . '/includes/class-meta.php';
+require_once __DIR__ . '/includes/class-post-types.php';
+require_once __DIR__ . '/includes/class-query.php';
+require_once __DIR__ . '/includes/class-capabilities.php';
+require_once __DIR__ . '/includes/class-installer.php';
+require_once __DIR__ . '/includes/class-settings.php';
+
+Post_Types::hook();
+Query::hook();
+Capabilities::hook();
+Installer::hook( __FILE__ );
+Settings::hook();

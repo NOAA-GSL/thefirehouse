@@ -152,8 +152,10 @@ plain CSS files with `fh-` class names, not inline React styles. The PHP templat
 the same markup and classes, so the stylesheets move across nearly untouched.
 
 `src/content/types.ts` stays useful: it becomes the specification for the post meta.
-A JSON Schema generated from it is passed to `register_post_meta`, so WordPress itself
-rejects a malformed value.
+JSON Schemas generated from it (`shared/project.schema.json` and
+`shared/topic.schema.json`) define each field, and the plugin checks every value it
+writes against them with WordPress's own validator. The post types aren't in the REST
+API, which nothing needs, so no draft or field can be read or written through it.
 
 ### Look and feel
 
@@ -755,6 +757,9 @@ empty plugin passes PHPCS and Plugin Check.
   the `firehouse` page tree.
 - The settings screen.
 - The Import screen with the seed bundle and dry run.
+
+*Started 1 November: the post types, meta, rewrites, `year` fix, role and settings
+screen are in `includes/`, checked in the local WordPress. The Import screen is next.*
 
 **Done when:** the seed bundle loads on the test site with every slug intact, and the
 editor role cannot edit anything outside Firehouse.

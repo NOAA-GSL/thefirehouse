@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$comment": "Generated from the TopicContent and TopicSummary types in src/content/types.ts by scripts/project-schema.mjs. Edit the type and run `npm run schema`, not this file.",
+  "title": "Topic",
+  "type": "object",
+  "properties": {
+    "short": {
+      "description": "Pill label, e.g. \"Observations\".",
+      "type": "string"
+    },
+    "description": {
+      "description": "One-sentence description. Used in the source document the synthesis reads and as the summary a search engine or a link preview will pick up; the topic page no longer shows it above the needs.",
+      "type": "string"
+    },
+    "intro": {
+      "description": "The longer introduction, one string per paragraph. Kept as an array rather than one blob so an editor can't smuggle markup in and the page never has to render raw HTML. **Not currently rendered.** The September 2026 review moved the needs to the top of the topic page and cut the prose above them, leaving only `covers`. Retained because the text is written and reviewed, and a surface for it may yet appear.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "covers": {
+      "description": "\"What this area covers\" — the kinds of question that belong under this topic. Rendered as the callout beside the needs, and the only area copy on the page.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "order": {
+      "type": "number"
+    },
+    "topNeeds": {
+      "description": "Most important first. The site shows up to five.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "description": "One plain-language phrase, e.g. \"Longer-lead outlooks for planning windows\".",
+            "type": "string"
+          },
+          "mentions": {
+            "description": "How many survey entries (need/recommendation pairs) raise this need, across all projects. Falls back to the number of `projects` when a pass didn't record it.",
+            "type": "number"
+          },
+          "projects": {
+            "description": "Slugs of the projects the need draws on, most direct first.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "updatedAt": {
+      "description": "ISO date of the last review pass; surfaced so readers know how fresh this is.",
+      "type": "string"
+    },
+    "sourceCount": {
+      "description": "How many projects were in the synthesis pass. Rendered next to the card, because \"top needs\" carries very different weight at 4 projects and at 40.",
+      "type": "number"
+    },
+    "model": {
+      "description": "Tool or model that produced the synthesis, e.g. \"NotebookLM\". Presence of this field is what flips the card's \"AI-synthesized\" label on. This is not decoration. The landing page is the one surface where the site paraphrases researchers instead of quoting them (project pages stay verbatim), and a federal site presenting model-derived synthesis needs to say that it is.",
+      "type": "string"
+    },
+    "reviewedBy": {
+      "description": "Who signed off on the synthesis pass. The human review step is not optional: while this is absent the site labels the needs as a draft pending review.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "short",
+    "order",
+    "topNeeds"
+  ],
+  "additionalProperties": false
+}

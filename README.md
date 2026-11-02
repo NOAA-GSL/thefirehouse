@@ -228,8 +228,30 @@ Named so it's clear these are gaps, not oversights:
 
 The site is moving into GSL's WordPress as a plugin; `WORDPRESS-PLAN.md` has the plan.
 The plugin sits at `wp-content/plugins/firehouse/`, the path it has in a WordPress
-install, the way GSL's own repository (NOAA-GSL/gsl-wordpress) keeps its theme. It
-registers nothing yet: `firehouse.php` loads `domain/`, which adds no hooks.
+install, the way GSL's own repository (NOAA-GSL/gsl-wordpress) keeps its theme.
+`firehouse.php` loads two folders: `includes/`, which adds WordPress hooks, and
+`domain/`, which adds none.
+
+`includes/` holds the content model, the permissions and the settings:
+
+- `Post_Types` registers `fh_project` and `fh_topic` at the React site's addresses:
+  `/firehouse/projects/`, `/firehouse/projects/{slug}/` and `/firehouse/topics/{key}/`.
+  Neither post type is in the REST API, and neither uses the block editor.
+- `Meta` registers each field of a project and a topic as post meta, named as in
+  `src/content/types.ts` with an `fh_` prefix and kept in revisions. The schemas come
+  from `shared/project.schema.json` and `shared/topic.schema.json`, which
+  `npm run schema` generates from `types.ts`. Nothing rewrites a value on save, so
+  whatever writes a field first checks it with `Meta::validate()`.
+- `Query` drops WordPress's `year` query variable from Firehouse requests, so the
+  explorer's `?year=` keeps its meaning (plan rule 7).
+- `Capabilities` defines the Firehouse Editor role. It can edit projects, topics,
+  the Firehouse settings and the pages under `/firehouse/`, and nothing else on the
+  site. It can't add, delete, move or rename a page. Administrators get the Firehouse
+  capabilities too, and only they can import.
+- `Installer` stores the role and the rewrite rules on activation, and again after an
+  update that changes them.
+- `Settings` is the Firehouse → Settings screen: the site name, the Submit a Finding
+  label and address, and the three navigation labels.
 
 `domain/` holds the PHP versions of `src/content/derive.ts`, `format.ts` and
 `normalize.ts`:

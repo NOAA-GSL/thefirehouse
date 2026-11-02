@@ -13,7 +13,9 @@ Public-facing hub for NOAA GSL's fire weather social science needs and findings.
 The Firehouse as a section of GSL's WordPress site, at /firehouse. It is built in
 phases; WORDPRESS-PLAN.md in https://github.com/NOAA-GSL/thefirehouse describes them.
 
-This release registers nothing yet.
+It registers the project and topic post types at /firehouse/projects/ and
+/firehouse/topics/, their fields, the Firehouse Editor role and a Firehouse
+settings screen. Nothing renders Firehouse pages yet.
 
 == Changelog ==
 
