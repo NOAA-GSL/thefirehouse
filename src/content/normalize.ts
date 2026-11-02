@@ -237,6 +237,11 @@ export function normalizeSiteContent(raw: RawSiteContent): SiteContent {
     // URL — none of which is true of a record that is merely never displayed.
     .filter((project) => project.irbApproved === true)
     .map((project) => {
+      if (typeof project.slug !== 'string' || !project.slug) {
+        throw new ContentError(
+          `The project titled "${project.title}" has no slug. Its slug is its address on the site.`,
+        );
+      }
       const where = `project "${project.slug}"`;
 
       if (typeof project.completionYear !== 'number' || Number.isNaN(project.completionYear)) {
@@ -262,7 +267,9 @@ export function normalizeSiteContent(raw: RawSiteContent): SiteContent {
         takeaways: project.takeaways ?? [],
         needs: normalizeNeeds(project.needs, where),
         papers: project.papers ?? [],
-        published: project.published ?? false,
+        // A real boolean, so every check after this one reads the flag the same way,
+        // and the PHP port, which coerces it too, agrees.
+        published: Boolean(project.published),
       };
     });
 

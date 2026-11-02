@@ -15,7 +15,7 @@ npm run reference  # capture the reference the plugin matches (reference/README.
 ```
 
 The test cases live in `wp-content/plugins/firehouse/shared/cases/` as plain JSON, so
-the plugin's PHP versions will run the same ones.
+the plugin's PHP tests run them too: all but `search.json` so far.
 
 ---
 
@@ -52,8 +52,9 @@ public/             Copied as-is to the build's base path (the site root, or /fi
 
 wp-content/plugins/firehouse/
                     The WordPress plugin that will replace this app (see
-                    The WordPress plugin, below). So far: its header, the shared
-                    vocabularies and test cases, and their PHP tests.
+                    The WordPress plugin, below). So far: firehouse.php, which
+                    loads the content logic in PHP (domain/); the shared
+                    vocabularies and test cases; and the PHP tests.
 ```
 
 ### The design system
@@ -228,7 +229,29 @@ Named so it's clear these are gaps, not oversights:
 The site is moving into GSL's WordPress as a plugin; `WORDPRESS-PLAN.md` has the plan.
 The plugin sits at `wp-content/plugins/firehouse/`, the path it has in a WordPress
 install, the way GSL's own repository (NOAA-GSL/gsl-wordpress) keeps its theme. It
-registers nothing yet.
+registers nothing yet: `firehouse.php` loads `domain/`, which adds no hooks.
+
+`domain/` holds the PHP versions of `src/content/derive.ts`, `format.ts` and
+`normalize.ts`:
+
+- `Normalize::site_content()` checks the raw content files and returns them in the
+  JSON shape of `src/content/types.ts`. When it refuses content, it throws a
+  `Content_Error` whose message starts `[content] ` and is already escaped for HTML.
+- `Derive` expects that normalized content; `Format` works on one field at a time: a
+  date, a byline's authors, a need, a link.
+- `Vocabulary` reads the keys and icon names from `shared/vocabulary.json`, and `Js`
+  holds the few JavaScript rules PHP doesn't share, such as what counts as true or as
+  whitespace.
+- `Json::decode()` reads JSON as the TypeScript sees it: an empty or numbered object
+  (`{}`, `{"0": …}`) stays an object, a `Json_Object`, instead of passing for a list.
+  `Normalize` turns every one back into an array on the way out, so pages and post meta
+  only see arrays. The tests read the shared cases through it, and the Import screen
+  will read the seed bundle through it.
+
+They pass the cases in `shared/cases/derive.json`, `format.json` and `normalize.json`,
+the same ones `npm test` runs. Search isn't ported yet: whether the explorer needs a
+PHP version depends on whether the site must work without JavaScript (plan open
+question 11).
 
 The local WordPress runs in Docker and borrows GSL's theme, WordPress images and
 database from a checkout of GSL's internal gsl-wordpress repository beside this one

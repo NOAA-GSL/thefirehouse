@@ -45,7 +45,7 @@ export const FIRE_PHASES: Record<FirePhase, FirePhaseDefinition> = Object.fromEn
 export const FIRE_PHASE_KEYS = FIRE_PHASE_LIST.map((phase) => phase.key);
 
 export function isFirePhase(value: unknown): value is FirePhase {
-  return typeof value === 'string' && value in FIRE_PHASES;
+  return typeof value === 'string' && Object.hasOwn(FIRE_PHASES, value);
 }
 
 /* --------------------------------------------------------- publication status -- */
@@ -72,7 +72,7 @@ export const PUBLICATION_STATUSES: Record<PublicationStatus, PublicationStatusDe
   ) as Record<PublicationStatus, PublicationStatusDefinition>;
 
 export function isPublicationStatus(value: unknown): value is PublicationStatus {
-  return typeof value === 'string' && value in PUBLICATION_STATUSES;
+  return typeof value === 'string' && Object.hasOwn(PUBLICATION_STATUSES, value);
 }
 
 /* -------------------------------------------------------------- coordination -- */
@@ -162,5 +162,5 @@ export function isGaccKey(value: unknown): value is GaccKey {
 }
 
 export function isRegionKey(value: unknown): value is RegionKey {
-  return typeof value === 'string' && value in REGIONS;
+  return typeof value === 'string' && Object.hasOwn(REGIONS, value);
 }

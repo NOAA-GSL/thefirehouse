@@ -12,8 +12,9 @@
  * License URI:       https://www.apache.org/licenses/LICENSE-2.0
  * Text Domain:       firehouse
  *
- * Registers nothing yet. WORDPRESS-PLAN.md in the repository describes what this
- * plugin becomes, phase by phase.
+ * Registers nothing yet: it loads the domain logic in domain/, plain PHP that adds no
+ * hooks. WORDPRESS-PLAN.md in the repository describes what this plugin becomes,
+ * phase by phase.
  *
  * @package Firehouse
  */
@@ -30,3 +31,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Plugin version. Kept in step with the header above and readme.txt.
  */
 const VERSION = '0.1.0';
+
+require_once __DIR__ . '/domain/class-content-error.php';
+require_once __DIR__ . '/domain/class-js.php';
+require_once __DIR__ . '/domain/class-json-object.php';
+require_once __DIR__ . '/domain/class-json.php';
+require_once __DIR__ . '/domain/class-vocabulary.php';
+require_once __DIR__ . '/domain/class-format.php';
+require_once __DIR__ . '/domain/class-derive.php';
+require_once __DIR__ . '/domain/class-normalize.php';
