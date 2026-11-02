@@ -37,12 +37,24 @@ final class Normalize {
 	/**
 	 * Checks and normalizes the whole site.
 	 *
-	 * @param array<string, mixed> $raw The decoded content files: settings, topics,
-	 *                                  topicSummaries, projects, landing and about.
+	 * The input may hold Json_Object values from Json::decode(); they let the list
+	 * checks tell `{}` from `[]` as JavaScript does. The result holds none: every one
+	 * is turned back into an array on the way out, so nothing after this, from a page
+	 * to post meta, has to know the type.
+	 *
+	 * @param mixed $raw The decoded content files: settings, topics, topicSummaries,
+	 *                   projects, landing and about.
 	 * @return array<string, mixed> The same keys, normalized.
 	 * @throws Content_Error When the content is refused.
 	 */
-	public static function site_content( array $raw ): array {
+	public static function site_content( mixed $raw ): array {
+		if ( $raw instanceof Json_Object ) {
+			$raw = $raw->getArrayCopy();
+		}
+		if ( ! is_array( $raw ) ) {
+			throw new Content_Error( esc_html( 'The content isn’t an object of settings, topics, projects and pages.' ) );
+		}
+
 		$settings = $raw['settings'] ?? null;
 		if ( ! is_array( $settings ) ) {
 			throw new Content_Error( esc_html( 'Site settings are missing.' ) );
@@ -67,14 +79,29 @@ final class Normalize {
 
 		$raw_projects = self::list_of( $raw['projects'] ?? null, 'projects' );
 
-		return array(
-			'settings'       => self::settings( $settings, $submit_form_url ),
-			'topics'         => $topics,
-			'topicSummaries' => self::topic_summaries( $raw['topicSummaries'] ?? null, self::published_slugs( $raw_projects ) ),
-			'projects'       => self::projects( $raw_projects ),
-			'landing'        => self::landing( $raw['landing'] ?? null, $submit_form_url ),
-			'about'          => self::about( $raw['about'] ?? null, $submit_form_url ),
+		return self::plain(
+			array(
+				'settings'       => self::settings( $settings, $submit_form_url ),
+				'topics'         => $topics,
+				'topicSummaries' => self::topic_summaries( $raw['topicSummaries'] ?? null, self::published_slugs( $raw_projects ) ),
+				'projects'       => self::projects( $raw_projects ),
+				'landing'        => self::landing( $raw['landing'] ?? null, $submit_form_url ),
+				'about'          => self::about( $raw['about'] ?? null, $submit_form_url ),
+			)
 		);
+	}
+
+	/**
+	 * A value with every Json_Object in it turned back into an array.
+	 *
+	 * @param mixed $value The value.
+	 * @return mixed
+	 */
+	private static function plain( mixed $value ): mixed {
+		if ( $value instanceof Json_Object ) {
+			$value = $value->getArrayCopy();
+		}
+		return is_array( $value ) ? array_map( array( self::class, 'plain' ), $value ) : $value;
 	}
 
 	/**
@@ -145,6 +172,8 @@ final class Normalize {
 			$needs = array();
 			foreach ( self::list_of( $summary['topNeeds'] ?? null, $where ) as $need ) {
 				$entry = is_string( $need ) ? array( 'text' => $need ) : $need;
+				// An empty object is an object: the TypeScript keeps it, with nothing to link.
+				$entry = $entry instanceof Json_Object ? $entry->getArrayCopy() : $entry;
 				if ( ! is_array( $entry ) ) {
 					throw new Content_Error( esc_html( sprintf( '%s has an entry that isn’t a need.', $where ) ) );
 				}
@@ -405,6 +434,10 @@ final class Normalize {
 	 * @throws Content_Error When the link is missing.
 	 */
 	private static function resolve_link( mixed $link, string $submit_form_url, string $where ): array {
+		// An empty object is a link with no href, which the TypeScript keeps as it is.
+		if ( $link instanceof Json_Object ) {
+			$link = $link->getArrayCopy();
+		}
 		if ( ! is_array( $link ) ) {
 			throw new Content_Error( esc_html( sprintf( '%s is missing a link.', $where ) ) );
 		}

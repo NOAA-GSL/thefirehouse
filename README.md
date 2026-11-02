@@ -244,8 +244,9 @@ registers nothing yet: `firehouse.php` loads `domain/`, which adds no hooks.
   whitespace.
 - `Json::decode()` reads JSON as the TypeScript sees it: an empty or numbered object
   (`{}`, `{"0": …}`) stays an object, a `Json_Object`, instead of passing for a list.
-  The tests read the shared cases through it, and the Import screen will read the seed
-  bundle through it.
+  `Normalize` turns every one back into an array on the way out, so pages and post meta
+  only see arrays. The tests read the shared cases through it, and the Import screen
+  will read the seed bundle through it.
 
 They pass the cases in `shared/cases/derive.json`, `format.json` and `normalize.json`,
 the same ones `npm test` runs. Search isn't ported yet: whether the explorer needs a

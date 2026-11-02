@@ -10,6 +10,7 @@ declare( strict_types = 1 );
 namespace Firehouse\Tests;
 
 use Firehouse\Domain\Content_Error;
+use Firehouse\Domain\Json;
 use Firehouse\Domain\Json_Object;
 use Firehouse\Domain\Normalize;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -138,5 +139,34 @@ final class NormalizeTest extends DomainTestCase {
 		$raw['projects'][0]['needs'] = array( array( 'need' => '0' ) );
 
 		$this->assertSame( array( array( 'need' => '0' ) ), Normalize::site_content( $raw )['projects'][0]['needs'] );
+	}
+
+	/**
+	 * Content that is an empty object is refused, not a type error.
+	 */
+	public function test_an_empty_object_of_content_is_refused(): void {
+		$this->expectException( Content_Error::class );
+		Normalize::site_content( Json::decode( '{}' ) );
+	}
+
+	/**
+	 * No Json_Object leaves Normalize, even in a field it passes through unchecked, so
+	 * a page or post meta only ever sees arrays.
+	 */
+	public function test_no_json_object_leaves(): void {
+		$raw                           = Cases::raw_site();
+		$raw['projects'][0]['methods'] = new Json_Object();
+		$raw['landing']['stats'][]     = new Json_Object( array( 'kept' ) );
+
+		$result = Normalize::site_content( $raw );
+
+		$this->assertSame( array(), $result['projects'][0]['methods'] );
+		array_walk_recursive(
+			$result,
+			function ( mixed $value ): void {
+				$this->assertNotInstanceOf( Json_Object::class, $value );
+			}
+		);
+		$this->assertSame( array( 'kept' ), end( $result['landing']['stats'] ) );
 	}
 }

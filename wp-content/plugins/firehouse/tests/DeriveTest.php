@@ -80,6 +80,31 @@ final class DeriveTest extends DomainTestCase {
 	}
 
 	/**
+	 * The synthesis line is on every page that shows the synthesis, so a date that
+	 * isn't text or a count that isn't a number is passed over, not a crash.
+	 */
+	public function test_malformed_synthesis_values_are_passed_over(): void {
+		$content                                     = Cases::site();
+		$content['topicSummaries'][0]['updatedAt']   = array();
+		$content['topicSummaries'][1]['sourceCount'] = array( 'not a count' );
+
+		$info = Derive::synthesis_info( $content );
+
+		$this->assertSame( '2026-10-27', $info['updatedAt'] );
+		$this->assertSame( 3, $info['sourceCount'] );
+		$this->assertSame(
+			2,
+			Derive::need_mentions(
+				array(
+					'mentions' => array(),
+					'projects' => array( 'a', 'b' ),
+				)
+			)
+		);
+		$this->assertSame( '', Derive::stat_value( array(), $content ) );
+	}
+
+	/**
 	 * Calls the function a case names.
 	 *
 	 * @param string  $name The TypeScript name.

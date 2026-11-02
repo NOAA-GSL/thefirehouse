@@ -78,6 +78,8 @@
     { "name": "a legacy author string loses the spaces JavaScript trims", "set": [{ "path": "/projects/2/author", "value": "\u00a0Dee Legacy\u2003" }], "checks": [{ "path": "/projects/2/authors", "equals": [{ "name": "Dee Legacy" }] }] },
     { "name": "fire phases with numbered keys are still an object, so none", "set": [{ "path": "/projects/0/firePhases", "value": { "0": "before" } }], "checks": [{ "path": "/projects/0/firePhases", "equals": [] }] },
     { "name": "needs written as an empty object are none", "set": [{ "path": "/projects/1/needs", "value": {} }], "checks": [{ "path": "/projects/1/needs", "equals": [] }] },
-    { "name": "authors written as an empty object are refused", "set": [{ "path": "/projects/1/authors", "value": {} }], "throws": true }
+    { "name": "authors written as an empty object are refused", "set": [{ "path": "/projects/1/authors", "value": {} }], "throws": true },
+    { "name": "a link written as an empty object is kept as it is", "set": [{ "path": "/landing/hero/secondaryCta", "value": {} }], "checks": [{ "path": "/landing/hero/secondaryCta", "equals": {} }] },
+    { "name": "a top need written as an empty object is kept", "set": [{ "path": "/topicSummaries/1/topNeeds", "value": [{}] }], "checks": [{ "path": "/topicSummaries/1/topNeeds", "equals": [{}] }] }
   ]
 }

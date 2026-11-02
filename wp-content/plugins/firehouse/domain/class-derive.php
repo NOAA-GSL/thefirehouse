@@ -184,15 +184,16 @@ final class Derive {
 
 	/**
 	 * How many times a need was raised: its stored count, or else how many projects
-	 * raised it. A stored zero still wins.
+	 * raised it. A stored zero still wins. A count that isn't a number counts as none
+	 * stored, rather than being cast into one.
 	 *
 	 * @param array<string, mixed> $need One need from a synthesis.
 	 */
 	public static function need_mentions( array $need ): int {
-		if ( isset( $need['mentions'] ) ) {
+		if ( is_numeric( $need['mentions'] ?? null ) ) {
 			return (int) $need['mentions'];
 		}
-		return isset( $need['projects'] ) ? count( $need['projects'] ) : 0;
+		return is_array( $need['projects'] ?? null ) ? count( $need['projects'] ) : 0;
 	}
 
 	/**
@@ -201,7 +202,9 @@ final class Derive {
 	 * A pass runs over the whole collection, so the four summaries normally agree. If
 	 * they don't, the latest date and the largest source count win, and there's a
 	 * reviewer only if every summary has one. Keys with no value are left out, as
-	 * JSON leaves out `undefined`.
+	 * JSON leaves out `undefined`. A date that isn't text, or a count that isn't a
+	 * number, is passed over: this runs on every page that shows the synthesis, so it
+	 * mustn't fail on one malformed value.
 	 *
 	 * @param array<string, mixed> $content Normalized site content.
 	 * @return array{model?: string, reviewedBy?: string, updatedAt?: string, sourceCount: int}
@@ -222,13 +225,14 @@ final class Derive {
 			$info['reviewedBy'] = $summaries[0]['reviewedBy'];
 		}
 
-		$dates = array_filter( array_column( $summaries, 'updatedAt' ), array( Js::class, 'truthy' ) );
+		$dates = array_filter( array_column( $summaries, 'updatedAt' ), static fn( mixed $date ): bool => is_string( $date ) && '' !== $date );
 		if ( array() !== $dates ) {
 			sort( $dates, SORT_STRING );
 			$info['updatedAt'] = end( $dates );
 		}
 
-		$largest             = max( array( 0, ...array_map( static fn( array $summary ): int => (int) ( $summary['sourceCount'] ?? 0 ), $summaries ) ) );
+		$counts              = array_map( static fn( array $summary ): int => is_numeric( $summary['sourceCount'] ?? null ) ? (int) $summary['sourceCount'] : 0, $summaries );
+		$largest             = max( array( 0, ...$counts ) );
 		$info['sourceCount'] = $largest > 0 ? $largest : count( self::published_projects( $content ) );
 
 		return $info;
