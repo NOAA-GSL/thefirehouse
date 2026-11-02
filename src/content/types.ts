@@ -330,8 +330,6 @@ export interface LandingPageContent {
  */
 export interface TeamMember {
   name: string;
-  /** Work email, shown under the name as a mailto link. */
-  email?: string;
   /**
    * Basename (no extension) of a portrait in `src/assets/people/`, e.g.
    * "stephanie-hoekstra". Resolved at build time by `AboutPage.tsx`; when the file
@@ -378,8 +376,12 @@ export interface AboutPageContent {
   mission: SectionIntro & { paragraphs: string[] };
   audiences: SectionIntro & { items: AboutAudience[] };
   process: SectionIntro & { steps: AboutStep[]; links: LinkRef[] };
-  /** `email` is the team's shared mailbox, shown once under the section's body. */
-  team: SectionIntro & { members: TeamMember[]; email?: string };
+  /**
+   * `email` is the team's shared mailbox, the one address the page shows, once under
+   * the section's body after `emailLead` ("Write to the team at"). Team members carry
+   * no address of their own.
+   */
+  team: SectionIntro & { members: TeamMember[]; email?: string; emailLead?: string };
   cta: CtaBandContent;
   /** That the findings are the researchers' own, not NOAA's. Ends the page. */
   disclaimer?: string;
