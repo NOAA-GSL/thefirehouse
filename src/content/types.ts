@@ -378,7 +378,8 @@ export interface AboutPageContent {
   mission: SectionIntro & { paragraphs: string[] };
   audiences: SectionIntro & { items: AboutAudience[] };
   process: SectionIntro & { steps: AboutStep[]; links: LinkRef[] };
-  team: SectionIntro & { members: TeamMember[] };
+  /** `email` is the team's shared mailbox, shown once under the section's body. */
+  team: SectionIntro & { members: TeamMember[]; email?: string };
   cta: CtaBandContent;
   /** That the findings are the researchers' own, not NOAA's. Ends the page. */
   disclaimer?: string;

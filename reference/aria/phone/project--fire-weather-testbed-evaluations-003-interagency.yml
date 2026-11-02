@@ -110,7 +110,7 @@
   - img "NOAA"
   - img "GSL"
   - text: The Firehouse
-  - paragraph: A project of NOAA's Global Systems Laboratory (GSL). Part of the National Oceanic and Atmospheric Administration.
+  - paragraph: A project of the Global Systems Laboratory (GSL), part of the National Oceanic and Atmospheric Administration (NOAA).
   - navigation "Explore":
     - heading "Explore" [level=2]
     - link "About The Firehouse":

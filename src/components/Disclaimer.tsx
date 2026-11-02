@@ -8,7 +8,8 @@ import './Disclaimer.css';
  * by page; a page without it shows nothing here.
  */
 export function Disclaimer({ text }: { text?: string }) {
-  if (!text) return null;
+  // A CMS can hand back null or rich text here; neither may blank the page.
+  if (typeof text !== 'string' || !text.trim()) return null;
   return (
     <div className="fh-disclaimer fh-container">
       <p className="fh-disclaimer__text">{text}</p>

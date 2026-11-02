@@ -177,6 +177,17 @@ export function AboutPage() {
               {team.heading}
             </h2>
             {team.body && <p className="fh-about__section-body">{team.body}</p>}
+            {/* One address for the team, said once: under each name, a shared mailbox
+                read as that person's own. */}
+            {team.email && (
+              <p className="fh-about__section-body">
+                Write to the team at{' '}
+                <a className="fh-about__team-email" href={`mailto:${team.email}`}>
+                  {team.email}
+                </a>
+                .
+              </p>
+            )}
           </div>
 
           <ul className="fh-about__team">

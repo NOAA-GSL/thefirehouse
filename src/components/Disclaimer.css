@@ -1,5 +1,5 @@
-/* The page's last line before the footer: quiet, but body-sized text in a readable
-   colour, not a caption. */
+/* The page's last line before the footer: quiet, small body text in the secondary
+   text colour, but not a caption. */
 .fh-disclaimer {
   padding-block: 0 var(--space-2xl);
 }

@@ -4,8 +4,8 @@
    One long read rather than a dashboard, so the page is a single measured column
    of sections with a consistent rhythm, and only two things break out of it: the
    audience cards and the team cards. Both are glass panels, both read as lists of
-   peers, and neither carries a link — nothing here competes with the CTA at the
-   foot of the page.
+   peers, and neither carries a link — the team's one address sits in the section's
+   introduction, so nothing here competes with the CTA near the foot of the page.
    ============================================================ */
 
 /* ---- Introduction ---- */
@@ -77,6 +77,16 @@
   margin: 0;
   font: var(--text-body);
   color: var(--color-text-secondary);
+}
+
+/* An address has no spaces to break at, so it may break anywhere on a narrow screen. */
+.fh-about__team-email {
+  color: var(--color-link);
+  overflow-wrap: anywhere;
+}
+
+.fh-about__team-email:hover {
+  color: var(--color-link-hover);
 }
 
 /* Runs the full width of the container rather than sitting at a typographic

@@ -240,7 +240,10 @@ bridge resolves unchanged under the plugin. The Submit page is new.
   ID**; the ID is turned back into a slug when the page renders.
 - **Landing and About.** Ordinary WordPress pages built from blocks. Their layouts are
   locked to text-only editing (`contentOnly`), with a short allowed-blocks list and no
-  Custom HTML block.
+  Custom HTML block. Both patterns end with the disclaimer (`disclaimer` in
+  `landing.json` and `about.json`), which the Phase 1 import doesn't write, so the
+  patterns must carry it. Under `contentOnly` an editor can reword it like any other
+  text; whether the cleared wording is locked instead is decided in Phase 4.
 - **Settings.** A Firehouse → Settings screen holds the site name, the submit label, the
   submit address, the navigation labels, the survey's question wording, the AI prompt
   and who is emailed about new submissions.
@@ -633,11 +636,12 @@ the build on the presenter's laptop and sharing the screen.
 3. **Turn the gov banner and footer back on.** A static page does not receive GSL's
    header and footer. *Done.*
 4. Finish the remaining items in the README's "Before this goes public" list: hero
-   image, synthesis review, the team mailbox and a sitemap. The synthesis review matters most: today's
-   draft covers 4 of the 8 published projects. Stephanie and Emily reran it across all
-   8 on 27 October; it goes onto the site once their reviewed table arrives. A `robots.txt` in the build
-   can't help: under `/firehouse/` crawlers never read it, so the test-site copy uses
-   the `noindex` tag instead.
+   image, synthesis review, the team mailbox, the disclaimer's wording and a sitemap.
+   The synthesis review matters most: today's draft covers 4 of the 8 published
+   projects. Stephanie and Emily reran it across all 8 on 27 October; it goes onto the
+   site once their reviewed table arrives. A `robots.txt` in the build can't help:
+   under `/firehouse/` crawlers never read it, so the test-site copy uses the
+   `noindex` tag instead.
 5. **Point Submit a Finding at the Google Form,** the way to submit through AMS, where
    the team's talk invites researchers to submit. *Done.*
 6. **Remove the citation generator** from the project page, so the public site does
