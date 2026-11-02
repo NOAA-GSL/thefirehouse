@@ -28,8 +28,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * submitter's private answers (rule 2). The plugin doesn't take that on trust: read()
  * reports, as problems that stop the import, any project, topic or synthesis field
  * the plugin doesn't store, and any text shaped like an email address other than a
- * team member's own work address on the About page, naming where each is and never
- * what it says. Whatever a bundle holds, only the fields the schemas name reach a post.
+ * team work address in one of the About page's team email fields, naming where each
+ * is and never what it says. Whatever a bundle holds, only the fields the schemas
+ * name reach a post.
  */
 final class Seed_Bundle {
 
@@ -76,7 +77,7 @@ final class Seed_Bundle {
 			if ( 1 === preg_match( '/^projects\.(\d+)/', $path, $match ) && is_string( $content['projects'][ (int) $match[1] ]['slug'] ?? null ) ) {
 				$path .= sprintf( ' (“%s”)', $content['projects'][ (int) $match[1] ]['slug'] );
 			}
-			$problems[] = sprintf( 'Something shaped like an email address is in %s. No one’s email belongs in the site’s content (rule 2), except a team member’s own work address on the About page.', $path );
+			$problems[] = sprintf( 'Something shaped like an email address is in %s. No one’s email belongs in the site’s content (rule 2), except the team’s work addresses on the About page.', $path );
 		}
 		return array(
 			'content'  => $content,

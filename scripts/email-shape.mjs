@@ -18,13 +18,21 @@ export const EMAIL_PATTERN = shape.pattern;
 /** Whether text holds something shaped like an email address. */
 export const hasEmail = (text) => new RegExp(shape.pattern, 'i').test(text);
 
-/** Whether the whole of a text is a team member's work address. */
+/** Whether the whole of a text is a team work address. */
 export const isTeamEmail = (text) => new RegExp(shape.teamEmail, 'i').test(text);
+
+/** Whether a path is one of the About page's team email fields: the team's, or a member's own. */
+const isTeamField = (path) =>
+  path[0] === 'about' &&
+  path[1] === 'team' &&
+  ((path.length === 3 && path[2] === 'email') ||
+    (path.length === 5 && path[2] === 'members' && /^\d+$/.test(path[3]) && path[4] === 'email'));
 
 /**
  * The paths of every string in the site's content that holds something shaped like an
- * email address. The one exception is an About page team member's own `email` field,
- * when the whole of it is a team address: the site shows it on purpose.
+ * email address. The one exception is an About page team email field (the team's
+ * mailbox, or a member's own), when the whole of it is a team address: the site shows
+ * it on purpose.
  *
  * @param {Record<string, unknown>} blocks The content files, by name: settings, about…
  * @returns {string[]} Each path, such as "projects.3.abstract". Never the value.
@@ -33,8 +41,7 @@ export function findEmails(blocks) {
   const found = [];
   const scan = (value, path) => {
     if (typeof value === 'string') {
-      const teamField = path.length === 5 && path[0] === 'about' && path[1] === 'team' && path[2] === 'members' && /^\d+$/.test(path[3]) && path[4] === 'email';
-      if (hasEmail(value) && !(teamField && isTeamEmail(value))) found.push(path.join('.'));
+      if (hasEmail(value) && !(isTeamField(path) && isTeamEmail(value))) found.push(path.join('.'));
     } else if (value && typeof value === 'object') {
       for (const [key, inner] of Object.entries(value)) scan(inner, [...path, key]);
     }

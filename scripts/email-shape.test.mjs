@@ -20,11 +20,12 @@ describe('shared/email-shape.json', () => {
 });
 
 describe('findEmails', () => {
-  it('finds an address anywhere, by path, and passes a team member’s own address', () => {
+  it('finds an address anywhere, by path, and passes the team’s and a member’s own address', () => {
     const blocks = {
       projects: [{ abstract: 'Write to jane@gmail.com.' }],
       about: {
         team: {
+          email: 'the.team@noaa.gov',
           members: [
             { name: 'A', email: 'a.person@noaa.gov' },
             { name: 'B', email: 'b@noaa.gov; c@gmail.com' },
@@ -40,6 +41,10 @@ describe('findEmails', () => {
       'about.team.members.2.bio.0',
       'about.team.members.0.email',
     ]);
+  });
+
+  it('finds an outside address in the team’s own field', () => {
+    expect(findEmails({ about: { team: { email: 'the.team@gmail.com' } } })).toEqual(['about.team.email']);
   });
 
   it('finds nothing in the site’s content files', () => {

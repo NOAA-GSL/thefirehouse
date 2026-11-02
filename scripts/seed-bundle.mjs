@@ -10,10 +10,10 @@
  * The bundle holds what the site already publishes and nothing more. The import
  * script has already dropped submitters' emails, job titles and Q10 answers
  * (WORDPRESS-PLAN.md rule 2), and this script stops, writing nothing, if any field
- * holds something shaped like an email address, other than an About page team
- * member's own work address (scripts/email-shape.mjs). The Import screen checks the
- * same again. The About portraits aren't in it: they reach WordPress through the Media
- * Library when the About page is built (Phase 4).
+ * holds something shaped like an email address, other than a team work address in
+ * one of the About page's team email fields (scripts/email-shape.mjs). The Import
+ * screen checks the same again. The About portraits aren't in it: they reach
+ * WordPress through the Media Library when the About page is built (Phase 4).
  *
  * `firehouseSeed` marks the file's format, so the Import screen refuses any other JSON
  * file before checking its content.

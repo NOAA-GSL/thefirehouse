@@ -38,7 +38,7 @@ final class Email_Shape {
 	}
 
 	/**
-	 * Whether the whole of a text is a team member's work address, the one email the
+	 * Whether the whole of a text is a team work address, the one kind of email the
 	 * site shows on purpose.
 	 *
 	 * @param string $text The text.
@@ -49,8 +49,8 @@ final class Email_Shape {
 
 	/**
 	 * The path of every string in the content that holds something shaped like an
-	 * email address, except an About page team member's own `email` field when the
-	 * whole of it is a team address.
+	 * email address, except an About page team email field (the team's mailbox, or a
+	 * member's own) when the whole of it is a team address.
 	 *
 	 * @param array<string, mixed> $blocks The content, by block: settings, about and the rest.
 	 * @return list<string> Each path, such as "projects.3.abstract". Never the value.
@@ -72,8 +72,7 @@ final class Email_Shape {
 	 */
 	private static function scan( mixed $value, array $path, array &$found ): void {
 		if ( is_string( $value ) ) {
-			$team_field = 5 === count( $path ) && array( 'about', 'team', 'members' ) === array_slice( $path, 0, 3 ) && 1 === preg_match( '/^\d+$/', $path[3] ) && 'email' === $path[4];
-			if ( self::has_email( $value ) && ! ( $team_field && self::is_team_email( $value ) ) ) {
+			if ( self::has_email( $value ) && ! ( self::is_team_field( $path ) && self::is_team_email( $value ) ) ) {
 				$found[] = implode( '.', $path );
 			}
 			return;
@@ -86,6 +85,22 @@ final class Email_Shape {
 				self::scan( $inner, array_merge( $path, array( (string) $key ) ), $found );
 			}
 		}
+	}
+
+	/**
+	 * Whether a path is one of the About page's team email fields: the team's, or a
+	 * member's own.
+	 *
+	 * @param string[] $path Where a value is.
+	 */
+	private static function is_team_field( array $path ): bool {
+		if ( 'about' !== ( $path[0] ?? null ) || 'team' !== ( $path[1] ?? null ) ) {
+			return false;
+		}
+		if ( 3 === count( $path ) ) {
+			return 'email' === $path[2];
+		}
+		return 5 === count( $path ) && 'members' === $path[2] && 1 === preg_match( '/^\d+$/', $path[3] ) && 'email' === $path[4];
 	}
 
 	/**

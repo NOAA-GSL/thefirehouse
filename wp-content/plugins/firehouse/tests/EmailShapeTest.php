@@ -38,14 +38,15 @@ final class EmailShapeTest extends DomainTestCase {
 	}
 
 	/**
-	 * An address anywhere is found by its path, and a team member's own address is
-	 * passed, as scripts/email-shape.test.mjs has it.
+	 * An address anywhere is found by its path, and the team's and a member's own
+	 * address are passed, as scripts/email-shape.test.mjs has it.
 	 */
 	public function test_find_reports_paths_and_passes_a_team_address(): void {
 		$blocks = array(
 			'projects' => array( array( 'abstract' => 'Write to jane@gmail.com.' ) ),
 			'about'    => array(
 				'team'                 => array(
+					'email'   => 'the.team@noaa.gov',
 					'members' => array(
 						array(
 							'name'  => 'A',
@@ -68,6 +69,16 @@ final class EmailShapeTest extends DomainTestCase {
 		$this->assertSame(
 			array( 'projects.0.abstract', 'about.team.members.1.email', 'about.team.members.2.bio.0', 'about.team.members.0.email' ),
 			Email_Shape::find( $blocks )
+		);
+	}
+
+	/**
+	 * An outside address in the team's own field is found.
+	 */
+	public function test_find_reports_an_outside_address_in_the_teams_field(): void {
+		$this->assertSame(
+			array( 'about.team.email' ),
+			Email_Shape::find( array( 'about' => array( 'team' => array( 'email' => 'the.team@gmail.com' ) ) ) )
 		);
 	}
 }

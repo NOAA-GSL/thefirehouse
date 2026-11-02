@@ -70,8 +70,8 @@ final class SeedBundleTest extends DomainTestCase {
 	}
 
 	/**
-	 * An email address anywhere but a team member's own email field is a problem,
-	 * named by where it is; a team member's work address isn't.
+	 * An email address anywhere but a team email field is a problem, named by where
+	 * it is; a team work address in a team email field isn't.
 	 */
 	public function test_an_email_where_none_belongs_is_a_problem(): void {
 		$problems = Seed_Bundle::read(
