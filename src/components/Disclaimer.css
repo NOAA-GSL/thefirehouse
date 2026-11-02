@@ -1,0 +1,12 @@
+/* The page's last line before the footer: quiet, small body text in the secondary
+   text colour, but not a caption. */
+.fh-disclaimer {
+  padding-block: 0 var(--space-2xl);
+}
+
+.fh-disclaimer__text {
+  max-width: 72ch;
+  margin: 0;
+  font: var(--text-body-sm);
+  color: var(--color-text-secondary);
+}
