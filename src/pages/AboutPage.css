@@ -282,18 +282,6 @@
   text-wrap: balance;
 }
 
-/* An address has no spaces to break at, so it may break anywhere rather than push
-   the card wider than a phone screen. */
-.fh-person__email {
-  font: var(--text-body-sm);
-  color: var(--color-link);
-  overflow-wrap: anywhere;
-}
-
-.fh-person__email:hover {
-  color: var(--color-link-hover);
-}
-
 /* Below roughly 400px the portrait and the name stop fitting side by side without
    the name breaking to one word a line, so they stack. */
 @media (max-width: 400px) {
