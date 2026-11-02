@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Button, Icon } from '../design-system';
+import { Disclaimer } from '../components/Disclaimer';
 import { useContent } from '../content/ContentProvider';
 import type { LinkRef, TeamMember } from '../content/types';
 import './AboutPage.css';
@@ -78,7 +79,7 @@ function ProcessLink({ link }: { link: LinkRef }) {
  */
 export function AboutPage() {
   const content = useContent();
-  const { hero, mission, audiences, process, team, cta } = content.about;
+  const { hero, mission, audiences, process, team, cta, disclaimer } = content.about;
 
   useEffect(() => {
     document.title = `About — ${content.settings.siteName}`;
@@ -176,6 +177,17 @@ export function AboutPage() {
               {team.heading}
             </h2>
             {team.body && <p className="fh-about__section-body">{team.body}</p>}
+            {/* One address for the team, said once: under each name, a shared mailbox
+                read as that person's own. */}
+            {team.email && (
+              <p className="fh-about__section-body">
+                Write to the team at{' '}
+                <a className="fh-about__team-email" href={`mailto:${team.email}`}>
+                  {team.email}
+                </a>
+                .
+              </p>
+            )}
           </div>
 
           <ul className="fh-about__team">
@@ -255,6 +267,8 @@ export function AboutPage() {
           )}
         </div>
       </section>
+
+      <Disclaimer text={disclaimer} />
     </div>
   );
 }

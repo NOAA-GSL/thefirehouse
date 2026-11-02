@@ -23,8 +23,8 @@ the plugin's PHP tests run them too: all but `search.json` so far.
 
 | Route              | Status                                                                        |
 | ------------------ | ----------------------------------------------------------------------------- |
-| `/`                | **Landing page** — logo and hero with live stats, then the four topic areas' top-5 needs with mention counts, "where these needs come from", the GACC coverage map, and the submit CTA band. |
-| `/about`           | **About page** — what the hub is, the three audiences it serves, how a completed project becomes a published need, and the two people who maintain it. All copy lives in `about.json`; the biographies are rendered verbatim. |
+| `/`                | **Landing page** — logo and hero with live stats, then the four topic areas' top-5 needs with mention counts, "where these needs come from", the GACC coverage map, the submit CTA band, and a closing disclaimer. |
+| `/about`           | **About page** — what the hub is, the three audiences it serves, how a completed project becomes a published need, the two people who maintain it with the team's mailbox, and a closing disclaimer. All copy lives in `about.json`; the biographies are rendered verbatim. |
 | `/projects`        | **Project explorer** — brief §5.2. Search, fire-phase / GACC / year / project-type filters, sort, detail modal. |
 | `/topics/:topicKey` | **Topic area page** — the area's top five needs, each with its mention count and links to the projects it draws on, plus a "what this area covers" callout. One per `TopicKey`. Projects are not filed under topics: needs are synthesized across the whole collection, so the attribution is per *need*. |
 | `*`                | **Custom 404** — echoes the requested address, and offers the explorer plus all four topic areas rather than dead-ending. Also rendered by `/topics/:topicKey` for a key that isn't one of the four, with wording tailored to that case. |
@@ -43,7 +43,7 @@ src/
   styles/           global.css, a11y-overrides.css
   content/          CMS-agnostic content layer (see below)
   pages/            Landing, Projects, Project, Topic, About and NotFound pages
-  components/       Layout, ThemeProvider, SynthesisNote
+  components/       Layout, ThemeProvider, SynthesisNote, Disclaimer
   assets/           NOAA + GSL logos; hero imagery (see caveat)
 
 public/             Copied as-is to the build's base path (the site root, or /firehouse/):
@@ -163,6 +163,10 @@ overrides are isolated so a re-sync doesn't lose them.
   covers" list), in `topics.json` and `types.ts`. Both optional: a topic without
   them still renders. `intro` is kept in the data but no longer shown. Arrays of plain strings rather than rich text,
   so nothing has to render editor-supplied HTML.
+- **A disclaimer ends the landing and About pages** (`disclaimer` in `landing.json`,
+  `about.json` and `types.ts`): researchers outside NOAA can submit, so the site says
+  whose views the findings are. The field is new and optional; delete it and the line
+  disappears. Its wording is a draft until Stephanie and Emily confirm it.
 
 ## Before this goes public
 
@@ -187,6 +191,14 @@ overrides are isolated so a re-sync doesn't lose them.
       labels it a draft on every surface that shows it — rerun it across all eight
       with the prompt in `notebooklm/README.md`, edit the wording, then set
       `reviewedBy` to clear the label.
+- [ ] **Set up `gsl.firehouse@noaa.gov`.** Since 2 November the About page gives it as
+      the team's address in place of Stephanie's and Emily's own, so it has to receive
+      mail before any build is deployed, the test site included. Requested from GSL's
+      help desk on 2 November.
+- [ ] **Confirm the disclaimer** that ends the landing and About pages (`disclaimer`
+      in `landing.json` and `about.json`, drafted 2 November). Stephanie and Emily own
+      its wording, and it speaks for NOAA, so it goes through clearance before
+      gsl.noaa.gov.
 - [ ] **Review the topic-area `covers` copy** in `topics.json` — the bullet list in
       the callout, and now the only area copy on `/topics/…`. The longer `intro`
       paragraphs are no longer rendered (September 2026 review) but are kept in the

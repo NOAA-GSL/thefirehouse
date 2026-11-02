@@ -42,14 +42,14 @@ A shared home for **synthesized fire weather social-science needs and recommenda
 ## Brand Commitments
 
 - Product name: **The Firehouse**; the logo wordmark reads **FireHouse — Fire Weather Research Hub** (brand files in `src/assets/logos/`)
-- Parent: NOAA Global Systems Laboratory (GSL) / Earth Prediction Innovation Center
+- Parent: NOAA Global Systems Laboratory (GSL)
 - Voice in approved landing copy: plain, institutional, useful — not marketing flourish
-- Binding assets: NOAA and GSL logos under `src/assets/logos/`; approved landing copy in `src/content/data/landing.json`
+- Binding assets: NOAA and GSL logos under `src/assets/logos/`; approved landing copy in `src/content/data/landing.json` (its `disclaimer` is a draft)
 - Incumbent visual system exists (ported Firehouse design system); product record does not redefine it
 
 ## Evidence on Hand
 
-- Approved landing copy in `landing.json`
+- Approved landing copy in `landing.json`, apart from the draft `disclaimer`
 - **Draft** top-needs synthesis in `topicSummaries.json`, drafted from the four published projects and traced entry-by-entry in `notebooklm/draft-synthesis-2026-09-17.md` — unreviewed, and labelled as a draft in the UI until `reviewedBy` is set
 - Topic definitions and area copy in `topics.json` — needs Stephanie/Emily review
 - Nine **placeholder** project records in `projects.json` — must not ship publicly as-is; `papers` empty on purpose
