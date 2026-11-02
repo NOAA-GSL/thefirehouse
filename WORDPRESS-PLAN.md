@@ -217,6 +217,7 @@ wp-content/plugins/firehouse/
   shared/          vocabulary.json, the project and topic schemas, and test cases, read
                    by PHP and JS
   tests/           PHPUnit tests, run without WordPress through Brain Monkey
+  uninstall.php    removes the role and the capabilities; the content stays
 ```
 
 ### URL map and content model
@@ -235,19 +236,20 @@ These are the React app's routes under a `/firehouse/` base, so a URL shared fro
 bridge resolves unchanged under the plugin. The Submit page is new.
 
 - **`fh_project`.** Post status replaces the `published` flag: a draft is unpublished.
-  The slug is the current slug. Survey fields, the title included, are plain-text post
-  meta; the post's own title is an escaped copy for WordPress's lists. The response
-  ID is stored and unique, and it is the key every re-import matches on: the Qualtrics
-  ResponseId for projects that came from Qualtrics, the response timestamp for those
-  that come from Google Forms, and an ID the plugin generates for submissions through
-  its own form. The block editor is off for this post type,
-  because there is no free-form body to edit, and no one adds a project in the admin.
-- **`fh_topic`.** Exactly four posts, with the topic key as the slug. Creating,
-  deleting or trashing one is blocked by capability, and its key and status can't be
-  changed: adding a fifth topic is a schema change, not an edit. Each topic stores its
-  synthesis as meta (`topNeeds`, `updatedAt`,
-  `sourceCount`, `model`, `reviewedBy`). Each need points to its projects by **post
-  ID**; the ID is turned back into a slug when the page renders.
+  The slug is the current slug. Survey fields, the title included, are post meta stored
+  exactly as submitted; the post's own title is an escaped copy for WordPress's lists.
+  The response ID is stored and unique, and it is the key every re-import matches on:
+  the Qualtrics ResponseId for projects that came from Qualtrics, the response
+  timestamp for those that come from Google Forms, and an ID the plugin generates for
+  submissions through its own form. There is no block editor or title box, because a
+  project has no free-form body and its title is meta. No one adds a project in the
+  admin.
+- **`fh_topic`.** Exactly four posts, with the topic key as the slug, created by the
+  Import screen. Adding, deleting or trashing one in the admin is blocked by
+  capability, and its key and status can't be changed: adding a fifth topic is a
+  schema change, not an edit. Each topic stores its synthesis as meta (`topNeeds`,
+  `updatedAt`, `sourceCount`, `model`, `reviewedBy`). Each need points to its projects
+  by **post ID**; the ID is turned back into a slug when the page renders.
 - **Landing and About.** Ordinary WordPress pages built from blocks. Their layouts are
   locked to text-only editing (`contentOnly`), with a short allowed-blocks list and no
   Custom HTML block.
@@ -326,7 +328,10 @@ in a rewrite.
    - **The import script drops them,** as today, along with Qualtrics' IP and location
      columns (Google Forms records neither). It runs on the developer's computer, so a
      response export never reaches GSL's server. The seed bundle it feeds holds no
-     personal data.
+     private answers, only what the site publishes (researchers' names and
+     organizations, and the team's names, biographies and work addresses), and the
+     Import screen refuses a bundle with anything shaped like an email address but a
+     team member's own.
    - **The plugin's form keeps them,** because Stephanie and Emily need a way to reach
      a submitter. They are stored apart from the survey fields, in meta that is never
      rendered, never sent through the REST API and never copied into revisions, and
@@ -445,9 +450,9 @@ short:
   prompt. Drafts and private answers never leave GSL.
 - **Secrets in `wp-config.php`, not the database.** The AI service key is a constant
   set by developers. It stays out of database backups, and editors never handle it.
-- **Personal data comes only from the form,** and stays private (rule 2): submitters'
-  emails, job titles and Q10 answers, readable by the Firehouse roles alone.
-  No IP addresses.
+- **Private personal data comes only from the form,** and stays private (rule 2):
+  submitters' emails, job titles and Q10 answers, readable by the Firehouse roles
+  alone. No IP addresses. The seed bundle carries only what the site publishes.
 - **One public endpoint writes to the database:** the form's submission handler. It
   checks a nonce, validates every field on the server, caps field lengths, accepts no
   files, and limits repeat submissions. Spam protection adds no third-party service
@@ -470,15 +475,24 @@ short:
 ### No WP-CLI: the Import screen
 
 One **Firehouse → Import** screen, available only to a separate import capability,
-loads the **seed bundle**: today's six JSON content files in one JSON file, which
-`npm run seed` writes (chosen over a zip on 1 November, since nothing needs the About
-portraits until the About page is built in Phase 4; they come through the Media
-Library then). This is how test, and later prod, get their first load. A dry-run
-preview first lists what was parsed, every problem and any notes, and nothing is
-written until the person confirms. It is repeatable: running it again updates the
-same posts rather than duplicating them. The file is read from PHP's temporary upload
-and never stored; between the dry run and the confirmation, the checked content waits
-for at most 30 minutes in a transient that belongs to the person who uploaded it.
+loads the **seed bundle**: the six content files of `src/content/data/` in one JSON
+file, which `npm run seed` writes. One file was chosen over a zip on 1 November:
+nothing needs the About portraits until the About page is built in Phase 4, and they
+come through the Media Library then. This is how test, and later prod, get their first
+load.
+
+A dry run first lists what would change, every problem and any notes, and nothing is
+written until the person confirms. Running it again updates the same posts rather than
+duplicating them: projects take the bundle's survey fields and keep their editorial
+fields (rule 4), and topics and settings are written only when they don't exist yet,
+so a reviewed synthesis is never overwritten. The plugin checks the bundle itself: a
+field it doesn't store, or anything shaped like an email address but a team member's
+own work address, stops the import.
+
+The uploaded file itself is never saved. After a dry run with no problems, the parts of
+the content the import writes wait in a transient keyed to the person who uploaded it,
+usable for 30 minutes; the confirmation plans again and imports only if nothing would
+differ from what was shown. Opening the screen afresh, or importing, clears it.
 
 Survey responses don't come through this screen. Until launch the existing import
 script turns them into the JSON files (see
@@ -881,7 +895,9 @@ ships.
 - Cache purging, only if Site Health shows Cloudflare has started caching HTML.
 - A screen-reader audit of the public pages and the admin screens.
 - CI that builds the versioned plugin zip, without `tests/`.
-- A runbook for editors and for administrators.
+- A runbook for editors and for administrators, including how to remove a project
+  for good (trash, then Delete Permanently, which takes its fields and revisions
+  with it).
 - Launch: close the Google Form and run the import script one last time, build the
   seed bundle, install on prod and run the seed import, build the page tree behind the
   bridge, remove the static directory, and point Submit a Finding at the Submit page.

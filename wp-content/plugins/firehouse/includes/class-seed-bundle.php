@@ -10,6 +10,7 @@ declare( strict_types = 1 );
 namespace Firehouse;
 
 use Firehouse\Domain\Content_Error;
+use Firehouse\Domain\Email_Shape;
 use Firehouse\Domain\Json;
 use Firehouse\Domain\Json_Object;
 use Firehouse\Domain\Normalize;
@@ -21,8 +22,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Reads a seed bundle, the file `npm run seed` writes from src/content/data/: the
  * settings, topics, syntheses, projects, landing page and About page in one object,
- * marked with `firehouseSeed`. The bundle holds what the site already publishes, and
- * no submitter's private answers (rule 2).
+ * marked with `firehouseSeed`.
+ *
+ * A bundle from `npm run seed` holds what the site already publishes and no
+ * submitter's private answers (rule 2). The plugin doesn't take that on trust: read()
+ * reports, as problems that stop the import, any project, topic or synthesis field
+ * the plugin doesn't store, and any text shaped like an email address other than a
+ * team member's own work address on the About page, naming where each is and never
+ * what it says. Whatever a bundle holds, only the fields the schemas name reach a post.
  */
 final class Seed_Bundle {
 
@@ -41,9 +48,10 @@ final class Seed_Bundle {
 	 * Reads a bundle and checks its content as the React site does.
 	 *
 	 * @param string $json The bundle.
-	 * @return array{content: array<string, mixed>, notes: list<string>} The content,
-	 *         normalized (Normalize::site_content()'s shape), and a note for each link
-	 *         normalizing dropped.
+	 * @return array{content: array<string, mixed>, notes: list<string>, problems: list<string>}
+	 *         The content, normalized (Normalize::site_content()'s shape); a note for
+	 *         each link normalizing dropped; and a problem for each field the plugin
+	 *         doesn't store and each email address where none belongs.
 	 * @throws Content_Error When the file is too large, isn't JSON, isn't a bundle,
 	 *                       or holds content Normalize refuses.
 	 */
@@ -62,11 +70,45 @@ final class Seed_Bundle {
 		if ( ! is_array( $raw ) || self::FORMAT !== ( $raw['firehouseSeed'] ?? null ) ) {
 			throw new Content_Error( esc_html( 'The file isn’t a Firehouse seed bundle. Make one with npm run seed.' ) );
 		}
-		$content = Normalize::site_content( $raw );
+		$content  = Normalize::site_content( $raw );
+		$problems = self::unknown_fields( $content );
+		foreach ( Email_Shape::find( $content ) as $path ) {
+			$problems[] = sprintf( 'Something shaped like an email address is in %s. No one’s email belongs in the site’s content (rule 2), except a team member’s own work address on the About page.', $path );
+		}
 		return array(
-			'content' => $content,
-			'notes'   => self::dropped_links( $raw['topicSummaries'] ?? null, $content['topicSummaries'] ),
+			'content'  => $content,
+			'notes'    => self::dropped_links( $raw['topicSummaries'] ?? null, $content['topicSummaries'] ),
+			'problems' => $problems,
 		);
+	}
+
+	/**
+	 * A problem for each project, topic or synthesis field the plugin doesn't store:
+	 * a field a newer site added, or one that should never have been in the files.
+	 *
+	 * @param array<string, mixed> $content The content, normalized.
+	 * @return list<string>
+	 */
+	private static function unknown_fields( array $content ): array {
+		$project = array_keys( Meta::fields( Post_Types::PROJECT ) );
+		$topic   = array_keys( Meta::fields( Post_Types::TOPIC ) );
+		$known   = array(
+			// A project's slug and published flag are its post's; `author` is the older
+			// single-string byline, which Normalize turns into `authors`.
+			'projects'       => array_merge( $project, array( 'slug', 'published', 'author' ) ),
+			'topics'         => array_merge( $topic, array( 'key', 'label' ) ),
+			'topicSummaries' => array_merge( $topic, array( 'topic' ) ),
+		);
+
+		$problems = array();
+		foreach ( $known as $block => $fields ) {
+			foreach ( $content[ $block ] as $index => $item ) {
+				foreach ( array_diff( array_keys( $item ), $fields ) as $field ) {
+					$problems[] = sprintf( '%1$s.%2$d has a field the plugin doesn’t store: %3$s. Remove it from the content files, or update the plugin if it is new.', $block, $index, $field );
+				}
+			}
+		}
+		return $problems;
 	}
 
 	/**

@@ -19,16 +19,22 @@ if ( ! defined( 'ABSPATH' ) ) {
  * The Firehouse Editor role can change Firehouse content and nothing else on the
  * site: projects, topics, Firehouse settings, and the pages in the Firehouse tree (the
  * `firehouse` page and its descendants). It has no `unfiltered_html` (rule 12), can't
- * edit the site's posts or menus, can't add, delete, trash, move or rename a page, and
- * can't use XML-RPC. Administrators get the Firehouse capabilities too, and they alone
- * can import. No one can delete or trash a topic, or change its key or status.
+ * edit the site's posts or menus, can't add, delete or trash a page or take one out of
+ * the trash, can't change a page's parent or slug, which are its address, and can't
+ * use XML-RPC. Administrators get the Firehouse capabilities too, and they alone can
+ * import. No one can delete or trash a topic, or change its key or status, except the
+ * plugin's own import (Store::writing()).
  *
- * The role stores only Firehouse's own capabilities. WordPress's page capabilities are
- * lent to it while the plugin runs (lend_page_caps()), and narrowed to the tree
- * (map_meta_cap()), so a deactivated or removed plugin leaves a role that can do
- * nothing. The other filters refuse a new page, a trashing or a move out of the tree
- * by any route that writes. Someone who also holds a role of their own keeps that
- * role's reach, and no more.
+ * The role stores `read` and Firehouse's own capabilities. WordPress's page
+ * capabilities are lent to it while the plugin runs (lend_page_caps()) and narrowed to
+ * the tree (map_meta_cap()), so with the plugin off its users can only sign in.
+ *
+ * The other filters refuse, by any route that writes, a new page, and a trashing or
+ * restoring by anyone who may not delete the post. A move or slug change is refused
+ * through the REST API and quietly undone elsewhere (keep_in_place()). A user whose
+ * other role edits all pages, such as Editor, keeps that reach; for anyone else the
+ * lent capabilities add only the Firehouse pages. Anyone with the role loses XML-RPC,
+ * whatever else they hold.
  */
 final class Capabilities {
 
@@ -70,7 +76,7 @@ final class Capabilities {
 		add_filter( 'user_has_cap', array( self::class, 'lend_page_caps' ) );
 		add_filter( 'map_meta_cap', array( self::class, 'map_meta_cap' ), 10, 4 );
 		add_filter( 'wp_insert_post_empty_content', array( self::class, 'refuse_write' ), 10, 2 );
-		add_filter( 'wp_insert_post_data', array( self::class, 'keep_in_place' ), 10, 4 );
+		add_filter( 'wp_insert_post_data', array( self::class, 'keep_in_place' ), 10, 2 );
 		add_filter( 'rest_pre_insert_page', array( self::class, 'refuse_rest_page_write' ), 10, 2 );
 		add_filter( 'authenticate', array( self::class, 'refuse_xmlrpc' ), 100 );
 		add_action( 'load-post-new.php', array( self::class, 'refuse_new_page_screen' ) );
@@ -223,9 +229,9 @@ final class Capabilities {
 	/**
 	 * Refuses, by any route that writes:
 	 *
-	 * - Trashing a page, project or topic through an edit, for anyone who may not delete
-	 *   it. WordPress asks for that only on its Trash link, and renames a trashed page
-	 *   before anything later could stop it.
+	 * - Moving a page, project or topic into or out of the trash through an edit, for
+	 *   anyone who may not delete it. WordPress asks for that only on its Trash and
+	 *   Restore links, and renames a trashed page before anything later could stop it.
 	 * - A limited editor's new page, or a change to a page they may not edit.
 	 *
 	 * WordPress reports a refusal here as empty content, so the routes an editor uses
@@ -242,8 +248,10 @@ final class Capabilities {
 		$stored = 0 === $id ? null : get_post( $id );
 		$type   = $stored instanceof \WP_Post ? $stored->post_type : ( $postarr['post_type'] ?? 'post' );
 
-		$trashing = $stored instanceof \WP_Post && 'trash' === ( $postarr['post_status'] ?? null ) && 'trash' !== $stored->post_status;
-		if ( $trashing && in_array( $type, array( 'page', Post_Types::PROJECT, Post_Types::TOPIC ), true ) && is_user_logged_in() && ! current_user_can( 'delete_post', $id ) ) {
+		$status     = $postarr['post_status'] ?? '';
+		$trashing   = $stored instanceof \WP_Post && 'trash' === $status && 'trash' !== $stored->post_status;
+		$untrashing = $stored instanceof \WP_Post && 'trash' === $stored->post_status && '' !== $status && 'trash' !== $status;
+		if ( ( $trashing || $untrashing ) && in_array( $type, array( 'page', Post_Types::PROJECT, Post_Types::TOPIC ), true ) && is_user_logged_in() && ! current_user_can( 'delete_post', $id ) ) {
 			return true;
 		}
 
@@ -258,21 +266,21 @@ final class Capabilities {
 	 *
 	 * - A topic's key and status, unless the plugin itself is writing: there are four
 	 *   topics, each always published, at its key.
-	 * - A limited editor's page's parent and slug, which are its address. A draft that
-	 *   has no slug yet gets one as usual, and a page coming out of the trash gets its
-	 *   old slug back as WordPress gives it.
+	 * - A limited editor's page's parent and slug, which are its address, whatever the
+	 *   page's status. A draft that has no slug yet gets one as usual, and a page in the
+	 *   trash, whose slug WordPress has changed, gets its old one back as WordPress
+	 *   gives it.
 	 *
-	 * @param array<string, mixed> $data        The post's fields as they will be saved.
-	 * @param array<string, mixed> $postarr     The post as given.
-	 * @param array<string, mixed> $unsanitized The post as given, before sanitizing.
-	 * @param bool                 $update      Whether an existing post is being changed.
+	 * It reads only the first two of the filter's arguments, which every caller passes.
+	 *
+	 * @param array<string, mixed> $data    The post's fields as they will be saved.
+	 * @param array<string, mixed> $postarr The post as given.
 	 * @return array<string, mixed>
 	 */
-	public static function keep_in_place( array $data, array $postarr, array $unsanitized, bool $update ): array {
-		if ( ! $update ) {
-			return $data;
-		}
-		$stored = get_post( (int) ( $postarr['ID'] ?? 0 ) );
+	public static function keep_in_place( array $data, array $postarr ): array {
+		// The ID decides, not $update: get_post( 0 ) would be whatever post is current.
+		$id     = (int) ( $postarr['ID'] ?? 0 );
+		$stored = 0 === $id ? null : get_post( $id );
 		if ( ! $stored instanceof \WP_Post ) {
 			return $data;
 		}
@@ -281,9 +289,9 @@ final class Capabilities {
 			$data['post_name']   = $stored->post_name;
 			$data['post_status'] = $stored->post_status;
 		}
-		if ( 'page' === $stored->post_type && 'trash' !== $stored->post_status && self::is_limited( wp_get_current_user() ) ) {
+		if ( 'page' === $stored->post_type && self::is_limited( wp_get_current_user() ) ) {
 			$data['post_parent'] = $stored->post_parent;
-			if ( '' !== $stored->post_name ) {
+			if ( '' !== $stored->post_name && 'trash' !== $stored->post_status ) {
 				$data['post_name'] = $stored->post_name;
 			}
 		}
@@ -325,12 +333,13 @@ final class Capabilities {
 
 	/**
 	 * Refuses XML-RPC to Firehouse Editors, who have no use for it. Its page methods
-	 * check capabilities of their own, and its custom fields bypass the screens.
+	 * check capabilities of their own, and its custom fields bypass the screens. Any
+	 * type is taken, since other plugins' filters on every sign-in can return anything.
 	 *
-	 * @param \WP_User|\WP_Error|null $user Who signed in, as far as WordPress has decided.
-	 * @return \WP_User|\WP_Error|null
+	 * @param mixed $user Who signed in, as far as WordPress and other plugins have decided.
+	 * @return mixed
 	 */
-	public static function refuse_xmlrpc( \WP_User|\WP_Error|null $user ): \WP_User|\WP_Error|null {
+	public static function refuse_xmlrpc( mixed $user ): mixed {
 		if ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST && self::is_editor( $user ) ) {
 			return new \WP_Error( 'firehouse_no_xmlrpc', __( 'Firehouse editors can’t use XML-RPC.', 'firehouse' ) );
 		}

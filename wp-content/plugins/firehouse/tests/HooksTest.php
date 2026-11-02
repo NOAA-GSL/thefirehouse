@@ -44,7 +44,7 @@ final class HooksTest extends WordPressTestCase {
 	 * Every write of a field is checked, with the four arguments the check reads.
 	 */
 	public function test_meta_writes_are_checked(): void {
-		Filters\expectAdded( 'add_post_metadata' )->once()->with( array( Meta::class, 'refuse_invalid' ), 10, 4 );
+		Filters\expectAdded( 'add_post_metadata' )->once()->with( array( Meta::class, 'refuse_add' ), 10, 4 );
 		Filters\expectAdded( 'update_post_metadata' )->once()->with( array( Meta::class, 'refuse_invalid' ), 10, 4 );
 
 		Meta::hook();
@@ -67,7 +67,7 @@ final class HooksTest extends WordPressTestCase {
 		Filters\expectAdded( 'user_has_cap' )->once()->with( array( Capabilities::class, 'lend_page_caps' ), 10, 1 );
 		Filters\expectAdded( 'map_meta_cap' )->once()->with( array( Capabilities::class, 'map_meta_cap' ), 10, 4 );
 		Filters\expectAdded( 'wp_insert_post_empty_content' )->once()->with( array( Capabilities::class, 'refuse_write' ), 10, 2 );
-		Filters\expectAdded( 'wp_insert_post_data' )->once()->with( array( Capabilities::class, 'keep_in_place' ), 10, 4 );
+		Filters\expectAdded( 'wp_insert_post_data' )->once()->with( array( Capabilities::class, 'keep_in_place' ), 10, 2 );
 		Filters\expectAdded( 'rest_pre_insert_page' )->once()->with( array( Capabilities::class, 'refuse_rest_page_write' ), 10, 2 );
 		Filters\expectAdded( 'authenticate' )->once()->with( array( Capabilities::class, 'refuse_xmlrpc' ), 100, 1 );
 		Actions\expectAdded( 'load-post-new.php' )->once()->with( array( Capabilities::class, 'refuse_new_page_screen' ), 10, 1 );

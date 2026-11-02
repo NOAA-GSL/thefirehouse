@@ -43,6 +43,7 @@ require_once __DIR__ . '/domain/class-vocabulary.php';
 require_once __DIR__ . '/domain/class-format.php';
 require_once __DIR__ . '/domain/class-derive.php';
 require_once __DIR__ . '/domain/class-normalize.php';
+require_once __DIR__ . '/domain/class-email-shape.php';
 
 require_once __DIR__ . '/includes/class-meta.php';
 require_once __DIR__ . '/includes/class-post-types.php';

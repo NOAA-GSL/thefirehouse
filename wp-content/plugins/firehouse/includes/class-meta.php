@@ -64,14 +64,36 @@ final class Meta {
 	 * Hooks the check on every write of a field, whatever code makes it.
 	 */
 	public static function hook(): void {
-		add_filter( 'add_post_metadata', array( self::class, 'refuse_invalid' ), 10, 4 );
+		add_filter( 'add_post_metadata', array( self::class, 'refuse_add' ), 10, 4 );
 		add_filter( 'update_post_metadata', array( self::class, 'refuse_invalid' ), 10, 4 );
+	}
+
+	/**
+	 * Refuses to add a second value to a field, which holds one, and otherwise checks
+	 * the value as refuse_invalid() does.
+	 *
+	 * @param mixed  $check      Null to let WordPress store it, or another filter's answer.
+	 * @param int    $object_id  The post.
+	 * @param string $meta_key   The meta key.
+	 * @param mixed  $meta_value The value, unslashed.
+	 * @return mixed False to refuse; otherwise $check.
+	 */
+	public static function refuse_add( mixed $check, int $object_id, string $meta_key, mixed $meta_value ): mixed {
+		if ( null === $check && null !== self::field_of( $object_id, $meta_key ) && metadata_exists( 'post', $object_id, $meta_key ) ) {
+			return false;
+		}
+		return self::refuse_invalid( $check, $object_id, $meta_key, $meta_value );
 	}
 
 	/**
 	 * Refuses to store a field of a project or topic that validate() rejects, so no
 	 * route can put a value of the wrong kind into a field. A valid value is stored as
 	 * given; a revision's copy isn't checked, since its post was.
+	 *
+	 * A number or true or false may arrive as WordPress stores it, as text ("2025",
+	 * "1"), as it does when a revision is restored; it is read the way Store reads it
+	 * back. A refusal only makes WordPress's function return false, with no message:
+	 * code that writes a field calls validate() first to say what's wrong.
 	 *
 	 * @param mixed  $check      Null to let WordPress store it, or another filter's answer.
 	 * @param int    $object_id  The post.
@@ -80,18 +102,50 @@ final class Meta {
 	 * @return mixed False to refuse; otherwise $check.
 	 */
 	public static function refuse_invalid( mixed $check, int $object_id, string $meta_key, mixed $meta_value ): mixed {
-		if ( null !== $check || ! str_starts_with( $meta_key, self::PREFIX ) ) {
+		$field = null === $check ? self::field_of( $object_id, $meta_key ) : null;
+		if ( null === $field ) {
 			return $check;
+		}
+		list( $post_type, $name ) = $field;
+		$value                    = self::typed( $meta_value, self::fields( $post_type )[ $name ]['type'] );
+		return true === self::validate( $post_type, $name, $value ) ? $check : false;
+	}
+
+	/**
+	 * A stored value with its schema's type: WordPress keeps a number or a boolean
+	 * stored on its own as text. Lists and objects come back as stored.
+	 *
+	 * @param mixed  $value The stored value.
+	 * @param string $type  The schema's type.
+	 * @return mixed
+	 */
+	public static function typed( mixed $value, string $type ): mixed {
+		return match ( true ) {
+			'number' === $type && is_string( $value ) && is_numeric( $value ) => $value + 0,
+			'integer' === $type && is_string( $value ) && 1 === preg_match( '/^-?\d+$/', $value ) => (int) $value,
+			'boolean' === $type && '1' === $value => true,
+			'boolean' === $type && '' === $value => false,
+			default => $value,
+		};
+	}
+
+	/**
+	 * The post type and field a meta key is, on a project or topic, or null.
+	 *
+	 * @param int    $object_id The post.
+	 * @param string $meta_key  The meta key.
+	 * @return array{0: string, 1: string}|null
+	 */
+	private static function field_of( int $object_id, string $meta_key ): ?array {
+		if ( ! str_starts_with( $meta_key, self::PREFIX ) ) {
+			return null;
 		}
 		$post = get_post( $object_id );
 		if ( ! $post instanceof \WP_Post || ! in_array( $post->post_type, array( Post_Types::PROJECT, Post_Types::TOPIC ), true ) ) {
-			return $check;
+			return null;
 		}
 		$name = substr( $meta_key, strlen( self::PREFIX ) );
-		if ( ! array_key_exists( $name, self::fields( $post->post_type ) ) ) {
-			return $check;
-		}
-		return true === self::validate( $post->post_type, $name, $meta_value ) ? $check : false;
+		return array_key_exists( $name, self::fields( $post->post_type ) ) ? array( $post->post_type, $name ) : null;
 	}
 
 	/**
@@ -120,7 +174,8 @@ final class Meta {
 	 *
 	 * A topic's needs point to their projects by post ID, where types.ts and the seed
 	 * bundle name them by slug, so renaming a project can't strip a need of its
-	 * sources (rule 5). The ID is turned back into a slug when a page is drawn.
+	 * sources (rule 5). Pages will turn the ID back into a slug when they're drawn
+	 * (Phase 4).
 	 *
 	 * A schema file that can't be read is a broken release, and read() throws.
 	 *

@@ -83,6 +83,50 @@ final class StoreTest extends WordPressTestCase {
 	}
 
 	/**
+	 * A topic's label is its title, stored escaped and read back as written.
+	 */
+	public function test_a_topic_label_reads_back_unescaped(): void {
+		Functions\when( 'metadata_exists' )->justReturn( false );
+		Functions\when( 'wp_specialchars_decode' )->alias( static fn( string $text ): string => htmlspecialchars_decode( $text, ENT_QUOTES ) );
+		$post = new \WP_Post(
+			array(
+				'ID'         => 40,
+				'post_type'  => 'fh_topic',
+				'post_name'  => 'observe',
+				'post_title' => 'Fire &amp; Smoke &lt;b&gt;',
+			)
+		);
+
+		$topic = Store::topic( $post );
+
+		$this->assertSame( 'observe', $topic['key'] );
+		$this->assertSame( array( 'label' => 'Fire & Smoke <b>' ), $topic['fields'] );
+	}
+
+	/**
+	 * If WordPress refuses an update, the fields removed for it are put back.
+	 */
+	public function test_a_refused_update_puts_removed_fields_back(): void {
+		$restored = array();
+		Functions\when( 'wp_slash' )->returnArg();
+		Functions\when( 'has_filter' )->justReturn( false );
+		Functions\when( 'kses_remove_filters' )->justReturn();
+		Functions\when( 'delete_post_meta' )->justReturn( true );
+		Functions\when( 'wp_update_post' )->justReturn( new \WP_Error( 'db_update_error', 'Could not update.' ) );
+		Functions\when( 'update_post_meta' )->alias(
+			static function ( int $id, string $key, mixed $value ) use ( &$restored ): bool {
+				$restored[ $key ] = $value;
+				return true;
+			}
+		);
+
+		$result = Store::save( 'fh_project', 50, array(), array( 'title' => 'New' ), array( 'methods' ) );
+
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( array( 'fh_methods' => array( 'Survey' ) ), $restored );
+	}
+
+	/**
 	 * A project post's title is the researcher's, escaped for WordPress's lists.
 	 */
 	public function test_the_post_title_is_an_escaped_label(): void {

@@ -1,0 +1,18 @@
+{
+  "$comment": "Cases for shared/email-shape.json. `email` is whether the text holds something shaped like an email address; `team` is whether the whole text is a team member's work address, the one email the site shows on purpose. The last two `email` cases are known limits: the check catches an address written out, which is how a submitter's email would arrive, not one disguised on purpose.",
+  "cases": [
+    { "name": "an address", "text": "jane.doe@noaa.gov", "email": true, "team": true },
+    { "name": "an address in a sentence, in capitals", "text": "Contact Jane.Doe@NOAA.GOV for the data.", "email": true, "team": false },
+    { "name": "a mailto link", "text": "mailto:jane@example.org", "email": true, "team": false },
+    { "name": "an address in angle brackets", "text": "Jane <jane@example.org>", "email": true, "team": false },
+    { "name": "an address after a label", "text": "Email:x@y.gov", "email": true, "team": false },
+    { "name": "an address outside NOAA", "text": "jane@gmail.com", "email": true, "team": false },
+    { "name": "a team address with another after it", "text": "jane@noaa.gov; bob@gmail.com", "email": true, "team": false },
+    { "name": "a handle in a link", "text": "https://medium.com/@name.surname/post", "email": false, "team": false },
+    { "name": "a handle on its own", "text": "Follow @firewx for updates.", "email": false, "team": false },
+    { "name": "no domain ending", "text": "a@b", "email": false, "team": false },
+    { "name": "a DOI", "text": "https://doi.org/10.1175/WAF-D-24-0001.1", "email": false, "team": false },
+    { "name": "a spaced address isn't caught", "text": "jane @ noaa.gov", "email": false, "team": false },
+    { "name": "a spelled-out address isn't caught", "text": "jane at noaa dot gov", "email": false, "team": false }
+  ]
+}

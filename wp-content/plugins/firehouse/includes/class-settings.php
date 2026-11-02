@@ -193,7 +193,7 @@ final class Settings {
 		<div class="wrap">
 			<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
 			<?php if ( array() !== $errors ) : ?>
-				<div id="firehouse-settings-errors" class="notice notice-error">
+				<div id="firehouse-settings-errors" class="notice notice-error inline">
 					<h2>
 						<?php
 						/* translators: %d: how many problems. */
@@ -389,17 +389,20 @@ final class Settings {
 	 * @param string   $type        The input type.
 	 */
 	private static function add_field( string $section, array $path, string $label, string $description, string $type = 'text' ): void {
+		$id = self::field_id( $path );
 		add_settings_field(
-			self::field_id( $path ),
+			$id,
 			$label,
 			array( self::class, 'text_field' ),
 			self::PAGE,
 			$section,
 			array(
-				'label_for'   => self::field_id( $path ),
+				'label_for'   => $id,
 				'path'        => $path,
 				'description' => $description,
 				'type'        => $type,
+				// WordPress's own style for a field in error: a red border.
+				'class'       => isset( self::errors()[ $id ] ) ? 'form-invalid form-required' : '',
 			)
 		);
 	}

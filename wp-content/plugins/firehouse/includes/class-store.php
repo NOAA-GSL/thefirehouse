@@ -22,7 +22,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * project's title included, read back with the type its schema gives, since WordPress
  * returns a stored number or true as text. A project post's own title is a label for
  * WordPress's lists and any theme template: the researcher's title, escaped, so a
- * template that prints it raw can't be made to run markup.
+ * template that prints it raw can't be made to run markup. A topic's label is stored
+ * escaped the same way, and read back unescaped.
  *
  * Writes keep researchers' text exactly as given (rule 1). WordPress strips one level
  * of backslashes from what it saves, so every write is slashed first, and the kses
@@ -96,7 +97,9 @@ final class Store {
 	}
 
 	/**
-	 * A topic post: its key and label, and its fields as Meta has them.
+	 * A topic post: its key, its label (its title, which is stored escaped like a
+	 * project's label), and its fields as Meta has them, a need's projects still as
+	 * post IDs.
 	 *
 	 * @param \WP_Post $post The post.
 	 * @return array{post_id: int, status: string, key: string, fields: array<string, mixed>}
@@ -106,7 +109,7 @@ final class Store {
 			'post_id' => $post->ID,
 			'status'  => $post->post_status,
 			'key'     => $post->post_name,
-			'fields'  => array( 'label' => $post->post_title ) + self::meta( $post->ID, Post_Types::TOPIC ),
+			'fields'  => array( 'label' => wp_specialchars_decode( $post->post_title, ENT_QUOTES ) ) + self::meta( $post->ID, Post_Types::TOPIC ),
 		);
 	}
 
@@ -122,7 +125,7 @@ final class Store {
 		$fields = array();
 		foreach ( Meta::fields( $post_type ) as $name => $schema ) {
 			if ( metadata_exists( 'post', $post_id, Meta::key( $name ) ) ) {
-				$fields[ $name ] = self::typed( get_post_meta( $post_id, Meta::key( $name ), true ), $schema['type'] );
+				$fields[ $name ] = Meta::typed( get_post_meta( $post_id, Meta::key( $name ), true ), $schema['type'] );
 			}
 		}
 		return $fields;
@@ -132,19 +135,41 @@ final class Store {
 	 * Saves a post and its fields: creates it when $post_id is 0, or changes it.
 	 *
 	 * Fields in $delete are removed before the post is saved, and fields in $set are
-	 * saved with it, so the revision WordPress makes holds the result.
+	 * saved with it, so the revision WordPress makes holds the result. If WordPress
+	 * refuses the save, the removed fields are put back.
 	 *
 	 * @param string               $post_type The post type.
 	 * @param int                  $post_id   The post, or 0 for a new one.
-	 * @param array<string, mixed> $post      Post fields: post_title, post_name, post_status.
+	 * @param array<string, mixed> $post      Post fields: post_title, post_name, post_status, post_author.
 	 * @param array<string, mixed> $set       Fields to save, by name.
 	 * @param string[]             $delete    Fields to remove, by name.
 	 * @return int|\WP_Error The post's ID, or why it wasn't saved.
 	 */
 	public static function save( string $post_type, int $post_id, array $post, array $set, array $delete ): int|\WP_Error {
+		$removed = array();
 		foreach ( $delete as $name ) {
+			$removed[ $name ] = get_post_meta( $post_id, Meta::key( $name ), true );
 			delete_post_meta( $post_id, Meta::key( $name ) );
 		}
+		$saved = self::write( $post_type, $post_id, $post, $set );
+		if ( is_wp_error( $saved ) ) {
+			foreach ( $removed as $name => $value ) {
+				update_post_meta( $post_id, Meta::key( $name ), wp_slash( $value ) );
+			}
+		}
+		return $saved;
+	}
+
+	/**
+	 * Inserts or updates the post itself, its fields with it.
+	 *
+	 * @param string               $post_type The post type.
+	 * @param int                  $post_id   The post, or 0 for a new one.
+	 * @param array<string, mixed> $post      Post fields.
+	 * @param array<string, mixed> $set       Fields to save, by name.
+	 * @return int|\WP_Error The post's ID, or why it wasn't saved.
+	 */
+	private static function write( string $post_type, int $post_id, array $post, array $set ): int|\WP_Error {
 
 		$meta = array();
 		foreach ( $set as $name => $value ) {
@@ -192,23 +217,5 @@ final class Store {
 				'order'       => 'ASC',
 			)
 		);
-	}
-
-	/**
-	 * A stored value with its schema's type: WordPress returns a number or a boolean
-	 * stored on its own as text. Lists and objects come back as stored.
-	 *
-	 * @param mixed  $value The stored value.
-	 * @param string $type  The schema's type.
-	 * @return mixed
-	 */
-	private static function typed( mixed $value, string $type ): mixed {
-		return match ( true ) {
-			'number' === $type && is_numeric( $value )  => $value + 0,
-			'integer' === $type && is_numeric( $value ) => (int) $value,
-			'boolean' === $type && in_array( $value, array( '1', 1, true ), true ) => true,
-			'boolean' === $type && in_array( $value, array( '', '0', 0, false ), true ) => false,
-			default => $value,
-		};
 	}
 }

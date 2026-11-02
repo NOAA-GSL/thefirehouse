@@ -176,4 +176,36 @@ final class MetaTest extends WordPressTestCase {
 		$this->assertNull( Meta::refuse_invalid( null, 70, 'fh_completionYear', 'not a year' ) );
 		$this->assertTrue( Meta::refuse_invalid( true, 50, 'fh_completionYear', 'not a year' ), 'Another filter’s answer stands.' );
 	}
+
+	/**
+	 * A number or true or false may arrive as WordPress stores it, as text, as it does
+	 * when a revision is restored; any other text in such a field is still refused.
+	 */
+	public function test_stored_text_for_a_number_or_boolean_passes(): void {
+		$project = new \WP_Post( array( 'ID' => 50, 'post_type' => 'fh_project' ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+		Functions\when( 'get_post' )->justReturn( $project );
+
+		$this->assertNull( Meta::refuse_invalid( null, 50, 'fh_completionYear', '2025' ) );
+		$this->assertNull( Meta::refuse_invalid( null, 50, 'fh_irbApproved', '1' ) );
+		$this->assertNull( Meta::refuse_invalid( null, 50, 'fh_irbApproved', '' ) );
+		$this->assertFalse( Meta::refuse_invalid( null, 50, 'fh_irbApproved', 'false' ) );
+		$this->assertFalse( Meta::refuse_invalid( null, 50, 'fh_methods', 'Survey' ) );
+		$this->assertSame( 2025, Meta::typed( '2025', 'number' ) );
+		$this->assertSame( 'false', Meta::typed( 'false', 'boolean' ) );
+	}
+
+	/**
+	 * A field holds one value, so a second one isn't added; a first one is checked.
+	 */
+	public function test_a_second_value_is_not_added(): void {
+		$project = new \WP_Post( array( 'ID' => 50, 'post_type' => 'fh_project' ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+		Functions\when( 'get_post' )->justReturn( $project );
+		Functions\when( 'metadata_exists' )->justReturn( true );
+		$this->assertFalse( Meta::refuse_add( null, 50, 'fh_completionYear', 1999 ) );
+
+		Functions\when( 'metadata_exists' )->justReturn( false );
+		$this->assertNull( Meta::refuse_add( null, 50, 'fh_completionYear', 1999 ) );
+		$this->assertFalse( Meta::refuse_add( null, 50, 'fh_completionYear', 'not a year' ) );
+		$this->assertNull( Meta::refuse_add( null, 50, '_edit_lock', 'anything' ) );
+	}
 }

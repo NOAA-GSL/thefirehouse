@@ -7,10 +7,12 @@
  *   node scripts/project-schema.mjs            write the files
  *   node scripts/project-schema.mjs --check    fail if either file is out of date
  *
- * The plugin registers each property as post meta and checks every value it writes
- * against the property's schema with WordPress's own validator, so the TypeScript
- * type stays the one place a field is defined. The schema is self-contained (no
- * `$ref`), because WordPress's schema validation doesn't follow references.
+ * The plugin registers each property as post meta, apart from the ones the post itself
+ * holds (a project's slug and published flag), and checks every write against the
+ * property's schema with WordPress's own validator. One property departs from the
+ * type: the plugin stores a need's `projects` as post IDs and swaps in its own schema
+ * (includes/class-meta.php). Each schema is self-contained (no `$ref`), because
+ * WordPress's schema validation doesn't follow references.
  *
  * It uses the TypeScript compiler the site already builds with, so it adds no
  * dependency. It covers what those types use: strings, numbers, booleans, string

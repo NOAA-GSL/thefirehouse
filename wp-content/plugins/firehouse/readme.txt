@@ -19,8 +19,13 @@ Editor role, a Firehouse settings screen, and an Import screen that loads the si
 content from a seed bundle. It has no page templates yet, so the site's theme shows
 those addresses with its own templates.
 
-Deleting the plugin removes the Firehouse Editor role and the Firehouse
-capabilities, and leaves the content.
+The Import screen keeps nothing it doesn't import: the uploaded file isn't saved, and
+the checked content waits briefly for the confirmation and is then cleared. The plugin
+stores only what the site publishes.
+
+Deactivating the plugin keeps the Firehouse Editor role, which can then only sign in.
+Deleting the plugin removes the role and the Firehouse capabilities, and users who had
+the role are left with no role on the site. The content stays.
 
 == Changelog ==
 

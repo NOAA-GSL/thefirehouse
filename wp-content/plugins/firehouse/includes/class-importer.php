@@ -17,29 +17,38 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Loads a seed bundle's content into WordPress, after a dry run that says what it
- * would change.
+ * would change. An import creates what is missing and refreshes the survey's words;
+ * whatever editors and reviewers own, it writes only the first time:
  *
  * - **Projects** are matched by response ID (`id`), so running it again updates the
- *   same posts. A new project arrives whole: published or a draft, as the bundle has
- *   it. An existing one has its survey fields replaced and keeps its editorial fields,
- *   which belong to editors in WordPress (rule 4): its slug, whether it is published,
- *   its summary, publication status, full-record link and geography note.
- * - **Topics** are the four posts keyed by topic key, created if missing. A topic's
- *   fields and synthesis are replaced; each need's projects become post IDs (rule 5).
- * - **Settings**: the site name, submit label and address, and the navigation labels.
+ *   same posts. A new project arrives whole, published or a draft as the bundle has
+ *   it. An existing one takes the bundle's survey fields, a field the bundle no longer
+ *   has is removed, and it keeps its editorial fields (rule 4): its slug, whether it
+ *   is published, its summary, publication status, full-record link, and the parts of
+ *   its geography the survey doesn't ask for (the note and states).
+ * - **Topics** are the four posts keyed by topic key. A missing one is created with
+ *   its fields and synthesis, each need's projects as post IDs (rule 5). An existing
+ *   one is left as it is: a synthesis changes through review, not the seed.
+ * - **Settings** are written only if they have never been saved.
  *
- * Nothing is written while anything is wrong, and the dry run lists every problem.
- * Projects in WordPress that the bundle doesn't have are left as they are. The landing
- * and About pages are checked but not written: their pages are built from blocks in
- * Phase 4.
+ * Every difference kept from WordPress is noted. Nothing is written while anything is
+ * wrong, and the dry run lists every problem. Projects in WordPress that the bundle
+ * doesn't have are left as they are. The landing and About pages are checked but not
+ * written: their pages are built from blocks in Phase 4. New posts have no author: the
+ * researcher's work isn't credited to whoever imported it.
  */
 final class Importer {
 
 	/**
-	 * A project's editorial fields, besides its geography note: an existing project
-	 * keeps WordPress's.
+	 * A project's editorial fields: an existing project keeps WordPress's.
 	 */
 	public const EDITORIAL = array( 'slug', 'published', 'summary', 'publicationStatus', 'fullRecordUrl' );
+
+	/**
+	 * The parts of a project's geography the survey doesn't ask for, which an existing
+	 * project keeps.
+	 */
+	public const GEO_EDITORIAL = array( 'note', 'states' );
 
 	/**
 	 * Slugs WordPress won't give a project, because its addresses use them.
@@ -49,35 +58,43 @@ final class Importer {
 	/**
 	 * What importing this content would change, against what WordPress holds now.
 	 *
-	 * @param array<string, mixed> $content Normalized content, from Seed_Bundle::read().
-	 * @param string[]             $notes   Seed_Bundle::read()'s notes about the bundle.
+	 * @param array<string, mixed> $content  Normalized content, from Seed_Bundle::read().
+	 * @param string[]             $notes    Seed_Bundle::read()'s notes about the bundle.
+	 * @param string[]             $problems Seed_Bundle::read()'s problems with the bundle.
 	 * @return array<string, mixed> The plan; see plan().
 	 */
-	public static function preview( array $content, array $notes = array() ): array {
-		return self::plan( $content, Store::projects(), Store::topics(), Settings::get(), $notes );
+	public static function preview( array $content, array $notes = array(), array $problems = array() ): array {
+		$saved = false !== get_option( Settings::OPTION, false ) ? Settings::get() : null;
+		return self::plan( $content, Store::projects(), Store::topics(), $saved, $notes, $problems );
 	}
 
 	/**
-	 * Imports the content, if the dry run finds nothing wrong, and checks each post
+	 * Imports the content, if the dry run finds nothing wrong, and checks everything
 	 * it wrote by reading it back.
 	 *
-	 * @param array<string, mixed> $content Normalized content, from Seed_Bundle::read().
-	 * @param string[]             $notes   Seed_Bundle::read()'s notes about the bundle.
+	 * Writing stops at nothing short of a problem: a save WordPress refuses is listed,
+	 * the rest still happens, and importing the same bundle again finishes the job.
+	 *
+	 * @param array<string, mixed> $content  Normalized content, from Seed_Bundle::read().
+	 * @param string[]             $notes    Seed_Bundle::read()'s notes about the bundle.
+	 * @param string[]             $problems Seed_Bundle::read()'s problems with the bundle.
 	 * @return array<string, mixed> The plan, with each post's ID, `imported`, and any
 	 *                              write that failed or read back differently as a problem.
 	 */
-	public static function run( array $content, array $notes = array() ): array {
-		$plan = self::preview( $content, $notes );
+	public static function run( array $content, array $notes = array(), array $problems = array() ): array {
+		$plan = self::preview( $content, $notes, $problems );
 		if ( ! $plan['ok'] ) {
 			return $plan + array( 'imported' => false );
 		}
 
-		$ids = array();
+		$ids    = array();
+		$failed = array();
 		foreach ( $plan['projects'] as $index => $project ) {
 			if ( 'unchanged' !== $project['action'] ) {
 				$saved = Store::save( Post_Types::PROJECT, $project['post_id'], $project['post'], $project['set'], $project['delete'] );
 				if ( is_wp_error( $saved ) ) {
 					$plan['projects'][ $index ]['problems'][] = 'WordPress didn’t save it: ' . $saved->get_error_message();
+					$failed[ $project['slug'] ]               = true;
 					continue;
 				}
 				$plan['projects'][ $index ]['post_id'] = $saved;
@@ -86,47 +103,68 @@ final class Importer {
 		}
 
 		foreach ( $plan['topics'] as $index => $topic ) {
+			if ( 'create' !== $topic['action'] ) {
+				continue;
+			}
 			$set = $topic['set'];
-			if ( isset( $set['topNeeds'] ) ) {
-				$set['topNeeds'] = self::needs_by_id( $set['topNeeds'], $ids );
+			if ( array() !== array_intersect_key( $failed, array_flip( self::needed_projects( $set['topNeeds'] ) ) ) ) {
+				$plan['topics'][ $index ]['problems'][] = 'A need names a project WordPress didn’t save, so the topic wasn’t created. Import again once the project saves.';
+				continue;
 			}
-			if ( 'unchanged' !== $topic['action'] || $topic['needs_new_projects'] ) {
-				$saved = Store::save( Post_Types::TOPIC, $topic['post_id'], $topic['post'], $set, $topic['delete'] );
-				if ( is_wp_error( $saved ) ) {
-					$plan['topics'][ $index ]['problems'][] = 'WordPress didn’t save it: ' . $saved->get_error_message();
-					continue;
-				}
-				$plan['topics'][ $index ]['post_id'] = $saved;
+			$set['topNeeds'] = self::needs_by_id( $set['topNeeds'], $ids );
+			$saved           = Store::save( Post_Types::TOPIC, 0, $topic['post'], $set, array() );
+			if ( is_wp_error( $saved ) ) {
+				$plan['topics'][ $index ]['problems'][] = 'WordPress didn’t save it: ' . $saved->get_error_message();
+				continue;
 			}
-			$plan['topics'][ $index ]['set'] = $set;
+			$plan['topics'][ $index ]['post_id'] = $saved;
+			$plan['topics'][ $index ]['set']     = $set;
 		}
 
-		if ( 'unchanged' !== $plan['settings']['action'] ) {
+		if ( 'update' === $plan['settings']['action'] ) {
 			update_option( Settings::OPTION, $plan['settings']['value'] );
 		}
 
-		$plan = self::verify( $plan );
-		return array_merge( $plan, array( 'imported' => true ) );
+		return array_merge( self::verify( $plan ), array( 'imported' => true ) );
+	}
+
+	/**
+	 * A short fingerprint of what a plan would do, so the Import screen can tell
+	 * whether WordPress changed between the dry run and the confirmation.
+	 *
+	 * @param array<string, mixed> $plan The plan.
+	 */
+	public static function fingerprint( array $plan ): string {
+		$summary = array();
+		foreach ( array( 'projects', 'topics' ) as $list ) {
+			foreach ( $plan[ $list ] as $entry ) {
+				$summary[] = array( $entry['action'], $entry['post_id'], $entry['changes'], $entry['delete'] );
+			}
+		}
+		$summary[] = array( $plan['settings']['action'], $plan['settings']['changes'] );
+		return hash( 'sha256', serialize( $summary ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize -- Hashed, never stored or unserialized.
 	}
 
 	/**
 	 * Plans an import of the content into what WordPress holds.
 	 *
 	 * Each project and topic has an `action` (create, update or unchanged), the fields
-	 * it would change, `problems` that stop the import and `notes` that don't. `ok` is
-	 * whether nothing anywhere stops it.
+	 * it would change and remove, `problems` that stop the import and `notes` that
+	 * don't. `ok` is whether nothing anywhere stops it.
 	 *
 	 * @param array<string, mixed>       $content  Normalized content.
 	 * @param list<array<string, mixed>> $projects The project posts, from Store::projects().
 	 * @param list<array<string, mixed>> $topics   The topic posts, from Store::topics().
-	 * @param array<string, mixed>       $settings The current settings.
+	 * @param array<string, mixed>|null  $settings The saved settings, or null if never saved.
 	 * @param string[]                   $notes    Notes about the bundle itself.
-	 * @return array{ok: bool, projects: list<array<string, mixed>>, topics: list<array<string, mixed>>, settings: array<string, mixed>, left_alone: list<array<string, string>>, notes: list<string>}
+	 * @param string[]                   $problems Problems with the bundle itself.
+	 * @return array{ok: bool, problems: list<string>, projects: list<array<string, mixed>>, topics: list<array<string, mixed>>, settings: array<string, mixed>, left_alone: list<array<string, mixed>>, notes: list<string>}
 	 */
-	public static function plan( array $content, array $projects, array $topics, array $settings, array $notes = array() ): array {
-		$by_id   = array();
-		$repeats = array();
-		$slugs   = array();
+	public static function plan( array $content, array $projects, array $topics, ?array $settings, array $notes = array(), array $problems = array() ): array {
+		$by_id      = array();
+		$repeats    = array();
+		$slugs      = array();
+		$left_alone = array();
 		foreach ( $projects as $stored ) {
 			$id = $stored['fields']['id'] ?? null;
 			if ( is_string( $id ) && '' !== $id ) {
@@ -134,6 +172,8 @@ final class Importer {
 					$repeats[ $id ] = true;
 				}
 				$by_id[ $id ] = $stored;
+			} else {
+				$left_alone[] = self::left_alone( $stored, false );
 			}
 			$slugs[ $stored['fields']['slug'] ] = true;
 		}
@@ -143,14 +183,9 @@ final class Importer {
 		foreach ( $content['projects'] as $project ) {
 			$planned[] = self::plan_project( $project, $by_id, $repeats, $slugs, $seen );
 		}
-
-		$left_alone = array();
 		foreach ( $by_id as $id => $stored ) {
 			if ( ! isset( $seen[ $id ] ) ) {
-				$left_alone[] = array(
-					'slug'  => (string) $stored['fields']['slug'],
-					'title' => (string) $stored['fields']['title'],
-				);
+				$left_alone[] = self::left_alone( $stored, true );
 			}
 		}
 
@@ -160,6 +195,7 @@ final class Importer {
 		}
 
 		$plan = array(
+			'problems'   => array_values( $problems ),
 			'projects'   => $planned,
 			'topics'     => self::plan_topics( $content, $topics, $post_ids ),
 			'settings'   => self::plan_settings( $content['settings'], $settings ),
@@ -167,11 +203,13 @@ final class Importer {
 			'notes'      => array_merge( array_values( $notes ), array( 'The landing and About pages are checked but not written: their pages are built in Phase 4.' ) ),
 		);
 
-		$problems   = array_merge(
+		$all        = array_merge(
+			$plan['problems'],
+			$plan['settings']['problems'],
 			...array_column( $plan['projects'], 'problems' ),
 			...array_column( $plan['topics'], 'problems' )
 		);
-		$plan['ok'] = array() === $problems && array() === $plan['settings']['problems'];
+		$plan['ok'] = array() === $all;
 		return $plan;
 	}
 
@@ -237,6 +275,7 @@ final class Importer {
 				'post_title'  => Store::label( $entry['title'] ),
 				'post_name'   => $entry['slug'],
 				'post_status' => $entry['status'],
+				'post_author' => 0,
 			);
 			$entry['set']  = $fields;
 			return $entry;
@@ -248,13 +287,14 @@ final class Importer {
 			$entry['problems'][] = 'It is in the trash in WordPress. Restore it or delete it permanently, then import again.';
 		}
 
-		$survey = array_diff_key( $fields, array_flip( self::EDITORIAL ) );
-		$note   = $stored['fields']['geo']['note'] ?? null;
+		$survey     = array_diff_key( $fields, array_flip( self::EDITORIAL ) );
+		$stored_geo = is_array( $stored['fields']['geo'] ?? null ) ? $stored['fields']['geo'] : array();
+		$kept_geo   = array_intersect_key( $stored_geo, array_flip( self::GEO_EDITORIAL ) );
 		if ( isset( $survey['geo'] ) ) {
-			unset( $survey['geo']['note'] );
+			$survey['geo'] = array_diff_key( $survey['geo'], array_flip( self::GEO_EDITORIAL ) );
 		}
-		if ( is_string( $note ) ) {
-			$survey['geo'] = ( $survey['geo'] ?? array( 'regions' => array() ) ) + array( 'note' => $note );
+		if ( array() !== $kept_geo ) {
+			$survey['geo'] = ( $survey['geo'] ?? array( 'regions' => array() ) ) + $kept_geo;
 		}
 
 		foreach ( $survey as $name => $value ) {
@@ -268,27 +308,29 @@ final class Importer {
 		}
 		foreach ( array_keys( Meta::fields( Post_Types::PROJECT ) ) as $name ) {
 			if ( ! in_array( $name, self::EDITORIAL, true ) && ! array_key_exists( $name, $survey ) && array_key_exists( $name, $stored['fields'] ) ) {
-				$entry['delete'][]  = $name;
-				$entry['changes'][] = $name;
+				$entry['delete'][] = $name;
 			}
 		}
-		$entry['action'] = array() === $entry['changes'] ? 'unchanged' : 'update';
+		$entry['action'] = array() === $entry['changes'] && array() === $entry['delete'] ? 'unchanged' : 'update';
 
 		foreach ( self::EDITORIAL as $name ) {
-			$ours   = 'slug' === $name || 'published' === $name ? $project[ $name ] : ( $fields[ $name ] ?? null );
+			$ours   = in_array( $name, array( 'slug', 'published' ), true ) ? $project[ $name ] : ( $fields[ $name ] ?? null );
 			$theirs = $stored['fields'][ $name ] ?? null;
 			if ( ! self::same( $ours, $theirs ) ) {
 				$entry['notes'][] = sprintf( 'It keeps WordPress’s %s, which differs from the bundle’s.', $name );
 			}
 		}
-		if ( ! self::same( $project['geo']['note'] ?? null, $note ) ) {
-			$entry['notes'][] = 'It keeps WordPress’s geography note, which differs from the bundle’s.';
+		foreach ( self::GEO_EDITORIAL as $name ) {
+			if ( ! self::same( $project['geo'][ $name ] ?? null, $stored_geo[ $name ] ?? null ) ) {
+				$entry['notes'][] = sprintf( 'It keeps WordPress’s geography %s, which differs from the bundle’s.', $name );
+			}
 		}
 		return $entry;
 	}
 
 	/**
-	 * Plans the four topics.
+	 * Plans the four topics: a missing one is created, and an existing one is kept,
+	 * with a note naming each field that differs from the bundle's.
 	 *
 	 * @param array<string, mixed>       $content  Normalized content.
 	 * @param list<array<string, mixed>> $topics   The topic posts.
@@ -301,17 +343,16 @@ final class Importer {
 			$entries   = array_values( array_filter( $content['topics'], static fn( array $topic ): bool => $key === $topic['key'] ) );
 			$summaries = array_values( array_filter( $content['topicSummaries'], static fn( array $summary ): bool => $key === $summary['topic'] ) );
 			$entry     = array(
-				'key'                => $key,
-				'label'              => is_string( $entries[0]['label'] ?? null ) ? $entries[0]['label'] : '',
-				'action'             => 'create',
-				'post_id'            => 0,
-				'changes'            => array(),
-				'problems'           => array(),
-				'notes'              => array(),
-				'post'               => array(),
-				'set'                => array(),
-				'delete'             => array(),
-				'needs_new_projects' => false,
+				'key'      => $key,
+				'label'    => is_string( $entries[0]['label'] ?? null ) ? $entries[0]['label'] : '',
+				'action'   => 'create',
+				'post_id'  => 0,
+				'changes'  => array(),
+				'problems' => array(),
+				'notes'    => array(),
+				'post'     => array(),
+				'set'      => array(),
+				'delete'   => array(),
 			);
 			if ( 1 !== count( $entries ) ) {
 				$entry['problems'][] = sprintf( 'The bundle has %d topics with this key; it needs exactly one.', count( $entries ) );
@@ -327,15 +368,8 @@ final class Importer {
 			if ( ! isset( $fields['topNeeds'] ) ) {
 				$fields['topNeeds'] = array();
 			}
-			$known = self::needs_by_id( $fields['topNeeds'], $post_ids );
-			foreach ( $fields['topNeeds'] as $need ) {
-				foreach ( $need['projects'] ?? array() as $slug ) {
-					if ( 0 === ( $post_ids[ $slug ] ?? 0 ) ) {
-						$entry['needs_new_projects'] = true;
-					}
-				}
-			}
-			foreach ( array_merge( $fields, array( 'topNeeds' => $known ) ) as $name => $value ) {
+			$by_id = self::needs_by_id( $fields['topNeeds'], $post_ids );
+			foreach ( array_merge( $fields, array( 'topNeeds' => $by_id ) ) as $name => $value ) {
 				$valid = Meta::validate( Post_Types::TOPIC, $name, $value );
 				if ( is_wp_error( $valid ) ) {
 					$entry['problems'][] = sprintf( '%s: %s', $name, $valid->get_error_message() );
@@ -351,84 +385,104 @@ final class Importer {
 			}
 			if ( null === $stored ) {
 				$entry['post'] = array(
-					'post_title'  => $entry['label'],
+					'post_title'  => Store::label( $entry['label'] ),
 					'post_name'   => $key,
 					'post_status' => 'publish',
+					'post_author' => 0,
 				);
 				$entry['set']  = $fields;
 				$planned[]     = $entry;
 				continue;
 			}
 
+			$entry['action']  = 'unchanged';
 			$entry['post_id'] = $stored['post_id'];
-			if ( 'publish' !== $stored['status'] ) {
-				$entry['post']['post_status'] = 'publish';
-				$entry['changes'][]           = 'status';
-			}
-			if ( $entry['label'] !== $stored['fields']['label'] ) {
-				$entry['post']['post_title'] = $entry['label'];
-				$entry['changes'][]          = 'label';
-			}
-			foreach ( $fields as $name => $value ) {
-				$compare = 'topNeeds' === $name ? $known : $value;
-				if ( ! array_key_exists( $name, $stored['fields'] ) || ! self::same( $compare, $stored['fields'][ $name ] ) || ( 'topNeeds' === $name && $entry['needs_new_projects'] ) ) {
-					$entry['set'][ $name ] = $value;
-					$entry['changes'][]    = $name;
+			$differ           = array();
+			foreach ( array( 'label' => $entry['label'] ) + $fields + $stored['fields'] as $name => $unused ) {
+				$ours = 'label' === $name ? $entry['label'] : ( 'topNeeds' === $name ? $by_id : ( $fields[ $name ] ?? null ) );
+				if ( ! self::same( $ours, $stored['fields'][ $name ] ?? null ) ) {
+					$differ[] = $name;
 				}
 			}
-			foreach ( array_keys( Meta::fields( Post_Types::TOPIC ) ) as $name ) {
-				if ( ! array_key_exists( $name, $fields ) && array_key_exists( $name, $stored['fields'] ) ) {
-					$entry['delete'][]  = $name;
-					$entry['changes'][] = $name;
-				}
+			if ( array() !== $differ ) {
+				$entry['notes'][] = sprintf( 'It keeps WordPress’s %s, which differ from the bundle’s. A synthesis changes through review, not the seed.', implode( ', ', $differ ) );
 			}
-			$entry['action'] = array() === $entry['changes'] ? 'unchanged' : 'update';
-			$planned[]       = $entry;
+			$planned[] = $entry;
 		}
 		return $planned;
 	}
 
 	/**
-	 * Plans the settings: the bundle's, checked as the settings screen checks them.
-	 * A navigation link the bundle doesn't have keeps its current label.
+	 * Plans the settings: the bundle's, checked as the settings screen checks them, if
+	 * they have never been saved; otherwise WordPress's, with a note naming each that
+	 * differs. A navigation link the bundle doesn't have keeps its default label.
 	 *
-	 * @param array<string, mixed> $bundle  The bundle's settings.
-	 * @param array<string, mixed> $current The current settings.
-	 * @return array{action: string, changes: list<string>, problems: list<string>, value: array<string, mixed>}
+	 * @param array<string, mixed>      $bundle The bundle's settings.
+	 * @param array<string, mixed>|null $saved  The saved settings, or null if never saved.
+	 * @return array{action: string, changes: list<string>, problems: list<string>, notes: list<string>, value: array<string, mixed>}
 	 */
-	private static function plan_settings( array $bundle, array $current ): array {
-		$labels = $current['navLabels'];
+	private static function plan_settings( array $bundle, ?array $saved ): array {
+		$current = $saved ?? Settings::defaults();
+		$labels  = $current['navLabels'];
 		foreach ( is_array( $bundle['nav'] ?? null ) ? $bundle['nav'] : array() as $link ) {
 			$key = is_array( $link ) ? array_search( $link['to'] ?? null, Settings::NAV, true ) : false;
 			if ( false !== $key && is_string( $link['label'] ?? null ) ) {
 				$labels[ $key ] = $link['label'];
 			}
 		}
-		$input = array(
+		$input                  = array(
 			'siteName'      => $bundle['siteName'] ?? null,
 			'submitLabel'   => $bundle['submitLabel'] ?? null,
 			'submitFormUrl' => $bundle['submitFormUrl'] ?? null,
 			'navLabels'     => $labels,
 		);
-
 		list( $value, $errors ) = Settings::validate( $input );
-		$changes                = array();
+
+		$differ = array();
 		foreach ( $value as $key => $setting ) {
 			if ( ! self::same( $setting, $current[ $key ] ?? null ) ) {
-				$changes[] = $key;
+				$differ[] = $key;
 			}
 		}
+
+		if ( null !== $saved ) {
+			return array(
+				'action'   => 'unchanged',
+				'changes'  => array(),
+				'problems' => array(),
+				'notes'    => array() === $differ ? array() : array( sprintf( 'The settings keep WordPress’s %s, which differ from the bundle’s.', implode( ', ', $differ ) ) ),
+				'value'    => $saved,
+			);
+		}
 		return array(
-			'action'   => array() === $changes ? 'unchanged' : 'update',
-			'changes'  => $changes,
+			'action'   => 'update',
+			'changes'  => $differ,
 			'problems' => array_values( $errors ),
+			'notes'    => array(),
 			'value'    => $value,
 		);
 	}
 
 	/**
-	 * Reads back each project and topic the run wrote, and lists any field that
-	 * reads back differently from what was written as a problem.
+	 * A project post the import leaves as it is, for the report.
+	 *
+	 * @param array<string, mixed> $stored     The post, from Store::projects().
+	 * @param bool                 $has_id     Whether it has a response ID.
+	 * @return array{slug: string, title: string, published: bool, has_id: bool}
+	 */
+	private static function left_alone( array $stored, bool $has_id ): array {
+		return array(
+			'slug'      => (string) $stored['fields']['slug'],
+			'title'     => (string) ( $stored['fields']['title'] ?? '' ),
+			'published' => 'publish' === $stored['status'],
+			'has_id'    => $has_id,
+		);
+	}
+
+	/**
+	 * Reads back what the run wrote, and lists as a problem anything that reads back
+	 * differently: a field, a field that should be gone, the title, slug or status, or
+	 * a setting.
 	 *
 	 * @param array<string, mixed> $plan The plan, after the writes.
 	 * @return array<string, mixed>
@@ -439,35 +493,46 @@ final class Importer {
 			'topics'   => Post_Types::TOPIC,
 		) as $list => $post_type ) {
 			foreach ( $plan[ $list ] as $index => $entry ) {
-				if ( 'unchanged' === $entry['action'] && empty( $entry['needs_new_projects'] ) ) {
+				if ( 'unchanged' === $entry['action'] || 0 === $entry['post_id'] || array() !== $entry['problems'] ) {
 					continue;
 				}
 				$post = get_post( $entry['post_id'] );
 				if ( ! $post instanceof \WP_Post ) {
+					$plan[ $list ][ $index ]['problems'][] = 'It can’t be read back.';
 					continue;
 				}
-				$stored = Post_Types::PROJECT === $post_type ? Store::project( $post ) : Store::topic( $post );
+				$stored  = Post_Types::PROJECT === $post_type ? Store::project( $post ) : Store::topic( $post );
+				$differs = array();
 				foreach ( $entry['set'] as $name => $value ) {
 					if ( ! self::same( $value, $stored['fields'][ $name ] ?? null ) ) {
-						$plan[ $list ][ $index ]['problems'][] = sprintf( 'Its %s reads back differently from what was imported.', $name );
+						$differs[] = $name;
 					}
 				}
-				$expected = array(
-					'post_title' => Post_Types::PROJECT === $post_type ? 'title' : 'label',
-					'post_name'  => 'slug',
-				);
-				foreach ( $expected as $field => $name ) {
-					if ( isset( $entry['post'][ $field ] ) && $entry['post'][ $field ] !== $post->$field ) {
-						$plan[ $list ][ $index ]['problems'][] = sprintf( 'Its %s reads back differently from what was imported.', $name );
+				foreach ( $entry['delete'] as $name ) {
+					if ( array_key_exists( $name, $stored['fields'] ) ) {
+						$differs[] = $name . ' (still there)';
 					}
+				}
+				foreach ( array( 'post_title', 'post_name', 'post_status' ) as $field ) {
+					if ( isset( $entry['post'][ $field ] ) && $entry['post'][ $field ] !== $post->$field ) {
+						$differs[] = $field;
+					}
+				}
+				if ( array() !== $differs ) {
+					$plan[ $list ][ $index ]['problems'][] = sprintf( 'It reads back differently from what was imported: %s.', implode( ', ', $differs ) );
 				}
 			}
+		}
+
+		if ( 'update' === $plan['settings']['action'] && ! self::same( $plan['settings']['value'], Settings::get() ) ) {
+			$plan['settings']['problems'][] = 'The settings read back differently from what was imported.';
 		}
 		return $plan;
 	}
 
 	/**
 	 * The fields of a project or topic that are stored as meta, as the bundle has them.
+	 * Seed_Bundle has already refused a bundle with any other field.
 	 *
 	 * @param array<string, mixed> $item      A project, or a topic and its synthesis.
 	 * @param string               $post_type The post type.
@@ -475,6 +540,22 @@ final class Importer {
 	 */
 	private static function fields( array $item, string $post_type ): array {
 		return array_intersect_key( $item, Meta::fields( $post_type ) );
+	}
+
+	/**
+	 * The slugs a synthesis's needs name.
+	 *
+	 * @param list<array<string, mixed>> $needs The needs, naming projects by slug.
+	 * @return list<string>
+	 */
+	private static function needed_projects( array $needs ): array {
+		$slugs = array();
+		foreach ( $needs as $need ) {
+			foreach ( $need['projects'] ?? array() as $slug ) {
+				$slugs[] = $slug;
+			}
+		}
+		return $slugs;
 	}
 
 	/**

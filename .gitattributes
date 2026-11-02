@@ -1,2 +1,4 @@
 # Shell scripts run in Git Bash and Linux; a CRLF checkout breaks them.
 bin/* text eol=lf
+# The plugin release is built with git archive; the tests stay out of it.
+wp-content/plugins/firehouse/tests export-ignore

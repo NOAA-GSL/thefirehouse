@@ -1,0 +1,5 @@
+{
+  "$comment": "What counts as an email address where none belongs, read by scripts/email-shape.mjs (the survey import and the seed bundle) and by the plugin's PHP (the Import screen). `pattern` is a regular expression without delimiters, matched without regard to case. A slash or colon can't sit beside the @, so \"https://medium.com/@name.surname/post\" isn't one. `teamEmail` is the whole of the one email the site shows on purpose: an About page team member's work address. The cases both languages must pass are in cases/email-shape.json.",
+  "pattern": "[^\\s@<>()/:,;\"']+@[^\\s@<>()/:,;\"']+\\.[a-z]{2,}",
+  "teamEmail": "^[^\\s@<>()/:,;\"']+@noaa\\.gov$"
+}

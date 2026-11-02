@@ -279,17 +279,23 @@ final class CapabilitiesTest extends WordPressTestCase {
 	}
 
 	/**
-	 * Trashing through an edit takes the right to delete, as the Trash link does,
-	 * for everyone signed in: a topic can't be trashed even by an administrator.
+	 * Trashing or restoring through an edit takes the right to delete, as the Trash
+	 * and Restore links do, for everyone signed in: a topic can't be trashed even by an
+	 * administrator, and a limited editor can't take a page out of the trash.
 	 */
-	public function test_trashing_through_an_edit_takes_the_right_to_delete(): void {
+	public function test_trashing_or_restoring_through_an_edit_takes_the_right_to_delete(): void {
 		$this->as_user( array( 'administrator' ), array() );
 		$this->can['delete_post:50'] = true;
 
 		$this->assertTrue( Capabilities::refuse_write( false, array( 'ID' => 40, 'post_status' => 'trash' ) ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
 		$this->assertTrue( Capabilities::refuse_write( false, array( 'ID' => 11, 'post_status' => 'trash' ) ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+		$this->assertTrue( Capabilities::refuse_write( false, array( 'ID' => 21, 'post_status' => 'publish' ) ), 'Restoring.' ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
 		$this->assertFalse( Capabilities::refuse_write( false, array( 'ID' => 50, 'post_status' => 'trash' ) ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
 		$this->assertFalse( Capabilities::refuse_write( false, array( 'ID' => 21, 'post_status' => 'trash' ) ), 'Already in the trash.' ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+		$this->assertFalse( Capabilities::refuse_write( false, array( 'ID' => 21 ) ), 'An edit that leaves the status alone.' );
+
+		$this->can['delete_post:21'] = true;
+		$this->assertFalse( Capabilities::refuse_write( false, array( 'ID' => 21, 'post_status' => 'publish' ) ), 'Restoring, by someone who may delete it.' ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
 
 		Functions\when( 'is_user_logged_in' )->justReturn( false );
 		$this->assertFalse( Capabilities::refuse_write( false, array( 'ID' => 40, 'post_status' => 'trash' ) ), 'WP-CLI and cron run as no one.' ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
@@ -305,25 +311,28 @@ final class CapabilitiesTest extends WordPressTestCase {
 	}
 
 	/**
-	 * A limited editor's page keeps its parent and slug; a draft with no slug yet gets
-	 * one; a page coming out of the trash gets its slug back as WordPress gives it.
+	 * A limited editor's page keeps its parent and slug, whatever its status; a draft
+	 * with no slug yet gets one; a page in the trash keeps its parent but gets its slug
+	 * back as WordPress gives it.
 	 */
 	public function test_a_limited_editors_page_stays_where_it_is(): void {
 		$moved = array(
 			'post_type'   => 'page',
-			'post_parent' => 0,
+			'post_parent' => 46,
 			'post_name'   => 'moved-out',
 		);
 
-		$kept = Capabilities::keep_in_place( $moved, array( 'ID' => 11 ), array(), true );
+		$kept = Capabilities::keep_in_place( $moved, array( 'ID' => 11 ) );
 		$this->assertSame( 10, $kept['post_parent'] );
 		$this->assertSame( 'about', $kept['post_name'] );
 
-		$draft = Capabilities::keep_in_place( $moved, array( 'ID' => 12 ), array(), true );
+		$draft = Capabilities::keep_in_place( $moved, array( 'ID' => 12 ) );
 		$this->assertSame( 11, $draft['post_parent'] );
 		$this->assertSame( 'moved-out', $draft['post_name'] );
 
-		$this->assertSame( $moved, Capabilities::keep_in_place( $moved, array( 'ID' => 21 ), array(), true ) );
+		$trashed = Capabilities::keep_in_place( $moved, array( 'ID' => 21 ) );
+		$this->assertSame( 0, $trashed['post_parent'], 'A restore can’t move it either.' );
+		$this->assertSame( 'moved-out', $trashed['post_name'] );
 	}
 
 	/**
@@ -338,7 +347,7 @@ final class CapabilitiesTest extends WordPressTestCase {
 			'post_title'  => 'A new label',
 		);
 
-		$kept = Capabilities::keep_in_place( $renamed, array( 'ID' => 40 ), array(), true );
+		$kept = Capabilities::keep_in_place( $renamed, array( 'ID' => 40 ) );
 
 		$this->assertSame( 'observe', $kept['post_name'] );
 		$this->assertSame( 'publish', $kept['post_status'] );
@@ -346,7 +355,7 @@ final class CapabilitiesTest extends WordPressTestCase {
 	}
 
 	/**
-	 * Others' pages, new posts and projects are saved as given.
+	 * New posts, projects and others' pages are saved as given.
 	 */
 	public function test_others_saves_are_left_alone(): void {
 		$moved = array(
@@ -354,12 +363,20 @@ final class CapabilitiesTest extends WordPressTestCase {
 			'post_parent' => 0,
 			'post_name'   => 'moved-out',
 		);
-		$this->assertSame( $moved, Capabilities::keep_in_place( $moved, array( 'ID' => 11 ), array(), false ) );
+		$this->assertSame( $moved, Capabilities::keep_in_place( $moved, array() ), 'A new post has no ID.' );
 		$project = array( 'post_type' => 'fh_project' ) + $moved;
-		$this->assertSame( $project, Capabilities::keep_in_place( $project, array( 'ID' => 50 ), array(), true ) );
+		$this->assertSame( $project, Capabilities::keep_in_place( $project, array( 'ID' => 50 ) ) );
 
 		$this->as_user( array( 'administrator' ), array() );
-		$this->assertSame( $moved, Capabilities::keep_in_place( $moved, array( 'ID' => 11 ), array(), true ) );
+		$this->assertSame( $moved, Capabilities::keep_in_place( $moved, array( 'ID' => 11 ) ) );
+	}
+
+	/**
+	 * Whatever another plugin's sign-in filter returns is passed on.
+	 */
+	public function test_signing_in_takes_whatever_other_plugins_return(): void {
+		$this->assertFalse( Capabilities::refuse_xmlrpc( false ) );
+		$this->assertNull( Capabilities::refuse_xmlrpc( null ) );
 	}
 
 	/**

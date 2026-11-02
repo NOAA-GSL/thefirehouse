@@ -109,8 +109,9 @@ final class Post_Types {
 	 * The topic post type's arguments.
 	 *
 	 * There are exactly four topics, with the topic key as the slug, created by the
-	 * Import screen. No one can add one here, or delete, trash, rename or unpublish one
-	 * (Capabilities): a fifth topic is a schema change, not an edit.
+	 * Import screen. No one can add one here, or delete or trash one, or change its key
+	 * or status (Capabilities): a fifth topic is a schema change, not an edit. Its label,
+	 * the post's title, can be edited.
 	 *
 	 * @return array<string, mixed>
 	 */
