@@ -56,7 +56,6 @@
       - text: Write to the team at
       - link "gsl.firehouse@noaa.gov":
         - /url: mailto:gsl.firehouse@noaa.gov
-      - text: .
     - list:
       - listitem:
         - heading "Dr. Stephanie Hoekstra" [level=3]

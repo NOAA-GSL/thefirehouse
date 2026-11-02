@@ -76,7 +76,7 @@ const QUERY = /* groq */ `{
     audiences{eyebrow, heading, body, items[]{icon, title, body}},
     process{eyebrow, heading, body, steps[]{title, body}, links[]{label, to, href}},
     team{
-      eyebrow, heading, body, email,
+      eyebrow, heading, body, email, emailLead,
       members[]{
         name,
         bio,
