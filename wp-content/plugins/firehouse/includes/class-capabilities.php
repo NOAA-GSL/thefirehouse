@@ -17,17 +17,18 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Who may do what in Firehouse.
  *
  * The Firehouse Editor role can change Firehouse content and nothing else on the
- * site: projects, topics, Firehouse settings, and the pages in the Firehouse tree
- * (the `firehouse` page and its descendants). It has no `unfiltered_html` (rule 12),
- * can't edit the site's posts or menus, and can't add, delete, move or rename a page.
- * Administrators get the Firehouse capabilities too, and they alone can import.
+ * site: projects, topics, Firehouse settings, and the pages in the Firehouse tree (the
+ * `firehouse` page and its descendants). It has no `unfiltered_html` (rule 12), can't
+ * edit the site's posts or menus, can't add, delete, trash, move or rename a page, and
+ * can't use XML-RPC. Administrators get the Firehouse capabilities too, and they alone
+ * can import. No one can delete or trash a topic, or change its key or status.
  *
- * WordPress grants page capabilities for every page at once, so the tree limit is
- * applied on top of them: map_meta_cap() refuses any page outside the tree, and the
- * other filters refuse a new page or a move out of the tree by any route, whether
- * the block editor, Quick Edit or XML-RPC. It applies only where the Firehouse role is
- * what grants page editing: someone who also holds a role that edits others' pages
- * keeps that role's reach.
+ * The role stores only Firehouse's own capabilities. WordPress's page capabilities are
+ * lent to it while the plugin runs (lend_page_caps()), and narrowed to the tree
+ * (map_meta_cap()), so a deactivated or removed plugin leaves a role that can do
+ * nothing. The other filters refuse a new page, a trashing or a move out of the tree
+ * by any route that writes. Someone who also holds a role of their own keeps that
+ * role's reach, and no more.
  */
 final class Capabilities {
 
@@ -47,13 +48,31 @@ final class Capabilities {
 	public const SETTINGS = 'firehouse_manage_settings';
 
 	/**
+	 * Editing the pages in the Firehouse tree. The role stores this instead of
+	 * WordPress's page capabilities, which are lent for it while the plugin runs.
+	 */
+	public const EDIT_PAGES = 'firehouse_edit_pages';
+
+	/**
+	 * The page capabilities lent for EDIT_PAGES.
+	 */
+	private const PAGE_CAPS = array( 'edit_pages', 'edit_others_pages', 'edit_published_pages', 'publish_pages' );
+
+	/**
+	 * The meta capabilities that act on one page or post.
+	 */
+	private const POST_CHECKS = array( 'edit_post', 'edit_page', 'delete_post', 'delete_page', 'publish_post' );
+
+	/**
 	 * Hooks the filters.
 	 */
 	public static function hook(): void {
+		add_filter( 'user_has_cap', array( self::class, 'lend_page_caps' ) );
 		add_filter( 'map_meta_cap', array( self::class, 'map_meta_cap' ), 10, 4 );
-		add_filter( 'wp_insert_post_empty_content', array( self::class, 'refuse_page_write' ), 10, 2 );
-		add_filter( 'wp_insert_post_data', array( self::class, 'keep_page_in_place' ), 10, 4 );
-		add_filter( 'rest_pre_insert_page', array( self::class, 'refuse_rest_page_write' ) );
+		add_filter( 'wp_insert_post_empty_content', array( self::class, 'refuse_write' ), 10, 2 );
+		add_filter( 'wp_insert_post_data', array( self::class, 'keep_in_place' ), 10, 4 );
+		add_filter( 'rest_pre_insert_page', array( self::class, 'refuse_rest_page_write' ), 10, 2 );
+		add_filter( 'authenticate', array( self::class, 'refuse_xmlrpc' ), 100 );
 		add_action( 'load-post-new.php', array( self::class, 'refuse_new_page_screen' ) );
 		add_action( 'pre_get_posts', array( self::class, 'limit_page_list' ) );
 	}
@@ -95,23 +114,19 @@ final class Capabilities {
 	}
 
 	/**
-	 * The Firehouse Editor role's capabilities: Firehouse content, and the page
-	 * capabilities the tree limit narrows to the Firehouse tree. No deleting pages,
-	 * reading others' private pages, uploading, or anything outside Firehouse.
+	 * The Firehouse Editor role's capabilities: Firehouse content and settings, and
+	 * the tree's pages. Nothing of WordPress's own beyond `read`.
 	 *
 	 * @return array<string, true>
 	 */
 	public static function editor_caps(): array {
-		$caps = array_merge(
-			array( 'read', self::SETTINGS, 'edit_pages', 'edit_others_pages', 'edit_published_pages', 'publish_pages' ),
-			self::project_caps(),
-			self::topic_caps()
-		);
+		$caps = array_merge( array( 'read', self::SETTINGS, self::EDIT_PAGES ), self::project_caps(), self::topic_caps() );
 		return array_fill_keys( $caps, true );
 	}
 
 	/**
 	 * The capabilities administrators are given: all of Firehouse's, including import.
+	 * They edit pages with their own.
 	 *
 	 * @return list<string>
 	 */
@@ -120,37 +135,71 @@ final class Capabilities {
 	}
 
 	/**
+	 * Whether a capability is one of Firehouse's, whether or not this version still
+	 * grants it. uninstall.php recognizes them the same way.
+	 *
+	 * @param string $cap The capability.
+	 */
+	public static function is_own( string $cap ): bool {
+		return 1 === preg_match( '/^firehouse_|_fh_(projects|topics)$/', $cap );
+	}
+
+	/**
 	 * Creates the Firehouse Editor role as defined here, replacing an older version
-	 * of it, and gives administrators the Firehouse capabilities. Users keep the role
-	 * while it is replaced, because their accounts store only its name.
+	 * of it, and gives administrators the Firehouse capabilities, taking back any an
+	 * older version gave. Users keep the role while it is replaced, because their
+	 * accounts store only its name.
 	 */
 	public static function install(): void {
 		remove_role( self::EDITOR_ROLE );
 		add_role( self::EDITOR_ROLE, 'Firehouse Editor', self::editor_caps() );
 
 		$administrator = get_role( 'administrator' );
-		if ( $administrator ) {
-			foreach ( self::administrator_caps() as $cap ) {
-				$administrator->add_cap( $cap );
+		if ( ! $administrator ) {
+			return;
+		}
+		foreach ( array_keys( $administrator->capabilities ) as $cap ) {
+			if ( self::is_own( (string) $cap ) && ! in_array( $cap, self::administrator_caps(), true ) ) {
+				$administrator->remove_cap( $cap );
 			}
+		}
+		foreach ( self::administrator_caps() as $cap ) {
+			$administrator->add_cap( $cap );
 		}
 	}
 
 	/**
-	 * Refuses deleting a topic to everyone, and editing, publishing or deleting a page
-	 * outside the Firehouse tree to a limited editor.
+	 * Lends WordPress's page capabilities to anyone who may edit Firehouse pages, for
+	 * this request only; map_meta_cap() keeps them inside the tree.
+	 *
+	 * @param array<string, bool> $allcaps What the user has.
+	 * @return array<string, bool>
+	 */
+	public static function lend_page_caps( array $allcaps ): array {
+		if ( ! empty( $allcaps[ self::EDIT_PAGES ] ) ) {
+			foreach ( self::PAGE_CAPS as $cap ) {
+				$allcaps[ $cap ] = true;
+			}
+		}
+		return $allcaps;
+	}
+
+	/**
+	 * Refuses deleting a topic to everyone, and refuses a page outside the Firehouse
+	 * tree to anyone whose page capabilities are lent, unless what WordPress asks for
+	 * is theirs anyway.
 	 *
 	 * @param string[] $caps    The primitive capabilities WordPress requires.
 	 * @param string   $cap     The capability asked about.
 	 * @param int      $user_id The user.
-	 * @param mixed[]  $args    The capability's arguments; the first is the post ID.
+	 * @param mixed[]  $args    The capability's arguments; the first is the post.
 	 * @return string[]
 	 */
 	public static function map_meta_cap( array $caps, string $cap, int $user_id, array $args ): array {
-		if ( ! in_array( $cap, array( 'edit_post', 'delete_post', 'publish_post' ), true ) || ! isset( $args[0] ) ) {
+		if ( ! in_array( $cap, self::POST_CHECKS, true ) || ! isset( $args[0] ) ) {
 			return $caps;
 		}
-		$post = get_post( (int) $args[0] );
+		$post = get_post( $args[0] );
 		if ( $post instanceof \WP_Post && 'revision' === $post->post_type ) {
 			$post = get_post( $post->post_parent );
 		}
@@ -158,39 +207,60 @@ final class Capabilities {
 			return $caps;
 		}
 
-		if ( 'delete_post' === $cap && Post_Types::TOPIC === $post->post_type ) {
+		if ( in_array( $cap, array( 'delete_post', 'delete_page' ), true ) && Post_Types::TOPIC === $post->post_type ) {
 			return array( 'do_not_allow' );
 		}
-		if ( 'page' === $post->post_type && ! self::in_tree( $post ) && self::is_limited( get_userdata( $user_id ) ) ) {
-			return array( 'do_not_allow' );
+		if ( 'page' !== $post->post_type ) {
+			return $caps;
 		}
-		return $caps;
+		$user = get_userdata( $user_id );
+		if ( ! $user instanceof \WP_User || empty( $user->allcaps[ self::EDIT_PAGES ] ) || self::covers( $user, $caps ) || self::in_tree( $post ) ) {
+			return $caps;
+		}
+		return array( 'do_not_allow' );
 	}
 
 	/**
-	 * Refuses, by any route, a limited editor's new page, or a change to a page
-	 * outside the tree. WordPress reports this as empty content, so the routes the
-	 * editor uses refuse it earlier with a clearer message; this is the backstop.
+	 * Refuses, by any route that writes:
+	 *
+	 * - Trashing a page, project or topic through an edit, for anyone who may not delete
+	 *   it. WordPress asks for that only on its Trash link, and renames a trashed page
+	 *   before anything later could stop it.
+	 * - A limited editor's new page, or a change to a page they may not edit.
+	 *
+	 * WordPress reports a refusal here as empty content, so the routes an editor uses
+	 * refuse earlier with a clearer message; this is the backstop.
 	 *
 	 * @param bool                 $refuse  Whether WordPress would refuse it already.
 	 * @param array<string, mixed> $postarr The post being saved.
 	 */
-	public static function refuse_page_write( bool $refuse, array $postarr ): bool {
-		if ( $refuse || ! self::is_limited( wp_get_current_user() ) ) {
-			return $refuse;
+	public static function refuse_write( bool $refuse, array $postarr ): bool {
+		if ( $refuse ) {
+			return true;
 		}
-		$id = (int) ( $postarr['ID'] ?? 0 );
-		if ( 0 === $id ) {
-			return 'page' === ( $postarr['post_type'] ?? 'post' );
+		$id     = (int) ( $postarr['ID'] ?? 0 );
+		$stored = 0 === $id ? null : get_post( $id );
+		$type   = $stored instanceof \WP_Post ? $stored->post_type : ( $postarr['post_type'] ?? 'post' );
+
+		$trashing = $stored instanceof \WP_Post && 'trash' === ( $postarr['post_status'] ?? null ) && 'trash' !== $stored->post_status;
+		if ( $trashing && in_array( $type, array( 'page', Post_Types::PROJECT, Post_Types::TOPIC ), true ) && is_user_logged_in() && ! current_user_can( 'delete_post', $id ) ) {
+			return true;
 		}
-		$stored = get_post( $id );
-		return $stored instanceof \WP_Post && 'page' === $stored->post_type && ! self::in_tree( $stored );
+
+		if ( 'page' !== $type || ! self::is_limited( wp_get_current_user() ) ) {
+			return false;
+		}
+		return ! $stored instanceof \WP_Post || ! current_user_can( 'edit_post', $id );
 	}
 
 	/**
-	 * Keeps a limited editor's page where it is: its parent and slug are its address,
-	 * so they can't be changed to move it out of the tree or break its links. A draft
-	 * that has no slug yet gets one as usual.
+	 * Keeps what is structural where it is, whatever a save sends:
+	 *
+	 * - A topic's key and status, unless the plugin itself is writing: there are four
+	 *   topics, each always published, at its key.
+	 * - A limited editor's page's parent and slug, which are its address. A draft that
+	 *   has no slug yet gets one as usual, and a page coming out of the trash gets its
+	 *   old slug back as WordPress gives it.
 	 *
 	 * @param array<string, mixed> $data        The post's fields as they will be saved.
 	 * @param array<string, mixed> $postarr     The post as given.
@@ -198,30 +268,44 @@ final class Capabilities {
 	 * @param bool                 $update      Whether an existing post is being changed.
 	 * @return array<string, mixed>
 	 */
-	public static function keep_page_in_place( array $data, array $postarr, array $unsanitized, bool $update ): array {
-		if ( ! $update || 'page' !== ( $data['post_type'] ?? null ) || ! self::is_limited( wp_get_current_user() ) ) {
+	public static function keep_in_place( array $data, array $postarr, array $unsanitized, bool $update ): array {
+		if ( ! $update ) {
 			return $data;
 		}
 		$stored = get_post( (int) ( $postarr['ID'] ?? 0 ) );
 		if ( ! $stored instanceof \WP_Post ) {
 			return $data;
 		}
-		$data['post_parent'] = $stored->post_parent;
-		if ( '' !== $stored->post_name ) {
-			$data['post_name'] = $stored->post_name;
+
+		if ( Post_Types::TOPIC === $stored->post_type && ! Store::writing() ) {
+			$data['post_name']   = $stored->post_name;
+			$data['post_status'] = $stored->post_status;
+		}
+		if ( 'page' === $stored->post_type && 'trash' !== $stored->post_status && self::is_limited( wp_get_current_user() ) ) {
+			$data['post_parent'] = $stored->post_parent;
+			if ( '' !== $stored->post_name ) {
+				$data['post_name'] = $stored->post_name;
+			}
 		}
 		return $data;
 	}
 
 	/**
 	 * Refuses a limited editor's new page, or a move or rename of a page, through the
-	 * REST API, which the block editor saves pages with, and says why.
+	 * REST API, which the block editor saves pages with, and says why. An autosave
+	 * can't carry a refusal (WordPress would save the error as the autosave), so it
+	 * just loses the move.
 	 *
 	 * @param \stdClass|\WP_Error $prepared The page as the request would save it.
+	 * @param \WP_REST_Request    $request  The request.
 	 * @return \stdClass|\WP_Error
 	 */
-	public static function refuse_rest_page_write( \stdClass|\WP_Error $prepared ): \stdClass|\WP_Error {
+	public static function refuse_rest_page_write( \stdClass|\WP_Error $prepared, \WP_REST_Request $request ): \stdClass|\WP_Error {
 		if ( is_wp_error( $prepared ) || ! self::is_limited( wp_get_current_user() ) ) {
+			return $prepared;
+		}
+		if ( str_ends_with( $request->get_route(), '/autosaves' ) ) {
+			unset( $prepared->post_parent, $prepared->post_name );
 			return $prepared;
 		}
 		if ( empty( $prepared->ID ) ) {
@@ -240,7 +324,21 @@ final class Capabilities {
 	}
 
 	/**
-	 * Refuses the Add New Page screen to a limited editor.
+	 * Refuses XML-RPC to Firehouse Editors, who have no use for it. Its page methods
+	 * check capabilities of their own, and its custom fields bypass the screens.
+	 *
+	 * @param \WP_User|\WP_Error|null $user Who signed in, as far as WordPress has decided.
+	 * @return \WP_User|\WP_Error|null
+	 */
+	public static function refuse_xmlrpc( \WP_User|\WP_Error|null $user ): \WP_User|\WP_Error|null {
+		if ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST && self::is_editor( $user ) ) {
+			return new \WP_Error( 'firehouse_no_xmlrpc', __( 'Firehouse editors can’t use XML-RPC.', 'firehouse' ) );
+		}
+		return $user;
+	}
+
+	/**
+	 * Refuses the Add New Page screen to a limited editor, and says where to go.
 	 *
 	 * The menu's Add New Page link stays: without it, the Pages menu would have one
 	 * item, the same as its parent, and WordPress would drop the submenu and then
@@ -248,9 +346,18 @@ final class Capabilities {
 	 */
 	public static function refuse_new_page_screen(): void {
 		global $typenow;
-		if ( 'page' === $typenow && self::is_limited( wp_get_current_user() ) ) {
-			wp_die( esc_html__( 'Firehouse editors can’t add pages.', 'firehouse' ), '', array( 'response' => 403 ) );
+		if ( 'page' !== $typenow || ! self::is_limited( wp_get_current_user() ) ) {
+			return;
 		}
+		wp_die(
+			'<h1>' . esc_html__( 'Firehouse editors can’t add pages', 'firehouse' ) . '</h1><p>' . esc_html__( 'The Firehouse pages already exist, and you can edit them from the Pages list. To add a page, ask a site administrator.', 'firehouse' ) . '</p>',
+			esc_html__( 'Can’t add pages', 'firehouse' ),
+			array(
+				'response'  => 403,
+				'link_url'  => esc_url( admin_url( 'edit.php?post_type=page' ) ),
+				'link_text' => esc_html__( 'Back to Pages', 'firehouse' ),
+			)
+		);
 	}
 
 	/**
@@ -268,18 +375,34 @@ final class Capabilities {
 	}
 
 	/**
-	 * Whether a user's page editing is limited to the Firehouse tree: they hold the
-	 * Firehouse Editor role, and no other role of theirs edits others' pages.
+	 * Whether a user holds the Firehouse Editor role.
+	 *
+	 * @param mixed $user The user, or anything else.
+	 */
+	public static function is_editor( mixed $user ): bool {
+		return $user instanceof \WP_User && in_array( self::EDITOR_ROLE, $user->roles, true );
+	}
+
+	/**
+	 * Whether a user's page editing is limited to the Firehouse tree: their page
+	 * capabilities are lent, because their own roles don't hold all of them.
 	 *
 	 * @param \WP_User|false $user The user.
 	 */
 	public static function is_limited( \WP_User|false $user ): bool {
-		if ( ! $user instanceof \WP_User || ! in_array( self::EDITOR_ROLE, $user->roles, true ) ) {
-			return false;
-		}
-		foreach ( $user->roles as $name ) {
-			$role = self::EDITOR_ROLE === $name ? null : get_role( $name );
-			if ( $role && $role->has_cap( 'edit_others_pages' ) ) {
+		return $user instanceof \WP_User && ! empty( $user->allcaps[ self::EDIT_PAGES ] ) && ! self::covers( $user, self::PAGE_CAPS );
+	}
+
+	/**
+	 * Whether a user's own roles and capabilities hold every one of these, without
+	 * what is lent.
+	 *
+	 * @param \WP_User $user The user.
+	 * @param string[] $caps The capabilities.
+	 */
+	private static function covers( \WP_User $user, array $caps ): bool {
+		foreach ( $caps as $cap ) {
+			if ( empty( $user->allcaps[ $cap ] ) ) {
 				return false;
 			}
 		}
@@ -297,11 +420,23 @@ final class Capabilities {
 	}
 
 	/**
-	 * The root page's ID: the top-level page at /firehouse/, or 0 if there is none.
+	 * The root page's ID: the oldest top-level page with the slug `firehouse` that
+	 * isn't in the trash, or 0 if there is none.
 	 */
 	public static function root_id(): int {
-		$root = get_page_by_path( Query::ROOT_PATH );
-		return $root instanceof \WP_Post ? $root->ID : 0;
+		$ids = get_posts(
+			array(
+				'post_type'   => 'page',
+				'name'        => Query::ROOT_PATH,
+				'post_parent' => 0,
+				'post_status' => array( 'publish', 'future', 'draft', 'pending', 'private' ),
+				'orderby'     => 'ID',
+				'order'       => 'ASC',
+				'numberposts' => 1,
+				'fields'      => 'ids',
+			)
+		);
+		return isset( $ids[0] ) ? (int) $ids[0] : 0;
 	}
 
 	/**

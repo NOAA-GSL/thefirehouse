@@ -11,38 +11,61 @@ namespace Firehouse\Tests;
 
 use Brain\Monkey\Functions;
 use Firehouse\Settings;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
- * The settings read over their defaults, and a bad field keeps what it had.
+ * The settings read over their defaults, and a save with any error changes nothing.
  */
 final class SettingsTest extends WordPressTestCase {
 
 	/**
 	 * The errors recorded, as add_settings_error() was given them.
 	 *
-	 * @var list<array{string, string, string}>
+	 * @var list<array{setting: string, code: string, message: string, type: string}>
 	 */
 	private array $errors = array();
+
+	/**
+	 * The transients set, by name.
+	 *
+	 * @var array<string, mixed>
+	 */
+	private array $transients = array();
 
 	/**
 	 * Stubs the option and the functions sanitizing calls.
 	 */
 	protected function setUp(): void {
 		parent::setUp();
-		$this->errors = array();
-		$errors       = &$this->errors;
+		$this->errors     = array();
+		$this->transients = array();
+		$errors           = &$this->errors;
+		$transients       = &$this->transients;
 		Functions\when( 'get_option' )->justReturn( array() );
+		Functions\when( 'get_current_user_id' )->justReturn( 7 );
 		Functions\when( 'sanitize_text_field' )->alias( static fn( string $text ): string => trim( strip_tags( $text ) ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.strip_tags_strip_tags -- Standing in for sanitize_text_field().
 		Functions\when( 'wp_parse_url' )->alias( static fn( string $url ): mixed => parse_url( $url ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url -- Standing in for wp_parse_url().
 		Functions\when( 'esc_url_raw' )->returnArg();
+		Functions\when( 'wp_specialchars_decode' )->alias( static fn( string $text ): string => htmlspecialchars_decode( $text, ENT_QUOTES ) );
 		Functions\when( 'get_settings_errors' )->alias(
 			static function () use ( &$errors ): array {
-				return array_map( static fn( array $error ): array => array( 'code' => $error[1] ), $errors );
+				return $errors;
 			}
 		);
 		Functions\when( 'add_settings_error' )->alias(
 			static function ( string $setting, string $code, string $message ) use ( &$errors ): void {
-				$errors[] = array( $setting, $code, $message );
+				$errors[] = array(
+					'setting' => $setting,
+					'code'    => $code,
+					'message' => $message,
+					'type'    => 'error',
+				);
+			}
+		);
+		Functions\when( 'set_transient' )->alias(
+			static function ( string $name, mixed $value ) use ( &$transients ): bool {
+				$transients[ $name ] = $value;
+				return true;
 			}
 		);
 	}
@@ -114,22 +137,42 @@ final class SettingsTest extends WordPressTestCase {
 	public function test_a_valid_submission_is_saved(): void {
 		$this->assertSame( self::valid(), Settings::sanitize( self::valid() ) );
 		$this->assertSame( array(), $this->errors );
+		$this->assertSame( array(), $this->transients );
 	}
 
 	/**
-	 * An empty field keeps what it had, and the error names the field and links to it.
+	 * A save with any error changes nothing, not even its valid fields. Each error is
+	 * recorded against its field, and what was typed is kept to show again.
 	 */
-	public function test_an_empty_field_keeps_what_it_had(): void {
+	public function test_a_save_with_an_error_changes_nothing(): void {
 		$input                          = self::valid();
+		$input['siteName']              = 'A new name';
 		$input['submitLabel']           = '  ';
 		$input['navLabels']['projects'] = '';
 
-		$settings = Settings::sanitize( $input );
+		$this->assertSame( Settings::defaults(), Settings::sanitize( $input ) );
+		$this->assertSame( array( 'firehouse-submitLabel', 'firehouse-navLabels-projects' ), array_column( $this->errors, 'code' ) );
+		$this->assertSame( 'Button label can’t be empty.', $this->errors[0]['message'] );
+		$typed = $this->transients['firehouse_settings_rejected_7'];
+		$this->assertSame( 'A new name', $typed['firehouse-siteName'] );
+		$this->assertSame( '  ', $typed['firehouse-submitLabel'] );
+	}
 
-		$this->assertSame( 'Submit a Finding', $settings['submitLabel'] );
-		$this->assertSame( 'Explore Projects', $settings['navLabels']['projects'] );
-		$this->assertSame( array( 'firehouse-submitLabel', 'firehouse-navLabels-projects' ), array_column( $this->errors, 1 ) );
-		$this->assertStringContainsString( '<a href="#firehouse-submitLabel">Button label</a>', $this->errors[0][2] );
+	/**
+	 * The checks alone, for the Import screen: the settings with each valid field
+	 * changed, and each error by field, without recording or saving anything.
+	 */
+	public function test_validate_checks_without_recording(): void {
+		$input                  = self::valid();
+		$input['submitFormUrl'] = 'http://forms.example.org/firehouse';
+
+		list( $settings, $errors ) = Settings::validate( $input );
+
+		$this->assertSame( 'The Firehouse', $settings['siteName'] );
+		$this->assertSame( '', $settings['submitFormUrl'] );
+		$this->assertSame( array( 'firehouse-submitFormUrl' ), array_keys( $errors ) );
+		$this->assertSame( array(), $this->errors );
+		$this->assertSame( array(), $this->transients );
 	}
 
 	/**
@@ -137,17 +180,18 @@ final class SettingsTest extends WordPressTestCase {
 	 *
 	 * @param mixed $url A submitted address.
 	 */
-	#[\PHPUnit\Framework\Attributes\DataProvider( 'bad_addresses' )]
+	#[DataProvider( 'bad_addresses' )]
 	public function test_a_bad_address_is_refused( mixed $url ): void {
 		$input                  = self::valid();
 		$input['submitFormUrl'] = $url;
 
-		$this->assertSame( '', Settings::sanitize( $input )['submitFormUrl'] );
-		$this->assertSame( array( 'firehouse-submitFormUrl' ), array_column( $this->errors, 1 ) );
+		list( , $errors ) = Settings::validate( $input );
+
+		$this->assertSame( array( 'firehouse-submitFormUrl' ), array_keys( $errors ) );
 	}
 
 	/**
-	 * Plain http, no scheme, a script, no host, and something that isn't text.
+	 * Plain http, no scheme, a script, no host, something that isn't text, and nothing.
 	 *
 	 * @return array<string, array{mixed}>
 	 */
@@ -170,7 +214,9 @@ final class SettingsTest extends WordPressTestCase {
 		$input                  = self::valid();
 		$input['submitFormUrl'] = 'https://forms.example.org/a form';
 
-		$this->assertSame( '', Settings::sanitize( $input )['submitFormUrl'] );
+		list( , $errors ) = Settings::validate( $input );
+
+		$this->assertArrayHasKey( 'firehouse-submitFormUrl', $errors );
 	}
 
 	/**
@@ -201,26 +247,62 @@ final class SettingsTest extends WordPressTestCase {
 	}
 
 	/**
+	 * After a refused save, the browser's title says so.
+	 */
+	public function test_a_refused_save_is_in_the_title(): void {
+		$this->assertSame( 'Firehouse settings', Settings::title( 'Firehouse settings' ) );
+
+		Settings::sanitize( array( 'submitLabel' => '' ) + self::valid() );
+
+		$this->assertSame( 'Not saved: Firehouse settings', Settings::title( 'Firehouse settings' ) );
+	}
+
+	/**
 	 * A field's label points at it, its description is tied to it, and its value is
 	 * escaped.
 	 */
 	public function test_a_field_is_labelled_described_and_escaped(): void {
 		Functions\when( 'get_option' )->justReturn( array( 'siteName' => 'The "Firehouse"' ) );
 
-		ob_start();
-		Settings::text_field(
-			array(
-				'path'        => array( 'siteName' ),
-				'description' => 'The name.',
-				'type'        => 'text',
-			)
-		);
-		$html = (string) ob_get_clean();
+		$html = self::field( array( 'siteName' ) );
 
 		$this->assertStringContainsString( 'id="firehouse-siteName"', $html );
 		$this->assertStringContainsString( 'aria-describedby="firehouse-siteName-description"', $html );
 		$this->assertStringContainsString( 'id="firehouse-siteName-description"', $html );
 		$this->assertStringContainsString( 'value="The &quot;Firehouse&quot;"', $html );
 		$this->assertStringContainsString( 'required', $html );
+		$this->assertStringNotContainsString( 'aria-invalid', $html );
+	}
+
+	/**
+	 * A field in error is marked invalid, its error is tied to it and says "Error:" in
+	 * words, and it takes the focus.
+	 */
+	public function test_a_field_in_error_says_so(): void {
+		Settings::sanitize( array( 'submitLabel' => '' ) + self::valid() );
+
+		$html = self::field( array( 'submitLabel' ) );
+
+		$this->assertStringContainsString( 'aria-invalid="true"', $html );
+		$this->assertStringContainsString( 'aria-describedby="firehouse-submitLabel-error firehouse-submitLabel-description"', $html );
+		$this->assertStringContainsString( '<p class="description" id="firehouse-submitLabel-error"><strong>Error:</strong> Button label can’t be empty.</p>', $html );
+		$this->assertStringContainsString( 'autofocus', $html );
+	}
+
+	/**
+	 * Draws one field.
+	 *
+	 * @param string[] $path The field's path.
+	 */
+	private static function field( array $path ): string {
+		ob_start();
+		Settings::text_field(
+			array(
+				'path'        => $path,
+				'description' => 'What it is for.',
+				'type'        => 'text',
+			)
+		);
+		return (string) ob_get_clean();
 	}
 }

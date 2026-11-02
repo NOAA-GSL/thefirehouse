@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! class_exists( 'WP_Post' ) ) {
 	/**
-	 * A post: its ID, type, parent and slug.
+	 * A post: its ID, type, parent, slug, status and title.
 	 */
 	final class WP_Post {
 
@@ -49,6 +49,20 @@ if ( ! class_exists( 'WP_Post' ) ) {
 		public string $post_name = '';
 
 		/**
+		 * The status.
+		 *
+		 * @var string
+		 */
+		public string $post_status = 'publish';
+
+		/**
+		 * The title.
+		 *
+		 * @var string
+		 */
+		public string $post_title = '';
+
+		/**
 		 * Sets the fields given.
 		 *
 		 * @param array<string, mixed> $fields The fields.
@@ -63,17 +77,40 @@ if ( ! class_exists( 'WP_Post' ) ) {
 
 if ( ! class_exists( 'WP_User' ) ) {
 	/**
-	 * A user: their ID and roles.
+	 * A user: their ID, roles, and the capabilities those roles and the user hold.
 	 */
 	final class WP_User {
 
 		/**
-		 * Sets the user's ID and roles.
+		 * Sets the user's ID, roles and capabilities.
 		 *
-		 * @param int      $ID    The user's ID.
-		 * @param string[] $roles The user's roles.
+		 * @param int                 $ID      The user's ID.
+		 * @param string[]            $roles   The user's roles.
+		 * @param array<string, bool> $allcaps What the roles and the user hold.
 		 */
-		public function __construct( public int $ID = 0, public array $roles = array() ) {}
+		public function __construct( public int $ID = 0, public array $roles = array(), public array $allcaps = array() ) {}
+	}
+}
+
+if ( ! class_exists( 'WP_REST_Request' ) ) {
+	/**
+	 * A REST request: its route.
+	 */
+	final class WP_REST_Request {
+
+		/**
+		 * Sets the route.
+		 *
+		 * @param string $route The route, such as "/wp/v2/pages/12".
+		 */
+		public function __construct( private string $route = '' ) {}
+
+		/**
+		 * The route.
+		 */
+		public function get_route(): string {
+			return $this->route;
+		}
 	}
 }
 
@@ -97,6 +134,13 @@ if ( ! class_exists( 'WP_Error' ) ) {
 		 */
 		public function get_error_code(): string {
 			return $this->code;
+		}
+
+		/**
+		 * The message.
+		 */
+		public function get_error_message(): string {
+			return $this->message;
 		}
 	}
 }

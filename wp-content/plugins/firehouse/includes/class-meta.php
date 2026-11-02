@@ -19,9 +19,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Each field is stored under its name in types.ts with the `fh_` prefix, so another
  * plugin's meta of the same name can't reach it. None is sanitized on save: survey
- * text is stored as the researcher wrote it (rule 1) and escaped where it's shown.
- * Neither post type is in the REST API, so WordPress doesn't check a value against
- * its schema on its own; whatever writes a field checks it with validate() first.
+ * text, the project's title included, is stored as plain-string meta exactly as the
+ * researcher wrote it (rule 1), and escaped where it's shown.
+ *
+ * Only the plugin's own code writes these fields, through Store. WordPress's custom
+ * field screens and requests can't: they ask for edit_post_meta, which no one is
+ * given, so they can't change a survey field around rule 4. Neither post type is in
+ * the REST API, so WordPress would never check a value against its schema on its own;
+ * refuse_invalid() checks every write with validate() instead.
  */
 final class Meta {
 
@@ -31,10 +36,22 @@ final class Meta {
 	public const PREFIX = 'fh_';
 
 	/**
-	 * A project's fields that the post itself holds: its slug, its title, and whether
-	 * it is published, which is its status.
+	 * A project's fields that the post itself holds: its slug, and whether it is
+	 * published, which is its status.
 	 */
-	private const PROJECT_POST_FIELDS = array( 'slug', 'title', 'published' );
+	private const PROJECT_POST_FIELDS = array( 'slug', 'published' );
+
+	/**
+	 * Each schema type, in words, for a message.
+	 */
+	private const TYPE_WORDS = array(
+		'string'  => 'text',
+		'boolean' => 'true or false',
+		'integer' => 'a whole number',
+		'number'  => 'a number',
+		'array'   => 'a list',
+		'object'  => 'an object',
+	);
 
 	/**
 	 * The schemas, read once per request.
@@ -42,6 +59,40 @@ final class Meta {
 	 * @var array<string, array<string, array<string, mixed>>>
 	 */
 	private static array $fields = array();
+
+	/**
+	 * Hooks the check on every write of a field, whatever code makes it.
+	 */
+	public static function hook(): void {
+		add_filter( 'add_post_metadata', array( self::class, 'refuse_invalid' ), 10, 4 );
+		add_filter( 'update_post_metadata', array( self::class, 'refuse_invalid' ), 10, 4 );
+	}
+
+	/**
+	 * Refuses to store a field of a project or topic that validate() rejects, so no
+	 * route can put a value of the wrong kind into a field. A valid value is stored as
+	 * given; a revision's copy isn't checked, since its post was.
+	 *
+	 * @param mixed  $check      Null to let WordPress store it, or another filter's answer.
+	 * @param int    $object_id  The post.
+	 * @param string $meta_key   The meta key.
+	 * @param mixed  $meta_value The value, unslashed.
+	 * @return mixed False to refuse; otherwise $check.
+	 */
+	public static function refuse_invalid( mixed $check, int $object_id, string $meta_key, mixed $meta_value ): mixed {
+		if ( null !== $check || ! str_starts_with( $meta_key, self::PREFIX ) ) {
+			return $check;
+		}
+		$post = get_post( $object_id );
+		if ( ! $post instanceof \WP_Post || ! in_array( $post->post_type, array( Post_Types::PROJECT, Post_Types::TOPIC ), true ) ) {
+			return $check;
+		}
+		$name = substr( $meta_key, strlen( self::PREFIX ) );
+		if ( ! array_key_exists( $name, self::fields( $post->post_type ) ) ) {
+			return $check;
+		}
+		return true === self::validate( $post->post_type, $name, $meta_value ) ? $check : false;
+	}
 
 	/**
 	 * Registers the meta of both post types. Runs after the post types are
@@ -100,7 +151,12 @@ final class Meta {
 	}
 
 	/**
-	 * Checks a value against its field's schema, with WordPress's own validator.
+	 * Checks a value against its field's schema: with WordPress's own validator, then
+	 * for the exact type of every part of it.
+	 *
+	 * WordPress's validator is written for REST input, which it converts afterwards, so
+	 * it lets "2025" pass as a number, "false" as a boolean and "a, b" as a list. A field
+	 * here is stored as given, so it must already be what its schema says.
 	 *
 	 * @param string $post_type Post_Types::PROJECT or Post_Types::TOPIC.
 	 * @param string $name      The field's name in types.ts.
@@ -112,7 +168,58 @@ final class Meta {
 		if ( null === $schema ) {
 			return new \WP_Error( 'firehouse_unknown_field', sprintf( 'A %1$s has no field named %2$s.', $post_type, $name ) );
 		}
-		return rest_validate_value_from_schema( $value, $schema, $name );
+		$valid = rest_validate_value_from_schema( $value, $schema, $name );
+		if ( true !== $valid ) {
+			return $valid;
+		}
+		$wrong = self::wrong_type( $value, $schema, $name );
+		if ( null !== $wrong ) {
+			return new \WP_Error( 'firehouse_wrong_type', sprintf( '%1$s has to be %2$s.', $wrong[0], self::TYPE_WORDS[ $wrong[1] ] ?? $wrong[1] ) );
+		}
+		return true;
+	}
+
+	/**
+	 * The first part of a value whose PHP type isn't its schema's, if any. A list must
+	 * be a PHP list; an object must be an array that isn't one, or empty, since an
+	 * empty JSON object decodes to an empty array.
+	 *
+	 * @param mixed                $value  The value.
+	 * @param array<string, mixed> $schema Its schema.
+	 * @param string               $path   Where it is, for the message.
+	 * @return array{0: string, 1: string}|null Where, and the type it should be.
+	 */
+	public static function wrong_type( mixed $value, array $schema, string $path ): ?array {
+		$type = $schema['type'] ?? null;
+		$ok   = match ( $type ) {
+			'string'  => is_string( $value ),
+			'boolean' => is_bool( $value ),
+			'integer' => is_int( $value ),
+			'number'  => is_int( $value ) || is_float( $value ),
+			'array'   => is_array( $value ) && array_is_list( $value ),
+			'object'  => is_array( $value ) && ( array() === $value || ! array_is_list( $value ) ),
+			default   => true,
+		};
+		if ( ! $ok ) {
+			return array( $path, (string) $type );
+		}
+		if ( 'array' === $type ) {
+			foreach ( $value as $index => $item ) {
+				$wrong = self::wrong_type( $item, $schema['items'] ?? array(), sprintf( '%s[%d]', $path, $index ) );
+				if ( null !== $wrong ) {
+					return $wrong;
+				}
+			}
+		}
+		if ( 'object' === $type ) {
+			foreach ( $value as $key => $item ) {
+				$wrong = isset( $schema['properties'][ $key ] ) ? self::wrong_type( $item, $schema['properties'][ $key ], $path . '.' . $key ) : null;
+				if ( null !== $wrong ) {
+					return $wrong;
+				}
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -128,19 +235,8 @@ final class Meta {
 			'single'            => true,
 			'show_in_rest'      => false,
 			'revisions_enabled' => true,
-			'auth_callback'     => array( self::class, 'can_edit' ),
+			'auth_callback'     => '__return_false',
 		);
-	}
-
-	/**
-	 * Whether the current user may change a field: only if they may edit its post.
-	 *
-	 * @param bool   $allowed  Whether WordPress would allow it.
-	 * @param string $meta_key The meta key.
-	 * @param int    $post_id  The post.
-	 */
-	public static function can_edit( bool $allowed, string $meta_key, int $post_id ): bool {
-		return current_user_can( 'edit_post', $post_id );
 	}
 
 	/**

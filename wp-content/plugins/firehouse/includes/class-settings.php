@@ -48,6 +48,14 @@ final class Settings {
 	);
 
 	/**
+	 * What was typed into each field of a refused save, by field ID, while the screen
+	 * is drawn.
+	 *
+	 * @var array<string, string>
+	 */
+	private static array $rejected = array();
+
+	/**
 	 * Hooks the setting, the screen and the capability.
 	 */
 	public static function hook(): void {
@@ -140,7 +148,7 @@ final class Settings {
 	 * Adds the screen under the Firehouse menu.
 	 */
 	public static function add_page(): void {
-		add_submenu_page(
+		$hook = add_submenu_page(
 			Post_Types::MENU,
 			__( 'Firehouse settings', 'firehouse' ),
 			__( 'Settings', 'firehouse' ),
@@ -148,21 +156,62 @@ final class Settings {
 			self::PAGE,
 			array( self::class, 'render' )
 		);
+		if ( $hook ) {
+			add_action(
+				'load-' . $hook,
+				static function (): void {
+					add_filter( 'admin_title', array( self::class, 'title' ) );
+				}
+			);
+		}
 	}
 
 	/**
-	 * Draws the screen.
+	 * Says in the browser's title that a save was refused, so a screen reader's first
+	 * words do: a refused save otherwise reloads looking like a successful one.
+	 *
+	 * @param string $title The admin page's title.
+	 */
+	public static function title( string $title ): string {
+		return array() === self::errors() ? $title : __( 'Not saved:', 'firehouse' ) . ' ' . $title;
+	}
+
+	/**
+	 * Draws the screen. After a refused save, a summary at the top lists each problem
+	 * and links to its field, and each field shows what was typed into it, its error,
+	 * and the focus on the first.
 	 */
 	public static function render(): void {
 		if ( ! current_user_can( Capabilities::SETTINGS ) ) {
 			return;
 		}
+		$errors         = self::errors();
+		$rejected       = get_transient( self::rejected_key() );
+		self::$rejected = is_array( $rejected ) ? $rejected : array();
+		delete_transient( self::rejected_key() );
 		?>
 		<div class="wrap">
 			<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
-			<?php settings_errors(); ?>
+			<?php if ( array() !== $errors ) : ?>
+				<div id="firehouse-settings-errors" class="notice notice-error">
+					<h2>
+						<?php
+						/* translators: %d: how many problems. */
+						echo esc_html( sprintf( _n( 'Not saved: %d problem', 'Not saved: %d problems', count( $errors ), 'firehouse' ), count( $errors ) ) );
+						?>
+					</h2>
+					<p><?php esc_html_e( 'Nothing was changed. Fix these, then save again:', 'firehouse' ); ?></p>
+					<ul>
+						<?php foreach ( $errors as $id => $message ) : ?>
+							<li><a href="#<?php echo esc_attr( $id ); ?>"><?php echo esc_html( $message ); ?></a></li>
+						<?php endforeach; ?>
+					</ul>
+				</div>
+			<?php else : ?>
+				<?php settings_errors( 'general' ); ?>
+			<?php endif; ?>
 			<p><?php esc_html_e( 'Every field is required.', 'firehouse' ); ?></p>
-			<form action="options.php" method="post">
+			<form action="options.php" method="post" novalidate>
 				<?php
 				settings_fields( self::OPTION );
 				do_settings_sections( self::PAGE );
@@ -186,29 +235,70 @@ final class Settings {
 	 * @param array{path: string[], description: string, type: string} $args The field.
 	 */
 	public static function text_field( array $args ): void {
-		$id    = self::field_id( $args['path'] );
-		$value = self::value_at( self::get(), $args['path'] );
+		static $focused = false;
+
+		$id        = self::field_id( $args['path'] );
+		$error     = self::errors()[ $id ] ?? null;
+		$value     = self::$rejected[ $id ] ?? self::value_at( self::get(), $args['path'] );
+		$described = null === $error ? $id . '-description' : $id . '-error ' . $id . '-description';
+		$state     = '';
+		if ( null !== $error ) {
+			$state = ' aria-invalid="true"' . ( $focused ? '' : ' autofocus' );
+			// The first field in error takes the focus.
+			$focused = true;
+		}
 		printf(
-			'<input type="%1$s" id="%2$s" name="%3$s" value="%4$s" class="regular-text" required aria-describedby="%2$s-description" />',
+			'<input type="%1$s" id="%2$s" name="%3$s" value="%4$s" class="regular-text" required aria-describedby="%5$s"%6$s />',
 			esc_attr( $args['type'] ),
 			esc_attr( $id ),
 			esc_attr( self::OPTION . '[' . implode( '][', $args['path'] ) . ']' ),
-			esc_attr( $value )
+			esc_attr( $value ),
+			esc_attr( $described ),
+			$state // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Fixed attributes, written above.
 		);
+		if ( null !== $error ) {
+			printf( '<p class="description" id="%1$s-error"><strong>%2$s</strong> %3$s</p>', esc_attr( $id ), esc_html__( 'Error:', 'firehouse' ), esc_html( $error ) );
+		}
 		printf( '<p class="description" id="%1$s-description">%2$s</p>', esc_attr( $id ), esc_html( $args['description'] ) );
 	}
 
 	/**
-	 * Checks what was submitted. A field that is empty or wrong keeps what it had, and
-	 * the error names it and links to it.
+	 * Checks a save. If anything is wrong, nothing is changed: each error is recorded
+	 * against its field, and what was typed is kept for a minute so the screen can
+	 * show it again.
 	 *
 	 * @param mixed $input The submitted settings.
 	 * @return array{siteName: string, submitLabel: string, submitFormUrl: string, navLabels: array<string, string>}
 	 */
 	public static function sanitize( mixed $input ): array {
-		$settings = self::get();
-		if ( ! is_array( $input ) ) {
+		list( $settings, $errors ) = self::validate( $input );
+		if ( array() === $errors ) {
 			return $settings;
+		}
+
+		// WordPress sanitizes a new option twice, once to update it and once to add it.
+		$recorded = array_column( get_settings_errors( self::OPTION ), 'code' );
+		foreach ( $errors as $id => $message ) {
+			if ( ! in_array( $id, $recorded, true ) ) {
+				add_settings_error( self::OPTION, $id, esc_html( $message ) );
+			}
+		}
+		set_transient( self::rejected_key(), self::typed( $input ), MINUTE_IN_SECONDS );
+		return self::get();
+	}
+
+	/**
+	 * Checks settings, from the screen or the Import screen, without saving them.
+	 *
+	 * @param mixed $input The settings to check.
+	 * @return array{0: array{siteName: string, submitLabel: string, submitFormUrl: string, navLabels: array<string, string>}, 1: array<string, string>}
+	 *         The settings, with each valid field changed; and each error, by field ID.
+	 */
+	public static function validate( mixed $input ): array {
+		$settings = self::get();
+		$errors   = array();
+		if ( ! is_array( $input ) ) {
+			return array( $settings, $errors );
 		}
 
 		$labels = array(
@@ -218,31 +308,75 @@ final class Settings {
 			'projects'    => __( 'Projects link', 'firehouse' ),
 			'about'       => __( 'About link', 'firehouse' ),
 		);
+		/* translators: %s: a field's label. */
+		$empty = __( '%s can’t be empty.', 'firehouse' );
+
 		foreach ( array( 'siteName', 'submitLabel' ) as $key ) {
 			$text = self::text( $input[ $key ] ?? null );
 			if ( '' === $text ) {
-				self::error( array( $key ), $labels[ $key ], __( 'can’t be empty.', 'firehouse' ) );
+				$errors[ self::field_id( array( $key ) ) ] = sprintf( $empty, $labels[ $key ] );
 			} else {
 				$settings[ $key ] = $text;
 			}
 		}
+		$url = self::https_url( $input['submitFormUrl'] ?? null );
+		if ( null === $url ) {
+			$errors[ self::field_id( array( 'submitFormUrl' ) ) ] = __( 'Survey address has to be a web address that starts with https://.', 'firehouse' );
+		} else {
+			$settings['submitFormUrl'] = $url;
+		}
 		foreach ( array_keys( self::NAV ) as $key ) {
 			$text = self::text( $input['navLabels'][ $key ] ?? null );
 			if ( '' === $text ) {
-				self::error( array( 'navLabels', $key ), $labels[ $key ], __( 'can’t be empty.', 'firehouse' ) );
+				$errors[ self::field_id( array( 'navLabels', $key ) ) ] = sprintf( $empty, $labels[ $key ] );
 			} else {
 				$settings['navLabels'][ $key ] = $text;
 			}
 		}
 
-		$url = self::https_url( $input['submitFormUrl'] ?? null );
-		if ( null === $url ) {
-			self::error( array( 'submitFormUrl' ), __( 'Survey address', 'firehouse' ), __( 'has to be a web address that starts with https://.', 'firehouse' ) );
-		} else {
-			$settings['submitFormUrl'] = $url;
-		}
+		return array( $settings, $errors );
+	}
 
-		return $settings;
+	/**
+	 * The errors from a refused save, by field ID.
+	 *
+	 * @return array<string, string>
+	 */
+	private static function errors(): array {
+		$errors = array();
+		foreach ( get_settings_errors( self::OPTION ) as $error ) {
+			if ( 'error' === ( $error['type'] ?? null ) ) {
+				$errors[ (string) $error['code'] ] = wp_specialchars_decode( (string) $error['message'], ENT_QUOTES );
+			}
+		}
+		return $errors;
+	}
+
+	/**
+	 * What was typed into each field, by field ID.
+	 *
+	 * @param mixed $input The submitted settings.
+	 * @return array<string, string>
+	 */
+	private static function typed( mixed $input ): array {
+		$typed = array();
+		if ( ! is_array( $input ) ) {
+			return $typed;
+		}
+		foreach ( array( array( 'siteName' ), array( 'submitLabel' ), array( 'submitFormUrl' ) ) as $path ) {
+			$typed[ self::field_id( $path ) ] = self::value_at( $input, $path );
+		}
+		foreach ( array_keys( self::NAV ) as $key ) {
+			$typed[ self::field_id( array( 'navLabels', $key ) ) ] = self::value_at( $input, array( 'navLabels', $key ) );
+		}
+		return $typed;
+	}
+
+	/**
+	 * The transient holding the current user's refused save.
+	 */
+	private static function rejected_key(): string {
+		return 'firehouse_settings_rejected_' . get_current_user_id();
 	}
 
 	/**
@@ -267,26 +401,6 @@ final class Settings {
 				'description' => $description,
 				'type'        => $type,
 			)
-		);
-	}
-
-	/**
-	 * Records an error naming a field and linking to it.
-	 *
-	 * @param string[] $path    Where the value is in the option.
-	 * @param string   $label   The field's label.
-	 * @param string   $problem What is wrong, completing a sentence that starts with the label.
-	 */
-	private static function error( array $path, string $label, string $problem ): void {
-		// WordPress sanitizes a new option twice, once to update it and once to add it.
-		$code = self::field_id( $path );
-		if ( in_array( $code, array_column( get_settings_errors( self::OPTION ), 'code' ), true ) ) {
-			return;
-		}
-		add_settings_error(
-			self::OPTION,
-			self::field_id( $path ),
-			sprintf( '<a href="#%1$s">%2$s</a> %3$s', esc_attr( self::field_id( $path ) ), esc_html( $label ), esc_html( $problem ) )
 		);
 	}
 

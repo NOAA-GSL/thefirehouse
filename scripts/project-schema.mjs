@@ -13,7 +13,7 @@
  * `$ref`), because WordPress's schema validation doesn't follow references.
  *
  * It uses the TypeScript compiler the site already builds with, so it adds no
- * dependency. It covers what `Project` uses: strings, numbers, booleans, string
+ * dependency. It covers what those types use: strings, numbers, booleans, string
  * literal unions, arrays and nested interfaces. Anything else stops the script, so a
  * new kind of field can't slip through as an empty schema.
  */
@@ -117,6 +117,10 @@ function buildProjectSchema() {
 function buildTopicSchema() {
   const content = schemaOfInterface('TopicContent');
   const summary = schemaOfInterface('TopicSummary');
+  const shared = Object.keys(content.properties).filter((name) => name in summary.properties);
+  if (shared.length) {
+    throw new Error(`TopicContent and TopicSummary both have ${shared.join(', ')}; one would hide the other.`);
+  }
   const properties = { ...content.properties, ...summary.properties };
   for (const name of ['key', 'label', 'topic']) delete properties[name];
   const required = [...content.required, ...summary.required].filter((name) => name in properties);

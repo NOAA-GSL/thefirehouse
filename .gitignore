@@ -9,6 +9,8 @@ vendor/
 dist/
 dist-ssr/
 *.tsbuildinfo
+# The seed bundle (npm run seed): built from src/content/data/, never committed
+seed/
 
 # Environment
 .env

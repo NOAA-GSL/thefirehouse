@@ -10,7 +10,8 @@ npm run dev        # http://localhost:5173
 npm run build      # typecheck + production build to dist/
 npm run preview    # serve the production build
 npm test           # shared test cases for normalize, derive, search and format
-npm run schema     # regenerate the project schema from types.ts
+npm run schema     # regenerate shared/*.schema.json from types.ts
+npm run seed       # write seed/firehouse-seed.json for the plugin's Import screen
 npm run reference  # capture the reference the plugin matches (reference/README.md)
 ```
 
@@ -232,26 +233,63 @@ install, the way GSL's own repository (NOAA-GSL/gsl-wordpress) keeps its theme.
 `firehouse.php` loads two folders: `includes/`, which adds WordPress hooks, and
 `domain/`, which adds none.
 
-`includes/` holds the content model, the permissions and the settings:
+`includes/` holds the classes that hook into WordPress. `firehouse.php` hooks each
+one; `Meta`'s fields are registered by `Post_Types`, after the post types:
 
 - `Post_Types` registers `fh_project` and `fh_topic` at the React site's addresses:
   `/firehouse/projects/`, `/firehouse/projects/{slug}/` and `/firehouse/topics/{key}/`.
-  Neither post type is in the REST API, and neither uses the block editor.
-- `Meta` registers each field of a project and a topic as post meta, named as in
-  `src/content/types.ts` with an `fh_` prefix and kept in revisions. The schemas come
-  from `shared/project.schema.json` and `shared/topic.schema.json`, which
-  `npm run schema` generates from `types.ts`. Nothing rewrites a value on save, so
-  whatever writes a field first checks it with `Meta::validate()`.
+  There is no topic archive. Neither post type is in the REST API or uses the block
+  editor, and their edit screens have no form for the fields yet (Phase 6). No one
+  adds a project or a topic in the admin: projects come through the Import screen,
+  which also creates the four topics, with the topic key as the slug.
+- `Meta` registers the fields from `shared/project.schema.json` and
+  `shared/topic.schema.json`, which `npm run schema` generates from `types.ts`. Each
+  is post meta named as in `types.ts` with an `fh_` prefix, copied into each revision
+  when the post is saved. A project's slug and `published` are the post's slug and
+  status, and a topic's key and label are its slug and title; every other field,
+  the project's title included, is meta (rule 1). A need's `projects` holds post IDs,
+  not slugs (rule 5), so `Meta` swaps in its own schema for that one property.
+  - Nothing sanitizes a value on save: survey text is stored as written.
+  - WordPress checks a meta schema only in the REST API, so `Meta::validate()` checks
+    every write of a field, by any code, against its schema and its exact PHP type.
+  - No one may change a field through WordPress's custom-field routes.
+- `Store` reads projects and topics back into the shapes of `types.ts`, with numbers
+  and booleans typed, and writes them. A write is wrapped in `wp_slash()`, because
+  WordPress strips backslashes from what it saves, and runs with the kses filters
+  off. A project post's own title is the researcher's title escaped, a label for
+  WordPress's lists and the theme.
 - `Query` drops WordPress's `year` query variable from Firehouse requests, so the
   explorer's `?year=` keeps its meaning (plan rule 7).
-- `Capabilities` defines the Firehouse Editor role. It can edit projects, topics,
-  the Firehouse settings and the pages under `/firehouse/`, and nothing else on the
-  site. It can't add, delete, move or rename a page. Administrators get the Firehouse
-  capabilities too, and only they can import.
-- `Installer` stores the role and the rewrite rules on activation, and again after an
-  update that changes them.
+- `Capabilities` defines the Firehouse Editor role. It can add, edit, publish and
+  delete projects, edit topics, change the Firehouse settings, and edit the
+  `firehouse` page and the pages below it, and nothing else on the site.
+  - It can't add, delete, trash, move or rename a page, and its Pages list shows only
+    Firehouse pages. It can't use XML-RPC.
+  - The role stores only Firehouse's own capabilities. WordPress's page capabilities
+    are lent to it while the plugin runs, so with the plugin off the role can do
+    nothing.
+  - A user who also has a role of their own keeps that role's reach, and no more.
+  - No one can delete or trash a topic, or change its key or status.
+  - Administrators get the Firehouse capabilities too, and only they have
+    `firehouse_import`.
+- `Installer` stores the role and the administrators' capabilities, and has the
+  rewrite rules rebuilt, on activation and on the first request after
+  `Installer::REVISION` changes. Raise it whenever you change any of them.
+  Deactivating removes the addresses; `uninstall.php` removes the role and the
+  capabilities, and leaves the content.
 - `Settings` is the Firehouse → Settings screen: the site name, the Submit a Finding
-  label and address, and the three navigation labels.
+  label and address, and the three navigation labels. `Settings::get()` returns them
+  over the React site's wording; the survey address has no default and must start
+  with `https://`. Firehouse Editors save it with `firehouse_manage_settings`, not
+  `manage_options`. A save with any error changes nothing and shows what was typed.
+- `Seed_Bundle`, `Importer` and `Import_Screen` are the Firehouse → Import screen,
+  for administrators. It loads the seed bundle (`npm run seed` writes it from
+  `src/content/data/` to `seed/firehouse-seed.json`), shows a dry run of what would
+  change and anything wrong, and imports once confirmed. Projects are matched by
+  response ID, so importing again updates the same posts: survey fields come from the
+  bundle, and editorial fields keep WordPress's (rule 4). Each post is read back
+  after it is written. The landing and About pages are checked but not written until
+  Phase 4.
 
 `domain/` holds the PHP versions of `src/content/derive.ts`, `format.ts` and
 `normalize.ts`:
@@ -268,7 +306,7 @@ install, the way GSL's own repository (NOAA-GSL/gsl-wordpress) keeps its theme.
   (`{}`, `{"0": …}`) stays an object, a `Json_Object`, instead of passing for a list.
   `Normalize` turns every one back into an array on the way out, so pages and post meta
   only see arrays. The tests read the shared cases through it, and the Import screen
-  will read the seed bundle through it.
+  reads the seed bundle through it.
 
 They pass the cases in `shared/cases/derive.json`, `format.json` and `normalize.json`,
 the same ones `npm test` runs. Search isn't ported yet: whether the explorer needs a

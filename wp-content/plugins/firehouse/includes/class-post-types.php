@@ -61,10 +61,13 @@ final class Post_Types {
 	/**
 	 * The project post type's arguments.
 	 *
-	 * A draft is an unpublished project, and the slug is the project's address. There
-	 * is no block editor, because a project has no free-form body; its fields are
-	 * post meta. The archive shows every project at once, so it has no pages, and no
-	 * feed is asked for.
+	 * A draft is an unpublished project, and the slug is the project's address. Every
+	 * field is post meta, the researcher's title included (rule 1); the post's own
+	 * title is a label for WordPress's lists, which Store keeps in step. So there is no
+	 * title box or block editor: a project's fields get their own screen in Phase 6.
+	 * Projects arrive through the Import screen, and later the survey form, so no one
+	 * adds one here. The archive shows every project at once, so it has no pages, and
+	 * no feed is asked for.
 	 *
 	 * @return array<string, mixed>
 	 */
@@ -75,9 +78,7 @@ final class Post_Types {
 				'singular_name'      => __( 'Project', 'firehouse' ),
 				'menu_name'          => __( 'Firehouse', 'firehouse' ),
 				'all_items'          => __( 'Projects', 'firehouse' ),
-				'add_new_item'       => __( 'Add project', 'firehouse' ),
 				'edit_item'          => __( 'Edit project', 'firehouse' ),
-				'new_item'           => __( 'New project', 'firehouse' ),
 				'view_item'          => __( 'View project', 'firehouse' ),
 				'view_items'         => __( 'View projects', 'firehouse' ),
 				'search_items'       => __( 'Search projects', 'firehouse' ),
@@ -94,8 +95,9 @@ final class Post_Types {
 				'feeds'      => false,
 				'pages'      => false,
 			),
-			'supports'         => array( 'title', 'revisions' ),
+			'supports'         => array( 'revisions' ),
 			'capability_type'  => array( 'fh_project', 'fh_projects' ),
+			'capabilities'     => array( 'create_posts' => 'do_not_allow' ),
 			'map_meta_cap'     => true,
 			'menu_icon'        => 'dashicons-clipboard',
 			'menu_position'    => 26,
@@ -106,9 +108,9 @@ final class Post_Types {
 	/**
 	 * The topic post type's arguments.
 	 *
-	 * There are exactly four topics, with the topic key as the slug. No one can add
-	 * one, here or through Capabilities, which also stops anyone deleting one: a fifth
-	 * topic is a schema change, not an edit.
+	 * There are exactly four topics, with the topic key as the slug, created by the
+	 * Import screen. No one can add one here, or delete, trash, rename or unpublish one
+	 * (Capabilities): a fifth topic is a schema change, not an edit.
 	 *
 	 * @return array<string, mixed>
 	 */

@@ -14,19 +14,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Stores what the plugin needs in the database, once: the Firehouse Editor role, the
- * administrators' capabilities, and the rewrite rules for the Firehouse addresses.
+ * Stores what the plugin needs in the database, once: the Firehouse Editor role and
+ * the administrators' capabilities, and a rebuild of the rewrite rules so they hold
+ * the Firehouse addresses.
  *
- * Activation does it, and so does the first request after an update that changes
- * REVISION, since WordPress doesn't run the activation hook on an update.
+ * Activation does it, and so does the first request after an update that raises
+ * REVISION, since WordPress doesn't run the activation hook on an update. The rules
+ * are rebuilt by deleting the stored ones: WordPress makes them again when it next
+ * needs them, after every plugin and theme has registered its own.
  */
 final class Installer {
 
 	/**
-	 * Raised whenever the role, the capabilities or the rewrite rules change, so each
+	 * Raised whenever the role, the capabilities or the addresses change, so each
 	 * site applies the change once.
 	 */
-	public const REVISION = 1;
+	public const REVISION = 2;
 
 	/**
 	 * The option that records the revision a site has.
@@ -45,17 +48,14 @@ final class Installer {
 	}
 
 	/**
-	 * Installs on activation. The post types are registered first, because activation
-	 * runs after `init` and the rewrite rules are built from them.
+	 * Installs on activation.
 	 */
 	public static function activate(): void {
-		Post_Types::register();
 		self::install();
 	}
 
 	/**
-	 * Installs when the site has an older revision. Runs after the post types are
-	 * registered.
+	 * Installs when the site has an older revision.
 	 */
 	public static function maybe_upgrade(): void {
 		if ( self::REVISION !== (int) get_option( self::OPTION, 0 ) ) {
@@ -64,23 +64,22 @@ final class Installer {
 	}
 
 	/**
-	 * Removes the Firehouse addresses from the rewrite rules, and forgets the
-	 * revision so reactivating installs again. The role and the content stay.
+	 * Takes the Firehouse addresses out of the rewrite rules, and forgets the
+	 * revision so reactivating installs again. The role stays, and holds nothing of
+	 * WordPress's while the plugin is off; uninstall.php removes it.
 	 */
 	public static function deactivate(): void {
-		unregister_post_type( Post_Types::PROJECT );
-		unregister_post_type( Post_Types::TOPIC );
-		flush_rewrite_rules( false );
+		delete_option( 'rewrite_rules' );
 		delete_option( self::OPTION );
 	}
 
 	/**
-	 * Stores the role, the capabilities and the rewrite rules, and records the
-	 * revision.
+	 * Stores the role and the capabilities, has the rewrite rules rebuilt, and
+	 * records the revision.
 	 */
 	private static function install(): void {
 		Capabilities::install();
-		flush_rewrite_rules( false );
+		delete_option( 'rewrite_rules' );
 		update_option( self::OPTION, self::REVISION );
 	}
 }
