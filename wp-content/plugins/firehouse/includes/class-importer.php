@@ -405,7 +405,7 @@ final class Importer {
 				}
 			}
 			if ( array() !== $differ ) {
-				$entry['notes'][] = sprintf( 'It keeps WordPress’s %s, which differ from the bundle’s. A synthesis changes through review, not the seed.', implode( ', ', $differ ) );
+				$entry['notes'][] = sprintf( 'It keeps WordPress’s %s. A synthesis changes through review, not the seed.', self::differing( $differ ) );
 			}
 			$planned[] = $entry;
 		}
@@ -446,11 +446,17 @@ final class Importer {
 		}
 
 		if ( null !== $saved ) {
+			// Not written, so not a problem; but a value the settings screen would refuse
+			// is still worth saying, since Settings::validate() keeps WordPress's instead.
+			$notes = array() === $differ ? array() : array( sprintf( 'The settings keep WordPress’s %s.', self::differing( $differ ) ) );
+			foreach ( $errors as $error ) {
+				$notes[] = 'The bundle’s settings would be refused: ' . $error;
+			}
 			return array(
 				'action'   => 'unchanged',
 				'changes'  => array(),
 				'problems' => array(),
-				'notes'    => array() === $differ ? array() : array( sprintf( 'The settings keep WordPress’s %s, which differ from the bundle’s.', implode( ', ', $differ ) ) ),
+				'notes'    => $notes,
 				'value'    => $saved,
 			);
 		}
@@ -461,6 +467,20 @@ final class Importer {
 			'notes'    => array(),
 			'value'    => $value,
 		);
+	}
+
+	/**
+	 * Fields that differ from the bundle's, as a phrase: "covers, which differs from
+	 * the bundle's", or "covers and reviewedBy, which differ from the bundle's".
+	 *
+	 * @param string[] $fields The fields.
+	 */
+	private static function differing( array $fields ): string {
+		if ( 1 === count( $fields ) ) {
+			return $fields[0] . ', which differs from the bundle’s';
+		}
+		$last = array_pop( $fields );
+		return implode( ', ', $fields ) . ' and ' . $last . ', which differ from the bundle’s';
 	}
 
 	/**

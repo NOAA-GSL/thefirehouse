@@ -161,6 +161,9 @@ final class Settings {
 				'load-' . $hook,
 				static function (): void {
 					add_filter( 'admin_title', array( self::class, 'title' ) );
+					// WordPress's style for a field in error replaces the focus ring with the
+					// same red border every field in error has; this puts the ring back.
+					wp_add_inline_style( 'common', '.form-table tr.form-invalid.form-required input:focus{box-shadow:0 0 0 2px var(--wp-admin-theme-color,#2271b1)}' );
 				}
 			);
 		}

@@ -103,6 +103,7 @@ final class Email_Shape {
 			}
 			self::$shape = $shape;
 		}
-		return '~' . self::$shape[ $name ] . '~iu';
+		// D: a closing $ means the end, as in JavaScript, not the end or a final newline.
+		return '~' . self::$shape[ $name ] . '~iuD';
 	}
 }

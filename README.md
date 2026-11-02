@@ -281,8 +281,10 @@ The traps, for whoever changes this code next:
   so `Store` slashes every value, and runs with the kses filters off so text is kept
   as written. A post's own title is stored escaped (`Store::label()`), for themes
   that print it raw.
-- **Call `Meta::validate()` before writing a field.** `Meta` refuses any write of a
-  field that fails its schema or its exact PHP type, by any code, but the refusal is
+- **Call `Meta::validate()` before writing a field.** It checks a value against its
+  schema and its exact PHP type. `Meta` also refuses, by any code, a write of a field
+  that fails it, reading a number or boolean in the text form WordPress stores
+  ("2025", "1") as that type, so a restored revision still saves; but its refusal is
   only a `false` from WordPress's function, with no message. No one may change a
   field through WordPress's custom-field routes.
 - **The plugin checks the bundle itself.** It refuses fields it doesn't store and

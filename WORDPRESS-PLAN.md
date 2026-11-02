@@ -329,7 +329,7 @@ in a rewrite.
      columns (Google Forms records neither). It runs on the developer's computer, so a
      response export never reaches GSL's server. The seed bundle it feeds holds no
      private answers, only what the site publishes (researchers' names and
-     organizations, and the team's names, biographies and work addresses), and the
+     organizations, and the team's names, biographies and work email addresses), and the
      Import screen refuses a bundle with anything shaped like an email address but a
      team member's own.
    - **The plugin's form keeps them,** because Stephanie and Emily need a way to reach
@@ -345,8 +345,9 @@ in a rewrite.
    the response ID and overwrites survey fields only. The editorial fields (`published`,
    `summary`, `slug`, `publicationStatus`, `geoNote`, `fullRecordUrl`) live in
    `scripts/survey-editorial.json` today; in WordPress they belong to editors, and a
-   re-import never touches them. Survey fields appear read-only on the edit screen,
-   labelled as coming from the survey.
+   re-import never touches them. So do a project's geography states, which the survey
+   doesn't ask for. Survey fields appear read-only on the edit screen, labelled as
+   coming from the survey.
 5. **Slugs are shared links.** The site offers no citations, but project links travel
    in slides, email and posts, so the migration keeps every current slug exactly.
    Needs point to projects by post ID, so renaming a project cannot silently strip a

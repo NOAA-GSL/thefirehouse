@@ -357,49 +357,116 @@ final class ImporterTest extends WordPressTestCase {
 	}
 
 	/**
-	 * Stands in for WordPress's posts and options: wp_insert_post() keeps what it is
-	 * given, and get_post() and the meta functions read it back.
+	 * Every write the stand-in WordPress was asked for, as "insert", "update",
+	 * "delete" or "option".
+	 *
+	 * @var list<string>
+	 */
+	private array $writes = array();
+
+	/**
+	 * Whether the stand-in WordPress ignores deletions, as a broken save would.
+	 *
+	 * @var bool
+	 */
+	private bool $ignore_deletes = false;
+
+	/**
+	 * A post status the stand-in WordPress saves instead of the one given, or ''.
+	 *
+	 * @var string
+	 */
+	private string $status_instead = '';
+
+	/**
+	 * A post as the stand-in WordPress returns it.
+	 *
+	 * @param int                  $id   The post's ID.
+	 * @param array<string, mixed> $post What was saved.
+	 */
+	private static function as_post( int $id, array $post ): \WP_Post {
+		return new \WP_Post(
+			array(
+				'ID'          => $id,
+				'post_type'   => $post['post_type'],
+				'post_name'   => $post['post_name'],
+				'post_status' => $post['post_status'],
+				'post_title'  => $post['post_title'],
+			)
+		);
+	}
+
+	/**
+	 * Stands in for WordPress's posts and options: wp_insert_post() and
+	 * wp_update_post() keep what they are given, and get_posts(), get_post() and the
+	 * meta functions read it back.
 	 */
 	private function stand_in_wordpress(): void {
-		$posts   = &$this->posts;
-		$options = &$this->options;
-		$refuse  = &$this->refuse;
-		Functions\when( 'get_posts' )->justReturn( array() );
+		$this->writes = array();
+		$posts        = &$this->posts;
+		$options      = &$this->options;
+		$refuse       = &$this->refuse;
+		$writes       = &$this->writes;
+		$ignore       = &$this->ignore_deletes;
+		$instead      = &$this->status_instead;
+		Functions\when( 'get_posts' )->alias(
+			static function ( array $args ) use ( &$posts ): array {
+				$found = array();
+				foreach ( $posts as $id => $post ) {
+					if ( $args['post_type'] === $post['post_type'] ) {
+						$found[] = self::as_post( $id, $post );
+					}
+				}
+				return $found;
+			}
+		);
 		Functions\when( 'wp_slash' )->returnArg();
 		Functions\when( 'has_filter' )->justReturn( false );
 		Functions\when( 'kses_remove_filters' )->justReturn();
 		Functions\when( 'update_option' )->alias(
-			static function ( string $name, mixed $value ) use ( &$options ): bool {
+			static function ( string $name, mixed $value ) use ( &$options, &$writes ): bool {
+				$writes[]         = 'option';
 				$options[ $name ] = $value;
 				return true;
 			}
 		);
 		Functions\when( 'wp_insert_post' )->alias(
-			static function ( array $postarr ) use ( &$posts, &$refuse ): int|\WP_Error {
+			static function ( array $postarr ) use ( &$posts, &$refuse, &$writes, &$instead ): int|\WP_Error {
+				$writes[] = 'insert';
 				if ( $refuse === $postarr['post_name'] ) {
 					return new \WP_Error( 'db_insert_error', 'Could not insert post into the database.' );
+				}
+				if ( '' !== $instead ) {
+					$postarr['post_status'] = $instead;
 				}
 				$id           = 200 + count( $posts );
 				$posts[ $id ] = $postarr;
 				return $id;
 			}
 		);
+		Functions\when( 'wp_update_post' )->alias(
+			static function ( array $postarr ) use ( &$posts, &$writes ): int {
+				$writes[]                   = 'update';
+				$id                         = $postarr['ID'];
+				$meta                       = $postarr['meta_input'] + ( $posts[ $id ]['meta_input'] ?? array() );
+				$posts[ $id ]               = array_merge( $posts[ $id ], array_diff_key( $postarr, array_flip( array( 'ID', 'meta_input' ) ) ) );
+				$posts[ $id ]['meta_input'] = $meta;
+				return $id;
+			}
+		);
+		Functions\when( 'delete_post_meta' )->alias(
+			static function ( int $id, string $key ) use ( &$posts, &$writes, &$ignore ): bool {
+				$writes[] = 'delete';
+				if ( ! $ignore ) {
+					unset( $posts[ $id ]['meta_input'][ $key ] );
+				}
+				return true;
+			}
+		);
 		Functions\when( 'get_post' )->alias(
 			static function ( mixed $id ) use ( &$posts ): ?\WP_Post {
 				$id = (int) $id;
-				if ( ! isset( $posts[ $id ] ) ) {
-					return null;
-				}
-				$post = $posts[ $id ];
-				return new \WP_Post(
-					array(
-						'ID'          => $id,
-						'post_type'   => $post['post_type'],
-						'post_name'   => $post['post_name'],
-						'post_status' => $post['post_status'],
-						'post_title'  => $post['post_title'],
-					)
-				);
+				return isset( $posts[ $id ] ) ? self::as_post( $id, $posts[ $id ] ) : null;
 			}
 		);
 		Functions\when( 'metadata_exists' )->alias(
@@ -466,5 +533,51 @@ final class ImporterTest extends WordPressTestCase {
 		$result = Importer::run( self::content() );
 
 		$this->assertStringContainsString( 'reads back differently from what was imported: title', $result['projects'][0]['problems'][0] );
+	}
+
+	/**
+	 * A second run of the same bundle writes nothing at all: no post, no field, no
+	 * setting. Topics and settings that exist are never written again.
+	 */
+	public function test_a_second_run_writes_nothing(): void {
+		$this->stand_in_wordpress();
+		Importer::run( self::content() );
+		$this->writes = array();
+
+		$result = Importer::run( self::content() );
+
+		$this->assertTrue( $result['imported'] );
+		$this->assertSame( array(), $this->writes );
+		$this->assertSame( array( 'unchanged' ), array_values( array_unique( array_column( array_merge( $result['projects'], $result['topics'] ), 'action' ) ) ) );
+		$this->assertSame( 'unchanged', $result['settings']['action'] );
+	}
+
+	/**
+	 * A survey field the bundle no longer has is removed; if it reads back as still
+	 * there, that is a problem.
+	 */
+	public function test_a_field_left_behind_is_a_problem(): void {
+		$this->stand_in_wordpress();
+		Importer::run( self::content() );
+		$content = self::content();
+		unset( $content['projects'][0]['methods'] );
+		$this->ignore_deletes = true;
+
+		$result = Importer::run( $content );
+
+		$this->assertSame( array( 'methods' ), $result['projects'][0]['delete'] );
+		$this->assertStringContainsString( 'methods (still there)', $result['projects'][0]['problems'][0] );
+	}
+
+	/**
+	 * A post that reads back with a status other than the one written is a problem.
+	 */
+	public function test_a_wrong_status_is_a_problem(): void {
+		$this->stand_in_wordpress();
+		$this->status_instead = 'pending';
+
+		$result = Importer::run( self::content() );
+
+		$this->assertStringContainsString( 'post_status', $result['projects'][0]['problems'][0] );
 	}
 }

@@ -8,6 +8,7 @@
     { "name": "an address after a label", "text": "Email:x@y.gov", "email": true, "team": false },
     { "name": "an address outside NOAA", "text": "jane@gmail.com", "email": true, "team": false },
     { "name": "a team address with another after it", "text": "jane@noaa.gov; bob@gmail.com", "email": true, "team": false },
+    { "name": "a team address with a line break after it", "text": "jane@noaa.gov\n", "email": true, "team": false },
     { "name": "a handle in a link", "text": "https://medium.com/@name.surname/post", "email": false, "team": false },
     { "name": "a handle on its own", "text": "Follow @firewx for updates.", "email": false, "team": false },
     { "name": "no domain ending", "text": "a@b", "email": false, "team": false },

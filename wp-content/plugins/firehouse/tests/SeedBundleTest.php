@@ -45,22 +45,28 @@ final class SeedBundleTest extends DomainTestCase {
 
 	/**
 	 * A field the plugin doesn't store is a problem, named by where it is and what
-	 * it's called, never by what it holds.
+	 * it's called, never by what it holds; a name that doesn't look like a field's
+	 * isn't shown either, since a name can carry anything.
 	 */
 	public function test_a_field_the_plugin_doesnt_store_is_a_problem(): void {
 		$problems = Seed_Bundle::read(
 			self::bundle(
 				static function ( array &$site ): void {
-					$site['projects'][0]['jobTitle']       = 'Private answer';
-					$site['topicSummaries'][0]['internal'] = 'x';
+					$site['projects'][0]['jobTitle']        = 'Private answer';
+					$site['projects'][1]['q10@example.org'] = 'x';
+					$site['topicSummaries'][0]['internal']  = 'x';
+					$site['topics'][0]['topNeeds']          = array();
 				}
 			)
 		)['problems'];
 
-		$this->assertCount( 2, $problems );
-		$this->assertStringContainsString( 'projects.0 has a field the plugin doesn’t store: jobTitle', $problems[0] );
-		$this->assertStringContainsString( 'topicSummaries.0 has a field the plugin doesn’t store: internal', $problems[1] );
+		$this->assertCount( 4, $problems );
+		$this->assertStringContainsString( 'projects.0 (“smoke-alerts-for-evacuation”) has a field the plugin doesn’t store: jobTitle', $problems[0] );
+		$this->assertStringContainsString( 'has a field the plugin doesn’t store: a field with an unusual name', $problems[1] );
+		$this->assertStringContainsString( 'topNeeds', $problems[2], 'A synthesis field in a topic’s own entry.' );
+		$this->assertStringContainsString( 'topicSummaries.0 (“observe”) has a field the plugin doesn’t store: internal', $problems[3] );
 		$this->assertStringNotContainsString( 'Private answer', implode( ' ', $problems ) );
+		$this->assertStringNotContainsString( 'example.org', implode( ' ', $problems ) );
 	}
 
 	/**

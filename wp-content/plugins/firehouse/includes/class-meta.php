@@ -42,6 +42,12 @@ final class Meta {
 	private const PROJECT_POST_FIELDS = array( 'slug', 'published' );
 
 	/**
+	 * A topic's fields that come from its synthesis (TopicSummary in types.ts); the
+	 * rest of its fields are the topic's own (TopicContent).
+	 */
+	public const SYNTHESIS_FIELDS = array( 'topNeeds', 'updatedAt', 'sourceCount', 'model', 'reviewedBy' );
+
+	/**
 	 * Each schema type, in words, for a message.
 	 */
 	private const TYPE_WORDS = array(
@@ -113,19 +119,22 @@ final class Meta {
 
 	/**
 	 * A stored value with its schema's type: WordPress keeps a number or a boolean
-	 * stored on its own as text. Lists and objects come back as stored.
+	 * stored on its own as text. Only text in the form WordPress itself writes counts
+	 * ("2025", not "2025.0" or " 2025"; "1" or "" for true or false); anything else is
+	 * left as it is. Lists and objects come back as stored.
 	 *
 	 * @param mixed  $value The stored value.
 	 * @param string $type  The schema's type.
 	 * @return mixed
 	 */
 	public static function typed( mixed $value, string $type ): mixed {
+		$number = is_string( $value ) && is_numeric( $value ) && (string) ( $value + 0 ) === $value;
 		return match ( true ) {
-			'number' === $type && is_string( $value ) && is_numeric( $value ) => $value + 0,
-			'integer' === $type && is_string( $value ) && 1 === preg_match( '/^-?\d+$/', $value ) => (int) $value,
-			'boolean' === $type && '1' === $value => true,
-			'boolean' === $type && '' === $value => false,
-			default => $value,
+			'number' === $type && $number                      => $value + 0,
+			'integer' === $type && $number && ! str_contains( $value, '.' ) => (int) $value,
+			'boolean' === $type && '1' === $value              => true,
+			'boolean' === $type && '' === $value               => false,
+			default                                            => $value,
 		};
 	}
 

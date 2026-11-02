@@ -46,6 +46,17 @@ final class Import_Screen {
 	private const KEPT = array( 'projects', 'topics', 'topicSummaries', 'settings' );
 
 	/**
+	 * The settings the import reads, and so the only ones kept between steps.
+	 */
+	private const KEPT_SETTINGS = array( 'siteName', 'submitLabel', 'submitFormUrl', 'nav' );
+
+	/**
+	 * A focus ring for the scrolling table regions: WordPress's admin styles remove
+	 * the browser's from every div.
+	 */
+	private const STYLE = '.firehouse-table-region:focus{outline:2px solid var(--wp-admin-theme-color,#2271b1);outline-offset:2px}';
+
+	/**
 	 * What the screen shows after a submission: a refusal, a dry run or a result.
 	 *
 	 * @var array<string, mixed>|null
@@ -86,6 +97,7 @@ final class Import_Screen {
 		if ( ! current_user_can( Capabilities::IMPORT ) ) {
 			wp_die( esc_html__( 'Only administrators can import Firehouse content.', 'firehouse' ), '', array( 'response' => 403 ) );
 		}
+		wp_add_inline_style( 'common', self::STYLE );
 		if ( ! isset( $_POST['firehouse_step'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Only checks whether a form was sent; each form's nonce is checked below.
 			delete_transient( self::transient() );
 			return;
@@ -182,7 +194,8 @@ final class Import_Screen {
 		} catch ( Content_Error $e ) {
 			return self::refused( self::without_prefix( $e->getMessage() ) );
 		}
-		$bundle['content'] = array_intersect_key( $bundle['content'], array_flip( self::KEPT ) );
+		$bundle['content']             = array_intersect_key( $bundle['content'], array_flip( self::KEPT ) );
+		$bundle['content']['settings'] = array_intersect_key( $bundle['content']['settings'], array_flip( self::KEPT_SETTINGS ) );
 
 		$state = array(
 			'step' => 'preview',
@@ -334,13 +347,13 @@ final class Import_Screen {
 		if ( ! empty( $state['changed'] ) ) {
 			$heading = __( 'Not imported: WordPress changed since your dry run', 'firehouse' );
 			$lead    = __( 'Nothing has been written. This is the dry run as things stand now.', 'firehouse' );
-			$text    = $plan['ok'] ? __( 'Check it, then import at the bottom of the page.', 'firehouse' ) : __( 'Fix these in the site’s content files, make the bundle again with npm run seed, and upload it:', 'firehouse' );
+			$text    = $plan['ok'] ? __( 'Check it, then import at the bottom of the page. Opening this screen again, here or in another tab, discards this dry run.', 'firehouse' ) : __( 'Fix these in the site’s content files, make the bundle again with npm run seed, and upload it:', 'firehouse' );
 			self::summary( 'error', $heading, array( $lead, $text ), $plan['ok'] ? array() : self::problems( $plan ) );
 			return;
 		}
 		if ( $plan['ok'] ) {
 			/* translators: %s: the file's name. */
-			self::summary( 'info', __( 'Ready to import. Nothing has been written yet.', 'firehouse' ), array( sprintf( __( 'This is what importing %s would change. Check it, then import at the bottom of the page.', 'firehouse' ), $state['file'] ) ) );
+			self::summary( 'info', __( 'Ready to import. Nothing has been written yet.', 'firehouse' ), array( sprintf( __( 'This is what importing %s would change. Check it, then import at the bottom of the page. Opening this screen again, here or in another tab, discards this dry run.', 'firehouse' ), $state['file'] ) ) );
 			return;
 		}
 		$count = self::problem_count( $plan );
@@ -437,7 +450,7 @@ final class Import_Screen {
 	 */
 	private static function report( array $plan ): void {
 		if ( array() !== $plan['problems'] ) {
-			echo '<h2 id="firehouse-import-bundle">' . esc_html__( 'Problems with the bundle', 'firehouse' ) . '</h2>';
+			echo '<h2 id="firehouse-import-bundle" tabindex="-1">' . esc_html__( 'Problems with the bundle', 'firehouse' ) . '</h2>';
 			self::messages( $plan['problems'], array() );
 		}
 
@@ -449,12 +462,12 @@ final class Import_Screen {
 
 		self::table_start( 'projects', __( 'Projects', 'firehouse' ), __( 'Projects in the bundle', 'firehouse' ), array( __( 'Project', 'firehouse' ), __( 'Change', 'firehouse' ), __( 'Status', 'firehouse' ), __( 'Fields', 'firehouse' ), __( 'Problems and notes', 'firehouse' ) ) );
 		foreach ( $plan['projects'] as $index => $project ) {
-			echo '<tr><th scope="row" id="firehouse-import-project-' . esc_attr( (string) $index ) . '">' . esc_html( $project['title'] ) . '<br /><code>' . esc_html( $project['slug'] ) . '</code></th>';
+			echo '<tr><th scope="row" tabindex="-1" id="firehouse-import-project-' . esc_attr( (string) $index ) . '">' . esc_html( $project['title'] ) . '<br /><code>' . esc_html( $project['slug'] ) . '</code></th>';
 			echo '<td>' . esc_html( $actions[ $project['action'] ] ) . '</td>';
 			echo '<td>' . esc_html( self::status( $project['status'] ) ) . '</td>';
 			echo '<td>' . esc_html( self::fields_changed( $project ) ) . '</td>';
 			echo '<td>';
-			self::messages( $project['problems'], $project['notes'] );
+			self::messages( $project['problems'], $project['notes'], true );
 			echo '</td></tr>';
 		}
 		self::table_end();
@@ -477,16 +490,16 @@ final class Import_Screen {
 
 		self::table_start( 'topics', __( 'Topics', 'firehouse' ), __( 'Topics and their syntheses', 'firehouse' ), array( __( 'Topic', 'firehouse' ), __( 'Change', 'firehouse' ), __( 'Fields', 'firehouse' ), __( 'Problems and notes', 'firehouse' ) ) );
 		foreach ( $plan['topics'] as $topic ) {
-			echo '<tr><th scope="row" id="firehouse-import-topic-' . esc_attr( $topic['key'] ) . '">' . esc_html( $topic['label'] ) . '<br /><code>' . esc_html( $topic['key'] ) . '</code></th>';
+			echo '<tr><th scope="row" tabindex="-1" id="firehouse-import-topic-' . esc_attr( $topic['key'] ) . '">' . esc_html( $topic['label'] ) . '<br /><code>' . esc_html( $topic['key'] ) . '</code></th>';
 			echo '<td>' . esc_html( $actions[ $topic['action'] ] ) . '</td>';
 			echo '<td>' . esc_html( self::fields_changed( $topic ) ) . '</td>';
 			echo '<td>';
-			self::messages( $topic['problems'], $topic['notes'] );
+			self::messages( $topic['problems'], $topic['notes'], true );
 			echo '</td></tr>';
 		}
 		self::table_end();
 
-		echo '<h2 id="firehouse-import-settings">' . esc_html__( 'Settings', 'firehouse' ) . '</h2>';
+		echo '<h2 id="firehouse-import-settings" tabindex="-1">' . esc_html__( 'Settings', 'firehouse' ) . '</h2>';
 		$settings = $plan['settings'];
 		if ( 'update' === $settings['action'] && array() !== $settings['changes'] ) {
 			/* translators: %s: the settings that change. */
@@ -511,7 +524,7 @@ final class Import_Screen {
 	private static function table_start( string $name, string $heading, string $caption, array $columns ): void {
 		$id = 'firehouse-import-' . $name . '-heading';
 		echo '<h2 id="' . esc_attr( $id ) . '">' . esc_html( $heading ) . '</h2>';
-		echo '<div role="region" aria-labelledby="' . esc_attr( $id ) . '" tabindex="0" style="overflow-x:auto">';
+		echo '<div class="firehouse-table-region" role="region" aria-labelledby="' . esc_attr( $id ) . '" tabindex="0" style="overflow-x:auto">';
 		echo '<table class="widefat striped"><caption class="screen-reader-text">' . esc_html( $caption ) . '</caption><thead><tr>';
 		foreach ( $columns as $column ) {
 			echo '<th scope="col">' . esc_html( $column ) . '</th>';
@@ -562,15 +575,18 @@ final class Import_Screen {
 	}
 
 	/**
-	 * Problems and notes, each labelled in words rather than by colour alone, or
-	 * "None".
+	 * Problems and notes, each labelled in words rather than by colour alone. In a
+	 * table cell, none at all is "None", so a screen reader doesn't say "blank".
 	 *
 	 * @param string[] $problems What stops the import.
 	 * @param string[] $notes    What doesn't.
+	 * @param bool     $cell     Whether this is a table cell.
 	 */
-	private static function messages( array $problems, array $notes ): void {
+	private static function messages( array $problems, array $notes, bool $cell = false ): void {
 		if ( array() === $problems && array() === $notes ) {
-			echo esc_html__( 'None', 'firehouse' );
+			if ( $cell ) {
+				echo esc_html__( 'None', 'firehouse' );
+			}
 			return;
 		}
 		echo '<ul>';

@@ -192,6 +192,18 @@ final class MetaTest extends WordPressTestCase {
 		$this->assertFalse( Meta::refuse_invalid( null, 50, 'fh_methods', 'Survey' ) );
 		$this->assertSame( 2025, Meta::typed( '2025', 'number' ) );
 		$this->assertSame( 'false', Meta::typed( 'false', 'boolean' ) );
+		foreach ( array( '2025.0', ' 2025', '1e3', '007' ) as $text ) {
+			$this->assertFalse( Meta::refuse_invalid( null, 50, 'fh_completionYear', $text ), $text . ' isn’t how WordPress stores a number.' );
+		}
+	}
+
+	/**
+	 * The synthesis's fields are topic fields, and the rest of a topic's fields are
+	 * its own: the bundle check keeps them apart.
+	 */
+	public function test_the_synthesis_fields_are_topic_fields(): void {
+		$this->assertSame( array(), array_diff( Meta::SYNTHESIS_FIELDS, array_keys( Meta::fields( 'fh_topic' ) ) ) );
+		$this->assertContains( 'covers', array_diff( array_keys( Meta::fields( 'fh_topic' ) ), Meta::SYNTHESIS_FIELDS ) );
 	}
 
 	/**

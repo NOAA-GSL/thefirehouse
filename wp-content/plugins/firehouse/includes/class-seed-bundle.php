@@ -73,6 +73,9 @@ final class Seed_Bundle {
 		$content  = Normalize::site_content( $raw );
 		$problems = self::unknown_fields( $content );
 		foreach ( Email_Shape::find( $content ) as $path ) {
+			if ( 1 === preg_match( '/^projects\.(\d+)/', $path, $match ) && is_string( $content['projects'][ (int) $match[1] ]['slug'] ?? null ) ) {
+				$path .= sprintf( ' (“%s”)', $content['projects'][ (int) $match[1] ]['slug'] );
+			}
 			$problems[] = sprintf( 'Something shaped like an email address is in %s. No one’s email belongs in the site’s content (rule 2), except a team member’s own work address on the About page.', $path );
 		}
 		return array(
@@ -91,20 +94,28 @@ final class Seed_Bundle {
 	 */
 	private static function unknown_fields( array $content ): array {
 		$project = array_keys( Meta::fields( Post_Types::PROJECT ) );
-		$topic   = array_keys( Meta::fields( Post_Types::TOPIC ) );
+		$topic   = array_diff( array_keys( Meta::fields( Post_Types::TOPIC ) ), Meta::SYNTHESIS_FIELDS );
 		$known   = array(
 			// A project's slug and published flag are its post's; `author` is the older
 			// single-string byline, which Normalize turns into `authors`.
 			'projects'       => array_merge( $project, array( 'slug', 'published', 'author' ) ),
 			'topics'         => array_merge( $topic, array( 'key', 'label' ) ),
-			'topicSummaries' => array_merge( $topic, array( 'topic' ) ),
+			'topicSummaries' => array_merge( Meta::SYNTHESIS_FIELDS, array( 'topic' ) ),
 		);
 
 		$problems = array();
 		foreach ( $known as $block => $fields ) {
 			foreach ( $content[ $block ] as $index => $item ) {
+				$where = sprintf( '%s.%d', $block, $index );
+				$name  = $item['slug'] ?? $item['key'] ?? $item['topic'] ?? null;
+				if ( is_string( $name ) ) {
+					$where .= sprintf( ' (“%s”)', $name );
+				}
 				foreach ( array_diff( array_keys( $item ), $fields ) as $field ) {
-					$problems[] = sprintf( '%1$s.%2$d has a field the plugin doesn’t store: %3$s. Remove it from the content files, or update the plugin if it is new.', $block, $index, $field );
+					// A field's name is shown only if it looks like one: a name can carry
+					// anything, an email address included.
+					$field      = 1 === preg_match( '/^[A-Za-z][A-Za-z0-9_]{0,63}$/', (string) $field ) ? $field : 'a field with an unusual name';
+					$problems[] = sprintf( '%1$s has a field the plugin doesn’t store: %2$s. Remove it from the content files, or update the plugin if it is new.', $where, $field );
 				}
 			}
 		}

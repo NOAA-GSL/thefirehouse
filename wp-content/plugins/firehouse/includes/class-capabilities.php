@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * the trash, can't change a page's parent or slug, which are its address, and can't
  * use XML-RPC. Administrators get the Firehouse capabilities too, and they alone can
  * import. No one can delete or trash a topic, or change its key or status, except the
- * plugin's own import (Store::writing()).
+ * plugin's own code writing through Store (Store::writing()).
  *
  * The role stores `read` and Firehouse's own capabilities. WordPress's page
  * capabilities are lent to it while the plugin runs (lend_page_caps()) and narrowed to
