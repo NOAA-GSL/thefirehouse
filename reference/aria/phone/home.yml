@@ -126,11 +126,12 @@
     - paragraph: Describe what you learned in your own words. Submissions are reviewed and folded into the four topic areas above.
     - link "Submit a Finding (opens in a new tab)":
       - /url: https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform
+  - paragraph: Researchers inside and outside NOAA submit the projects on this site. Their findings and views are their own and do not necessarily reflect those of NOAA or the U.S. Department of Commerce.
 - contentinfo:
   - img "NOAA"
   - img "GSL"
   - text: The Firehouse
-  - paragraph: A project of NOAA's Global Systems Laboratory (GSL), Earth Prediction Innovation Center. Part of the National Oceanic and Atmospheric Administration.
+  - paragraph: A project of NOAA's Global Systems Laboratory (GSL). Part of the National Oceanic and Atmospheric Administration.
   - navigation "Explore":
     - heading "Explore" [level=2]
     - link "About The Firehouse":

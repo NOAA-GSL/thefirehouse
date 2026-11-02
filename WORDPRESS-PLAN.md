@@ -633,7 +633,7 @@ the build on the presenter's laptop and sharing the screen.
 3. **Turn the gov banner and footer back on.** A static page does not receive GSL's
    header and footer. *Done.*
 4. Finish the remaining items in the README's "Before this goes public" list: hero
-   image, synthesis review and a sitemap. The synthesis review matters most: today's
+   image, synthesis review, the team mailbox and a sitemap. The synthesis review matters most: today's
    draft covers 4 of the 8 published projects. Stephanie and Emily reran it across all
    8 on 27 October; it goes onto the site once their reviewed table arrives. A `robots.txt` in the build
    can't help: under `/firehouse/` crawlers never read it, so the test-site copy uses

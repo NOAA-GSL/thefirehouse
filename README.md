@@ -186,6 +186,10 @@ overrides are isolated so a re-sync doesn't lose them.
       labels it a draft on every surface that shows it — rerun it across all eight
       with the prompt in `notebooklm/README.md`, edit the wording, then set
       `reviewedBy` to clear the label.
+- [ ] **Set up `gsl.firehouse@noaa.gov`.** Since 2 November the About page lists it
+      under Stephanie's and Emily's names in place of their own addresses, so it has
+      to receive mail before any copy goes up. Requested from GSL's help desk on
+      2 November.
 - [ ] **Review the topic-area `covers` copy** in `topics.json` — the bullet list in
       the callout, and now the only area copy on `/topics/…`. The longer `intro`
       paragraphs are no longer rendered (September 2026 review) but are kept in the

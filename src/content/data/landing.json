@@ -39,5 +39,6 @@
     "heading": "Have a finding to share?",
     "body": "Describe what you learned in your own words. Submissions are reviewed and folded into the four topic areas above.",
     "cta": { "label": "Submit a Finding", "href": "" }
-  }
+  },
+  "disclaimer": "Researchers inside and outside NOAA submit the projects on this site. Their findings and views are their own and do not necessarily reflect those of NOAA or the U.S. Department of Commerce."
 }

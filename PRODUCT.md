@@ -42,7 +42,7 @@ A shared home for **synthesized fire weather social-science needs and recommenda
 ## Brand Commitments
 
 - Product name: **The Firehouse**; the logo wordmark reads **FireHouse — Fire Weather Research Hub** (brand files in `src/assets/logos/`)
-- Parent: NOAA Global Systems Laboratory (GSL) / Earth Prediction Innovation Center
+- Parent: NOAA Global Systems Laboratory (GSL)
 - Voice in approved landing copy: plain, institutional, useful — not marketing flourish
 - Binding assets: NOAA and GSL logos under `src/assets/logos/`; approved landing copy in `src/content/data/landing.json`
 - Incumbent visual system exists (ported Firehouse design system); product record does not redefine it

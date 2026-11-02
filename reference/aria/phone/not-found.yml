@@ -39,7 +39,7 @@
   - img "NOAA"
   - img "GSL"
   - text: The Firehouse
-  - paragraph: A project of NOAA's Global Systems Laboratory (GSL), Earth Prediction Innovation Center. Part of the National Oceanic and Atmospheric Administration.
+  - paragraph: A project of NOAA's Global Systems Laboratory (GSL). Part of the National Oceanic and Atmospheric Administration.
   - navigation "Explore":
     - heading "Explore" [level=2]
     - link "About The Firehouse":

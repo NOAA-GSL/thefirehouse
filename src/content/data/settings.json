@@ -16,7 +16,7 @@
   ],
   "submitLabel": "Submit a Finding",
   "submitFormUrl": "https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform",
-  "footerBlurb": "A project of NOAA's Global Systems Laboratory (GSL), Earth Prediction Innovation Center. Part of the National Oceanic and Atmospheric Administration.",
+  "footerBlurb": "A project of NOAA's Global Systems Laboratory (GSL). Part of the National Oceanic and Atmospheric Administration.",
   "footerGroups": [
     {
       "heading": "Explore",

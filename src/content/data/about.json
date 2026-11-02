@@ -62,7 +62,7 @@
     "members": [
       {
         "name": "Dr. Stephanie Hoekstra",
-        "email": "stephanie.hoekstra@noaa.gov",
+        "email": "gsl.firehouse@noaa.gov",
         "photo": "stephanie-hoekstra",
         "bio": [
           "By day, Dr. Stephanie Hoekstra studies the human side of extreme weather—translating how people interpret risk and make high-stakes decisions when nature gets wild. Her current focus is all about fire weather, partnering directly with National Weather Service forecasters and wildland fire professionals to make sure decision-support tools are actually, genuinely useful in the heat of the moment. By night (and weekend), she trades risk communication for refereeing her three kids, playing ice hockey, endlessly scrolling Zillow floorplans she has no intention of buying, and pursuing a lifelong mission of finding the absolute best cannoli on Earth."
@@ -70,7 +70,7 @@
       },
       {
         "name": "Dr. Emily Wells",
-        "email": "emily.wells@noaa.gov",
+        "email": "gsl.firehouse@noaa.gov",
         "photo": "emily-wells",
         "bio": [
           "Dr. Emily Wells is a social and decision scientist with a deep curiosity about how wildland fire operational professionals make decisions under uncertainty, particularly when it comes to if and how they use advanced technologies. What motivates her most is engaging with practitioners: listening to their stories, learning from their perspectives, and translating their operational realities and needs back to researchers and model developers. Emily is a proud, born and raised Yinzer (here we go Steelers!). When her laptop is closed, you can find her swimming laps, hiking in the Rockies, or tuning into her guilty pleasure - reality TV."
@@ -82,5 +82,6 @@
     "heading": "Add your work to the record",
     "body": "If you've wrapped up fire weather social science research, send it over. Your work will join the master record and inform our cross-project syntheses.",
     "cta": { "label": "Submit a Finding", "href": "" }
-  }
+  },
+  "disclaimer": "Researchers inside and outside NOAA submit the projects on this site. Their findings and views are their own and do not necessarily reflect those of NOAA or the U.S. Department of Commerce."
 }

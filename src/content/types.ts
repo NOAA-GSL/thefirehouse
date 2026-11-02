@@ -315,6 +315,8 @@ export interface LandingPageContent {
   /** How many needs to show per topic card before the card links out. */
   needsPerCard: number;
   submitBand: CtaBandContent;
+  /** That the findings are the researchers' own, not NOAA's. Ends the page. */
+  disclaimer?: string;
 }
 
 /**
@@ -378,6 +380,8 @@ export interface AboutPageContent {
   process: SectionIntro & { steps: AboutStep[]; links: LinkRef[] };
   team: SectionIntro & { members: TeamMember[] };
   cta: CtaBandContent;
+  /** That the findings are the researchers' own, not NOAA's. Ends the page. */
+  disclaimer?: string;
 }
 
 export interface FooterGroupContent {

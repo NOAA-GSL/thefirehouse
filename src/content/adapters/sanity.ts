@@ -67,7 +67,8 @@ const QUERY = /* groq */ `{
     stats[]{id, source, value, label, caption, accent},
     topicSection{eyebrow, heading, body},
     needsPerCard,
-    submitBand{heading, body, cta{label, to, href}}
+    submitBand{heading, body, cta{label, to, href}},
+    disclaimer
   },
   "about": *[_type == "aboutPage"][0]{
     hero{eyebrow, heading, body},
@@ -83,7 +84,8 @@ const QUERY = /* groq */ `{
         "photoAlt": coalesce(photo.alt, null)
       }
     },
-    cta{heading, body, cta{label, to, href}}
+    cta{heading, body, cta{label, to, href}},
+    disclaimer
   }
 }`;
 

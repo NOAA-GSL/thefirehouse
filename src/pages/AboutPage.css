@@ -319,7 +319,7 @@
    the same ask, and a visitor who has seen one should recognise the other. */
 
 .fh-about__cta-section {
-  padding-block: 0 var(--space-3xl);
+  padding-block: 0 var(--space-2xl);
 }
 
 .fh-about__cta {

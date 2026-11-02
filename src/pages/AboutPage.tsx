@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Button, Icon } from '../design-system';
+import { Disclaimer } from '../components/Disclaimer';
 import { useContent } from '../content/ContentProvider';
 import type { LinkRef, TeamMember } from '../content/types';
 import './AboutPage.css';
@@ -78,7 +79,7 @@ function ProcessLink({ link }: { link: LinkRef }) {
  */
 export function AboutPage() {
   const content = useContent();
-  const { hero, mission, audiences, process, team, cta } = content.about;
+  const { hero, mission, audiences, process, team, cta, disclaimer } = content.about;
 
   useEffect(() => {
     document.title = `About — ${content.settings.siteName}`;
@@ -255,6 +256,8 @@ export function AboutPage() {
           )}
         </div>
       </section>
+
+      <Disclaimer text={disclaimer} />
     </div>
   );
 }
