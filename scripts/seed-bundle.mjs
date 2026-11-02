@@ -11,7 +11,7 @@
  * script has already dropped submitters' emails, job titles and Q10 answers
  * (WORDPRESS-PLAN.md rule 2), and this script stops, writing nothing, if any field
  * holds something shaped like an email address, other than a team work address in
- * one of the About page's team email fields (scripts/email-shape.mjs). The Import
+ * the About page's team mailbox field (scripts/email-shape.mjs). The Import
  * screen checks the same again. The About portraits aren't in it: they reach
  * WordPress through the Media Library when the About page is built (Phase 4).
  *

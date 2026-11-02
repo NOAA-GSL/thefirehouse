@@ -332,9 +332,9 @@ in a rewrite.
      columns (Google Forms records neither). It runs on the developer's computer, so a
      response export never reaches GSL's server. The seed bundle it feeds holds no
      private answers, only what the site publishes (researchers' names and
-     organizations, and the team's names, biographies and work email address), and the
+     organizations, and the team's names, biographies and mailbox address), and the
      Import screen refuses a bundle with anything shaped like an email address but a
-     team work address in the About page's team email fields.
+     team work address in the About page's team mailbox field.
    - **The plugin's form keeps them,** because Stephanie and Emily need a way to reach
      a submitter. They are stored apart from the survey fields, in meta that is never
      rendered, never sent through the REST API and never copied into revisions, and
@@ -491,7 +491,7 @@ duplicating them: projects take the bundle's survey fields and keep their editor
 fields (rule 4), and topics and settings are written only when they don't exist yet,
 so a reviewed synthesis is never overwritten. The plugin checks the bundle itself: a
 field it doesn't store, or anything shaped like an email address but a team work
-address in the About page's team email fields, stops the import.
+address in the About page's team mailbox field, stops the import.
 
 The uploaded file itself is never saved. After a dry run with no problems, the parts of
 the content the import writes wait in a transient keyed to the person who uploaded it,
@@ -759,7 +759,7 @@ as in `shared/vocabulary.json`, which takes its labels from the form.
   changes and are retaken with them (bridge step 8).*
 - **Add shared test cases.** Unit tests for `normalize`, `derive`, `search` and
   `format`, written as data files (input and expected output) that the PHP tests will
-  read later. *Done: 176 cases in `shared/cases/`, run by `npm test` and in CI.*
+  read later. *Done: 201 cases in `shared/cases/`, run by `npm test` and in CI.*
 - **Move the vocabularies** into `shared/vocabulary.json`, with each option's label as
   the Google Form shows it, and generate a JSON Schema from `types.ts`. *Done: `npm run
   schema` writes `shared/project.schema.json`, and CI fails if it is out of date.*

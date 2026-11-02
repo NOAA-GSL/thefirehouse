@@ -70,15 +70,15 @@ final class SeedBundleTest extends DomainTestCase {
 	}
 
 	/**
-	 * An email address anywhere but a team email field is a problem, named by where
-	 * it is; a team work address in a team email field isn't.
+	 * An email address anywhere but the team's mailbox field is a problem, named by
+	 * where it is; a team work address there isn't, and a team member's own is.
 	 */
 	public function test_an_email_where_none_belongs_is_a_problem(): void {
 		$problems = Seed_Bundle::read(
 			self::bundle(
 				static function ( array &$site ): void {
-					$site['projects'][0]['abstract']              = 'Write to jane.doe@gmail.com for the data.';
-					$site['about']['team']['members'][0]['email'] = 'hal.member@noaa.gov';
+					$site['projects'][0]['abstract'] = 'Write to jane.doe@gmail.com for the data.';
+					$site['about']['team']['email']  = 'the.team@noaa.gov';
 				}
 			)
 		)['problems'];
@@ -87,14 +87,17 @@ final class SeedBundleTest extends DomainTestCase {
 		$this->assertStringContainsString( 'projects.0.abstract', $problems[0] );
 		$this->assertStringNotContainsString( 'jane.doe', $problems[0] );
 
-		$outside = Seed_Bundle::read(
+		$elsewhere = Seed_Bundle::read(
 			self::bundle(
 				static function ( array &$site ): void {
-					$site['about']['team']['members'][0]['email'] = 'hal@gmail.com';
+					$site['about']['team']['email']               = 'the.team@gmail.com';
+					$site['about']['team']['members'][0]['email'] = 'hal.member@noaa.gov';
 				}
 			)
 		)['problems'];
-		$this->assertStringContainsString( 'about.team.members.0.email', $outside[0] );
+		$this->assertCount( 2, $elsewhere );
+		$this->assertStringContainsString( 'in about.team.email.', implode( ' ', $elsewhere ) );
+		$this->assertStringContainsString( 'in about.team.members.0.email.', implode( ' ', $elsewhere ) );
 	}
 
 	/**

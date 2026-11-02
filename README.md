@@ -301,7 +301,8 @@ The traps, for whoever changes this code next:
   field through WordPress's custom-field routes.
 - **The plugin checks the bundle itself.** It refuses fields it doesn't store and
   anything shaped like an email address but a team work address in the About page's
-  team email fields (the team's mailbox, or a member's own), by the same pattern as the Node scripts (`shared/email-shape.json`).
+  team mailbox field, by the same pattern and field list as the Node scripts
+  (`shared/email-shape.json`).
 - `uninstall.php` removes the role, so users who had it are left with no role on the
   site, and the capabilities; the content stays.
 

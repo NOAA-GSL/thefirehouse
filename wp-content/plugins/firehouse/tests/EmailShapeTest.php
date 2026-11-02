@@ -38,47 +38,30 @@ final class EmailShapeTest extends DomainTestCase {
 	}
 
 	/**
-	 * An address anywhere is found by its path, and the team's and a member's own
-	 * address are passed, as scripts/email-shape.test.mjs has it.
+	 * Each shared `find` case: the paths found, in any order.
+	 *
+	 * @param array<string, mixed> $find_case The case.
 	 */
-	public function test_find_reports_paths_and_passes_a_team_address(): void {
-		$blocks = array(
-			'projects' => array( array( 'abstract' => 'Write to jane@gmail.com.' ) ),
-			'about'    => array(
-				'team'                 => array(
-					'email'   => 'the.team@noaa.gov',
-					'members' => array(
-						array(
-							'name'  => 'A',
-							'email' => 'a.person@noaa.gov',
-						),
-						array(
-							'name'  => 'B',
-							'email' => 'b@noaa.gov; c@gmail.com',
-						),
-						array(
-							'name' => 'C',
-							'bio'  => array( 'Reach me at c@noaa.gov.' ),
-						),
-					),
-				),
-				'team.members.0.email' => 'd@gmail.com',
-			),
-		);
+	#[DataProvider( 'find_cases' )]
+	public function test_shared_find_case( array $find_case ): void {
+		$found    = Email_Shape::find( $find_case['blocks'] );
+		$expected = $find_case['paths'];
+		sort( $found );
+		sort( $expected );
 
-		$this->assertSame(
-			array( 'projects.0.abstract', 'about.team.members.1.email', 'about.team.members.2.bio.0', 'about.team.members.0.email' ),
-			Email_Shape::find( $blocks )
-		);
+		$this->assertSame( $expected, $found );
 	}
 
 	/**
-	 * An outside address in the team's own field is found.
+	 * The `find` cases in shared/cases/email-shape.json.
+	 *
+	 * @return array<string, array{array<string, mixed>}>
 	 */
-	public function test_find_reports_an_outside_address_in_the_teams_field(): void {
-		$this->assertSame(
-			array( 'about.team.email' ),
-			Email_Shape::find( array( 'about' => array( 'team' => array( 'email' => 'the.team@gmail.com' ) ) ) )
-		);
+	public static function find_cases(): array {
+		$cases = array();
+		foreach ( Cases::read( 'email-shape.json' )['find'] as $find_case ) {
+			$cases[ $find_case['name'] ] = array( $find_case );
+		}
+		return $cases;
 	}
 }

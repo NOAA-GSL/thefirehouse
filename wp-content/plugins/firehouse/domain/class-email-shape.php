@@ -24,7 +24,7 @@ final class Email_Shape {
 	/**
 	 * The decoded file, read once per request.
 	 *
-	 * @var array<string, string>|null
+	 * @var array<string, mixed>|null
 	 */
 	private static ?array $shape = null;
 
@@ -49,8 +49,8 @@ final class Email_Shape {
 
 	/**
 	 * The path of every string in the content that holds something shaped like an
-	 * email address, except an About page team email field (the team's mailbox, or a
-	 * member's own) when the whole of it is a team address.
+	 * email address, except a field in the file's `teamFields` (the About page's team
+	 * mailbox) when the whole of it is a team address.
 	 *
 	 * @param array<string, mixed> $blocks The content, by block: settings, about and the rest.
 	 * @return list<string> Each path, such as "projects.3.abstract". Never the value.
@@ -88,37 +88,44 @@ final class Email_Shape {
 	}
 
 	/**
-	 * Whether a path is one of the About page's team email fields: the team's, or a
-	 * member's own.
+	 * Whether a path, as its list of keys, is one of the file's `teamFields`.
 	 *
 	 * @param string[] $path Where a value is.
 	 */
 	private static function is_team_field( array $path ): bool {
-		if ( 'about' !== ( $path[0] ?? null ) || 'team' !== ( $path[1] ?? null ) ) {
-			return false;
-		}
-		if ( 3 === count( $path ) ) {
-			return 'email' === $path[2];
-		}
-		return 5 === count( $path ) && 'members' === $path[2] && 1 === preg_match( '/^\d+$/', $path[3] ) && 'email' === $path[4];
+		return in_array( $path, self::shape()['teamFields'], true );
 	}
 
 	/**
 	 * One of the file's patterns, as a PHP regular expression.
 	 *
 	 * @param string $name `pattern` or `teamEmail`.
+	 */
+	private static function regex( string $name ): string {
+		// D: a closing $ means the end, as in JavaScript, not the end or a final newline.
+		return '~' . self::shape()[ $name ] . '~iuD';
+	}
+
+	/**
+	 * The decoded file.
+	 *
+	 * @return array{pattern: string, teamEmail: string, teamFields: list<list<string>>}
 	 * @throws \RuntimeException When the file is missing or isn't the shape file, which
 	 *                           is a broken release rather than anything content can cause.
 	 */
-	private static function regex( string $name ): string {
+	private static function shape(): array {
 		if ( null === self::$shape ) {
-			$shape = wp_json_file_decode( dirname( __DIR__ ) . '/shared/email-shape.json', array( 'associative' => true ) );
-			if ( ! is_array( $shape ) || ! is_string( $shape['pattern'] ?? null ) || ! is_string( $shape['teamEmail'] ?? null ) ) {
+			$shape  = wp_json_file_decode( dirname( __DIR__ ) . '/shared/email-shape.json', array( 'associative' => true ) );
+			$fields = is_array( $shape ) ? ( $shape['teamFields'] ?? null ) : null;
+			$valid  = is_array( $fields ) && array_is_list( $fields ) && array() === array_filter(
+				$fields,
+				static fn( mixed $field ): bool => ! is_array( $field ) || ! array_is_list( $field ) || array() !== array_filter( $field, static fn( mixed $key ): bool => ! is_string( $key ) )
+			);
+			if ( ! $valid || ! is_string( $shape['pattern'] ?? null ) || ! is_string( $shape['teamEmail'] ?? null ) ) {
 				throw new \RuntimeException( 'The Firehouse plugin could not read shared/email-shape.json.' );
 			}
 			self::$shape = $shape;
 		}
-		// D: a closing $ means the end, as in JavaScript, not the end or a final newline.
-		return '~' . self::$shape[ $name ] . '~iuD';
+		return self::$shape;
 	}
 }

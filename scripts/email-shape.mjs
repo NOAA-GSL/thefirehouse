@@ -21,18 +21,15 @@ export const hasEmail = (text) => new RegExp(shape.pattern, 'i').test(text);
 /** Whether the whole of a text is a team work address. */
 export const isTeamEmail = (text) => new RegExp(shape.teamEmail, 'i').test(text);
 
-/** Whether a path is one of the About page's team email fields: the team's, or a member's own. */
+/** Whether a path, as its list of keys, is one of the shape's `teamFields`. */
 const isTeamField = (path) =>
-  path[0] === 'about' &&
-  path[1] === 'team' &&
-  ((path.length === 3 && path[2] === 'email') ||
-    (path.length === 5 && path[2] === 'members' && /^\d+$/.test(path[3]) && path[4] === 'email'));
+  shape.teamFields.some((field) => field.length === path.length && field.every((key, i) => key === path[i]));
 
 /**
  * The paths of every string in the site's content that holds something shaped like an
- * email address. The one exception is an About page team email field (the team's
- * mailbox, or a member's own), when the whole of it is a team address: the site shows
- * it on purpose.
+ * email address. The one exception is a field in the shape's `teamFields` (the About
+ * page's team mailbox), when the whole of it is a team address: the site shows it on
+ * purpose.
  *
  * @param {Record<string, unknown>} blocks The content files, by name: settings, about…
  * @returns {string[]} Each path, such as "projects.3.abstract". Never the value.
