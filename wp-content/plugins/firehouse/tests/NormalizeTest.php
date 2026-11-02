@@ -142,6 +142,38 @@ final class NormalizeTest extends DomainTestCase {
 	}
 
 	/**
+	 * Text that isn't valid UTF-8 is refused, in a value or a key, naming where it is
+	 * as a JSON Pointer. JSON can't carry it, so a shared case can't either; post meta
+	 * can.
+	 *
+	 * @param string $key     A key under the landing page.
+	 * @param string $value   Its value.
+	 * @param string $message A pattern the refusal must match.
+	 */
+	#[DataProvider( 'broken_text' )]
+	public function test_text_that_isnt_utf8_is_refused( string $key, string $value, string $message ): void {
+		$raw                    = Cases::raw_site();
+		$raw['landing'][ $key ] = $value;
+
+		$this->expectException( Content_Error::class );
+		$this->expectExceptionMessageMatches( $message );
+		Normalize::site_content( $raw );
+	}
+
+	/**
+	 * A broken value, a broken key, and a broken value under a key with a slash.
+	 *
+	 * @return array<string, array{string, string, string}>
+	 */
+	public static function broken_text(): array {
+		return array(
+			'in a value'               => array( 'note', "A note\xFF", '#The text at /landing/note #' ),
+			'in a key'                 => array( "note\xFF", 'A note', '#A key at /landing #' ),
+			'under a key with a slash' => array( 'a/b~c', "A note\xFF", '#/landing/a~1b~0c #' ),
+		);
+	}
+
+	/**
 	 * Content that is an empty object is refused, not a type error.
 	 */
 	public function test_an_empty_object_of_content_is_refused(): void {
@@ -154,13 +186,13 @@ final class NormalizeTest extends DomainTestCase {
 	 * a page or post meta only ever sees arrays.
 	 */
 	public function test_no_json_object_leaves(): void {
-		$raw                           = Cases::raw_site();
-		$raw['projects'][0]['methods'] = new Json_Object();
-		$raw['landing']['stats'][]     = new Json_Object( array( 'kept' ) );
+		$raw                         = Cases::raw_site();
+		$raw['projects'][0]['extra'] = new Json_Object();
+		$raw['landing']['stats'][]   = new Json_Object( array( 'kept' ) );
 
 		$result = Normalize::site_content( $raw );
 
-		$this->assertSame( array(), $result['projects'][0]['methods'] );
+		$this->assertSame( array(), $result['projects'][0]['extra'] );
 		array_walk_recursive(
 			$result,
 			function ( mixed $value ): void {

@@ -39,7 +39,7 @@ final class Cases {
 	 *
 	 * @param string $file The file name.
 	 * @return array<string, array{array<string, mixed>}>
-	 * @throws RuntimeException When two cases share a name, which would drop one.
+	 * @throws \RuntimeException When two cases share a name, which would drop one.
 	 */
 	public static function provider( string $file ): array {
 		$cases = array();
@@ -47,7 +47,7 @@ final class Cases {
 			$key = ( $case['fn'] ?? '' ) . ': ' . $case['name'];
 			if ( isset( $cases[ $key ] ) ) {
 				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- A test's message goes to the test report, never to a page.
-				throw new RuntimeException( 'Two cases share a name in ' . $file . ': ' . $key );
+				throw new \RuntimeException( 'Two cases share a name in ' . $file . ': ' . $key );
 			}
 			$cases[ $key ] = array( $case );
 		}
@@ -190,14 +190,14 @@ final class Cases {
 	 * @param string[]     $tokens   The tokens before the last one.
 	 * @param string       $pointer  The whole pointer, for the message.
 	 * @return array<mixed>
-	 * @throws RuntimeException When the parent isn't there.
+	 * @throws \RuntimeException When the parent isn't there.
 	 */
 	private static function &parent( array &$document, array $tokens, string $pointer ): array {
 		$node = &$document;
 		foreach ( $tokens as $token ) {
 			if ( ! is_array( $node ) || ! array_key_exists( $token, $node ) || ! is_array( $node[ $token ] ) ) {
 				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- A test's message goes to the test report, never to a page.
-				throw new RuntimeException( "Can't reach " . $pointer . '.' );
+				throw new \RuntimeException( "Can't reach " . $pointer . '.' );
 			}
 			$node = &$node[ $token ];
 		}

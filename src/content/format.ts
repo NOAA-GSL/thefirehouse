@@ -6,13 +6,17 @@
 const ISO_DATE =
   /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)?)?$/;
 
-/** Whether a written date and time is on the calendar and the clock. */
+/**
+ * Whether a written date and time is on the calendar and the clock. The calendar
+ * starts at the year 1: `Date` would show the year 0, which is 1 BC, as "1".
+ */
 function isRealDate(parts: RegExpExecArray): boolean {
   const [year, month, day, hour, minute, second] = parts.slice(1, 7).map((part) => Number(part ?? 0));
   // setUTCFullYear, not Date.UTC, which would read the years 0–99 as 1900–1999.
   const date = new Date(0);
   date.setUTCFullYear(year, month - 1, day);
   return (
+    year >= 1 &&
     date.getUTCFullYear() === year &&
     date.getUTCMonth() === month - 1 &&
     date.getUTCDate() === day &&
@@ -31,13 +35,13 @@ function isRealDate(parts: RegExpExecArray): boolean {
  * written without a zone is read in UTC too, where `Date` would read local time.
  * Anything that isn't an ISO date comes back unchanged, and so does one that isn't on
  * the calendar (February 30, month 00), which `Date` would roll over into a date
- * nobody wrote.
+ * nobody wrote, or one whose zone takes it back before the year 1.
  */
 export function formatReviewDate(iso: string): string {
   const match = ISO_DATE.exec(iso);
   if (!match || !isRealDate(match)) return iso;
   const date = new Date(iso.includes('T') && !match[7] ? `${iso}Z` : iso);
-  if (Number.isNaN(date.getTime())) return iso;
+  if (Number.isNaN(date.getTime()) || date.getUTCFullYear() < 1) return iso;
   return date.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -82,12 +86,14 @@ export function splitNeedLead(need: string): { lead?: string; rest: string } {
 }
 
 /**
- * A link: a scheme, then the host (after any user, up to the last "@", and before any
- * port; an IPv6 host in brackets), then the path. Read as written rather than through
- * `URL`, which percent-encodes and normalizes, so a SICI DOI keeps its angle brackets
- * and the PHP port can match it exactly.
+ * A web link: http or https, then the host (after any user, up to the last "@", and
+ * before any port; an IPv6 host in brackets), then the path. Read as written rather
+ * than through `URL`, which percent-encodes and normalizes, so a SICI DOI keeps its
+ * angle brackets and the PHP port can match it exactly. A backslash ends the host, as
+ * it does for a browser, so "https://a.example\@doi.org/" can't be labeled as a
+ * doi.org link. Other schemes read a backslash differently, so they aren't labeled.
  */
-const LINK = /^[a-z][a-z0-9+.-]*:\/\/(?:[^/?#]*@)?(\[[^\]/?#]*\]|[^:/?#]*)(?::[^/?#]*)?([^?#]*)/i;
+const LINK = /^https?:\/\/(?:[^/\\?#]*@)?(\[[^\]/\\?#]*\]|[^:/\\?#]*)(?::[^/\\?#]*)?([^?#]*)/i;
 
 /** "doi.org/10.1175/…" → a readable label for a link that has no published title. */
 export function linkLabel(url: string): string {

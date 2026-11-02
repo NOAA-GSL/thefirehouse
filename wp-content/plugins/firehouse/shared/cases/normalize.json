@@ -80,6 +80,23 @@
     { "name": "needs written as an empty object are none", "set": [{ "path": "/projects/1/needs", "value": {} }], "checks": [{ "path": "/projects/1/needs", "equals": [] }] },
     { "name": "authors written as an empty object are refused", "set": [{ "path": "/projects/1/authors", "value": {} }], "throws": true },
     { "name": "a link written as an empty object is kept as it is", "set": [{ "path": "/landing/hero/secondaryCta", "value": {} }], "checks": [{ "path": "/landing/hero/secondaryCta", "equals": {} }] },
-    { "name": "a top need written as an empty object is kept", "set": [{ "path": "/topicSummaries/1/topNeeds", "value": [{}] }], "checks": [{ "path": "/topicSummaries/1/topNeeds", "equals": [{}] }] }
+    { "name": "a top need written as an empty object is kept", "set": [{ "path": "/topicSummaries/1/topNeeds", "value": [{}] }], "checks": [{ "path": "/topicSummaries/1/topNeeds", "equals": [{}] }] },
+    { "name": "lists written as null are none", "set": [{ "path": "/projects/1/methods", "value": null }, { "path": "/projects/1/takeaways", "value": null }, { "path": "/projects/1/papers", "value": null }], "checks": [{ "path": "/projects/1/methods", "equals": [] }, { "path": "/projects/1/takeaways", "equals": [] }, { "path": "/projects/1/papers", "equals": [] }] },
+    { "name": "methods written as text are refused", "set": [{ "path": "/projects/1/methods", "value": "Interviews" }], "throws": true },
+    { "name": "methods with numbered keys are refused", "set": [{ "path": "/projects/1/methods", "value": { "0": "Survey" } }], "throws": true },
+    { "name": "takeaways written as an empty object are refused", "set": [{ "path": "/projects/1/takeaways", "value": {} }], "throws": true },
+    { "name": "papers written as text are refused", "set": [{ "path": "/projects/1/papers", "value": "https://doi.org/10.1175/x" }], "throws": true },
+    { "name": "synthesis fields written as null count as none", "set": [{ "path": "/topicSummaries/0/sourceCount", "value": null }, { "path": "/topicSummaries/0/model", "value": null }, { "path": "/topicSummaries/0/topNeeds/1/mentions", "value": null }], "checks": [{ "path": "/topicSummaries", "length": 3 }] },
+    { "name": "a source count written as text is refused", "set": [{ "path": "/topicSummaries/0/sourceCount", "value": "3" }], "throws": true },
+    { "name": "a source count with a fraction is refused", "set": [{ "path": "/topicSummaries/0/sourceCount", "value": 2.5 }], "throws": true },
+    { "name": "a negative source count is refused", "set": [{ "path": "/topicSummaries/0/sourceCount", "value": -1 }], "throws": true },
+    { "name": "a source count too large to show exactly is refused", "set": [{ "path": "/topicSummaries/0/sourceCount", "value": 1e20 }], "throws": true },
+    { "name": "a mention count too large to show exactly is refused", "set": [{ "path": "/topicSummaries/0/topNeeds/1/mentions", "value": 9007199254740993 }], "throws": true },
+    { "name": "a review date that isn't text is refused", "set": [{ "path": "/topicSummaries/0/updatedAt", "value": 20260917 }], "throws": true },
+    { "name": "a reviewer written as a list is refused", "set": [{ "path": "/topicSummaries/0/reviewedBy", "value": ["Reviewer One"] }], "throws": true },
+    { "name": "a model that isn't text is refused", "set": [{ "path": "/topicSummaries/0/model", "value": true }], "throws": true },
+    { "name": "a mention count written as text is refused", "set": [{ "path": "/topicSummaries/0/topNeeds/1/mentions", "value": "2" }], "throws": true },
+    { "name": "a mention count with a fraction is refused", "set": [{ "path": "/topicSummaries/0/topNeeds/1/mentions", "value": 2.5 }], "throws": true },
+    { "name": "a stored mention count of zero is kept", "set": [{ "path": "/topicSummaries/0/topNeeds/1/mentions", "value": 0 }], "checks": [{ "path": "/topicSummaries/0/topNeeds/1/mentions", "equals": 0 }] }
   ]
 }

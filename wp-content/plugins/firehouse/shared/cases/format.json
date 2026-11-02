@@ -35,6 +35,13 @@
     { "name": "February 29 in a leap year is a date", "fn": "formatReviewDate", "args": ["2028-02-29"], "expected": "February 29, 2028" },
     { "name": "an IPv6 host keeps its brackets", "fn": "linkLabel", "args": ["https://[2001:db8::1]:8080/x/"], "expected": "[2001:db8::1]/x" },
     { "name": "a password with an @ in it isn't the host", "fn": "linkLabel", "args": ["https://user:p@ss@host.org/a"], "expected": "host.org/a" },
-    { "name": "an offset out of range isn't a time", "fn": "formatReviewDate", "args": ["2026-09-17T00:30:00+24:00"], "expected": "2026-09-17T00:30:00+24:00" }
+    { "name": "an offset out of range isn't a time", "fn": "formatReviewDate", "args": ["2026-09-17T00:30:00+24:00"], "expected": "2026-09-17T00:30:00+24:00" },
+    { "name": "hour 24 isn't rolled over into the next day", "fn": "formatReviewDate", "args": ["2026-09-17T24:00:00Z"], "expected": "2026-09-17T24:00:00Z" },
+    { "name": "minute 60 isn't a time", "fn": "formatReviewDate", "args": ["2026-09-17T23:60:00Z"], "expected": "2026-09-17T23:60:00Z" },
+    { "name": "an early year prints unpadded", "fn": "formatReviewDate", "args": ["0099-09-17"], "expected": "September 17, 99" },
+    { "name": "the year 0 isn't on the calendar", "fn": "formatReviewDate", "args": ["0000-01-01"], "expected": "0000-01-01" },
+    { "name": "a zone that takes a date back before the year 1 leaves it as written", "fn": "formatReviewDate", "args": ["0001-01-01T00:30:00+01:00"], "expected": "0001-01-01T00:30:00+01:00" },
+    { "name": "a backslash ends the host, as a browser reads it", "fn": "linkLabel", "args": ["https://evil.example\\@doi.org/10.1175/x"], "expected": "evil.example\\@doi.org/10.1175/x" },
+    { "name": "a link that isn't http or https comes back unchanged", "fn": "linkLabel", "args": ["s3://doi.org\\@evil.example/x"], "expected": "s3://doi.org\\@evil.example/x" }
   ]
 }

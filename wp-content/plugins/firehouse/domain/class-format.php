@@ -29,12 +29,14 @@ final class Format {
 	private const ISO_DATE = '/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)?)?$/D';
 
 	/**
-	 * A link: a scheme, then the host (after any user, up to the last "@", and before
-	 * any port; an IPv6 host in brackets), then the path. The label is built from them
-	 * as written, so a SICI DOI keeps its angle brackets and an international host
-	 * keeps its letters.
+	 * A web link: http or https, then the host (after any user, up to the last "@", and
+	 * before any port; an IPv6 host in brackets), then the path. The label is built
+	 * from them as written, so a SICI DOI keeps its angle brackets and an international
+	 * host keeps its letters. A backslash ends the host, as it does for a browser, so
+	 * "https://a.example\@doi.org/" can't be labeled as a doi.org link. Other schemes
+	 * read a backslash differently, so they aren't labeled.
 	 */
-	private const LINK = '/^[a-z][a-z0-9+.-]*:\/\/(?:[^\/?#]*@)?(\[[^\]\/?#]*\]|[^:\/?#]*)(?::[^\/?#]*)?([^?#]*)/i';
+	private const LINK = '/^https?:\/\/(?:[^\/\\\\?#]*@)?(\[[^\]\/\\\\?#]*\]|[^:\/\\\\?#]*)(?::[^\/\\\\?#]*)?([^?#]*)/i';
 
 	/**
 	 * Formats an ISO date for the "Last reviewed" lines: "September 17, 2026".
@@ -44,7 +46,8 @@ final class Format {
 	 * west of Greenwich, they would show the day before, including in every NOAA office.
 	 *
 	 * A date that isn't on the calendar (February 30, month 00, second 60) comes back
-	 * unchanged too, rather than rolled over into a date nobody wrote.
+	 * unchanged too, rather than rolled over into a date nobody wrote, and so does one
+	 * whose zone takes it back before the year 1.
 	 *
 	 * @param string $iso A date ("2026-09-17") or a date and time.
 	 * @return string The date in words, or the input unchanged if it isn't an ISO date.
@@ -66,7 +69,11 @@ final class Format {
 		}
 		// The year unpadded, as JavaScript prints it: 99, not 0099.
 		$date = $date->setTimezone( $utc );
-		return $date->format( 'F j, ' ) . (int) $date->format( 'Y' );
+		$year = (int) $date->format( 'Y' );
+		if ( $year < 1 ) {
+			return $iso;
+		}
+		return $date->format( 'F j, ' ) . $year;
 	}
 
 	/**
@@ -129,8 +136,8 @@ final class Format {
 	 *
 	 * @param string $url The link.
 	 * @return string The host, lowercased and without "www.", and the path without a
-	 *                trailing slash, both as written; or the input unchanged if it has
-	 *                no scheme and host.
+	 *                trailing slash, both as written; or the input unchanged if it isn't
+	 *                an http or https link with a host.
 	 */
 	public static function link_label( string $url ): string {
 		if ( ! preg_match( self::LINK, $url, $match ) || '' === $match[1] ) {

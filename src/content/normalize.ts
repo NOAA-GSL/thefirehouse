@@ -92,6 +92,41 @@ function assertRegionKeys(values: unknown, where: string) {
 }
 
 /**
+ * A list a page reads item by item. Missing is none; anything else that isn't a list
+ * is refused, since the page's `join` and `map` would crash on it.
+ */
+function assertList<T>(value: T[] | null | undefined, where: string): T[] {
+  if (value == null) return [];
+  if (!Array.isArray(value)) throw new ContentError(`${where} must be a list.`);
+  return value;
+}
+
+/**
+ * A count a page shows: none, or a whole number from zero up. Safe integers only:
+ * past them JavaScript loses digits and PHP can't hold the number exactly.
+ */
+function isCount(value: unknown): boolean {
+  return value == null || (Number.isSafeInteger(value) && (value as number) >= 0);
+}
+
+/**
+ * The synthesis line's fields: text where it shows text, a whole number where it
+ * counts. The PHP port passes over anything else where this would show it as
+ * written, so the two would show different lines.
+ */
+function assertSynthesisLine(summary: TopicSummary, where: string) {
+  for (const field of ['updatedAt', 'model', 'reviewedBy'] as const) {
+    const value: unknown = summary[field];
+    if (value != null && typeof value !== 'string') {
+      throw new ContentError(`${where}.${field} must be text.`);
+    }
+  }
+  if (!isCount(summary.sourceCount)) {
+    throw new ContentError(`${where}.sourceCount must be a whole number, 0 or more.`);
+  }
+}
+
+/**
  * Need/recommendation entries. A bare string is accepted as a stand-alone need, so a
  * CMS that stores the older flat list still renders rather than failing the load.
  */
@@ -213,21 +248,30 @@ export function normalizeSiteContent(raw: RawSiteContent): SiteContent {
     (raw.projects as Project[]).filter((p) => p.published && p.irbApproved === true).map((p) => p.slug),
   );
 
-  const topicSummaries = (raw.topicSummaries as TopicSummary[]).map((summary) => ({
-    ...summary,
-    topic: assertTopicKey(summary.topic, `topicSummaries["${summary.topic}"]`),
-    // Older passes stored plain strings; accept them so a CMS mid-migration still renders.
-    topNeeds: (summary.topNeeds as (TopNeed | string)[]).map((need) => {
-      const entry = typeof need === 'string' ? { text: need } : need;
-      // A citation to an unpublished (or IRB-excluded) project must not become a
-      // link or a count on the public site.
-      const projects = entry.projects?.filter((slug) => publishedSlugs.has(slug));
-      // Nor may its mentions: a stored count that includes a dropped project would
-      // over-report, so fall back to the count of what is actually public.
-      const dropped = (entry.projects?.length ?? 0) !== (projects?.length ?? 0);
-      return { ...entry, projects, mentions: dropped ? undefined : entry.mentions };
-    }),
-  }));
+  const topicSummaries = (raw.topicSummaries as TopicSummary[]).map((summary) => {
+    const topic = assertTopicKey(summary.topic, `topicSummaries["${summary.topic}"]`);
+    assertSynthesisLine(summary, `topicSummaries["${topic}"]`);
+    return {
+      ...summary,
+      topic,
+      // Older passes stored plain strings; accept them so a CMS mid-migration still renders.
+      topNeeds: (summary.topNeeds as (TopNeed | string)[]).map((need, index) => {
+        const entry = typeof need === 'string' ? { text: need } : need;
+        if (!isCount(entry.mentions)) {
+          throw new ContentError(
+            `topicSummaries["${topic}"].topNeeds[${index}].mentions must be a whole number, 0 or more.`,
+          );
+        }
+        // A citation to an unpublished (or IRB-excluded) project must not become a
+        // link or a count on the public site.
+        const projects = entry.projects?.filter((slug) => publishedSlugs.has(slug));
+        // Nor may its mentions: a stored count that includes a dropped project would
+        // over-report, so fall back to the count of what is actually public.
+        const dropped = (entry.projects?.length ?? 0) !== (projects?.length ?? 0);
+        return { ...entry, projects, mentions: dropped ? undefined : entry.mentions };
+      }),
+    };
+  });
 
   const projects = (raw.projects as Project[])
     // ---- Survey skip logic, enforced at the boundary -------------------------
@@ -263,10 +307,10 @@ export function normalizeSiteContent(raw: RawSiteContent): SiteContent {
         geo: project.geo
           ? { ...project.geo, regions: assertRegionKeys(project.geo.regions, where) }
           : undefined,
-        methods: project.methods ?? [],
-        takeaways: project.takeaways ?? [],
+        methods: assertList(project.methods, `${where} methods`),
+        takeaways: assertList(project.takeaways, `${where} takeaways`),
         needs: normalizeNeeds(project.needs, where),
-        papers: project.papers ?? [],
+        papers: assertList(project.papers, `${where} papers`),
         // A real boolean, so every check after this one reads the flag the same way,
         // and the PHP port, which coerces it too, agrees.
         published: Boolean(project.published),

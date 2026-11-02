@@ -35,6 +35,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class Normalize {
 
 	/**
+	 * JavaScript's Number.MAX_SAFE_INTEGER: past it, a count would show differently in
+	 * the two languages.
+	 */
+	private const MAX_SAFE_INTEGER = 9007199254740991;
+
+	/**
 	 * Checks and normalizes the whole site.
 	 *
 	 * The input may hold Json_Object values from Json::decode(); they let the list
@@ -54,6 +60,7 @@ final class Normalize {
 		if ( ! is_array( $raw ) ) {
 			throw new Content_Error( esc_html( 'The content isn’t an object of settings, topics, projects and pages.' ) );
 		}
+		self::utf8( $raw, '' );
 
 		$settings = $raw['settings'] ?? null;
 		if ( ! is_array( $settings ) ) {
@@ -89,6 +96,36 @@ final class Normalize {
 				'about'          => self::about( $raw['about'] ?? null, $submit_form_url ),
 			)
 		);
+	}
+
+	/**
+	 * Refuses text that isn't valid UTF-8, in a value or a key, anywhere in the
+	 * content, including projects that are dropped later: a file with broken text is
+	 * refused whole. JSON can't hold such text, but post meta can, and esc_html()
+	 * prints it as nothing: a byline or a biography would show empty.
+	 *
+	 * @param mixed  $value The value.
+	 * @param string $where Where it is, as a JSON Pointer, for messages.
+	 * @throws Content_Error When a string or a key isn't valid UTF-8.
+	 */
+	private static function utf8( mixed $value, string $where ): void {
+		if ( is_string( $value ) && 1 !== preg_match( '//u', $value ) ) {
+			throw new Content_Error( esc_html( sprintf( 'The text at %s isn’t valid UTF-8.', $where ) ) );
+		}
+		if ( $value instanceof Json_Object ) {
+			$value = $value->getArrayCopy();
+		}
+		if ( ! is_array( $value ) ) {
+			return;
+		}
+		foreach ( $value as $key => $item ) {
+			$key = (string) $key;
+			if ( 1 !== preg_match( '//u', $key ) ) {
+				throw new Content_Error( esc_html( sprintf( 'A key at %s isn’t valid UTF-8.', '' === $where ? 'the top level' : $where ) ) );
+			}
+			// A JSON Pointer escapes "~" and "/" in a key, so "a/b" can't read as a path.
+			self::utf8( $item, $where . '/' . str_replace( array( '~', '/' ), array( '~0', '~1' ), $key ) );
+		}
 	}
 
 	/**
@@ -158,8 +195,9 @@ final class Normalize {
 	 * @param mixed               $raw             The raw summaries.
 	 * @param array<string, true> $published_slugs Slugs a need may link to.
 	 * @return list<array<string, mixed>>
-	 * @throws Content_Error When a summary names an unknown topic, or its needs or
-	 *                       their projects aren't lists.
+	 * @throws Content_Error When a summary names an unknown topic, a field of its
+	 *                       synthesis line or a need's count is the wrong kind of
+	 *                       value, or its needs or their projects aren't lists.
 	 */
 	private static function topic_summaries( mixed $raw, array $published_slugs ): array {
 		$summaries = array();
@@ -167,15 +205,19 @@ final class Normalize {
 			$topic            = is_array( $summary ) ? ( $summary['topic'] ?? null ) : null;
 			$summary          = is_array( $summary ) ? $summary : array();
 			$summary['topic'] = self::topic_key( $topic, sprintf( 'topicSummaries[“%s”]', self::text( $topic ) ) );
-			$where            = sprintf( 'topicSummaries[“%s”].topNeeds', $summary['topic'] );
+			self::synthesis_line( $summary, sprintf( 'topicSummaries[“%s”]', $summary['topic'] ) );
+			$where = sprintf( 'topicSummaries[“%s”].topNeeds', $summary['topic'] );
 
 			$needs = array();
-			foreach ( self::list_of( $summary['topNeeds'] ?? null, $where ) as $need ) {
+			foreach ( self::list_of( $summary['topNeeds'] ?? null, $where ) as $index => $need ) {
 				$entry = is_string( $need ) ? array( 'text' => $need ) : $need;
 				// An empty object is an object: the TypeScript keeps it, with nothing to link.
 				$entry = $entry instanceof Json_Object ? $entry->getArrayCopy() : $entry;
 				if ( ! is_array( $entry ) ) {
 					throw new Content_Error( esc_html( sprintf( '%s has an entry that isn’t a need.', $where ) ) );
+				}
+				if ( ! self::is_count( $entry['mentions'] ?? null ) ) {
+					throw new Content_Error( esc_html( sprintf( '%s[%d].mentions must be a whole number, 0 or more.', $where, $index ) ) );
 				}
 				if ( isset( $entry['projects'] ) ) {
 					$listed = self::list_of( $entry['projects'], $where . ' projects' );
@@ -204,8 +246,8 @@ final class Normalize {
 	 * The projects, without those lacking IRB approval or exemption.
 	 *
 	 * Those are dropped here, before anything else sees them, so no page, count or
-	 * link can reach one. A project that is dropped isn't checked either: it is never
-	 * shown.
+	 * link can reach one. A project that is dropped isn't checked either, since it is
+	 * never shown; only the check for broken text in site_content() reads it.
 	 *
 	 * @param mixed[] $raw The raw projects.
 	 * @return list<array<string, mixed>>
@@ -257,10 +299,12 @@ final class Normalize {
 				unset( $project['geo'] );
 			}
 
-			$project['methods']   = $project['methods'] ?? array();
-			$project['takeaways'] = $project['takeaways'] ?? array();
+			// Missing is none; anything else that isn't a list is refused, as a page reads
+			// these item by item.
+			$project['methods']   = self::list_of( $project['methods'] ?? array(), $where . ' methods' );
+			$project['takeaways'] = self::list_of( $project['takeaways'] ?? array(), $where . ' takeaways' );
 			$project['needs']     = self::needs( $project['needs'] ?? null, $where );
-			$project['papers']    = $project['papers'] ?? array();
+			$project['papers']    = self::list_of( $project['papers'] ?? array(), $where . ' papers' );
 			$project['published'] = Js::truthy( $project['published'] ?? false );
 
 			$projects[] = $project;
@@ -445,6 +489,38 @@ final class Normalize {
 			$link['href'] = $submit_form_url;
 		}
 		return $link;
+	}
+
+	/**
+	 * The synthesis line's fields: text where it shows text, a whole number where it
+	 * counts. Derive passes over anything else where the TypeScript shows it as
+	 * written, so the two would show different lines.
+	 *
+	 * @param array<string, mixed> $summary One synthesis.
+	 * @param string               $where   Which, for messages.
+	 * @throws Content_Error When a field is the wrong kind of value.
+	 */
+	private static function synthesis_line( array $summary, string $where ): void {
+		foreach ( array( 'updatedAt', 'model', 'reviewedBy' ) as $field ) {
+			if ( null !== ( $summary[ $field ] ?? null ) && ! is_string( $summary[ $field ] ) ) {
+				throw new Content_Error( esc_html( sprintf( '%s.%s must be text.', $where, $field ) ) );
+			}
+		}
+		if ( ! self::is_count( $summary['sourceCount'] ?? null ) ) {
+			throw new Content_Error( esc_html( sprintf( '%s.sourceCount must be a whole number, 0 or more.', $where ) ) );
+		}
+	}
+
+	/**
+	 * Whether a value is a count a page may show: none, or a whole number from zero up
+	 * to JavaScript's largest exact one, as Number.isSafeInteger() has it. A whole
+	 * float counts: 2.0 does, 2.5 doesn't.
+	 *
+	 * @param mixed $value The value.
+	 */
+	private static function is_count( mixed $value ): bool {
+		$whole = is_int( $value ) || ( is_float( $value ) && floor( $value ) === $value );
+		return null === $value || ( $whole && $value >= 0 && $value <= self::MAX_SAFE_INTEGER );
 	}
 
 	/**
