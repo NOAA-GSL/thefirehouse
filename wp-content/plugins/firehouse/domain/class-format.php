@@ -23,9 +23,10 @@ final class Format {
 	/**
 	 * An ISO date, or a date and time with or without a zone, captured in parts so the
 	 * calendar can be checked. Nothing looser counts, so "tomorrow" can't become a
-	 * "Last reviewed" date.
+	 * "Last reviewed" date. A zone offset has to be a real one (up to ±23:59): PHP
+	 * would read "+24:00" and move the day.
 	 */
-	private const ISO_DATE = '/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})?)?$/D';
+	private const ISO_DATE = '/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)?)?$/D';
 
 	/**
 	 * A link: a scheme, then the host (after any user, up to the last "@", and before

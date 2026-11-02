@@ -75,6 +75,9 @@
     { "name": "a project with no slug", "remove": ["/projects/1/slug"], "throws": true },
     { "name": "a project with an empty slug", "set": [{ "path": "/projects/1/slug", "value": "" }], "throws": true },
     { "name": "the published flag is read as true or false", "set": [{ "path": "/projects/1/published", "value": "yes" }], "checks": [{ "path": "/projects/1/published", "equals": true }] },
-    { "name": "a legacy author string loses the spaces JavaScript trims", "set": [{ "path": "/projects/2/author", "value": "\u00a0Dee Legacy\u2003" }], "checks": [{ "path": "/projects/2/authors", "equals": [{ "name": "Dee Legacy" }] }] }
+    { "name": "a legacy author string loses the spaces JavaScript trims", "set": [{ "path": "/projects/2/author", "value": "\u00a0Dee Legacy\u2003" }], "checks": [{ "path": "/projects/2/authors", "equals": [{ "name": "Dee Legacy" }] }] },
+    { "name": "fire phases with numbered keys are still an object, so none", "set": [{ "path": "/projects/0/firePhases", "value": { "0": "before" } }], "checks": [{ "path": "/projects/0/firePhases", "equals": [] }] },
+    { "name": "needs written as an empty object are none", "set": [{ "path": "/projects/1/needs", "value": {} }], "checks": [{ "path": "/projects/1/needs", "equals": [] }] },
+    { "name": "authors written as an empty object are refused", "set": [{ "path": "/projects/1/authors", "value": {} }], "throws": true }
   ]
 }

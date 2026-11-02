@@ -1,9 +1,10 @@
 /**
  * An ISO date, or a date and time; nothing looser ("tomorrow") counts. Captured in
- * parts so the calendar can be checked.
+ * parts so the calendar can be checked. A zone offset has to be a real one (up to
+ * ±23:59), as the PHP port requires too.
  */
 const ISO_DATE =
-  /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(Z|[+-]\d{2}:\d{2})?)?$/;
+  /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)?)?$/;
 
 /** Whether a written date and time is on the calendar and the clock. */
 function isRealDate(parts: RegExpExecArray): boolean {

@@ -10,6 +10,7 @@ declare( strict_types = 1 );
 namespace Firehouse\Tests;
 
 use Firehouse\Domain\Content_Error;
+use Firehouse\Domain\Json_Object;
 use Firehouse\Domain\Normalize;
 use PHPUnit\Framework\Attributes\DataProvider;
 
@@ -114,6 +115,7 @@ final class NormalizeTest extends DomainTestCase {
 		return array(
 			'no topics'                     => array( '/topics', self::REMOVE ),
 			'no projects'                   => array( '/projects', self::REMOVE ),
+			'projects as an empty object'   => array( '/projects', new Json_Object() ),
 			'no syntheses'                  => array( '/topicSummaries', self::REMOVE ),
 			'a synthesis with no needs'     => array( '/topicSummaries/0/topNeeds', self::REMOVE ),
 			'a need that is null'           => array( '/topicSummaries/0/topNeeds/0', null ),

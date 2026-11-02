@@ -34,6 +34,7 @@
     { "name": "second 60 isn't a time", "fn": "formatReviewDate", "args": ["2026-09-17T23:59:60Z"], "expected": "2026-09-17T23:59:60Z" },
     { "name": "February 29 in a leap year is a date", "fn": "formatReviewDate", "args": ["2028-02-29"], "expected": "February 29, 2028" },
     { "name": "an IPv6 host keeps its brackets", "fn": "linkLabel", "args": ["https://[2001:db8::1]:8080/x/"], "expected": "[2001:db8::1]/x" },
-    { "name": "a password with an @ in it isn't the host", "fn": "linkLabel", "args": ["https://user:p@ss@host.org/a"], "expected": "host.org/a" }
+    { "name": "a password with an @ in it isn't the host", "fn": "linkLabel", "args": ["https://user:p@ss@host.org/a"], "expected": "host.org/a" },
+    { "name": "an offset out of range isn't a time", "fn": "formatReviewDate", "args": ["2026-09-17T00:30:00+24:00"], "expected": "2026-09-17T00:30:00+24:00" }
   ]
 }

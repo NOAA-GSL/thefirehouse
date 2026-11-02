@@ -34,6 +34,8 @@ const VERSION = '0.1.0';
 
 require_once __DIR__ . '/domain/class-content-error.php';
 require_once __DIR__ . '/domain/class-js.php';
+require_once __DIR__ . '/domain/class-json-object.php';
+require_once __DIR__ . '/domain/class-json.php';
 require_once __DIR__ . '/domain/class-vocabulary.php';
 require_once __DIR__ . '/domain/class-format.php';
 require_once __DIR__ . '/domain/class-derive.php';

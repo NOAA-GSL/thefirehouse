@@ -9,6 +9,8 @@ declare( strict_types = 1 );
 
 namespace Firehouse\Tests;
 
+use Firehouse\Domain\Json;
+use Firehouse\Domain\Json_Object;
 use Firehouse\Domain\Normalize;
 
 /**
@@ -22,14 +24,14 @@ use Firehouse\Domain\Normalize;
 final class Cases {
 
 	/**
-	 * One decoded file in shared/cases/.
+	 * One decoded file in shared/cases/, read through Json::decode() so an empty or
+	 * numbered object in a case stays an object, as it does in JavaScript.
 	 *
 	 * @param string $file The file name.
 	 * @return array<string, mixed>
 	 */
 	public static function read( string $file ): array {
-		$json = file_get_contents( dirname( __DIR__ ) . '/shared/cases/' . $file );
-		return json_decode( (string) $json, true, 512, JSON_THROW_ON_ERROR );
+		return Json::decode( (string) file_get_contents( dirname( __DIR__ ) . '/shared/cases/' . $file ) );
 	}
 
 	/**
@@ -118,6 +120,9 @@ final class Cases {
 	 * @return mixed
 	 */
 	public static function canonical( mixed $value ): mixed {
+		if ( $value instanceof Json_Object ) {
+			$value = $value->getArrayCopy();
+		}
 		if ( ! is_array( $value ) ) {
 			return $value;
 		}
