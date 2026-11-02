@@ -45,6 +45,17 @@
 
     { "name": "a one-string biography becomes one paragraph", "checks": [{ "path": "/about/team/members/0/bio", "equals": ["A one-paragraph biography."] }] },
     { "name": "empty biography paragraphs are dropped", "set": [{ "path": "/about/team/members/0/bio", "value": ["First.", "  ", "Second."] }], "checks": [{ "path": "/about/team/members/0/bio", "equals": ["First.", "Second."] }] },
+    { "name": "the team's address and the disclaimers are kept as written", "set": [
+      { "path": "/about/team/email", "value": "the.team@noaa.gov" },
+      { "path": "/about/team/emailLead", "value": "Write to the team at" },
+      { "path": "/about/disclaimer", "value": "Their views are their own, not NOAA’s." },
+      { "path": "/landing/disclaimer", "value": "Their views are their own, not NOAA’s." }
+    ], "checks": [
+      { "path": "/about/team/email", "equals": "the.team@noaa.gov" },
+      { "path": "/about/team/emailLead", "equals": "Write to the team at" },
+      { "path": "/about/disclaimer", "equals": "Their views are their own, not NOAA’s." },
+      { "path": "/landing/disclaimer", "equals": "Their views are their own, not NOAA’s." }
+    ] },
 
     { "name": "no settings", "remove": ["/settings"], "throws": true },
     { "name": "no survey address", "set": [{ "path": "/settings/submitFormUrl", "value": "" }], "throws": true },
