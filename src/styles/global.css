@@ -61,8 +61,8 @@ svg {
 
 /* Section 508 / WCAG 2.1 AA: the design system specifies a 3px sky-blue focus
    ring on every interactive element, and says it is never to be removed.
-   Applied globally with :focus-visible so it shows for keyboard users without
-   ringing on mouse clicks. */
+   Applied to everything inside the wrapper with :focus-visible, so it shows for
+   keyboard users without ringing on mouse clicks. */
 :focus-visible {
   outline: var(--focus-ring-width) solid var(--color-focus-ring);
   outline-offset: 2px;

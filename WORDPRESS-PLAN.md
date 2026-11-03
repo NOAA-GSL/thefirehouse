@@ -374,11 +374,16 @@ in a rewrite.
    such as a new fire phase, is a code change that waits on a reviewed release: the
    form can't offer the new option until then.
 9. **CSS is walled off in both directions.**
-   - Outward: tokens on `:root`, the `body` background and its fixed atmosphere layer,
-     the `*` and `img, svg` rules and the global `:focus-visible` ring all move under an
-     `.fh-app` wrapper.
-   - Inward: the theme's element styles for headings, links, lists and buttons would
-     otherwise reach Firehouse markup, so the wrapper gets a small reset.
+   - Outward: every rule moves under an `.fh-app` wrapper (`scripts/scope-css.ts`): the
+     tokens on `:root`, the `body` styles and the fixed atmosphere layer, the `*` and
+     `img, svg` rules and the `:focus-visible` ring. A theme condition stays on
+     `<html>`. The build stops on any rule that could match outside the wrapper.
+   - Inward: the theme's global styles would reach Firehouse markup, so inside the
+     wrapper a small reset puts back the browser's margins and padding and the fonts of
+     headings, paragraphs and lists (`src/styles/inward-reset.css`). The theme's other
+     element styles, on links and buttons for example, lose to Firehouse's own rules.
+     The reset beats only element selectors, so the wrapper sits outside the theme's
+     content wrappers.
    - Both contrast audits are re-run on pages inside GSL's header and footer.
 10. **Accessibility is re-earned, not assumed.** The React code handles many details
     on purpose:
@@ -814,18 +819,36 @@ ones.
 
 - CSS moved into the plugin and scoped under `.fh-app`, with the inward reset. *Done
   3 November: `npm run plugin:css` writes `assets/css/firehouse.css` from the site's own
-  build, which scopes every stylesheet with `scripts/scope-css.ts`, and CI checks the
-  file is current. The React site renders inside `#root.fh-app`, and its screenshots
-  match the unscoped build pixel for pixel, apart from the page canvas, which now shows
-  only when a page is overscrolled. The atmosphere layer is fixed to the
-  viewport, so inside GSL's page it would show wherever the theme's header and footer
-  are transparent; the templates settle how it's contained.*
+  build, which scopes every stylesheet with `scripts/scope-css.ts`. CI checks the file
+  is current, and the build stops on anything that could match outside the wrapper or
+  load from elsewhere. The React site renders inside `#root.fh-app`, and its reference
+  screenshots match the unscoped build pixel for pixel. With the theme's stylesheet
+  added to the static pages, no element's computed style changes, across the 15
+  properties checked, at rest.*
 - Icons as SVG, logos, and fonts. Fonts are self-hosted if Archivo and Public Sans are
   kept.
 - Firehouse page templates, chosen with the `template_include` filter, that call
   GSL's `get_header()` and `get_footer()`, with full-width sections between them.
   GSL's theme is classic, so no Site Editor copy of a template can override the
-  plugin's.
+  plugin's. Found while scoping the CSS, and settled here against the real theme:
+  - The atmosphere layer is fixed to the viewport and joins whatever stacking context
+    holds the wrapper. Inside a theme wrapper that forms one, it paints over the
+    footer, hiding links that stay focusable; elsewhere it shows through transparent
+    parts of the header and footer, or hides behind an opaque wrapper. It has to be
+    contained to the wrapper's box, and the contrast audits re-run against the result.
+  - The project dialog's overlay sits below a theme header with a higher stacking
+    order, close button included. A native `<dialog>` opened with `showModal()`
+    (rule 10) sits above everything and makes the rest of the page inert.
+  - The skip link hides by sitting above its wrapper, which works only at the top of a
+    page. It belongs before the theme's header, hidden by clipping.
+  - The wrapper sits outside the theme's content wrappers, whose rules beat the reset,
+    and `firehouse.css` loads after the theme's stylesheet, so ties go to Firehouse.
+  - The wrapper's `min-height: 100vh` pushes the footer down on a short page.
+  - The wrapper sets `color-scheme`, which nothing else on the theme's page does, and
+    a `[hidden]` rule that wins over Firehouse's own `display` values before the
+    Interactivity API starts setting `hidden`.
+  - The computed-style check re-runs inside the real template, with WordPress's own
+    styles, on hover and focus as well as at rest.
 - Dark colors keyed to GSL's light/dark toggle, if dark mode is kept (open
   question 9).
 - The Firehouse bar (`firehouse/subnav`), including whether it stays pinned under

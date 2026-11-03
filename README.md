@@ -41,7 +41,7 @@ from the Claude Design project. Every deviation is listed under
 src/
   design-system/    The Firehouse design system, ported to React. Pages import
                     only from here — never raw token values.
-  styles/tokens/    colors / typography / spacing, ported byte-faithfully.
+  styles/tokens/    colors / typography / spacing / glass, ported byte-faithfully.
   styles/           global.css, a11y-overrides.css, inward-reset.css, page-shell.css
   content/          CMS-agnostic content layer (see below)
   pages/            Landing, Projects, Project, Topic, About and NotFound pages
@@ -57,6 +57,7 @@ wp-content/plugins/firehouse/
                     The WordPress plugin, below). So far: firehouse.php, which
                     loads the content logic in PHP (domain/); the shared
                     vocabularies and test cases; and the PHP tests.
+                    assets/css/firehouse.css is generated from src/.
 ```
 
 ### The design system
@@ -79,6 +80,10 @@ Three deliberate changes to how they're built, none to how they look:
   an unknown icon name is a compile error rather than an empty box.
 - **`Button` is polymorphic.** Renders `<button>`, a router `<Link>`, or an `<a>`.
   "Submit a Finding" goes off-site to the Google Form and has to be a real link.
+
+Every stylesheet is scoped under `.fh-app` at build time (see The WordPress plugin,
+below), so selectors are written as usual. After changing one, run `npm run plugin:css`
+to update the plugin's copy, or CI fails.
 
 ### The content layer
 
@@ -220,8 +225,10 @@ overrides are isolated so a re-sync doesn't lose them.
       nothing. A `sitemap.xml` of the project pages would have to be listed in GSL's
       own `robots.txt` or submitted to search engines directly.
 - [ ] **Decide on self-hosted fonts.** Archivo and Public Sans load from Google
-      Fonts. Some agencies prohibit third-party CDN calls; swapping the `@import` in
-      `tokens/typography.css` for local `@font-face` is the only change needed.
+      Fonts. Some agencies prohibit third-party CDN calls. For this static build,
+      swapping the `@import` in `tokens/typography.css` for local `@font-face` is the
+      only change needed. The plugin's copy leaves the `@import` out and will load
+      its fonts itself (plan open question 10).
 - [ ] **Run an audit with a real screen reader**, and check the remaining federal
       requirements the brief flags as unconfirmed (USWDS conventions, privacy
       notice, .gov branding).
@@ -335,15 +342,18 @@ the same ones `npm test` runs. Search isn't ported yet: whether the explorer nee
 PHP version depends on whether the site must work without JavaScript (plan open
 question 11).
 
-`assets/css/firehouse.css` is the site's own CSS, scoped under `.fh-app` so it can sit
-inside GSL's theme without reaching the theme's header and footer (plan rule 9). Don't
+`assets/css/firehouse.css` is the site's CSS, scoped under `.fh-app` so it can sit
+inside GSL's theme without reaching the theme's header and footer (plan rule 9). It
+leaves out what GSL's theme replaces (the static build's page shell, gov banner and
+footer), the coverage map's CSS until Phase 5, and the Google Fonts `@import`. Don't
 edit it: `npm run plugin:css` writes it from `src/`, and CI fails if it falls behind.
 The site's own build scopes every stylesheet the same way (`scripts/scope-css.ts`), with
-`#root` as the wrapper, so the reference screenshots check the scoping.
+`#root` as the wrapper, so the static site runs on the same CSS the plugin gets, and
+the build stops on any rule that could match outside the wrapper.
 `src/styles/inward-reset.css` undoes GSL's element styles inside the wrapper, and
-`src/styles/page-shell.css`, which styles the static build's own `<body>`, is the one
-stylesheet left unscoped. Nothing loads the file yet: the page templates come later in
-Phase 3.
+`src/styles/page-shell.css`, which styles the static build's own `<html>` and
+`<body>`, is the one stylesheet left unscoped. Nothing loads the plugin's copy yet: the
+page templates come later in Phase 3.
 
 The local WordPress runs in Docker and borrows GSL's theme, WordPress images and
 database from a checkout of GSL's internal gsl-wordpress repository beside this one

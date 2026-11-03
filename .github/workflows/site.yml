@@ -1,8 +1,8 @@
 name: Site
 
 # Type check and tests for the React site, the shared test cases and vocabulary in
-# wp-content/plugins/firehouse/shared, and a check that the project and topic schemas
-# are current.
+# wp-content/plugins/firehouse/shared, and checks that the project and topic schemas
+# and the plugin's stylesheet (assets/css/firehouse.css) are current.
 
 on:
   push:

@@ -49,8 +49,16 @@
     return [0, 1, 2].map((i) => fg[i] * a + bg[i] * (1 - a));
   };
 
+  // The page's base colour comes from the atmosphere layer, `.fh-app::before`, whose
+  // background ends in --atmos-base. The wrapper and <body> carry none of their own.
+  function pageBase() {
+    const app = document.querySelector('.fh-app');
+    const color = parse(getComputedStyle(app ?? document.body, app ? '::before' : null).backgroundColor);
+    return color[3] > 0 ? color.slice(0, 3).concat(1) : [255, 255, 255, 1];
+  }
+
   function backdropOf(el) {
-    const root = parse(getComputedStyle(document.body).backgroundColor).slice(0, 3).concat(1);
+    const root = pageBase();
     const stack = [];
     for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
       const c = parse(getComputedStyle(n).backgroundColor);

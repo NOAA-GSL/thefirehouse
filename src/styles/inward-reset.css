@@ -11,7 +11,12 @@
 
    `revert` returns a property to the browser's default. The reset names only the
    properties the theme sets: `all: revert` would also discard SVG attributes such as
-   `fill` and `width`. */
+   `fill` and `width`.
+
+   Two conditions. The wrapper has to sit outside the theme's own content wrappers:
+   their rules weigh a class and an element (0,1,1) and beat this. And a Firehouse
+   rule written at zero weight, such as `:where(.fh-x) { margin: 0 }`, would tie with
+   the reset once scoped, and lose, because this file loads last with global.css. */
 :where(*) {
   margin: revert;
   padding: revert;

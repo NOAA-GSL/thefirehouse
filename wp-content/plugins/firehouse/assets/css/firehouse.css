@@ -5,7 +5,7 @@
  * Every rule is scoped under .fh-app (WORDPRESS-PLAN.md rule 9), in the order the
  * site loads them. Left out: the static build's page shell, gov banner and footer,
  * which GSL's theme replaces; the coverage map, which arrives with the map; and the
- * fonts, which the plugin loads itself.
+ * fonts, which the plugin will load itself.
  */
 
 /* Design system Button.
@@ -4216,7 +4216,12 @@
 
    `revert` returns a property to the browser's default. The reset names only the
    properties the theme sets: `all: revert` would also discard SVG attributes such as
-   `fill` and `width`. */
+   `fill` and `width`.
+
+   Two conditions. The wrapper has to sit outside the theme's own content wrappers:
+   their rules weigh a class and an element (0,1,1) and beat this. And a Firehouse
+   rule written at zero weight, such as `:where(.fh-x) { margin: 0 }`, would tie with
+   the reset once scoped, and lose, because this file loads last with global.css. */
 .fh-app :where(*) {
   margin: revert;
   padding: revert;
@@ -4229,9 +4234,12 @@
   line-height: revert;
 }
 
-.fh-app, .fh-app *,
-.fh-app::before, .fh-app *::before,
-.fh-app::after, .fh-app *::after {
+.fh-app,
+.fh-app *,
+.fh-app::before,
+.fh-app *::before,
+.fh-app::after,
+.fh-app *::after {
   box-sizing: border-box;
 }
 
@@ -4283,8 +4291,8 @@
 
 /* Section 508 / WCAG 2.1 AA: the design system specifies a 3px sky-blue focus
    ring on every interactive element, and says it is never to be removed.
-   Applied globally with :focus-visible so it shows for keyboard users without
-   ringing on mouse clicks. */
+   Applied to everything inside the wrapper with :focus-visible, so it shows for
+   keyboard users without ringing on mouse clicks. */
 .fh-app :focus-visible {
   outline: var(--focus-ring-width) solid var(--color-focus-ring);
   outline-offset: 2px;
@@ -4299,9 +4307,12 @@
 /* Reduced motion: the design system only uses 120–150ms functional transitions,
    but honour the preference anyway. */
 @media (prefers-reduced-motion: reduce) {
-  .fh-app, .fh-app *,
-  .fh-app::before, .fh-app *::before,
-  .fh-app::after, .fh-app *::after {
+  .fh-app,
+  .fh-app *,
+  .fh-app::before,
+  .fh-app *::before,
+  .fh-app::after,
+  .fh-app *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
