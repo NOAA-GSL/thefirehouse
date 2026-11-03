@@ -2,6 +2,7 @@ import { copyFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+import { scopeFirehouse } from './scripts/scope-css';
 
 const OUT_DIR = 'dist';
 
@@ -86,6 +87,10 @@ export default defineConfig({
   base: process.env.VITE_BASE_PATH ?? '/',
   build: { outDir: OUT_DIR },
   plugins: [react(), siteMeta(), spaFallback()],
+  // Every rule is scoped under `.fh-app` (`#root` here), as the plugin needs inside
+  // GSL's theme (WORDPRESS-PLAN.md rule 9), so this build checks the scoping. The page
+  // shell styles the static build's own `<body>` and stays outside.
+  css: { postcss: { plugins: [scopeFirehouse({ exclude: [/\/src\/styles\/page-shell\.css$/] })] } },
   // PORT lets a harness (or a second checkout) run the dev server somewhere else
   // when 5173 is already taken; 5173 stays the default everyone knows.
   server: { port: Number(process.env.PORT) || 5173 },

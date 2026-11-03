@@ -812,7 +812,14 @@ ones.
 
 ### Phase 3 — Design system and frame (2 weeks)
 
-- CSS moved into the plugin and scoped under `.fh-app`, with the inward reset.
+- CSS moved into the plugin and scoped under `.fh-app`, with the inward reset. *Done
+  3 November: `npm run plugin:css` writes `assets/css/firehouse.css` from the site's own
+  build, which scopes every stylesheet with `scripts/scope-css.ts`, and CI checks the
+  file is current. The React site renders inside `#root.fh-app`, and its screenshots
+  match the unscoped build pixel for pixel, apart from the page canvas, which now shows
+  only when a page is overscrolled. The atmosphere layer is fixed to the
+  viewport, so inside GSL's page it would show wherever the theme's header and footer
+  are transparent; the templates settle how it's contained.*
 - Icons as SVG, logos, and fonts. Fonts are self-hosted if Archivo and Public Sans are
   kept.
 - Firehouse page templates, chosen with the `template_include` filter, that call

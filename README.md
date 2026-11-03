@@ -12,6 +12,7 @@ npm run preview    # serve the production build
 npm test           # shared test cases for normalize, derive, search and format
 npm run schema     # regenerate shared/*.schema.json from types.ts
 npm run seed       # write seed/firehouse-seed.json for the plugin's Import screen
+npm run plugin:css # write the plugin's stylesheet from src/, scoped under .fh-app
 npm run reference  # capture the reference the plugin matches (reference/README.md)
 ```
 
@@ -41,7 +42,7 @@ src/
   design-system/    The Firehouse design system, ported to React. Pages import
                     only from here — never raw token values.
   styles/tokens/    colors / typography / spacing, ported byte-faithfully.
-  styles/           global.css, a11y-overrides.css
+  styles/           global.css, a11y-overrides.css, inward-reset.css, page-shell.css
   content/          CMS-agnostic content layer (see below)
   pages/            Landing, Projects, Project, Topic, About and NotFound pages
   components/       Layout, ThemeProvider, SynthesisNote, Disclaimer
@@ -333,6 +334,16 @@ They pass the cases in `shared/cases/derive.json`, `format.json` and `normalize.
 the same ones `npm test` runs. Search isn't ported yet: whether the explorer needs a
 PHP version depends on whether the site must work without JavaScript (plan open
 question 11).
+
+`assets/css/firehouse.css` is the site's own CSS, scoped under `.fh-app` so it can sit
+inside GSL's theme without reaching the theme's header and footer (plan rule 9). Don't
+edit it: `npm run plugin:css` writes it from `src/`, and CI fails if it falls behind.
+The site's own build scopes every stylesheet the same way (`scripts/scope-css.ts`), with
+`#root` as the wrapper, so the reference screenshots check the scoping.
+`src/styles/inward-reset.css` undoes GSL's element styles inside the wrapper, and
+`src/styles/page-shell.css`, which styles the static build's own `<body>`, is the one
+stylesheet left unscoped. Nothing loads the file yet: the page templates come later in
+Phase 3.
 
 The local WordPress runs in Docker and borrows GSL's theme, WordPress images and
 database from a checkout of GSL's internal gsl-wordpress repository beside this one

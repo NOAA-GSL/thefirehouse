@@ -1,0 +1,7 @@
+/* The static build's own page, around `#root.fh-app`. Everything else the site styles
+   lives inside that wrapper (WORDPRESS-PLAN.md rule 9); under the plugin, GSL's theme
+   styles the `<body>` instead, so this file stays out of the plugin's stylesheet and
+   is the one the scoping leaves alone (`vite.config.ts`). */
+body {
+  margin: 0;
+}

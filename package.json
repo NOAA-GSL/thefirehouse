@@ -12,6 +12,8 @@
     "test": "vitest run",
     "schema": "node scripts/project-schema.mjs",
     "schema:check": "node scripts/project-schema.mjs --check",
+    "plugin:css": "node scripts/plugin-css.mjs",
+    "plugin:css:check": "node scripts/plugin-css.mjs --check",
     "seed": "node scripts/seed-bundle.mjs",
     "reference": "node scripts/capture-reference.mjs"
   },

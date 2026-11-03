@@ -1,0 +1,25 @@
+/* ---- The inward wall (WORDPRESS-PLAN.md rule 9) ----
+   Under the plugin, GSL's theme styles every element on the page. A global rule
+   zeroes margins and padding, and headings, paragraphs and lists get the theme's own
+   fonts, sizes and line heights. The design was drawn against the browser's defaults,
+   so these put the defaults back.
+
+   The build scopes them like every other rule, to `.fh-app :where(…)`, which weighs
+   one class (0,1,0). That beats the theme's element selectors, and loses to every
+   Firehouse rule, which the build gives the wrapper's class on top of its own. In the
+   static build there is no theme, so they change nothing.
+
+   `revert` returns a property to the browser's default. The reset names only the
+   properties the theme sets: `all: revert` would also discard SVG attributes such as
+   `fill` and `width`. */
+:where(*) {
+  margin: revert;
+  padding: revert;
+}
+
+:where(h1, h2, h3, h4, h5, h6, p, ul, ol, li) {
+  font-family: revert;
+  font-size: revert;
+  font-weight: revert;
+  line-height: revert;
+}
