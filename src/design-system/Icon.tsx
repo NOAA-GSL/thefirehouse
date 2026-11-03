@@ -90,10 +90,11 @@ export const ICON_NAMES = Object.keys(REGISTRY) as IconName[];
  *
  * The registry is explicit so a bad name in *code* is a type error, but content can
  * carry one too (an About page audience card names its icon). This is how the
- * content layer turns that into a load-time error rather than a render crash.
+ * content layer turns that into a load-time error rather than a render crash. Own keys
+ * only: `in` would also accept "constructor", which then crashes at render.
  */
 export function isIconName(value: unknown): value is IconName {
-  return typeof value === 'string' && value in REGISTRY;
+  return typeof value === 'string' && Object.hasOwn(REGISTRY, value);
 }
 
 export interface IconProps {

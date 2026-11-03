@@ -3,6 +3,9 @@
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
          bootstrap="wp-content/plugins/firehouse/tests/bootstrap.php"
          cacheDirectory=".phpunit.cache"
+         failOnWarning="true"
+         failOnNotice="true"
+         failOnDeprecation="true"
          colors="true">
   <testsuites>
     <testsuite name="Firehouse plugin">

@@ -1,5 +1,5 @@
 {
-  "$comment": "The keys that tie the survey, the URL query string, the React site and the WordPress plugin together, read by both JavaScript and PHP. `label` and `short` are what the site shows; `formLabel` is the option exactly as the Google Form shows it, for reading its exports. Adding a key is a code change: the TypeScript unions in src/design-system must match (src/design-system/vocabulary.test.ts checks).",
+  "$comment": "The keys that tie the survey, the URL query string, the React site and the WordPress plugin together, read by both JavaScript and PHP. `label` and `short` are what the site shows; `formLabel` is the option exactly as the Google Form shows it, for reading its exports. `icons` are the names content may give an icon, such as an About page card; they are the keys of the registry in src/design-system/Icon.tsx. Adding a key is a code change: the TypeScript unions and the icon registry in src/design-system must match (src/design-system/vocabulary.test.ts checks).",
   "firePhases": [
     {
       "key": "before",
@@ -219,5 +219,38 @@
       "short": "Governance",
       "icon": "landmark"
     }
+  ],
+  "icons": [
+    "arrow-left",
+    "arrow-right",
+    "arrow-up-right",
+    "building",
+    "calendar",
+    "check",
+    "clipboard",
+    "chevron-down",
+    "chevron-left",
+    "chevron-right",
+    "copy",
+    "eye",
+    "layers",
+    "map-pin",
+    "quote",
+    "users",
+    "external-link",
+    "file-text",
+    "flame",
+    "flask",
+    "landmark",
+    "lock",
+    "menu",
+    "moon",
+    "plus",
+    "radar",
+    "search",
+    "sun",
+    "target",
+    "waves",
+    "x"
   ]
 }

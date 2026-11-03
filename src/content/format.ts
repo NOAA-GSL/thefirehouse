@@ -1,12 +1,48 @@
 /**
+ * An ISO date, or a date and time; nothing looser ("tomorrow") counts. Captured in
+ * parts so the calendar can be checked. A zone offset has to be a real one (up to
+ * ±23:59), as the PHP port requires too.
+ */
+const ISO_DATE =
+  /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)?)?$/;
+
+/**
+ * Whether a written date and time is on the calendar and the clock. The calendar
+ * starts at the year 1: `Date` would show the year 0, which is 1 BC, as "1".
+ */
+function isRealDate(parts: RegExpExecArray): boolean {
+  const [year, month, day, hour, minute, second] = parts.slice(1, 7).map((part) => Number(part ?? 0));
+  // setUTCFullYear, not Date.UTC, which would read the years 0–99 as 1900–1999.
+  const date = new Date(0);
+  date.setUTCFullYear(year, month - 1, day);
+  return (
+    year >= 1 &&
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day &&
+    hour < 24 &&
+    minute < 60 &&
+    second < 60
+  );
+}
+
+/**
  * Formats an ISO date for the "Last reviewed" lines on the landing and topic pages.
  *
  * Pinned to UTC on purpose: `topicSummaries.json` carries date-only strings, which
  * `Date` parses as midnight UTC. Rendering those in the viewer's local zone shows
- * the previous day to anyone west of Greenwich — including every NOAA office.
+ * the previous day to anyone west of Greenwich — including every NOAA office. A time
+ * written without a zone is read in UTC too, where `Date` would read local time.
+ * Anything that isn't an ISO date comes back unchanged, and so does one that isn't on
+ * the calendar (February 30, month 00), which `Date` would roll over into a date
+ * nobody wrote, or one whose zone takes it back before the year 1.
  */
 export function formatReviewDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', {
+  const match = ISO_DATE.exec(iso);
+  if (!match || !isRealDate(match)) return iso;
+  const date = new Date(iso.includes('T') && !match[7] ? `${iso}Z` : iso);
+  if (Number.isNaN(date.getTime()) || date.getUTCFullYear() < 1) return iso;
+  return date.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -49,13 +85,21 @@ export function splitNeedLead(need: string): { lead?: string; rest: string } {
   return { lead: match[1], rest: match[2] };
 }
 
+/**
+ * A web link: http or https, then the host (after any user, up to the last "@", and
+ * before any port; an IPv6 host in brackets), then the path. Read as written rather
+ * than through `URL`, which percent-encodes and normalizes, so a SICI DOI keeps its
+ * angle brackets and the PHP port can match it exactly. A backslash ends the host, as
+ * it does for a browser, so "https://a.example\@doi.org/" can't be labeled as a
+ * doi.org link. Other schemes read a backslash differently, so they aren't labeled.
+ */
+const LINK = /^https?:\/\/(?:[^/\\?#]*@)?(\[[^\]/\\?#]*\]|[^:/\\?#]*)(?::[^/\\?#]*)?([^?#]*)/i;
+
 /** "doi.org/10.1175/…" → a readable label for a link that has no published title. */
 export function linkLabel(url: string): string {
-  try {
-    const { hostname, pathname } = new URL(url);
-    const path = pathname.replace(/\/+$/, '');
-    return `${hostname.replace(/^www\./, '')}${path}`;
-  } catch {
-    return url;
-  }
+  const match = LINK.exec(url);
+  if (!match || !match[1]) return url;
+  // ASCII letters only, as PHP's strtolower() does, so the two can't differ.
+  const host = match[1].replace(/[A-Z]+/g, (letters) => letters.toLowerCase());
+  return `${host.replace(/^www\./, '')}${match[2].replace(/\/+$/, '')}`;
 }

@@ -52,5 +52,5 @@ export const TOPIC_LIST: TopicDefinition[] = Object.values(TOPICS);
 export const TOPIC_KEYS = Object.keys(TOPICS) as TopicKey[];
 
 export function isTopicKey(value: unknown): value is TopicKey {
-  return typeof value === 'string' && value in TOPICS;
+  return typeof value === 'string' && Object.hasOwn(TOPICS, value);
 }
