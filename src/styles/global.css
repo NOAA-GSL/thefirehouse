@@ -4,6 +4,8 @@
 @import './tokens/glass.css';
 /* Must come after tokens — corrects two AA contrast failures. See the file. */
 @import './a11y-overrides.css';
+/* GSL's element styles, undone inside the wrapper. See the file. */
+@import './inward-reset.css';
 
 *,
 *::before,
@@ -15,9 +17,12 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+/* The build moves this rule onto the `.fh-app` wrapper (scripts/scope-css.ts). It
+   sets no background: the atmosphere layer below paints the base colour as well, and
+   a wrapper's own background would sit on top of that layer, where a body's goes to
+   the canvas beneath it. */
 body {
   margin: 0;
-  background: var(--atmos-base);
   color: var(--color-text-primary);
   font: var(--text-body);
   -webkit-font-smoothing: antialiased;
@@ -56,8 +61,8 @@ svg {
 
 /* Section 508 / WCAG 2.1 AA: the design system specifies a 3px sky-blue focus
    ring on every interactive element, and says it is never to be removed.
-   Applied globally with :focus-visible so it shows for keyboard users without
-   ringing on mouse clicks. */
+   Applied to everything inside the wrapper with :focus-visible, so it shows for
+   keyboard users without ringing on mouse clicks. */
 :focus-visible {
   outline: var(--focus-ring-width) solid var(--color-focus-ring);
   outline-offset: 2px;

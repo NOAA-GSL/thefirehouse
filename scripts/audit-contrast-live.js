@@ -49,12 +49,25 @@
     return [0, 1, 2].map((i) => fg[i] * a + bg[i] * (1 - a));
   };
 
+  // The page's base colour comes from the atmosphere layer, `.fh-app::before`, whose
+  // background ends in --atmos-base. The wrapper and <body> carry none of their own.
+  function pageBase() {
+    const app = document.querySelector('.fh-app');
+    const color = parse(getComputedStyle(app ?? document.body, app ? '::before' : null).backgroundColor);
+    if (color[3] > 0) return color.slice(0, 3).concat(1);
+    console.warn('fhAudit: no page base colour found; compositing over white.');
+    return [255, 255, 255, 1];
+  }
+
   function backdropOf(el) {
-    const root = parse(getComputedStyle(document.body).backgroundColor).slice(0, 3).concat(1);
+    const root = pageBase();
     const stack = [];
+    // The walk stops at the wrapper: the atmosphere paints beneath it, so anything an
+    // enclosing page paints further out sits behind the atmosphere, not over it.
     for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
       const c = parse(getComputedStyle(n).backgroundColor);
       if (c[3] > 0) stack.push(c);
+      if (n.classList.contains('fh-app')) break;
     }
     stack.push(root);
     let out = stack[stack.length - 1];

@@ -44,6 +44,8 @@ that produced it).
 | Rendering | **Full WordPress rendering, in a plugin.** Not headless, not WordPress serving the React bundle, and not a standalone application linked from GSL's site (considered and set aside in October; see [Why full rendering](#why-full-rendering)). |
 | Hosts | GSL's test WordPress site first, gsl.noaa.gov later. Both run GSL's own **classic theme** (`gsl-theme`: PHP header and footer, no Site Editor; confirmed 27 October) and meet the plugin's minimums (WordPress 6.7+, PHP 8.1+). |
 | Design | **The Firehouse keeps its own design** (the one in this repository, described in `DESIGN.md`) for everything between GSL's header and footer. Stephanie and Emily chose it on 28 October; ITS approval is still needed (open question 6). The plugin carries the templates, stylesheets and fonts and loads them on Firehouse pages only. Nothing goes into GSL's theme. See [Look and feel](#look-and-feel). |
+| Fonts | **Archivo and Public Sans for now** (Eric, 3 November), self-hosted by the plugin. A later switch to GSL's Nunito Sans and Montserrat should stay a small change: the pages read only the font tokens, and the plugin loads its font files in one place. |
+| Dark mode | **Kept** (Eric, 3 November), following GSL's light/dark switch. The switch sets `data-theme="dark"` on `<html>`, the attribute Firehouse's dark colors key off, so a Firehouse page is never dark between a light header and footer. The visual and contrast checks run in both themes. |
 | URL base | `/firehouse` on both. The path is free on both sites. |
 | Place in GSL's menus | A Firehouse item under GSL's Research Portal menu, or failing that a tile on its Decision Support Systems page (Stephanie and Emily, 28 October). GSL's web team adds it. |
 | Fields | **WordPress built-in fields**: `register_post_meta`, the Settings API and block attributes. No ACF or Secure Custom Fields. |
@@ -374,11 +376,16 @@ in a rewrite.
    such as a new fire phase, is a code change that waits on a reviewed release: the
    form can't offer the new option until then.
 9. **CSS is walled off in both directions.**
-   - Outward: tokens on `:root`, the `body` background and its fixed atmosphere layer,
-     the `*` and `img, svg` rules and the global `:focus-visible` ring all move under an
-     `.fh-app` wrapper.
-   - Inward: the theme's element styles for headings, links, lists and buttons would
-     otherwise reach Firehouse markup, so the wrapper gets a small reset.
+   - Outward: every rule moves under an `.fh-app` wrapper (`scripts/scope-css.ts`): the
+     tokens on `:root`, the `body` styles and the fixed atmosphere layer, the `*` and
+     `img, svg` rules and the `:focus-visible` ring. A theme condition stays on
+     `<html>`. The build stops on any rule that could match outside the wrapper.
+   - Inward: the theme's global styles would reach Firehouse markup, so inside the
+     wrapper a small reset puts back the browser's margins and padding and the fonts of
+     headings, paragraphs and lists (`src/styles/inward-reset.css`). The theme's other
+     element styles, on links and buttons for example, lose to Firehouse's own rules.
+     The reset beats only element selectors, so the wrapper sits outside the theme's
+     content wrappers.
    - Both contrast audits are re-run on pages inside GSL's header and footer.
 10. **Accessibility is re-earned, not assumed.** The React code handles many details
     on purpose:
@@ -812,15 +819,47 @@ ones.
 
 ### Phase 3 — Design system and frame (2 weeks)
 
-- CSS moved into the plugin and scoped under `.fh-app`, with the inward reset.
-- Icons as SVG, logos, and fonts. Fonts are self-hosted if Archivo and Public Sans are
-  kept.
+- CSS moved into the plugin and scoped under `.fh-app`, with the inward reset. *Done
+  3 November: `npm run plugin:css` writes `assets/css/firehouse.css` from the site's own
+  build, which scopes every stylesheet with `scripts/scope-css.ts` and stops on any rule
+  that could match outside the wrapper. CI checks the file is current, and
+  `plugin:css` stops on anything in it that reaches the whole page or loads from
+  elsewhere, as both PostCSS and a real browser read it. The React site renders inside `#root.fh-app`, and its reference
+  screenshots match the unscoped build pixel for pixel. With the theme's stylesheet
+  added to the static pages, no element's computed style changes, across the 15
+  properties checked, at rest.*
+- Icons as SVG, logos, and fonts. Archivo and Public Sans are kept (open question 10)
+  and self-hosted, loaded from one place in the plugin. Every page reads its fonts
+  from three tokens (`--font-display`, `--font-display-expanded`, `--font-body`), so
+  switching to GSL's fonts means pointing those at Montserrat and Nunito Sans and not
+  loading the files. GSL loads Montserrat at one weight, so the display weights would
+  need checking then.
 - Firehouse page templates, chosen with the `template_include` filter, that call
   GSL's `get_header()` and `get_footer()`, with full-width sections between them.
   GSL's theme is classic, so no Site Editor copy of a template can override the
-  plugin's.
-- Dark colors keyed to GSL's light/dark toggle, if dark mode is kept (open
-  question 9).
+  plugin's. Found while scoping the CSS, and settled here against the real theme:
+  - The atmosphere layer is fixed to the viewport and joins whatever stacking context
+    holds the wrapper. Inside a theme wrapper that forms one, it paints over the
+    footer, hiding links that stay focusable; elsewhere it shows through transparent
+    parts of the header and footer, or hides behind an opaque wrapper. It has to be
+    contained to the wrapper's box, and the contrast audits re-run against the result.
+  - The project dialog's overlay sits below a theme header with a higher stacking
+    order, close button included. A native `<dialog>` opened with `showModal()`
+    (rule 10) sits above everything and makes the rest of the page inert.
+  - The skip link hides by sitting above its wrapper, which works only at the top of a
+    page. It belongs before the theme's header, hidden by clipping.
+  - The wrapper sits outside the theme's content wrappers, whose rules beat the reset,
+    and `firehouse.css` loads after the theme's stylesheet, so ties go to Firehouse.
+  - The wrapper's `min-height: 100vh` pushes the footer down on a short page.
+  - The wrapper sets `color-scheme`, which nothing else on the theme's page does, and
+    a `[hidden]` rule that wins over Firehouse's own `display` values before the
+    Interactivity API starts setting `hidden`.
+  - The computed-style check re-runs inside the real template, with WordPress's own
+    styles, on hover and focus as well as at rest.
+- Dark colors keyed to GSL's light/dark toggle (kept: open question 9). *The scoped CSS
+  already keeps the theme condition on `<html>`, where the toggle sets it. Left for the
+  templates: `color-scheme` on the wrapper, and the visual and contrast checks in both
+  themes inside the real theme.*
 - The Firehouse bar (`firehouse/subnav`), including whether it stays pinned under
   GSL's header (see [Look and feel](#look-and-feel)).
 - Stephanie and Emily see the frame on the test site (or in screenshots, if the VPN
@@ -1044,14 +1083,15 @@ Phases 6–7.
 
 8. Launch the bridge, on the test site for mid-November and on prod for AMS?
    *Recommended.*
-9. Keep dark mode for the WordPress version? *Recommended: keep it, and follow GSL's
-   toggle.* GSL's theme has its own light/dark switch, which sets `data-theme="dark"`
-   on the page, the same attribute Firehouse's dark colors use, so a Firehouse page
-   never sits dark between a light header and footer. Keeping it means the visual and
-   contrast checks run in both themes.
-10. Keep Archivo and Public Sans, or use GSL's fonts (Nunito Sans for text, Montserrat
-    for headings)? GSL's pages already load those, so using them adds nothing to
-    self-host.
+9. ~~Keep dark mode for the WordPress version?~~ *Yes (Eric, 3 November): keep it,
+   and follow GSL's toggle.* GSL's theme has its own light/dark switch, which sets
+   `data-theme="dark"` on the page, the same attribute Firehouse's dark colors use, so
+   a Firehouse page never sits dark between a light header and footer. Keeping it
+   means the visual and contrast checks run in both themes.
+10. ~~Keep Archivo and Public Sans, or use GSL's fonts (Nunito Sans for text,
+    Montserrat for headings)?~~ *Keep them for now (Eric, 3 November), and keep a
+    switch to GSL's fonts easy.* GSL's pages already load Nunito Sans and Montserrat,
+    so switching would add nothing to self-host.
 11. Is working without JavaScript a requirement? If not, the PHP search is dropped (see
     [Interactivity](#interactivity)).
 12. *(With NOAA's PRA clearance officer)* Does the survey count as a NOAA information

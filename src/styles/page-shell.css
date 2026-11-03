@@ -1,0 +1,19 @@
+/* The static build's own page, around `#root.fh-app`. Everything else the site styles
+   lives inside that wrapper (WORDPRESS-PLAN.md rule 9); under the plugin, GSL's theme
+   styles the page instead, so this file stays out of the plugin's stylesheet and is
+   the one the scoping leaves alone (`vite.config.ts`). */
+body {
+  margin: 0;
+}
+
+/* The canvas behind the atmosphere layer, seen when a page is overscrolled: the
+   atmosphere's base colour, --atmos-base. Its token lives on the wrapper, out of reach
+   here, so the value is repeated, and src/styles/page-shell.test.ts keeps the two in
+   step. */
+html {
+  background: #f7f8fa;
+}
+
+html[data-theme='dark'] {
+  background: #0a1020;
+}

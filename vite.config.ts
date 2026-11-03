@@ -2,6 +2,7 @@ import { copyFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+import { scopeFirehouse } from './scripts/scope-css';
 
 const OUT_DIR = 'dist';
 
@@ -13,13 +14,19 @@ const OUT_DIR = 'dist';
  * unless the host serves the app shell for unknown paths. On a server we control
  * that's `public/.htaccess` (Apache) or an nginx `try_files`; on bucket-style hosts
  * — S3, GitHub Pages, Azure Static Web Apps — the only lever is a 404 document, and
- * this is it. Harmless everywhere else.
+ * this is it. Harmless everywhere else. A build that writes nothing, such as
+ * `scripts/plugin-css.mjs`, leaves `dist/` alone.
  */
 function spaFallback(): Plugin {
+  let writes = true;
   return {
     name: 'firehouse-spa-fallback',
     apply: 'build',
+    configResolved(config) {
+      writes = config.build.write !== false;
+    },
     closeBundle() {
+      if (!writes) return;
       const index = resolve(OUT_DIR, 'index.html');
       if (existsSync(index)) copyFileSync(index, resolve(OUT_DIR, '404.html'));
     },
@@ -86,6 +93,11 @@ export default defineConfig({
   base: process.env.VITE_BASE_PATH ?? '/',
   build: { outDir: OUT_DIR },
   plugins: [react(), siteMeta(), spaFallback()],
+  // Every rule is scoped under `.fh-app` (`#root` here), as the plugin needs inside
+  // GSL's theme (WORDPRESS-PLAN.md rule 9), so the site runs on the same scoped CSS the
+  // plugin gets. The page shell styles the static build's own `<html>` and `<body>` and
+  // stays outside.
+  css: { postcss: { plugins: [scopeFirehouse({ exclude: [/\/src\/styles\/page-shell\.css$/] })] } },
   // PORT lets a harness (or a second checkout) run the dev server somewhere else
   // when 5173 is already taken; 5173 stays the default everyone knows.
   server: { port: Number(process.env.PORT) || 5173 },

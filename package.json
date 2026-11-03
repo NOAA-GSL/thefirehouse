@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
   "description": "The Firehouse — NOAA/GSL fire weather social science needs & findings hub",
   "scripts": {
     "dev": "vite",
@@ -12,6 +15,8 @@
     "test": "vitest run",
     "schema": "node scripts/project-schema.mjs",
     "schema:check": "node scripts/project-schema.mjs --check",
+    "plugin:css": "node scripts/plugin-css.mjs",
+    "plugin:css:check": "node scripts/plugin-css.mjs --check",
     "seed": "node scripts/seed-bundle.mjs",
     "reference": "node scripts/capture-reference.mjs"
   },
@@ -29,7 +34,8 @@
     "@types/react-dom": "^19.0.2",
     "@vitejs/plugin-react": "^4.3.4",
     "playwright-core": "^1.64.1",
-    "typescript": "^5.7.2",
+    "postcss": "^8.5.26",
+    "typescript": "^5.8.0",
     "vite": "^6.0.5",
     "vitest": "^5.0.5"
   }
