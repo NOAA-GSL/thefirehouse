@@ -819,9 +819,10 @@ ones.
 
 - CSS moved into the plugin and scoped under `.fh-app`, with the inward reset. *Done
   3 November: `npm run plugin:css` writes `assets/css/firehouse.css` from the site's own
-  build, which scopes every stylesheet with `scripts/scope-css.ts`. CI checks the file
-  is current, and the build stops on anything that could match outside the wrapper or
-  load from elsewhere. The React site renders inside `#root.fh-app`, and its reference
+  build, which scopes every stylesheet with `scripts/scope-css.ts` and stops on any rule
+  that could match outside the wrapper. CI checks the file is current, and
+  `plugin:css` stops on anything in it that reaches the whole page or loads from
+  elsewhere. The React site renders inside `#root.fh-app`, and its reference
   screenshots match the unscoped build pixel for pixel. With the theme's stylesheet
   added to the static pages, no element's computed style changes, across the 15
   properties checked, at rest.*

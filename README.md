@@ -12,7 +12,7 @@ npm run preview    # serve the production build
 npm test           # shared test cases for normalize, derive, search and format
 npm run schema     # regenerate shared/*.schema.json from types.ts
 npm run seed       # write seed/firehouse-seed.json for the plugin's Import screen
-npm run plugin:css # write the plugin's stylesheet from src/, scoped under .fh-app
+npm run plugin:css # write the plugin's stylesheet from src/, scoped under .fh-app (Node 22.18+)
 npm run reference  # capture the reference the plugin matches (reference/README.md)
 ```
 

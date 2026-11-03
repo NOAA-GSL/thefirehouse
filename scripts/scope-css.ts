@@ -110,23 +110,78 @@ export const scopeSelector = (selector: string, scope = SCOPE) => scopeSelectors
 
 /**
  * Why a scoped selector can't stand, or '' if it can: it could match outside the
- * wrapper, or it names the page past its condition, where it matches nothing.
+ * wrapper, or past the wrapper it names the page or the wrapper again, where it
+ * matches nothing.
  */
 export function scopeProblem(selector: string, scope = SCOPE): string {
   if (!isAnchored(selector, scope)) return `"${selector}" can match outside ${scope}`;
   const [leading, rest] = splitLeading(selector.trim());
   const after = isPageCondition(leading) ? splitLeading(rest.trim())[1] : rest;
-  if (/(?:^|[\s>+~(,])(?:html|body)(?![\w-])|:root(?![\w-])/.test(after)) {
-    return `"${selector}" names the page inside ${scope}, where it matches nothing`;
+  const page = [
+    /(?:^|[\s>+~(,])(?:html|body)(?![\w-])/,
+    /:root(?![\w-])/,
+    new RegExp(`${escapeRegExp(scope)}(?![\\w-])`),
+    ...ROOT_ATTRIBUTES.map((name) => new RegExp(`\\[\\s*${name}(?![\\w-])`)),
+    ...ROOT_CLASSES.map((name) => new RegExp(`\\.${name}(?![\\w-])`)),
+  ];
+  if (page.some((pattern) => pattern.test(after))) {
+    return `"${selector}" names the page or ${scope} inside ${scope}, where it matches nothing`;
   }
   return '';
+}
+
+/** The parts of a parsed stylesheet `outputProblems` walks. */
+interface CssNode {
+  type: string;
+  name?: string;
+  params?: string;
+  prop?: string;
+  value?: string;
+  selectors?: string[];
+  parent?: CssNode;
+}
+
+/** At-rules that only ever hold or condition scoped rules. */
+const CONTAINED_AT_RULES = ['media', 'supports', 'container'];
+
+/**
+ * What a finished stylesheet would do outside the wrapper, as a list: an unscoped
+ * selector, an at-rule that reaches the whole page (`@font-face`, `@property`,
+ * `@layer`, a keyframes name without the `fh-` prefix), or anything that loads from
+ * elsewhere (`@import`, a `url()` or `image-set()` other than `data:` or a fragment).
+ */
+export function outputProblems(root: { walk(callback: (node: CssNode) => void): void }, scope = SCOPE): string[] {
+  const problems: string[] = [];
+  root.walk((node) => {
+    if (node.type === 'atrule') {
+      const name = (node.name ?? '').toLowerCase();
+      if (/keyframes$/.test(name)) {
+        if (!/^fh-/.test(node.params ?? '')) problems.push(`@${node.name} ${node.params} isn't named fh-…`);
+      } else if (!CONTAINED_AT_RULES.includes(name)) problems.push(`@${node.name} ${node.params ?? ''}`.trim());
+    }
+    if (node.type === 'decl' && /url\((?!\s*['"]?\s*(?:data:|#))|image-set\(/i.test(node.value ?? '')) {
+      problems.push(`${node.prop}: ${node.value}`);
+    }
+    if (node.type === 'rule' && !(node.parent?.type === 'atrule' && /keyframes$/i.test(node.parent.name ?? ''))) {
+      for (const selector of node.selectors ?? []) if (!isAnchored(selector, scope)) problems.push(`unscoped ${selector}`);
+    }
+  });
+  return problems;
 }
 
 /** The parts of PostCSS's types this plugin touches. */
 interface CssRule {
   selectors: string[];
-  parent?: { type: string; name?: string };
+  parent?: { type: string; name?: string; parent?: unknown };
   source?: { input?: { file?: string }; start?: { line: number } };
+}
+
+/** True when a rule sits inside another rule, as CSS nesting writes it. */
+function isNested(rule: CssRule): boolean {
+  for (let node = rule.parent as { type?: string; parent?: unknown } | undefined; node; node = node.parent as typeof node) {
+    if (node.type === 'rule') return true;
+  }
+  return false;
 }
 interface CssRoot {
   walkRules(callback: (rule: CssRule) => void): void;
@@ -145,9 +200,12 @@ export function scopeFirehouse({ scope = SCOPE, exclude = [] as RegExp[] } = {})
         const file = (rule.source?.input?.file ?? '').replace(/\\/g, '/').replace(/\?.*$/, '');
         if (exclude.some((pattern) => pattern.test(file))) return;
         if (rule.parent?.type === 'atrule' && /keyframes$/i.test(rule.parent.name ?? '')) return;
+        const where = `${file}:${rule.source?.start?.line ?? '?'}`;
+        // A nested rule is scoped through its parent; prefixing it again would match nothing.
+        if (isNested(rule)) throw new Error(`${where}: nested CSS rules aren't supported by the scoping.`);
         const scoped = rule.selectors.flatMap((selector) => scopeSelectors(selector, scope));
         const problems = scoped.map((selector) => scopeProblem(selector, scope)).filter(Boolean);
-        if (problems.length) throw new Error(`${file}:${rule.source?.start?.line ?? '?'}: ${problems.join('; ')}.`);
+        if (problems.length) throw new Error(`${where}: ${problems.join('; ')}.`);
         rule.selectors = scoped;
       });
     },

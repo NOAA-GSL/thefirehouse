@@ -54,15 +54,20 @@
   function pageBase() {
     const app = document.querySelector('.fh-app');
     const color = parse(getComputedStyle(app ?? document.body, app ? '::before' : null).backgroundColor);
-    return color[3] > 0 ? color.slice(0, 3).concat(1) : [255, 255, 255, 1];
+    if (color[3] > 0) return color.slice(0, 3).concat(1);
+    console.warn('fhAudit: no page base colour found; compositing over white.');
+    return [255, 255, 255, 1];
   }
 
   function backdropOf(el) {
     const root = pageBase();
     const stack = [];
+    // The walk stops at the wrapper: the atmosphere paints beneath it, so anything an
+    // enclosing page paints further out sits behind the atmosphere, not over it.
     for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
       const c = parse(getComputedStyle(n).backgroundColor);
       if (c[3] > 0) stack.push(c);
+      if (n.classList.contains('fh-app')) break;
     }
     stack.push(root);
     let out = stack[stack.length - 1];

@@ -1,6 +1,6 @@
 import postcss from 'postcss';
 import { describe, expect, it } from 'vitest';
-import { isAnchored, scopeFirehouse, scopeProblem, scopeSelector } from './scope-css';
+import { isAnchored, outputProblems, scopeFirehouse, scopeProblem, scopeSelector } from './scope-css';
 
 describe('scopeSelector', () => {
   it.each([
@@ -66,6 +66,11 @@ describe('scopeProblem', () => {
     ["[data-theme='dark'] .fh-app body::before", 'names the page'],
     ['.fh-app body .x', 'names the page'],
     ['.fh-app :root', 'names the page'],
+    // What a selector that already named the wrapper becomes: it would match nothing.
+    ['.fh-app .fh-app ~ footer', 'names the page or .fh-app'],
+    ['.fh-app .fh-app.is-x .y', 'names the page or .fh-app'],
+    [".fh-app [data-theme='dark'] .x", 'names the page or .fh-app'],
+    ['.fh-app .leaflet-dragging .x', 'names the page or .fh-app'],
   ])('refuses %s', (selector, problem) => expect(scopeProblem(selector)).toContain(problem));
   it.each(['.fh-app tbody', '.fh-app .body-copy', '.fh-app html-viewer', ':root:not([x]) .fh-app .x'])(
     'accepts %s',
@@ -88,8 +93,46 @@ describe('scopeFirehouse', () => {
     (from) => expect(run('body { margin: 0 }', from)).toBe('body { margin: 0 }'),
   );
 
-  it.each(['body ~ footer { color: red }', "[data-theme='dark'] body::before { color: red }", 'html body .x { color: red }'])(
-    'stops the build on %s',
-    (css) => expect(() => run(css)).toThrow(/X\.css:1:/),
-  );
+  it.each([
+    'body ~ footer { color: red }',
+    "[data-theme='dark'] body::before { color: red }",
+    'html body .x { color: red }',
+    '.fh-app ~ footer { color: red }',
+    '.p { .y { color: red } }',
+  ])('stops the build on %s', (css) => expect(() => run(css)).toThrow(/X\.css:1:/));
+});
+
+describe('outputProblems', () => {
+  const problems = (css: string) => outputProblems(postcss.parse(css));
+
+  it('passes scoped rules, contained at-rules, fh- keyframes and inline URLs', () => {
+    expect(
+      problems(
+        [
+          ".fh-app .x { background: url(data:image/svg+xml,a) } .fh-app .y { behavior: url(#default#VML) }",
+          '@media (width < 9px) { .fh-app .z { color: red } }',
+          '@supports (display: grid) { .fh-app { display: grid } }',
+          '@container (width > 1px) { .fh-app .c { color: red } }',
+          '@keyframes fh-drift { from { opacity: 0 } 50% { opacity: 1 } }',
+          ".fh-app .q { background: url( 'data:image/png;base64,AA' ) }",
+        ].join('\n'),
+      ),
+    ).toEqual([]);
+  });
+
+  it.each([
+    ['@import url(https://example.com/x.css);', '@import'],
+    ['@import "https://example.com/x.css";', '@import'],
+    ['.fh-app .x { background: url(//example.com/a.png) }', 'url(//example.com'],
+    ['.fh-app .x { background: url(a.png) }', 'url(a.png)'],
+    ['.fh-app .x { background: image-set("a.png" 1x) }', 'image-set'],
+    ['@font-face { font-family: X; src: local(X) }', '@font-face'],
+    ['@property --x { syntax: "*"; inherits: false }', '@property'],
+    ['@layer base;', '@layer'],
+    ['@keyframes pulse { from { opacity: 0 } }', "isn't named fh-"],
+    ['.x { color: red }', 'unscoped .x'],
+    ['.fh-app ~ footer { color: red }', 'unscoped .fh-app ~ footer'],
+  ])('refuses %s', (css, problem) => {
+    expect(problems(css).join(' ')).toContain(problem);
+  });
 });
