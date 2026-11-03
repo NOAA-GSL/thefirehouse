@@ -192,16 +192,16 @@ overrides are isolated so a re-sync doesn't lose them.
       per project, so four of its "Project count" figures exceed the projects listed
       under them (`src/content/synthesis.test.ts` pins the four). The rerun has to
       replace it before any copy goes up, the test site's included.
-- [ ] **Set up `gsl.firehouse@noaa.gov`.** Since 2 November the About page gives it as
+- [x] **Set up `gsl.firehouse@noaa.gov`.** Since 2 November the About page gives it as
       the team's address in place of Stephanie's and Emily's own, so it has to receive
       mail before any build is deployed, the test site included. Requested from GSL's
-      help desk on 2 November.
+      help desk on 2 November; Eric reported it working the same afternoon.
 - [ ] **Clear the disclaimer** that ends every page (`disclaimer` in `settings.json`).
-      Asked whether its wording works, Stephanie answered "Yes - disclaimer for Landing
-      Page, About Page, Project Pages" on 3 November. It speaks for NOAA, so it goes
+      Asked whether its wording works, Stephanie and Emily answered "Yes - disclaimer
+      for Landing Page, About Page, Project Pages" on 3 November. It speaks for NOAA, so it goes
       through clearance before gsl.noaa.gov.
-- [ ] **Finish the 3 November wording round.** Stephanie answered on 3 November;
-      Emily hasn't yet. Still open: whether the needs are ranked strictly by project
+- [ ] **Finish the 3 November wording round.** Stephanie and Emily answered on 3
+      November, in one reply signed by both. Still open: whether the needs are ranked strictly by project
       count, as the About page says; the three lines that still say "how often" or
       "frequency"; and whether the synthesis needs its own line saying whose it is.
 - [ ] **Review the topic-area `covers` copy** in `topics.json` — the bullet list in
