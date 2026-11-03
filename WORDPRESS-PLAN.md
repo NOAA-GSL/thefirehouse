@@ -240,10 +240,11 @@ bridge resolves unchanged under the plugin. The Submit page is new.
   ID**; the ID is turned back into a slug when the page renders.
 - **Landing and About.** Ordinary WordPress pages built from blocks. Their layouts are
   locked to text-only editing (`contentOnly`), with a short allowed-blocks list and no
-  Custom HTML block. Both patterns end with the disclaimer (`disclaimer` in
-  `landing.json` and `about.json`), which the Phase 1 import doesn't write, so the
-  patterns must carry it. Under `contentOnly` an editor can reword it like any other
-  text; whether the cleared wording is locked instead is decided in Phase 4.
+  Custom HTML block.
+- **The disclaimer** ends every Firehouse page, above GSL's footer (`disclaimer` in
+  `settings.json`). The Phase 1 import doesn't read it, so Phase 4 decides where the
+  plugin keeps it, as a setting or as the templates' own copy, and whether an editor
+  can reword the cleared text.
 - **Settings.** A Firehouse → Settings screen holds the site name, the submit label, the
   submit address, the navigation labels, the survey's question wording, the AI prompt
   and who is emailed about new submissions.
@@ -489,7 +490,7 @@ Next to it is the **synthesis screen**, where the AI pass comes back in:
    team's prompt to the AI service (see [The AI service](#the-ai-service)). The
    fallback is to paste the JSON the prompt produced elsewhere. Either way the result
    is the same shape: up to five needs for each topic key (`observe`, `forecast`,
-   `warning`, `governance`), each with its text, its mention count and the projects it
+   `warning`, `governance`), each with its text, its project count and the projects it
    draws on. Projects can be named by slug or by response ID, so a pasted result can
    come from the downloaded source or the team's spreadsheet. Fields the site does not
    display are ignored.
@@ -636,7 +637,7 @@ the build on the presenter's laptop and sharing the screen.
 3. **Turn the gov banner and footer back on.** A static page does not receive GSL's
    header and footer. *Done.*
 4. Finish the remaining items in the README's "Before this goes public" list: hero
-   image, synthesis review, the team mailbox, the disclaimer's wording and a sitemap.
+   image, synthesis review, the team mailbox, the disclaimer's clearance and a sitemap.
    The synthesis review matters most: today's draft covers 4 of the 8 published
    projects. Stephanie and Emily reran it across all 8 on 27 October; it goes onto the
    site once their reviewed table arrives. A `robots.txt` in the build can't help:

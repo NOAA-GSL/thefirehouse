@@ -24,7 +24,7 @@
       {
         "icon": "flask",
         "title": "Researchers",
-        "body": "Make your grant proposals bulletproof. Ground your next proposal in real, documented user needs rather than guesses or unintentional retreads. Easily see which topics are thoroughly supported and where the evidence is still thin, so you can clearly justify fresh research or a deliberate replication study."
+        "body": "Make your grant proposals stronger. Ground your next proposal in real, documented user needs rather than guesses or unintentional retreads. Easily see which topics are thoroughly supported and where the evidence is still thin, so you can clearly justify fresh research or a deliberate replication study."
       },
       {
         "icon": "landmark",
@@ -43,7 +43,7 @@
       },
       {
         "title": "The findings are synthesized and reviewed",
-        "body": "The needs recorded across every project are read together, grouped into the four topic areas and ranked by mentions. Each updated pass of the synthesis is reviewed as new projects roll in, before it is published."
+        "body": "The needs recorded across every project are read together, grouped into the four topic areas and ranked by project count. Each updated pass of the synthesis is reviewed as new projects roll in, before it is published."
       },
       {
         "title": "Everything stays traceable",
@@ -82,6 +82,5 @@
     "heading": "Add your work to the record",
     "body": "If you've wrapped up fire weather social science research, send it over. Your work will join the master record and inform our cross-project syntheses.",
     "cta": { "label": "Submit a Finding", "href": "" }
-  },
-  "disclaimer": "Researchers inside and outside NOAA submit the projects on this site. Their findings and opinions are their own and do not necessarily reflect the views of NOAA or the U.S. Department of Commerce."
+  }
 }

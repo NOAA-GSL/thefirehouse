@@ -1,7 +1,6 @@
 import { Suspense, lazy, useEffect, useMemo, type CSSProperties } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { BrandMark, Button, Icon, StatCounter, TopicTag } from '../design-system';
-import { Disclaimer } from '../components/Disclaimer';
 import { SynthesisNote } from '../components/SynthesisNote';
 import { useTheme } from '../components/ThemeProvider';
 import { useContent } from '../content/ContentProvider';
@@ -72,7 +71,7 @@ export function LandingPage() {
   const content = useContent();
   const { theme } = useTheme();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { hero, stats, topicSection, submitBand, needsPerCard, disclaimer } = content.landing;
+  const { hero, stats, topicSection, submitBand, needsPerCard } = content.landing;
   const cards = buildTopicCards(content, needsPerCard);
   const synthesis = synthesisInfo(content);
   const heroImage = hero.imageUrl ?? packagedHero;
@@ -217,7 +216,7 @@ export function LandingPage() {
                         <span className="fh-needs__text">{need.text}</span>
                         {mentions > 0 && (
                           <span className="fh-needs__count">
-                            {mentions} {mentions === 1 ? 'mention' : 'mentions'}
+                            Project count: {mentions}
                           </span>
                         )}
                       </li>
@@ -309,8 +308,6 @@ export function LandingPage() {
           <CtaButton cta={submitBand.cta} variant="accent" size="lg" iconLeft="plus" blockOnMobile />
         </div>
       </section>
-
-      <Disclaimer text={disclaimer} />
     </>
   );
 }

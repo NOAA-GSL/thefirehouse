@@ -36,13 +36,13 @@
       - time: September 17, 2026
       - text: .
     - paragraph:
-      - text: Ranked by mentions — how many submitted needs and recommendations raise each one.
+      - text: "Ranked by project count: the number of projects that raise each need."
       - link "How these needs are synthesized":
         - /url: /#needs-source
     - list:
       - listitem:
         - paragraph: Trusted local relationships and joint training before an incident
-        - paragraph: 3 mentions · from 3 projects
+        - paragraph: "Project count: 3"
         - list "Projects behind need 1":
           - listitem:
             - 'link "Fire Weather Testbed Evaluations #003 - Interagency Collaboration: Tactical Integrated Warning Team (IWT) for Wildland Fire Operations 2025"':
@@ -55,7 +55,7 @@
               - /url: /projects/igniting-impact-advancing-fire-weather-decision-support
       - listitem:
         - paragraph: Integrated Warning Team frameworks with clear, locally scalable roles
-        - paragraph: 3 mentions · from 2 projects
+        - paragraph: "Project count: 3"
         - list "Projects behind need 2":
           - listitem:
             - 'link "Fire Weather Testbed Evaluations #003 - Interagency Collaboration: Tactical Integrated Warning Team (IWT) for Wildland Fire Operations 2025"':
@@ -65,7 +65,7 @@
               - /url: /projects/igniting-insight-evaluating-nws-fire-weather-products
       - listitem:
         - paragraph: Direct, two-way communication channels between forecasters and fire partners
-        - paragraph: 2 mentions · from 2 projects
+        - paragraph: "Project count: 2"
         - list "Projects behind need 3":
           - listitem:
             - 'link "Igniting Impact: Advancing Fire Weather Decision Support Services 2026"':
@@ -75,7 +75,7 @@
               - /url: /projects/fire-weather-testbed-evaluations-002-fire-detection
       - listitem:
         - paragraph: Regional flexibility to adopt or tailor Fire Warning workflows
-        - paragraph: 2 mentions · from 2 projects
+        - paragraph: "Project count: 2"
         - list "Projects behind need 4":
           - listitem:
             - 'link "Igniting Insight: Evaluating NWS Fire Weather Products within a Fire Partner Decision Making Context 2025"':
@@ -85,7 +85,7 @@
               - /url: /projects/fire-weather-testbed-evaluations-003-interagency
       - listitem:
         - paragraph: Staffing capacity and organizational buy-in to sustain interagency teams
-        - paragraph: 2 mentions · from 1 project
+        - paragraph: "Project count: 2"
         - list "Projects behind need 5":
           - listitem:
             - 'link "Fire Weather Testbed Evaluations #003 - Interagency Collaboration: Tactical Integrated Warning Team (IWT) for Wildland Fire Operations 2025"':
@@ -112,6 +112,7 @@
       - listitem:
         - link "Warnings Warnings and Immediate Response":
           - /url: /topics/warning
+  - paragraph: Researchers inside and outside NOAA submit the projects on this site. Their findings and opinions are their own and do not necessarily reflect the views of NOAA or the U.S. Department of Commerce.
 - contentinfo:
   - img "NOAA"
   - img "GSL"

@@ -1,10 +1,14 @@
 import type { ReactNode } from 'react';
 import { GovBanner, SiteFooter, SiteHeader } from '../design-system';
 import { useContent } from '../content/ContentProvider';
+import { Disclaimer } from './Disclaimer';
 import { useTheme } from './ThemeProvider';
 
 /**
  * Site shell: federal banner, header, main landmark, footer.
+ *
+ * Every page's content ends with the disclaimer, inside `main`, so it stays with the
+ * page when GSL's footer replaces this one.
  *
  * The banner and footer are this static build's own. Under the WordPress plugin,
  * GSL's header and footer take their place.
@@ -33,6 +37,7 @@ export function Layout({ children }: { children: ReactNode }) {
       />
       <main id="main" tabIndex={-1}>
         {children}
+        <Disclaimer text={settings.disclaimer} />
       </main>
       <SiteFooter
         siteName={settings.siteName}

@@ -93,8 +93,8 @@ export function TopicPage() {
               sourceCount={sourceCount}
             />
             <p className="fh-topic__how">
-              Ranked by mentions — how many submitted needs and recommendations raise
-              each one. <Link to="/#needs-source">How these needs are synthesized</Link>
+              Ranked by project count: the number of projects that raise each need.{' '}
+              <Link to="/#needs-source">How these needs are synthesized</Link>
             </p>
           </div>
 
@@ -113,9 +113,7 @@ export function TopicPage() {
                     <div className="fh-need__main">
                       <p className="fh-need__text">{need.text}</p>
                       <p className="fh-need__meta">
-                        {mentions} {mentions === 1 ? 'mention' : 'mentions'}
-                        {sources.length > 0 &&
-                          ` · from ${sources.length} ${sources.length === 1 ? 'project' : 'projects'}`}
+                        Project count: {mentions}
                       </p>
                       {sources.length > 0 && (
                         <ul

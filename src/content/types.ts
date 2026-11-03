@@ -315,8 +315,6 @@ export interface LandingPageContent {
   /** How many needs to show per topic card before the card links out. */
   needsPerCard: number;
   submitBand: CtaBandContent;
-  /** That the findings are the researchers' own, not NOAA's. Ends the page. */
-  disclaimer?: string;
 }
 
 /**
@@ -383,8 +381,6 @@ export interface AboutPageContent {
    */
   team: SectionIntro & { members: TeamMember[]; email?: string; emailLead?: string };
   cta: CtaBandContent;
-  /** That the findings are the researchers' own, not NOAA's. Ends the page. */
-  disclaimer?: string;
 }
 
 export interface FooterGroupContent {
@@ -401,6 +397,11 @@ export interface SiteSettings {
   /** The Qualtrics submission survey every "Submit a Finding" control points at. */
   submitFormUrl: string;
   footerBlurb: string;
+  /**
+   * That the findings are the researchers' own, not NOAA's. It ends every page, just
+   * above the footer, so it stays with the content when GSL's footer replaces this one.
+   */
+  disclaimer?: string;
   footerGroups: FooterGroupContent[];
   agencyLine: string;
   usaGovUrl: string;
