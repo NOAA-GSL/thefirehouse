@@ -44,6 +44,7 @@ that produced it).
 | Rendering | **Full WordPress rendering, in a plugin.** Not headless, not WordPress serving the React bundle, and not a standalone application linked from GSL's site (considered and set aside in October; see [Why full rendering](#why-full-rendering)). |
 | Hosts | GSL's test WordPress site first, gsl.noaa.gov later. Both run GSL's own **classic theme** (`gsl-theme`: PHP header and footer, no Site Editor; confirmed 27 October) and meet the plugin's minimums (WordPress 6.7+, PHP 8.1+). |
 | Design | **The Firehouse keeps its own design** (the one in this repository, described in `DESIGN.md`) for everything between GSL's header and footer. Stephanie and Emily chose it on 28 October; ITS approval is still needed (open question 6). The plugin carries the templates, stylesheets and fonts and loads them on Firehouse pages only. Nothing goes into GSL's theme. See [Look and feel](#look-and-feel). |
+| Dark mode | **Kept** (Eric, 3 November), following GSL's light/dark switch. The switch sets `data-theme="dark"` on `<html>`, the attribute Firehouse's dark colors key off, so a Firehouse page is never dark between a light header and footer. The visual and contrast checks run in both themes. |
 | URL base | `/firehouse` on both. The path is free on both sites. |
 | Place in GSL's menus | A Firehouse item under GSL's Research Portal menu, or failing that a tile on its Decision Support Systems page (Stephanie and Emily, 28 October). GSL's web team adds it. |
 | Fields | **WordPress built-in fields**: `register_post_meta`, the Settings API and block attributes. No ACF or Secure Custom Fields. |
@@ -850,8 +851,10 @@ ones.
     Interactivity API starts setting `hidden`.
   - The computed-style check re-runs inside the real template, with WordPress's own
     styles, on hover and focus as well as at rest.
-- Dark colors keyed to GSL's light/dark toggle, if dark mode is kept (open
-  question 9).
+- Dark colors keyed to GSL's light/dark toggle (kept: open question 9). *The scoped CSS
+  already keeps the theme condition on `<html>`, where the toggle sets it. Left for the
+  templates: `color-scheme` on the wrapper, and the visual and contrast checks in both
+  themes inside the real theme.*
 - The Firehouse bar (`firehouse/subnav`), including whether it stays pinned under
   GSL's header (see [Look and feel](#look-and-feel)).
 - Stephanie and Emily see the frame on the test site (or in screenshots, if the VPN
@@ -1075,11 +1078,11 @@ Phases 6–7.
 
 8. Launch the bridge, on the test site for mid-November and on prod for AMS?
    *Recommended.*
-9. Keep dark mode for the WordPress version? *Recommended: keep it, and follow GSL's
-   toggle.* GSL's theme has its own light/dark switch, which sets `data-theme="dark"`
-   on the page, the same attribute Firehouse's dark colors use, so a Firehouse page
-   never sits dark between a light header and footer. Keeping it means the visual and
-   contrast checks run in both themes.
+9. ~~Keep dark mode for the WordPress version?~~ *Yes (Eric, 3 November): keep it,
+   and follow GSL's toggle.* GSL's theme has its own light/dark switch, which sets
+   `data-theme="dark"` on the page, the same attribute Firehouse's dark colors use, so
+   a Firehouse page never sits dark between a light header and footer. Keeping it
+   means the visual and contrast checks run in both themes.
 10. Keep Archivo and Public Sans, or use GSL's fonts (Nunito Sans for text, Montserrat
     for headings)? GSL's pages already load those, so using them adds nothing to
     self-host.
