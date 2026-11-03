@@ -58,6 +58,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, extname, resolve } from 'node:path';
 import { inflateRawSync } from 'node:zlib';
 import { NOTEBOOK_SOURCE, writeNotebookSource } from './notebooklm-source.mjs';
+import { EMAIL_PATTERN } from './email-shape.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(HERE, '../src/content/data/projects.json');
@@ -339,10 +340,11 @@ function splitChoices(value) {
 const tidy = (value) => clean(value).replace(/\s+/g, ' ');
 
 /**
- * Anything shaped like an email address (Rule 1's backstop). A slash or colon can't
- * sit beside the @, so "https://medium.com/@name.surname/post" isn't one.
+ * Anything shaped like an email address (Rule 1's backstop), by the pattern the seed
+ * bundle and the plugin's Import screen use too (shared/email-shape.json). A slash or
+ * colon can't sit beside the @, so "https://medium.com/@name.surname/post" isn't one.
  */
-const EMAIL = /[^\s@<>()/:,;"']+@[^\s@<>()/:,;"']+\.[a-z]{2,}/gi;
+const EMAIL = new RegExp(EMAIL_PATTERN, 'gi');
 // The report masks more widely: any token with an @, since a value cut to 40
 // characters can end mid-address ("jane.doe@noaa.g").
 const mask = (line) => line.replace(/[^\s"'(),;<>]*@[^\s"'(),;<>]*/g, '[email]');

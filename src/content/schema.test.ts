@@ -3,8 +3,8 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Today's projects must pass the schema the plugin registers its post meta with, or
- * the seed import would be refused. The checker covers the keywords
+ * Today's projects and topics must pass the schemas the plugin checks every field
+ * against, or the seed import would be refused. The checker covers the keywords
  * `scripts/project-schema.mjs` writes: type, enum, properties, required,
  * additionalProperties and items.
  */
@@ -22,7 +22,10 @@ const read = (path: string) =>
   JSON.parse(readFileSync(fileURLToPath(new URL(path, import.meta.url)), 'utf8')) as unknown;
 
 const schema = read('../../wp-content/plugins/firehouse/shared/project.schema.json') as Schema;
+const topicSchema = read('../../wp-content/plugins/firehouse/shared/topic.schema.json') as Schema;
 const projects = read('./data/projects.json') as { slug: string }[];
+const topics = read('./data/topics.json') as Record<string, unknown>[];
+const summaries = read('./data/topicSummaries.json') as Record<string, unknown>[];
 
 function problems(value: unknown, s: Schema, where: string): string[] {
   const kind = Array.isArray(value) ? 'array' : value === null ? 'null' : typeof value;
@@ -53,12 +56,25 @@ describe('shared/project.schema.json', () => {
     expect(problems(project, schema, slug)).toEqual([]);
   });
 
-  it('refuses what WordPress should refuse', () => {
+  it('refuses what the plugin refuses', () => {
     const [first] = projects;
     expect(problems({ ...first, firePhases: ['winter'] }, schema, 'p')).toHaveLength(1);
     expect(problems({ ...first, completionYear: '2025' }, schema, 'p')).toHaveLength(1);
     expect(problems({ ...first, surprise: true }, schema, 'p')).toHaveLength(1);
     const { slug: _slug, ...noSlug } = first;
     expect(problems(noSlug, schema, 'p')).toEqual(['p.slug is missing']);
+  });
+});
+
+/**
+ * A topic as the plugin stores it: its entry in topics.json and its synthesis in
+ * topicSummaries.json, without the key, label and topic, which are the post's own.
+ */
+describe('shared/topic.schema.json', () => {
+  it.each(topics.map((topic) => [topic.key as string, topic]))('accepts %s with its synthesis', (key, topic) => {
+    const summary = summaries.find((candidate) => candidate.topic === key) ?? { topNeeds: [] };
+    const { key: _key, label: _label, ...content } = topic;
+    const { topic: _topic, ...synthesis } = summary;
+    expect(problems({ ...content, ...synthesis }, topicSchema, key)).toEqual([]);
   });
 });

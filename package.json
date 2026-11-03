@@ -12,6 +12,7 @@
     "test": "vitest run",
     "schema": "node scripts/project-schema.mjs",
     "schema:check": "node scripts/project-schema.mjs --check",
+    "seed": "node scripts/seed-bundle.mjs",
     "reference": "node scripts/capture-reference.mjs"
   },
   "dependencies": {

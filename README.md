@@ -10,7 +10,8 @@ npm run dev        # http://localhost:5173
 npm run build      # typecheck + production build to dist/
 npm run preview    # serve the production build
 npm test           # shared test cases for normalize, derive, search and format
-npm run schema     # regenerate the project schema from types.ts
+npm run schema     # regenerate shared/*.schema.json from types.ts
+npm run seed       # write seed/firehouse-seed.json for the plugin's Import screen
 npm run reference  # capture the reference the plugin matches (reference/README.md)
 ```
 
@@ -246,8 +247,70 @@ Named so it's clear these are gaps, not oversights:
 
 The site is moving into GSL's WordPress as a plugin; `WORDPRESS-PLAN.md` has the plan.
 The plugin sits at `wp-content/plugins/firehouse/`, the path it has in a WordPress
-install, the way GSL's own repository (NOAA-GSL/gsl-wordpress) keeps its theme. It
-registers nothing yet: `firehouse.php` loads `domain/`, which adds no hooks.
+install, the way GSL's own repository (NOAA-GSL/gsl-wordpress) keeps its theme.
+`firehouse.php` loads two folders: `includes/`, which works with WordPress's hooks,
+posts, options and screens, and `domain/`, plain PHP that adds no hooks and reads
+nothing from the database. Each class's docblock has the detail; this is the map.
+
+`includes/`:
+
+- `Post_Types` registers `fh_project` and `fh_topic` at the React site's addresses:
+  `/firehouse/projects/`, `/firehouse/projects/{slug}/` and `/firehouse/topics/{key}/`
+  (no topic archive). Neither is in the REST API, and their edit screens have no form
+  for the fields yet (Phase 6). No one adds either in the admin.
+- `Meta` registers every field in `shared/project.schema.json` and
+  `shared/topic.schema.json` (`npm run schema` writes them from `types.ts`) as post
+  meta named as in `types.ts` with an `fh_` prefix, except what the post holds: a
+  project's slug and `published` (its status), and a topic's key and label (its slug
+  and title). The project's title is meta, verbatim (rule 1). A need's `projects`
+  holds post IDs, not slugs (rule 5).
+- `Store` reads posts back as the fields of `types.ts`, numbers and booleans typed and
+  a need's `projects` still post IDs, and saves them.
+- `Query` drops WordPress's `year` query variable from Firehouse requests (rule 7).
+- `Capabilities` defines the Firehouse Editor role: projects, topics, the Firehouse
+  settings and the `firehouse` page tree, and nothing else on the site. The role
+  stores `read` and Firehouse's own capabilities; WordPress's page capabilities are
+  lent only while the plugin runs, so with the plugin off its users can only sign
+  in. Only administrators have `firehouse_import`.
+- `Installer` stores the role and the administrators' capabilities and has the
+  rewrite rules rebuilt, on activation and after `Installer::REVISION` changes.
+- `Settings` is Firehouse → Settings: the site name, the Submit a Finding label and
+  address, and the three navigation labels, read with `Settings::get()`.
+- `Seed_Bundle` reads a seed bundle and checks it; `Importer` plans the import and
+  writes it through `Store`; `Import_Screen` is Firehouse → Import, for
+  administrators. `npm run seed` writes the bundle from `src/content/data/` to
+  `seed/firehouse-seed.json`, which git ignores; upload it on the screen. The screen
+  shows a dry run of every change and problem, writes nothing while there is a
+  problem, and imports once confirmed.
+  - Projects are matched by response ID, so importing again updates the same posts.
+    Survey fields come from the bundle; editorial fields (`Importer::EDITORIAL`, and
+    the geography note and states) keep WordPress's (rule 4). Projects the bundle
+    doesn't have are left alone.
+  - Topics and settings are written only when they don't exist yet; after that,
+    WordPress's are kept, so importing again never overwrites a reviewed synthesis.
+  - Each post is read back after it is written. The landing and About pages are
+    checked but not written until Phase 4.
+
+The traps, for whoever changes this code next:
+
+- **Raise `Installer::REVISION`** whenever you change the role, the capabilities or
+  the addresses, or sites won't apply the change.
+- **Write fields through `Store`.** WordPress strips backslashes from what it saves,
+  so `Store` slashes every value, and runs with the kses filters off so text is kept
+  as written. A post's own title is stored escaped (`Store::label()`), for themes
+  that print it raw.
+- **Call `Meta::validate()` before writing a field.** It checks a value against its
+  schema and its exact PHP type. `Meta` also refuses, by any code, a write of a field
+  that fails it, reading a number or boolean in the text form WordPress stores
+  ("2025", "1") as that type, so a restored revision still saves; but its refusal is
+  only a `false` from WordPress's function, with no message. No one may change a
+  field through WordPress's custom-field routes.
+- **The plugin checks the bundle itself.** It refuses fields it doesn't store and
+  anything shaped like an email address but a team work address in the About page's
+  team mailbox field, by the same pattern and field list as the Node scripts
+  (`shared/email-shape.json`).
+- `uninstall.php` removes the role, so users who had it are left with no role on the
+  site, and the capabilities; the content stays.
 
 `domain/` holds the PHP versions of `src/content/derive.ts`, `format.ts` and
 `normalize.ts`:
@@ -264,7 +327,7 @@ registers nothing yet: `firehouse.php` loads `domain/`, which adds no hooks.
   (`{}`, `{"0": …}`) stays an object, a `Json_Object`, instead of passing for a list.
   `Normalize` turns every one back into an array on the way out, so pages and post meta
   only see arrays. The tests read the shared cases through it, and the Import screen
-  will read the seed bundle through it.
+  reads the seed bundle through it.
 
 They pass the cases in `shared/cases/derive.json`, `format.json` and `normalize.json`,
 the same ones `npm test` runs. Search isn't ported yet: whether the explorer needs a
@@ -282,6 +345,7 @@ bin/wp-init         # once: copy GSL's local database, activate the plugin
 bin/wp plugin list  # WP-CLI against that site
 bin/wp plugin install plugin-check --activate   # once
 bin/wp plugin check firehouse                   # WordPress's Plugin Check
+npm run seed        # then upload seed/firehouse-seed.json at Firehouse → Import
 composer install
 composer lint       # PHPCS: WordPress coding standards, PHP 8.1 compatibility
 composer test       # PHPUnit
