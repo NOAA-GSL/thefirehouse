@@ -12,7 +12,8 @@ npm run preview    # serve the production build
 npm test           # shared test cases for normalize, derive, search and format
 npm run schema     # regenerate shared/*.schema.json from types.ts
 npm run seed       # write seed/firehouse-seed.json for the plugin's Import screen
-npm run plugin:css # write the plugin's stylesheet from src/, scoped under .fh-app (Node 22.18+)
+npm run plugin:css # write the plugin's stylesheet from src/, scoped under .fh-app
+                   # (Node 22.18+, and Edge or Chrome installed, as for npm run reference)
 npm run reference  # capture the reference the plugin matches (reference/README.md)
 ```
 
@@ -349,7 +350,10 @@ footer), the coverage map's CSS until Phase 5, and the Google Fonts `@import`. D
 edit it: `npm run plugin:css` writes it from `src/`, and CI fails if it falls behind.
 The site's own build scopes every stylesheet the same way (`scripts/scope-css.ts`), with
 `#root` as the wrapper, so the static site runs on the same CSS the plugin gets, and
-the build stops on any rule that could match outside the wrapper.
+the build stops on any rule that could match outside the wrapper. Before writing,
+`plugin:css` also loads the result into a real browser (`scripts/css-browser-check.mjs`)
+and stops on any request, unscoped rule or loading value it finds there, since
+PostCSS and a browser tokenize some CSS differently.
 `src/styles/inward-reset.css` undoes GSL's element styles inside the wrapper, and
 `src/styles/page-shell.css`, which styles the static build's own `<html>` and
 `<body>`, is the one stylesheet left unscoped. Nothing loads the plugin's copy yet: the

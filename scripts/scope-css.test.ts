@@ -111,6 +111,10 @@ describe('decodeCssEscapes', () => {
     ['\\.x', '.x'],
     ['a\\0 b', 'a�b'],
     ['plain', 'plain'],
+    // One pass, as a browser reads it: an escaped backslash stays a backslash.
+    ['\\\\72', '\\72'],
+    ['da\\5c ta:x', 'da\\ta:x'],
+    ['u\\72\r\nl(', 'url('],
   ])('%s reads as %s', (text, decoded) => expect(decodeCssEscapes(text)).toBe(decoded));
 });
 
@@ -147,6 +151,8 @@ describe('outputProblems', () => {
     ['.fh-app .x { background: -webkit-image-set("a.png" 1x) }', 'image-set'],
     ['.fh-app .x { background: image("a.png") }', 'image('],
     ['.fh-app .x { background: src("a.png") }', 'src('],
+    // An escaped backslash isn't decoded twice into `data:`.
+    ['.fh-app .x { background: url(da\\5c ta:x.png) }', 'url(da'],
     ['@font-face { font-family: X; src: local(X) }', '@font-face'],
     ['@property --x { syntax: "*"; inherits: false }', '@property'],
     ['@layer base;', '@layer'],

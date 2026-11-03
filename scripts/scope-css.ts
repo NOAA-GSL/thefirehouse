@@ -144,43 +144,76 @@ interface CssNode {
 /** At-rules that only ever hold or condition scoped rules. */
 const CONTAINED_AT_RULES = ['media', 'supports', 'container'];
 
+/** `@keyframes`, with or without a vendor prefix. */
+export const KEYFRAMES = /^(?:-[a-z]+-)?keyframes$/i;
+
 /**
- * CSS text as a browser reads it: `\72` and `\72 ` are the code point 72 in hex, and
- * a backslash before any other character is that character. So `u\72l(` is `url(`.
+ * CSS text with its escapes decoded, in one pass as a browser does: `\72` and `\72 `
+ * are the code point 0x72 in hex, and a backslash before any other character is that
+ * character. So `u\72l(` is `url(`, and `\\72` is a backslash and then `72`.
  */
 export function decodeCssEscapes(text: string): string {
-  return text
-    .replace(/\\([0-9a-fA-F]{1,6})[ \t\n\r\f]?/g, (_, hex: string) => {
-      const point = parseInt(hex, 16);
-      return point === 0 || point > 0x10ffff || (point >= 0xd800 && point <= 0xdfff) ? '�' : String.fromCodePoint(point);
-    })
-    .replace(/\\([^\n\r\f0-9a-fA-F])/g, '$1');
+  return text.replace(/\\(?:([0-9a-fA-F]{1,6})(?:\r\n|[ \t\n\r\f])?|([^\n\r\f]))/g, (_, hex?: string, char?: string) => {
+    if (char !== undefined) return char;
+    const point = parseInt(hex ?? '0', 16);
+    return point === 0 || point > 0x10ffff || (point >= 0xd800 && point <= 0xdfff) ? '�' : String.fromCodePoint(point);
+  });
 }
 
-/** A `url()` or `src()` that isn't `data:` or a fragment, or a function that takes one. */
+/** A `url()` or `src()` that isn't `data:` or a fragment, or any `image-set()`, `image()` or `cross-fade()`. */
 const LOADS = /\b(?:url|src)\((?!\s*['"]?\s*(?:data:|#))|(?:image-set|image|cross-fade)\(/i;
+
+/** True when a declaration's value, its escapes decoded, could load something. */
+export const loadsSomething = (value: string) => LOADS.test(decodeCssEscapes(value));
+
+/** Splits a selector list at its top-level commas. */
+export function splitSelectorList(list: string): string[] {
+  const out: string[] = [];
+  let depth = 0;
+  let quote = '';
+  let start = 0;
+  for (let i = 0; i < list.length; i++) {
+    const c = list[i];
+    if (quote) {
+      if (c === '\\') i++;
+      else if (c === quote) quote = '';
+    } else if (c === '"' || c === "'") quote = c;
+    else if (c === '\\') i++;
+    else if (c === '(' || c === '[') depth++;
+    else if (c === ')' || c === ']') depth--;
+    else if (c === ',' && depth === 0) {
+      out.push(list.slice(start, i).trim());
+      start = i + 1;
+    }
+  }
+  out.push(list.slice(start).trim());
+  return out.filter(Boolean);
+}
 
 /**
  * What a finished stylesheet would do outside the wrapper, as a list: an unscoped
  * selector, an at-rule that reaches the whole page (`@font-face`, `@property`,
  * `@layer`, a keyframes name without the `fh-` prefix), or anything that loads from
- * elsewhere (`@import`, or `url()`, `src()`, `image-set()`, `image()` or
- * `cross-fade()` other than `data:` or a fragment). Names and values are read after
- * CSS escapes are decoded, as a browser reads them.
+ * elsewhere (`@import`, a `url()` or `src()` other than `data:` or a fragment, or any
+ * `image-set()`, `image()` or `cross-fade()`).
+ *
+ * It reads PostCSS's parse, which differs from a browser's at the edges (a backslash
+ * before `/*`, a newline inside a string, `url (` with a space), so it is the fast
+ * first look; `scripts/css-browser-check.mjs` reads the same text as a browser does.
  */
 export function outputProblems(root: { walk(callback: (node: CssNode) => void): void }, scope = SCOPE): string[] {
   const problems: string[] = [];
   root.walk((node) => {
     if (node.type === 'atrule') {
       const name = decodeCssEscapes(node.name ?? '').toLowerCase();
-      if (/keyframes$/.test(name)) {
+      if (KEYFRAMES.test(name)) {
         if (!/^fh-/.test(decodeCssEscapes(node.params ?? ''))) problems.push(`@${node.name} ${node.params} isn't named fh-…`);
       } else if (!CONTAINED_AT_RULES.includes(name)) problems.push(`@${node.name} ${node.params ?? ''}`.trim());
     }
-    if (node.type === 'decl' && LOADS.test(decodeCssEscapes(node.value ?? ''))) {
+    if (node.type === 'decl' && loadsSomething(node.value ?? '')) {
       problems.push(`${node.prop}: ${node.value}`);
     }
-    if (node.type === 'rule' && !(node.parent?.type === 'atrule' && /keyframes$/i.test(node.parent.name ?? ''))) {
+    if (node.type === 'rule' && !(node.parent?.type === 'atrule' && KEYFRAMES.test(node.parent.name ?? ''))) {
       for (const selector of node.selectors ?? []) if (!isAnchored(selector, scope)) problems.push(`unscoped ${selector}`);
     }
   });
@@ -217,7 +250,7 @@ export function scopeFirehouse({ scope = SCOPE, exclude = [] as RegExp[] } = {})
       root.walkRules((rule) => {
         const file = (rule.source?.input?.file ?? '').replace(/\\/g, '/').replace(/\?.*$/, '');
         if (exclude.some((pattern) => pattern.test(file))) return;
-        if (rule.parent?.type === 'atrule' && /keyframes$/i.test(rule.parent.name ?? '')) return;
+        if (rule.parent?.type === 'atrule' && KEYFRAMES.test(rule.parent.name ?? '')) return;
         const where = `${file}:${rule.source?.start?.line ?? '?'}`;
         // A nested rule is scoped through its parent; prefixing it again would match nothing.
         if (isNested(rule)) throw new Error(`${where}: nested CSS rules aren't supported by the scoping.`);

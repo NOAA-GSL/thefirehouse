@@ -824,7 +824,7 @@ ones.
   build, which scopes every stylesheet with `scripts/scope-css.ts` and stops on any rule
   that could match outside the wrapper. CI checks the file is current, and
   `plugin:css` stops on anything in it that reaches the whole page or loads from
-  elsewhere. The React site renders inside `#root.fh-app`, and its reference
+  elsewhere, as both PostCSS and a real browser read it. The React site renders inside `#root.fh-app`, and its reference
   screenshots match the unscoped build pixel for pixel. With the theme's stylesheet
   added to the static pages, no element's computed style changes, across the 15
   properties checked, at rest.*
