@@ -4,8 +4,8 @@ import './Disclaimer.css';
  * The note that the research on the site is its researchers' own, not NOAA's.
  *
  * Researchers outside NOAA submit too, so a federal site showing their findings says
- * whose they are. The wording is each page's own content, so it can be changed page
- * by page; a page without it shows nothing here.
+ * whose they are. One sentence in the site settings ends every page; without it, the
+ * page shows nothing here.
  */
 export function Disclaimer({ text }: { text?: string }) {
   // A CMS can hand back null or rich text here; neither may blank the page.

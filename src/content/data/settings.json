@@ -17,6 +17,7 @@
   "submitLabel": "Submit a Finding",
   "submitFormUrl": "https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform",
   "footerBlurb": "A project of the Global Systems Laboratory (GSL), part of the National Oceanic and Atmospheric Administration (NOAA).",
+  "disclaimer": "Researchers inside and outside NOAA submit the projects on this site. Their findings and opinions are their own and do not necessarily reflect the views of NOAA or the U.S. Department of Commerce.",
   "footerGroups": [
     {
       "heading": "Explore",

@@ -26,6 +26,7 @@ const QUERY = /* groq */ `{
     submitLabel,
     submitFormUrl,
     footerBlurb,
+    disclaimer,
     footerGroups[]{heading, links[]{label, to, href}},
     agencyLine,
     usaGovUrl
@@ -67,8 +68,7 @@ const QUERY = /* groq */ `{
     stats[]{id, source, value, label, caption, accent},
     topicSection{eyebrow, heading, body},
     needsPerCard,
-    submitBand{heading, body, cta{label, to, href}},
-    disclaimer
+    submitBand{heading, body, cta{label, to, href}}
   },
   "about": *[_type == "aboutPage"][0]{
     hero{eyebrow, heading, body},
@@ -84,8 +84,7 @@ const QUERY = /* groq */ `{
         "photoAlt": coalesce(photo.alt, null)
       }
     },
-    cta{heading, body, cta{label, to, href}},
-    disclaimer
+    cta{heading, body, cta{label, to, href}}
   }
 }`;
 

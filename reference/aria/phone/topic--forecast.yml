@@ -28,13 +28,13 @@
       - time: September 17, 2026
       - text: .
     - paragraph:
-      - text: Ranked by mentions — how many submitted needs and recommendations raise each one.
+      - text: "Project count: the number of projects that raise each need."
       - link "How these needs are synthesized":
         - /url: /#needs-source
     - list:
       - listitem:
         - paragraph: Earlier signals of critical fire weather, at least 48 hours ahead
-        - paragraph: 2 mentions · from 2 projects
+        - paragraph: "Project count: 2"
         - list "Projects behind need 1":
           - listitem:
             - 'link "Igniting Impact: Advancing Fire Weather Decision Support Services 2026"':
@@ -44,7 +44,7 @@
               - /url: /projects/igniting-insight-evaluating-nws-fire-weather-products
       - listitem:
         - paragraph: "Trend and duration detail: when conditions peak and how long they last"
-        - paragraph: 2 mentions · from 2 projects
+        - paragraph: "Project count: 2"
         - list "Projects behind need 2":
           - listitem:
             - 'link "Igniting Insight: Evaluating NWS Fire Weather Products within a Fire Partner Decision Making Context 2025"':
@@ -54,21 +54,21 @@
               - /url: /projects/igniting-impact-advancing-fire-weather-decision-support
       - listitem:
         - paragraph: Forecast discussions that state forecaster confidence and reasoning
-        - paragraph: 1 mention · from 1 project
+        - paragraph: "Project count: 1"
         - list "Projects behind need 3":
           - listitem:
             - 'link "Igniting Insight: Evaluating NWS Fire Weather Products within a Fire Partner Decision Making Context 2025"':
               - /url: /projects/igniting-insight-evaluating-nws-fire-weather-products
       - listitem:
         - paragraph: Probabilistic forecasts shown as combined text and graphics
-        - paragraph: 1 mention · from 1 project
+        - paragraph: "Project count: 1"
         - list "Projects behind need 4":
           - listitem:
             - 'link "Igniting Impact: Advancing Fire Weather Decision Support Services 2026"':
               - /url: /projects/igniting-impact-advancing-fire-weather-decision-support
       - listitem:
         - paragraph: Highly reliable wind and relative humidity forecasts throughout an incident
-        - paragraph: 1 mention · from 1 project
+        - paragraph: "Project count: 1"
         - list "Projects behind need 5":
           - listitem:
             - 'link "Igniting Impact: Advancing Fire Weather Decision Support Services 2026"':
@@ -95,6 +95,7 @@
       - listitem:
         - link "Governance Strategic Adaptation and Institutional Governance":
           - /url: /topics/governance
+  - paragraph: Researchers inside and outside NOAA submit the projects on this site. Their findings and opinions are their own and do not necessarily reflect the views of NOAA or the U.S. Department of Commerce.
 - contentinfo:
   - img "NOAA"
   - img "GSL"

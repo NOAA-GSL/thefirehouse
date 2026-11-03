@@ -36,13 +36,13 @@
       - time: September 17, 2026
       - text: .
     - paragraph:
-      - text: Ranked by mentions — how many submitted needs and recommendations raise each one.
+      - text: "Project count: the number of projects that raise each need."
       - link "How these needs are synthesized":
         - /url: /#needs-source
     - list:
       - listitem:
         - paragraph: Local ground-truth fuel conditions built into Red Flag Warning decisions
-        - paragraph: 2 mentions · from 2 projects
+        - paragraph: "Project count: 2"
         - list "Projects behind need 1":
           - listitem:
             - 'link "Igniting Impact: Advancing Fire Weather Decision Support Services 2026"':
@@ -52,28 +52,28 @@
               - /url: /projects/igniting-insight-evaluating-nws-fire-weather-products
       - listitem:
         - paragraph: Hotspot alerts that reach field partners by text when internet is unreliable
-        - paragraph: 2 mentions · from 1 project
+        - paragraph: "Project count: 2"
         - list "Projects behind need 2":
           - listitem:
             - 'link "Fire Weather Testbed Evaluations #002: Fire Detection and Dissemination - NESDIS Next Generation Fire System and NWS Hotspot Notification Tool 2025"':
               - /url: /projects/fire-weather-testbed-evaluations-002-fire-detection
       - listitem:
         - paragraph: Automated “safety net” fire detection so forecasters don’t miss new ignitions
-        - paragraph: 1 mention · from 1 project
+        - paragraph: "Project count: 1"
         - list "Projects behind need 3":
           - listitem:
             - 'link "Fire Weather Testbed Evaluations #002: Fire Detection and Dissemination - NESDIS Next Generation Fire System and NWS Hotspot Notification Tool 2025"':
               - /url: /projects/fire-weather-testbed-evaluations-002-fire-detection
       - listitem:
         - paragraph: Confidence indicators and weather context alongside satellite hotspot detections
-        - paragraph: 1 mention · from 1 project
+        - paragraph: "Project count: 1"
         - list "Projects behind need 4":
           - listitem:
             - 'link "Fire Weather Testbed Evaluations #002: Fire Detection and Dissemination - NESDIS Next Generation Fire System and NWS Hotspot Notification Tool 2025"':
               - /url: /projects/fire-weather-testbed-evaluations-002-fire-detection
       - listitem:
         - paragraph: Hotspot alert thresholds that forecasters can tune with local land managers
-        - paragraph: 1 mention · from 1 project
+        - paragraph: "Project count: 1"
         - list "Projects behind need 5":
           - listitem:
             - 'link "Fire Weather Testbed Evaluations #002: Fire Detection and Dissemination - NESDIS Next Generation Fire System and NWS Hotspot Notification Tool 2025"':
@@ -100,6 +100,7 @@
       - listitem:
         - link "Governance Strategic Adaptation and Institutional Governance":
           - /url: /topics/governance
+  - paragraph: Researchers inside and outside NOAA submit the projects on this site. Their findings and opinions are their own and do not necessarily reflect the views of NOAA or the U.S. Department of Commerce.
 - contentinfo:
   - img "NOAA"
   - img "GSL"
