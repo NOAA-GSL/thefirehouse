@@ -40,7 +40,7 @@
             "type": "string"
           },
           "mentions": {
-            "description": "How many survey entries (need/recommendation pairs) raise this need, across all projects. Falls back to the number of `projects` when a pass didn't record it.",
+            "description": "How many projects raise this need, each counted once (the team's rule since 28 October); the site shows it as \"Project count\". The 17 September draft counted survey entries instead, so four of its counts are higher. Falls back to the number of `projects` when a pass didn't record it.",
             "type": "number"
           },
           "projects": {

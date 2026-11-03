@@ -183,8 +183,8 @@ final class Derive {
 	}
 
 	/**
-	 * How many times a need was raised: its stored count, or else how many projects
-	 * raised it. A stored zero still wins. A count that isn't a number counts as none
+	 * A need's project count: the count the synthesis stored, or else how many projects
+	 * it names. A stored zero still wins. A count that isn't a number counts as none
 	 * stored, rather than being cast into one.
 	 *
 	 * @param array<string, mixed> $need One need from a synthesis.

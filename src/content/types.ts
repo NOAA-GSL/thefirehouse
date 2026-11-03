@@ -80,8 +80,10 @@ export interface TopNeed {
   /** One plain-language phrase, e.g. "Longer-lead outlooks for planning windows". */
   text: string;
   /**
-   * How many survey entries (need/recommendation pairs) raise this need, across all
-   * projects. Falls back to the number of `projects` when a pass didn't record it.
+   * How many projects raise this need, each counted once (the team's rule since 28
+   * October); the site shows it as "Project count". The 17 September draft counted
+   * survey entries instead, so four of its counts are higher. Falls back to the number
+   * of `projects` when a pass didn't record it.
    */
   mentions?: number;
   /** Slugs of the projects the need draws on, most direct first. */
@@ -315,8 +317,6 @@ export interface LandingPageContent {
   /** How many needs to show per topic card before the card links out. */
   needsPerCard: number;
   submitBand: CtaBandContent;
-  /** That the findings are the researchers' own, not NOAA's. Ends the page. */
-  disclaimer?: string;
 }
 
 /**
@@ -383,8 +383,6 @@ export interface AboutPageContent {
    */
   team: SectionIntro & { members: TeamMember[]; email?: string; emailLead?: string };
   cta: CtaBandContent;
-  /** That the findings are the researchers' own, not NOAA's. Ends the page. */
-  disclaimer?: string;
 }
 
 export interface FooterGroupContent {
@@ -401,6 +399,11 @@ export interface SiteSettings {
   /** The Qualtrics submission survey every "Submit a Finding" control points at. */
   submitFormUrl: string;
   footerBlurb: string;
+  /**
+   * That the findings are the researchers' own, not NOAA's. It ends every page, just
+   * above the footer, so it stays with the content when GSL's footer replaces this one.
+   */
+  disclaimer?: string;
   footerGroups: FooterGroupContent[];
   agencyLine: string;
   usaGovUrl: string;

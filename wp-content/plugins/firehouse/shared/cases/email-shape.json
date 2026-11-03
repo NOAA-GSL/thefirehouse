@@ -23,7 +23,7 @@
     { "name": "a sentence in the team's field", "blocks": { "about": { "team": { "email": "Write to the.team@noaa.gov" } } }, "paths": ["about.team.email"] },
     { "name": "a NOAA address in a project", "blocks": { "projects": [{ "abstract": "Write to jane@noaa.gov." }, { "contact": "jane@noaa.gov" }] }, "paths": ["projects.0.abstract", "projects.1.contact"] },
     { "name": "a team member's own address", "blocks": { "about": { "team": { "members": [{ "name": "A", "email": "a.person@noaa.gov" }] } } }, "paths": ["about.team.members.0.email"] },
-    { "name": "a NOAA address in a disclaimer", "blocks": { "about": { "disclaimer": "jane@noaa.gov" }, "landing": { "disclaimer": "jane@noaa.gov" } }, "paths": ["about.disclaimer", "landing.disclaimer"] },
+    { "name": "a NOAA address in the disclaimer", "blocks": { "settings": { "disclaimer": "jane@noaa.gov" } }, "paths": ["settings.disclaimer"] },
     { "name": "a key that spells the team's field", "blocks": { "about": { "team.email": "d@noaa.gov" } }, "paths": ["about.team.email"] },
     { "name": "the team's field as a list", "blocks": { "about": { "team": { "email": ["the.team@noaa.gov"] } } }, "paths": ["about.team.email.0"] },
     { "name": "the team's field holding an object", "blocks": { "about": { "team": { "email": { "address": "the.team@noaa.gov" } } } }, "paths": ["about.team.email.address"] },

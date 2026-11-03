@@ -41,7 +41,7 @@ a topic area. This folder holds what the notebook reads.
    `sourceCount` (the number of projects in the document), `updatedAt` (today, as
    `YYYY-MM-DD`), `model: "NotebookLM"` and `reviewedBy`. Until `reviewedBy` is set,
    the site labels the needs as a draft. The landing page and topic pages both show
-   all five, numbered, with their mention counts; topic pages also link each need to
+   all five, numbered, with their project counts; topic pages also link each need to
    its projects.
 
 ## Prompt
