@@ -80,8 +80,10 @@ export interface TopNeed {
   /** One plain-language phrase, e.g. "Longer-lead outlooks for planning windows". */
   text: string;
   /**
-   * How many survey entries (need/recommendation pairs) raise this need, across all
-   * projects. Falls back to the number of `projects` when a pass didn't record it.
+   * How many projects raise this need, each counted once (the team's rule since 28
+   * October); the site shows it as "Project count". The 17 September draft counted
+   * survey entries instead, so four of its counts are higher. Falls back to the number
+   * of `projects` when a pass didn't record it.
    */
   mentions?: number;
   /** Slugs of the projects the need draws on, most direct first. */

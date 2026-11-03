@@ -26,7 +26,7 @@ A shared home for **synthesized fire weather social-science needs and recommenda
 
 - Demo and use at AMS on phones as well as desktop.
 - Day-to-day content ownership by Stephanie and Emily (CMS-ready content layer; local JSON until a CMS is chosen).
-- “Submit a Finding” is an outbound Qualtrics survey; folding a processed submission into topic summaries may stay manual at first.
+- “Submit a Finding” is an outbound Google Form (Qualtrics is closed); folding a processed submission into topic summaries may stay manual at first.
 - Federal identity surface: USWDS-style gov banner, NOAA/GSL lockup, DOC/NOAA footer links.
 
 ## Capabilities and Constraints
@@ -35,7 +35,7 @@ A shared home for **synthesized fire weather social-science needs and recommenda
 
 **Structural (code, not CMS):** the four `TopicKey` values (`observe`, `forecast`, `warning`, `governance`) are fixed; display names are editable.
 
-**Hard constraints:** WCAG 2.1 AA / Section 508; NOAA–GSL branding and federal chrome; no invented citations, testimonials, or project takeaways; team biographies published verbatim as written by their subjects; replace placeholder `projects.json` before public launch; hero photo still missing (gradient stand-in until then); About portraits are real photographs of staff and need their subjects' consent before public launch.
+**Hard constraints:** WCAG 2.1 AA / Section 508; NOAA–GSL branding and federal chrome; no invented citations, testimonials, or project takeaways; team biographies published verbatim as written by their subjects; hero photo still missing (gradient stand-in until then); About portraits are real photographs of staff and need their subjects' consent before public launch.
 
 **Open decisions:** hosting placement (static build; optional `VITE_BASE_PATH` for subpath); which CMS to stand up; self-hosted vs Google Fonts CDN for Archivo / Public Sans; tests — not built yet.
 
@@ -45,14 +45,15 @@ A shared home for **synthesized fire weather social-science needs and recommenda
 - Parent: NOAA Global Systems Laboratory (GSL)
 - Voice in approved landing copy: plain, institutional, useful — not marketing flourish
 - Binding assets: NOAA and GSL logos under `src/assets/logos/`; approved landing copy in `src/content/data/landing.json`
+- The disclaimer that ends every page (`disclaimer` in `src/content/data/settings.json`): the findings are the researchers' own, not NOAA's. It goes through clearance before gsl.noaa.gov
 - Incumbent visual system exists (ported Firehouse design system); product record does not redefine it
 
 ## Evidence on Hand
 
 - Approved landing copy in `landing.json`
-- **Draft** top-needs synthesis in `topicSummaries.json`, drafted from the four published projects and traced entry-by-entry in `notebooklm/draft-synthesis-2026-09-17.md` — unreviewed, and labelled as a draft in the UI until `reviewedBy` is set
+- **Draft** top-needs synthesis in `topicSummaries.json`, drafted from four of the eight published projects and traced entry-by-entry in `notebooklm/draft-synthesis-2026-09-17.md` — unreviewed, and labelled as a draft in the UI until `reviewedBy` is set
 - Topic definitions and area copy in `topics.json` — needs Stephanie/Emily review
-- Nine **placeholder** project records in `projects.json` — must not ship publicly as-is; `papers` empty on purpose
+- Eight real projects in `projects.json`, imported from the team's Submission Data sheet
 - Placeholders that must not be fabricated later: real citations, testimonials, benchmarks, or a live CMS instance that does not exist yet
 
 ## Product Principles

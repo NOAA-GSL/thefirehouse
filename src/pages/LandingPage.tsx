@@ -216,6 +216,8 @@ export function LandingPage() {
                         <span className="fh-needs__text">{need.text}</span>
                         {mentions > 0 && (
                           <span className="fh-needs__count">
+                            {/* A pause between the need and its count, for screen readers. */}
+                            <span className="fh-visually-hidden">. </span>
                             Project count: {mentions}
                           </span>
                         )}

@@ -246,7 +246,7 @@ Adaptation and Institutional Governance.
 3. **Synthesis review.** An "Analyze results" button, with "or paste a result" beneath
    it, then a checks panel (for example: "A need in Forecasts and Modeling names a
    project that is not published"), then a comparison per topic area: needs added,
-   dropped or reworded, mention-count changes, and sources gained or lost. Buttons:
+   dropped or reworded, project-count changes, and sources gained or lost. Buttons:
    "Save draft" and "Mark reviewed" (the ember action). After marking, show the
    reviewer's name and the date.
 

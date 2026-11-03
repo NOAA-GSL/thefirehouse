@@ -36,7 +36,7 @@
       - time: September 17, 2026
       - text: .
     - paragraph:
-      - text: "Ranked by project count: the number of projects that raise each need."
+      - text: "Project count: the number of projects that raise each need."
       - link "How these needs are synthesized":
         - /url: /#needs-source
     - list:

@@ -174,7 +174,7 @@ A Firehouse page is stacked like this:
    how GSL's header behaves, and is settled in Phase 3.
 3. **The Firehouse page** in the current design: the atmosphere background, glass
    panels, Archivo and Public Sans (open question 10), the cards and the ember accent,
-   all scoped under `.fh-app` (rule 9).
+   all scoped under `.fh-app` (rule 9). It ends with the disclaimer.
 4. **GSL's footer** (`get_footer()`), with the federal links.
 
 The alternatives, and why not:
@@ -241,10 +241,12 @@ bridge resolves unchanged under the plugin. The Submit page is new.
 - **Landing and About.** Ordinary WordPress pages built from blocks. Their layouts are
   locked to text-only editing (`contentOnly`), with a short allowed-blocks list and no
   Custom HTML block.
-- **The disclaimer** ends every Firehouse page, above GSL's footer (`disclaimer` in
-  `settings.json`). The Phase 1 import doesn't read it, so Phase 4 decides where the
-  plugin keeps it, as a setting or as the templates' own copy, and whether an editor
-  can reword the cleared text.
+- **The disclaimer.** It ends every Firehouse page, above GSL's footer (`disclaimer`
+  in `settings.json`). The Phase 1 import doesn't read it. Phase 4 decides whether the
+  plugin keeps it as a setting or as the templates' own copy; whether an editor can
+  reword the cleared text is decided with the editing screens in Phase 6. Wherever it is
+  kept, the templates render it inside the theme's `main`, after the content, never
+  from `wp_footer` or a footer widget, which land after GSL's footer.
 - **Settings.** A Firehouse → Settings screen holds the site name, the submit label, the
   submit address, the navigation labels, the survey's question wording, the AI prompt
   and who is emailed about new submissions.
@@ -796,6 +798,7 @@ signed off on the frame.
 
 - The project page (including need cards), topic pages, About, the 404
   and the landing page without the map.
+- The disclaimer at the end of every Firehouse page, and where the plugin keeps it.
 - Description and Open Graph tags.
 - Check that projects appear in the sitemap.
 - Test link previews in Slack and Teams.
@@ -816,6 +819,7 @@ behaves the same, and the accessibility snapshots match.
 - Project and topic edit screens: survey fields read-only, editorial fields editable,
   publishing through WordPress's Publish button.
 - Landing and About layouts locked to text-only edits.
+- Whether an editor can reword the cleared disclaimer.
 - The synthesis screen: paste, validation, the comparison against the published
   synthesis, and **Mark reviewed**.
 - Download NotebookLM source, for the paste-in fallback.

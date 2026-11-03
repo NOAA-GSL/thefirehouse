@@ -43,44 +43,44 @@
         - link "Observations and Monitoring":
           - /url: /topics/observe
       - list:
-        - listitem: "Local ground-truth fuel conditions built into Red Flag Warning decisions Project count: 2"
-        - listitem: "Hotspot alerts that reach field partners by text when internet is unreliable Project count: 2"
-        - listitem: "Automated “safety net” fire detection so forecasters don’t miss new ignitions Project count: 1"
-        - listitem: "Confidence indicators and weather context alongside satellite hotspot detections Project count: 1"
-        - listitem: "Hotspot alert thresholds that forecasters can tune with local land managers Project count: 1"
+        - listitem: "Local ground-truth fuel conditions built into Red Flag Warning decisions . Project count: 2"
+        - listitem: "Hotspot alerts that reach field partners by text when internet is unreliable . Project count: 2"
+        - listitem: "Automated “safety net” fire detection so forecasters don’t miss new ignitions . Project count: 1"
+        - listitem: "Confidence indicators and weather context alongside satellite hotspot detections . Project count: 1"
+        - listitem: "Hotspot alert thresholds that forecasters can tune with local land managers . Project count: 1"
     - article:
       - text: Forecasts
       - heading "Forecasts and Modeling" [level=3]:
         - link "Forecasts and Modeling":
           - /url: /topics/forecast
       - list:
-        - listitem: "Earlier signals of critical fire weather, at least 48 hours ahead Project count: 2"
-        - listitem: "Trend and duration detail: when conditions peak and how long they last Project count: 2"
-        - listitem: "Forecast discussions that state forecaster confidence and reasoning Project count: 1"
-        - listitem: "Probabilistic forecasts shown as combined text and graphics Project count: 1"
-        - listitem: "Highly reliable wind and relative humidity forecasts throughout an incident Project count: 1"
+        - listitem: "Earlier signals of critical fire weather, at least 48 hours ahead . Project count: 2"
+        - listitem: "Trend and duration detail: when conditions peak and how long they last . Project count: 2"
+        - listitem: "Forecast discussions that state forecaster confidence and reasoning . Project count: 1"
+        - listitem: "Probabilistic forecasts shown as combined text and graphics . Project count: 1"
+        - listitem: "Highly reliable wind and relative humidity forecasts throughout an incident . Project count: 1"
     - article:
       - text: Warnings
       - heading "Warnings and Immediate Response" [level=3]:
         - link "Warnings and Immediate Response":
           - /url: /topics/warning
       - list:
-        - listitem: "Clear authority for who issues Fire Warnings during multi-agency incidents Project count: 2"
-        - listitem: "Consistent Red Flag Warning criteria and timing across neighboring offices Project count: 2"
-        - listitem: "Clearer public distinction between Fire Warnings, Red Flag Warnings, and evacuations Project count: 1"
-        - listitem: "Tiered warnings that flag rare, catastrophic fire weather Project count: 1"
-        - listitem: "Forecaster discretion to warn in near-criteria events, labeled as marginal Project count: 1"
+        - listitem: "Clear authority for who issues Fire Warnings during multi-agency incidents . Project count: 2"
+        - listitem: "Consistent Red Flag Warning criteria and timing across neighboring offices . Project count: 2"
+        - listitem: "Clearer public distinction between Fire Warnings, Red Flag Warnings, and evacuations . Project count: 1"
+        - listitem: "Tiered warnings that flag rare, catastrophic fire weather . Project count: 1"
+        - listitem: "Forecaster discretion to warn in near-criteria events, labeled as marginal . Project count: 1"
     - article:
       - text: Governance
       - heading "Strategic Adaptation and Institutional Governance" [level=3]:
         - link "Strategic Adaptation and Institutional Governance":
           - /url: /topics/governance
       - list:
-        - listitem: "Trusted local relationships and joint training before an incident Project count: 3"
-        - listitem: "Integrated Warning Team frameworks with clear, locally scalable roles Project count: 3"
-        - listitem: "Direct, two-way communication channels between forecasters and fire partners Project count: 2"
-        - listitem: "Regional flexibility to adopt or tailor Fire Warning workflows Project count: 2"
-        - listitem: "Staffing capacity and organizational buy-in to sustain interagency teams Project count: 2"
+        - listitem: "Trusted local relationships and joint training before an incident . Project count: 3"
+        - listitem: "Integrated Warning Team frameworks with clear, locally scalable roles . Project count: 3"
+        - listitem: "Direct, two-way communication channels between forecasters and fire partners . Project count: 2"
+        - listitem: "Regional flexibility to adopt or tailor Fire Warning workflows . Project count: 2"
+        - listitem: "Staffing capacity and organizational buy-in to sustain interagency teams . Project count: 2"
     - complementary "Where these needs come from":
       - heading "Where these needs come from" [level=3]
       - paragraph: Topic areas are not assigned project by project. Every project in The Firehouse is read together, with Claude. The end-user needs its researchers recorded are grouped into the four areas above and ranked by how often they come up. This pass serves as an initial draft that our team reviews and refines before finalizing each synthesis. Open any topic area to see which specific projects each need draws on; each project page preserves the researchers’ own words.
