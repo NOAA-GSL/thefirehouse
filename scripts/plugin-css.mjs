@@ -11,12 +11,13 @@
  * in the order the site loads them. That order matters: the shared rules in
  * `src/styles/global.css` come after the components' and win their ties.
  *
- * Left out, because GSL's theme does their job under the plugin: the static build's
- * page shell, gov banner and footer (`REACT_ONLY`; they're found among the JS imports,
- * so each has to stay imported by a component, not by a CSS `@import`). Left for
- * later: the coverage map's chunk, which loads with the map (`DEFERRED`, Phase 5), and
- * the Google Fonts `@import`, since the fonts will be the plugin's own to load. Any
- * other stylesheet the build makes stops the script, so none is dropped unnoticed.
+ * Left out (`LEFT_OUT`): the static build's page shell, gov banner and footer,
+ * because GSL's theme does their job under the plugin, and the fonts' stylesheet,
+ * which the plugin loads on its own so a switch to GSL's fonts stays one change.
+ * They're found among the JS imports, so each has to stay imported from a module,
+ * not by a CSS `@import`. Left for later: the coverage map's chunk, which loads with
+ * the map (`DEFERRED`, Phase 5). Any other stylesheet the build makes stops the
+ * script, so none is dropped unnoticed.
  *
  * The output is checked before it's written: every rule must sit inside `.fh-app`, no
  * at-rule may reach the whole page, and nothing may load from elsewhere. PostCSS reads
@@ -39,13 +40,18 @@ import { browserProblems, openBrowser } from './css-browser-check.mjs';
 // case the shell started in.
 const ROOT = realpathSync.native(resolve(dirname(fileURLToPath(import.meta.url)), '..'));
 const OUT = resolve(ROOT, 'wp-content/plugins/firehouse/assets/css/firehouse.css');
-const REACT_ONLY = ['src/styles/page-shell.css', 'src/design-system/GovBanner.css', 'src/design-system/SiteFooter.css'];
+const LEFT_OUT = [
+  'src/styles/page-shell.css',
+  'src/design-system/GovBanner.css',
+  'src/design-system/SiteFooter.css',
+  'wp-content/plugins/firehouse/assets/css/fonts.css',
+];
 const DEFERRED = ['RegionMap'];
 
 const posix = (path) => path.replace(/\\/g, '/');
-const leftOut = new Set(REACT_ONLY.map((file) => posix(resolve(ROOT, file))));
+const leftOut = new Set(LEFT_OUT.map((file) => posix(resolve(ROOT, file))));
 
-/** Loads each React-only stylesheet as empty, so the rest keep their places. */
+/** Loads each left-out stylesheet as empty, so the rest keep their places. */
 function leaveOut() {
   const seen = new Set();
   return {
@@ -103,7 +109,6 @@ const body = sheets
   .map((name) => output.find((file) => file.fileName === name).source)
   .join('\n')
   .replace(/\r\n/g, '\n')
-  .replace(/^@import url\((['"]?)https:\/\/fonts\.googleapis\.com\/[^)]*\1\);?\n?/gm, '')
   .trim();
 
 const css = `/*
@@ -113,7 +118,7 @@ const css = `/*
  * Every rule is scoped under .fh-app (WORDPRESS-PLAN.md rule 9), in the order the
  * site loads them. Left out: the static build's page shell, gov banner and footer,
  * which GSL's theme replaces; the coverage map, which arrives with the map; and the
- * fonts, which the plugin will load itself.
+ * fonts, which the plugin loads on its own from fonts.css.
  */
 
 ${body}

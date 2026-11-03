@@ -833,7 +833,11 @@ ones.
   from three tokens (`--font-display`, `--font-display-expanded`, `--font-body`), so
   switching to GSL's fonts means pointing those at Montserrat and Nunito Sans and not
   loading the files. GSL loads Montserrat at one weight, so the display weights would
-  need checking then.
+  need checking then. *Fonts done 3 November: `scripts/fetch-fonts.mjs` saved Google's
+  own files and licence in `assets/fonts/`, with their rules in `assets/css/fonts.css`,
+  which `firehouse.css` leaves out. The static build loads the same file, and its
+  screenshots match the build that loaded Google's pixel for pixel. Google serves no
+  Archivo Expanded, so the stats fall back to Archivo, as before.*
 - Firehouse page templates, chosen with the `template_include` filter, that call
   GSL's `get_header()` and `get_footer()`, with full-width sections between them.
   GSL's theme is classic, so no Site Editor copy of a template can override the

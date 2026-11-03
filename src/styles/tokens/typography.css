@@ -1,11 +1,12 @@
 /* Ported from the Firehouse design system: tokens/typography.css
  *
- * NOTE (from the design system readme): fonts come from Google Fonts over CDN.
- * Some federal sites restrict third-party CDN calls — if NOAA/GSL requires
- * self-hosted fonts, swap this @import for local @font-face rules. Nothing else
- * in the app needs to change; everything reads --font-display / --font-body.
+ * NOTE (from the design system readme): fonts came from Google Fonts over CDN.
+ * Some federal sites restrict third-party CDN calls, so the design system's
+ * @import is swapped here for local @font-face rules: Google's own files, saved in
+ * the plugin and loaded from wp-content/plugins/firehouse/assets/css/fonts.css
+ * (scripts/fetch-fonts.mjs). Nothing else in the app changed; everything reads
+ * --font-display / --font-body.
  */
-@import url('https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,500;0,600;0,700;0,800;1,600&family=Archivo+Expanded:wght@700;800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
 
 :root {
   --font-display: 'Archivo', ui-sans-serif, system-ui, -apple-system, sans-serif;

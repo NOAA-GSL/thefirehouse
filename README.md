@@ -58,7 +58,8 @@ wp-content/plugins/firehouse/
                     The WordPress plugin, below). So far: firehouse.php, which
                     loads the content logic in PHP (domain/); the shared
                     vocabularies and test cases; and the PHP tests.
-                    assets/css/firehouse.css is generated from src/.
+                    assets/css/firehouse.css is generated from src/;
+                    assets/fonts/ and assets/css/fonts.css hold the fonts.
 ```
 
 ### The design system
@@ -225,11 +226,10 @@ overrides are isolated so a re-sync doesn't lose them.
       site's root, so crawlers never read it, and a `Sitemap:` line there does
       nothing. A `sitemap.xml` of the project pages would have to be listed in GSL's
       own `robots.txt` or submitted to search engines directly.
-- [ ] **Decide on self-hosted fonts.** Archivo and Public Sans load from Google
-      Fonts. Some agencies prohibit third-party CDN calls. For this static build,
-      swapping the `@import` in `tokens/typography.css` for local `@font-face` is the
-      only change needed. The plugin's copy leaves the `@import` out and will load
-      its fonts itself (plan open question 10).
+- [x] **Self-host the fonts.** Some agencies prohibit third-party CDN calls.
+      Archivo and Public Sans now come from the site itself: Google's own files,
+      saved in the plugin's `assets/fonts/` and loaded from `assets/css/fonts.css`
+      (see The WordPress plugin, below).
 - [ ] **Run an audit with a real screen reader**, and check the remaining federal
       requirements the brief flags as unconfirmed (USWDS conventions, privacy
       notice, .gov branding).
@@ -346,8 +346,9 @@ question 11).
 `assets/css/firehouse.css` is the site's CSS, scoped under `.fh-app` so it can sit
 inside GSL's theme without reaching the theme's header and footer (plan rule 9). It
 leaves out what GSL's theme replaces (the static build's page shell, gov banner and
-footer), the coverage map's CSS until Phase 5, and the Google Fonts `@import`. Don't
-edit it: `npm run plugin:css` writes it from `src/`, and CI fails if it falls behind.
+footer), the coverage map's CSS until Phase 5, and the fonts, which load on their own.
+Don't edit it: `npm run plugin:css` writes it from `src/`, and CI fails if it falls
+behind.
 The site's own build scopes every stylesheet the same way (`scripts/scope-css.ts`), with
 `#root` as the wrapper, so the static site runs on the same CSS the plugin gets, and
 the build stops on any rule that could match outside the wrapper. Before writing,
@@ -358,6 +359,15 @@ PostCSS and a browser tokenize some CSS differently.
 `src/styles/page-shell.css`, which styles the static build's own `<html>` and
 `<body>`, is the one stylesheet left unscoped. Nothing loads the plugin's copy yet: the
 page templates come later in Phase 3.
+
+`assets/fonts/` holds Archivo and Public Sans, Google Fonts' own files with their SIL
+Open Font License, and `assets/css/fonts.css` their `@font-face` rules. The static
+build imports that file (`src/main.tsx`), and the plugin will load it with its
+templates, so no page calls Google. `node scripts/fetch-fonts.mjs` refreshes both from
+Google, which only that script ever reaches. Google serves no Archivo Expanded, so the
+stats fall back to Archivo, as they always have. To switch to GSL's fonts, stop loading
+`fonts.css` and point the three font tokens in `src/styles/tokens/typography.css` at
+Montserrat and Nunito Sans.
 
 The local WordPress runs in Docker and borrows GSL's theme, WordPress images and
 database from a checkout of GSL's internal gsl-wordpress repository beside this one

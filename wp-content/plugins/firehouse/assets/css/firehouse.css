@@ -5,7 +5,7 @@
  * Every rule is scoped under .fh-app (WORDPRESS-PLAN.md rule 9), in the order the
  * site loads them. Left out: the static build's page shell, gov banner and footer,
  * which GSL's theme replaces; the coverage map, which arrives with the map; and the
- * fonts, which the plugin will load itself.
+ * fonts, which the plugin loads on its own from fonts.css.
  */
 
 /* Design system Button.
@@ -3654,7 +3654,6 @@
     transform: none;
   }
 }
-
 /* Ported verbatim from the Firehouse design system:
    _ds/the-firehouse-design-system-a05f43c6.../tokens/colors.css
    Do not hand-edit values here — change them in the design system and re-sync. */
@@ -3866,10 +3865,12 @@
 }
 /* Ported from the Firehouse design system: tokens/typography.css
  *
- * NOTE (from the design system readme): fonts come from Google Fonts over CDN.
- * Some federal sites restrict third-party CDN calls — if NOAA/GSL requires
- * self-hosted fonts, swap this @import for local @font-face rules. Nothing else
- * in the app needs to change; everything reads --font-display / --font-body.
+ * NOTE (from the design system readme): fonts came from Google Fonts over CDN.
+ * Some federal sites restrict third-party CDN calls, so the design system's
+ * @import is swapped here for local @font-face rules: Google's own files, saved in
+ * the plugin and loaded from wp-content/plugins/firehouse/assets/css/fonts.css
+ * (scripts/fetch-fonts.mjs). Nothing else in the app changed; everything reads
+ * --font-display / --font-body.
  */
 
 .fh-app {
