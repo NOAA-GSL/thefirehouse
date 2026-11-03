@@ -1,6 +1,6 @@
 import postcss from 'postcss';
 import { describe, expect, it } from 'vitest';
-import { isAnchored, outputProblems, scopeFirehouse, scopeProblem, scopeSelector } from './scope-css';
+import { decodeCssEscapes, isAnchored, outputProblems, scopeFirehouse, scopeProblem, scopeSelector } from './scope-css';
 
 describe('scopeSelector', () => {
   it.each([
@@ -102,6 +102,18 @@ describe('scopeFirehouse', () => {
   ])('stops the build on %s', (css) => expect(() => run(css)).toThrow(/X\.css:1:/));
 });
 
+describe('decodeCssEscapes', () => {
+  it.each([
+    ['u\\72l(', 'url('],
+    ['\\75 rl(', 'url('],
+    ['\\000075rl(', 'url('],
+    ['ur\\l(', 'url('],
+    ['\\.x', '.x'],
+    ['a\\0 b', 'a�b'],
+    ['plain', 'plain'],
+  ])('%s reads as %s', (text, decoded) => expect(decodeCssEscapes(text)).toBe(decoded));
+});
+
 describe('outputProblems', () => {
   const problems = (css: string) => outputProblems(postcss.parse(css));
 
@@ -115,6 +127,7 @@ describe('outputProblems', () => {
           '@container (width > 1px) { .fh-app .c { color: red } }',
           '@keyframes fh-drift { from { opacity: 0 } 50% { opacity: 1 } }',
           ".fh-app .q { background: url( 'data:image/png;base64,AA' ) }",
+          '.fh-app .r { background: u\\72l(data:image/png;base64,AA) }',
         ].join('\n'),
       ),
     ).toEqual([]);
@@ -126,6 +139,14 @@ describe('outputProblems', () => {
     ['.fh-app .x { background: url(//example.com/a.png) }', 'url(//example.com'],
     ['.fh-app .x { background: url(a.png) }', 'url(a.png)'],
     ['.fh-app .x { background: image-set("a.png" 1x) }', 'image-set'],
+    // Escapes a browser decodes before it reads the function's name.
+    ['.fh-app .x { background: u\\72l("https://example.com/a.png") }', 'u\\72l('],
+    ['.fh-app .x { background: \\75 rl(//example.com/a.png) }', '\\75 rl('],
+    ['.fh-app .x { background: U\\52L(a.png) }', 'U\\52L('],
+    ['.fh-app .x { background: ur\\l(a.png) }', 'ur\\l('],
+    ['.fh-app .x { background: -webkit-image-set("a.png" 1x) }', 'image-set'],
+    ['.fh-app .x { background: image("a.png") }', 'image('],
+    ['.fh-app .x { background: src("a.png") }', 'src('],
     ['@font-face { font-family: X; src: local(X) }', '@font-face'],
     ['@property --x { syntax: "*"; inherits: false }', '@property'],
     ['@layer base;', '@layer'],
@@ -134,5 +155,9 @@ describe('outputProblems', () => {
     ['.fh-app ~ footer { color: red }', 'unscoped .fh-app ~ footer'],
   ])('refuses %s', (css, problem) => {
     expect(problems(css).join(' ')).toContain(problem);
+  });
+
+  it("can't be handed an escaped at-rule name: PostCSS refuses to parse it, which stops plugin-css.mjs", () => {
+    expect(() => postcss.parse('@\\69mport "https://example.com/x.css";')).toThrow(/At-rule without name/);
   });
 });

@@ -145,21 +145,39 @@ interface CssNode {
 const CONTAINED_AT_RULES = ['media', 'supports', 'container'];
 
 /**
+ * CSS text as a browser reads it: `\72` and `\72 ` are the code point 72 in hex, and
+ * a backslash before any other character is that character. So `u\72l(` is `url(`.
+ */
+export function decodeCssEscapes(text: string): string {
+  return text
+    .replace(/\\([0-9a-fA-F]{1,6})[ \t\n\r\f]?/g, (_, hex: string) => {
+      const point = parseInt(hex, 16);
+      return point === 0 || point > 0x10ffff || (point >= 0xd800 && point <= 0xdfff) ? '�' : String.fromCodePoint(point);
+    })
+    .replace(/\\([^\n\r\f0-9a-fA-F])/g, '$1');
+}
+
+/** A `url()` or `src()` that isn't `data:` or a fragment, or a function that takes one. */
+const LOADS = /\b(?:url|src)\((?!\s*['"]?\s*(?:data:|#))|(?:image-set|image|cross-fade)\(/i;
+
+/**
  * What a finished stylesheet would do outside the wrapper, as a list: an unscoped
  * selector, an at-rule that reaches the whole page (`@font-face`, `@property`,
  * `@layer`, a keyframes name without the `fh-` prefix), or anything that loads from
- * elsewhere (`@import`, a `url()` or `image-set()` other than `data:` or a fragment).
+ * elsewhere (`@import`, or `url()`, `src()`, `image-set()`, `image()` or
+ * `cross-fade()` other than `data:` or a fragment). Names and values are read after
+ * CSS escapes are decoded, as a browser reads them.
  */
 export function outputProblems(root: { walk(callback: (node: CssNode) => void): void }, scope = SCOPE): string[] {
   const problems: string[] = [];
   root.walk((node) => {
     if (node.type === 'atrule') {
-      const name = (node.name ?? '').toLowerCase();
+      const name = decodeCssEscapes(node.name ?? '').toLowerCase();
       if (/keyframes$/.test(name)) {
-        if (!/^fh-/.test(node.params ?? '')) problems.push(`@${node.name} ${node.params} isn't named fh-…`);
+        if (!/^fh-/.test(decodeCssEscapes(node.params ?? ''))) problems.push(`@${node.name} ${node.params} isn't named fh-…`);
       } else if (!CONTAINED_AT_RULES.includes(name)) problems.push(`@${node.name} ${node.params ?? ''}`.trim());
     }
-    if (node.type === 'decl' && /url\((?!\s*['"]?\s*(?:data:|#))|image-set\(/i.test(node.value ?? '')) {
+    if (node.type === 'decl' && LOADS.test(decodeCssEscapes(node.value ?? ''))) {
       problems.push(`${node.prop}: ${node.value}`);
     }
     if (node.type === 'rule' && !(node.parent?.type === 'atrule' && /keyframes$/i.test(node.parent.name ?? ''))) {
