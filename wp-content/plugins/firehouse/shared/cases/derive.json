@@ -5,6 +5,7 @@
 
     { "name": "the project count is live", "fn": "resolveStatValue", "args": [{ "id": "projects", "source": "publishedProjectCount", "label": "Projects" }, "@site"], "expected": "4" },
     { "name": "the topic count is live", "fn": "resolveStatValue", "args": [{ "id": "topics", "source": "topicCount", "label": "Topic areas" }, "@site"], "expected": "4" },
+    { "name": "the need count is live: needs in published projects, not recommendations alone", "fn": "resolveStatValue", "args": [{ "id": "needs", "source": "needCount", "label": "Needs" }, "@site"], "expected": "2" },
     { "name": "a static stat shows its value", "fn": "resolveStatValue", "args": [{ "id": "launch", "source": "static", "value": "2027", "label": "Launch" }, "@site"], "expected": "2027" },
     { "name": "a static stat with no value is empty", "fn": "resolveStatValue", "args": [{ "id": "empty", "source": "static", "label": "Empty" }, "@site"], "expected": "" },
 

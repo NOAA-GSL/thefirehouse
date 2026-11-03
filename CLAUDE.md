@@ -23,7 +23,8 @@ change.
   there rather than in code, and keep the test cases language-neutral.
 - **Before reporting a change done,** run the checks it touches: `npm run typecheck`,
   `npm test`, `npm run schema:check` and `npm run build` for the site; `composer lint`
-  and `composer test` for the plugin; `npm run reference` when a page changes.
+  and `composer test` for the plugin; `npm run reference` when a page changes (it also
+  fails on a page wider than the window).
 
 ## Review agents
 

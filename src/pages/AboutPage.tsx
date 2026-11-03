@@ -79,6 +79,10 @@ function ProcessLink({ link }: { link: LinkRef }) {
 export function AboutPage() {
   const content = useContent();
   const { hero, mission, audiences, process, team, cta } = content.about;
+  // A CMS may hand back something other than text; neither may break the page.
+  const text = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
+  const teamEmail = text(team.email);
+  const emailLead = text(team.emailLead);
 
   useEffect(() => {
     document.title = `About — ${content.settings.siteName}`;
@@ -176,6 +180,16 @@ export function AboutPage() {
               {team.heading}
             </h2>
             {team.body && <p className="fh-about__section-body">{team.body}</p>}
+            {/* One address for the team, said once: under each name, a shared mailbox
+                read as that person's own. */}
+            {teamEmail && (
+              <p className="fh-about__section-body">
+                {emailLead && <>{emailLead} </>}
+                <a className="fh-about__team-email" href={`mailto:${teamEmail}`}>
+                  {teamEmail}
+                </a>
+              </p>
+            )}
           </div>
 
           <ul className="fh-about__team">
@@ -207,7 +221,9 @@ export function AboutPage() {
                         </span>
                       )}
                     </div>
-                    <h3 className="fh-person__name">{member.name}</h3>
+                    <div className="fh-person__id">
+                      <h3 className="fh-person__name">{member.name}</h3>
+                    </div>
                   </div>
                   <div className="fh-person__bio">
                     {member.bio.map((paragraph, i) => (

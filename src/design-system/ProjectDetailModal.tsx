@@ -54,14 +54,14 @@ function BulletList({ items }: { items: string[] }) {
  * Quick look — a preview of one project, opened from the explorer grid.
  *
  * This used to be the project's only detail surface. It isn't any more: projects
- * have real pages at `/projects/:slug`, and that is where someone reads, links or
- * cites one. So this dialog was cut back to the job it is actually good at —
+ * have real pages at `/projects/:slug`, and that is where someone reads or links
+ * one. So this dialog was cut back to the job it is actually good at —
  * answering "is this the project I want?" without losing your place in the grid.
  *
  * It shows the abstract and the end-user needs, because those are what people
  * scan for, and then *counts* the rest rather than reprinting it. A preview that
  * duplicates the whole page gives nobody a reason to open the page, and buries the
- * one thing the page has that a dialog structurally cannot: a citable URL.
+ * one thing the page has that a dialog structurally cannot: a URL of its own.
  *
  * It is a real dialog: `aria-modal`, focus moved in on open and restored on close,
  * Escape to dismiss, and a focus loop so keyboard users can't tab out into the
@@ -214,7 +214,7 @@ export function ProjectDetailModal({
             Open project page
           </Button>
           <span className="fh-modal__footer-note">
-            Full takeaways, recommendations, papers and a citation
+            Full takeaways, recommendations and papers
           </span>
         </footer>
       </div>

@@ -20,6 +20,13 @@ export function resolveStatValue(stat: StatContent, content: SiteContent): strin
       return String(publishedProjects(content).length);
     case 'topicCount':
       return String(content.topics.length);
+    case 'needCount':
+      return String(
+        publishedProjects(content).reduce(
+          (count, project) => count + project.needs.filter((entry) => entry.need).length,
+          0,
+        ),
+      );
     case 'static':
       return stat.value ?? '';
   }
@@ -68,7 +75,7 @@ export function byRecency(a: Project, b: Project): number {
   return b.completionYear - a.completionYear || a.title.localeCompare(b.title);
 }
 
-/** How many times a need was raised; falls back to how many projects raised it. */
+/** A need's project count: the count the synthesis stored, or else how many projects it names. */
 export function needMentions(need: TopNeed): number {
   return need.mentions ?? need.projects?.length ?? 0;
 }

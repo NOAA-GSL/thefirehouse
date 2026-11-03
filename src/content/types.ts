@@ -80,8 +80,10 @@ export interface TopNeed {
   /** One plain-language phrase, e.g. "Longer-lead outlooks for planning windows". */
   text: string;
   /**
-   * How many survey entries (need/recommendation pairs) raise this need, across all
-   * projects. Falls back to the number of `projects` when a pass didn't record it.
+   * How many projects raise this need, each counted once (the team's rule since 28
+   * October); the site shows it as "Project count". The 17 September draft counted
+   * survey entries instead, so four of its counts are higher. Falls back to the number
+   * of `projects` when a pass didn't record it.
    */
   mentions?: number;
   /** Slugs of the projects the need draws on, most direct first. */
@@ -131,7 +133,7 @@ export interface Paper {
   /**
    * Bare DOI (`10.1175/WCAS-D-21-0042.1`), not a URL — the `https://doi.org/`
    * prefix is added at render time. Storing it bare keeps one canonical form, so
-   * the same value can be a link, a citation field, and a dedupe key.
+   * the same value can be a link and a dedupe key.
    */
   doi?: string;
 }
@@ -158,9 +160,8 @@ export interface NeedEntry {
  * One credited researcher.
  *
  * `name` is the only guaranteed field: the survey may capture a free-text byline
- * ("DESI research team") rather than structured names. When `family` is present the
- * citation builder can render a proper APA author string; when it isn't, it falls
- * back to `name` verbatim rather than guessing where a surname ends.
+ * ("DESI research team") rather than structured names. `name` is what the site
+ * shows, verbatim; nothing guesses where a surname ends.
  * See PLAN.md, open question 3.
  */
 export interface Author {
@@ -216,7 +217,7 @@ export interface Project {
   abstract?: string;
   authors: Author[];
   org?: string;
-  /** *Survey (Q7).* Year the project was completed — a primary filter and a citation field. */
+  /** *Survey (Q7).* Year the project was completed — a primary filter. */
   completionYear: number;
   /** *Survey (Q9).* Where in the fire cycle the work sits. A primary filter. */
   firePhases: FirePhase[];
@@ -231,8 +232,9 @@ export interface Project {
   /** *Survey (Q12).* Data collection instruments, e.g. "Focus groups". */
   methods: string[];
   /**
-   * *Survey (Q8).* IRB approval. Records where this is false never reach the UI —
-   * `normalize.ts` drops them at the boundary, implementing the survey's own skip
+   * *Survey (Q8).* IRB approval or exemption; also true for "Project did not require
+   * IRB review", which the team publishes too. Records where this is false never
+   * reach the UI — `normalize.ts` drops them at the boundary, implementing the survey's own skip
    * logic in the one place it cannot be forgotten by a future page.
    */
   irbApproved: boolean;
@@ -280,9 +282,11 @@ export interface HeroContent {
  * `source` decides where the number comes from. `derived` values are computed from
  * live content at render time (brief §5.1: "live, auto-updating stats") — an editor
  * controls the wording but cannot desync the count from reality. `static` is for
- * non-numeric slots like the "Open / For submissions" tile.
+ * non-numeric slots like the "Open / For submissions" tile. `needCount` counts the
+ * end-user needs in published projects; a recommendation submitted without a need
+ * isn't one.
  */
-export type StatSource = 'publishedProjectCount' | 'topicCount' | 'static';
+export type StatSource = 'publishedProjectCount' | 'topicCount' | 'needCount' | 'static';
 
 export interface StatContent {
   id: string;
@@ -372,7 +376,12 @@ export interface AboutPageContent {
   mission: SectionIntro & { paragraphs: string[] };
   audiences: SectionIntro & { items: AboutAudience[] };
   process: SectionIntro & { steps: AboutStep[]; links: LinkRef[] };
-  team: SectionIntro & { members: TeamMember[] };
+  /**
+   * `email` is the team's shared mailbox, the one address the page shows, once under
+   * the section's body after `emailLead` ("Write to the team at"). Team members carry
+   * no address of their own.
+   */
+  team: SectionIntro & { members: TeamMember[]; email?: string; emailLead?: string };
   cta: CtaBandContent;
 }
 
@@ -390,6 +399,11 @@ export interface SiteSettings {
   /** The Qualtrics submission survey every "Submit a Finding" control points at. */
   submitFormUrl: string;
   footerBlurb: string;
+  /**
+   * That the findings are the researchers' own, not NOAA's. It ends every page, just
+   * above the footer, so it stays with the content when GSL's footer replaces this one.
+   */
+  disclaimer?: string;
   footerGroups: FooterGroupContent[];
   agencyLine: string;
   usaGovUrl: string;

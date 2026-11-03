@@ -24,11 +24,13 @@
   cursor: pointer;
   padding: 0;
   margin-left: 4px;
+  /* Underlined at rest, as in USWDS: its color alone sits too close to the banner
+     text to mark it as a control (WCAG 1.4.1). */
+  text-decoration: underline;
 }
 
 .fh-gov__toggle:hover {
   color: var(--color-link-hover);
-  text-decoration: underline;
 }
 
 .fh-gov__panel {

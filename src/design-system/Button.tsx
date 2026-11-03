@@ -30,7 +30,7 @@ interface ButtonAsButton extends BaseProps {
   onClick?: MouseEventHandler<HTMLButtonElement>;
 }
 
-/** External / absolute destinations, e.g. the Qualtrics submission survey. */
+/** External / absolute destinations, e.g. the submission survey. */
 interface ButtonAsAnchor extends BaseProps {
   href: string;
   to?: undefined;
@@ -105,6 +105,7 @@ export function Button(props: ButtonProps) {
         {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
       >
         {content}
+        {external && <span className="fh-visually-hidden"> (opens in a new tab)</span>}
       </a>
     );
   }

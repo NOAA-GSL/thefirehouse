@@ -40,9 +40,15 @@ coverage/
 reference/screenshots/
 
 # Survey downloads hold submitters' emails and never belong in this public repository.
-# Keep them outside it; this is only a backstop.
+# Keep them outside it; this is only a backstop. Qualtrics and Google offer all of
+# these, and Qualtrics zips its downloads.
 *.xlsx
+*.xls
+*.ods
 *.csv
+*.tsv
+*.sav
+*.zip
 
 # OS
 .DS_Store

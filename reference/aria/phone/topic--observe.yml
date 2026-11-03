@@ -1,5 +1,8 @@
 - link "Skip to main content":
   - /url: "#main"
+- region "Official website of the United States government":
+  - text: An official website of the United States government
+  - button "Here’s how you know"
 - banner:
   - link "The Firehouse, NOAA Global Systems Laboratory — home":
     - /url: /
@@ -19,19 +22,19 @@
     - heading "Top 5 needs" [level=2]
     - paragraph:
       - strong: AI-synthesized
-      - text: across all 4 projects.
+      - text: across 4 of 8 projects.
       - strong: Draft, pending team review
       - text: · updated
       - time: September 17, 2026
       - text: .
     - paragraph:
-      - text: Ranked by mentions — how many submitted needs and recommendations raise each one.
+      - text: "Project count: the number of projects that raise each need."
       - link "How these needs are synthesized":
         - /url: /#needs-source
     - list:
       - listitem:
         - paragraph: Local ground-truth fuel conditions built into Red Flag Warning decisions
-        - paragraph: 2 mentions · from 2 projects
+        - paragraph: "Project count: 2"
         - list "Projects behind need 1":
           - listitem:
             - 'link "Igniting Impact: Advancing Fire Weather Decision Support Services 2026"':
@@ -41,28 +44,28 @@
               - /url: /projects/igniting-insight-evaluating-nws-fire-weather-products
       - listitem:
         - paragraph: Hotspot alerts that reach field partners by text when internet is unreliable
-        - paragraph: 2 mentions · from 1 project
+        - paragraph: "Project count: 2"
         - list "Projects behind need 2":
           - listitem:
             - 'link "Fire Weather Testbed Evaluations #002: Fire Detection and Dissemination - NESDIS Next Generation Fire System and NWS Hotspot Notification Tool 2025"':
               - /url: /projects/fire-weather-testbed-evaluations-002-fire-detection
       - listitem:
         - paragraph: Automated “safety net” fire detection so forecasters don’t miss new ignitions
-        - paragraph: 1 mention · from 1 project
+        - paragraph: "Project count: 1"
         - list "Projects behind need 3":
           - listitem:
             - 'link "Fire Weather Testbed Evaluations #002: Fire Detection and Dissemination - NESDIS Next Generation Fire System and NWS Hotspot Notification Tool 2025"':
               - /url: /projects/fire-weather-testbed-evaluations-002-fire-detection
       - listitem:
         - paragraph: Confidence indicators and weather context alongside satellite hotspot detections
-        - paragraph: 1 mention · from 1 project
+        - paragraph: "Project count: 1"
         - list "Projects behind need 4":
           - listitem:
             - 'link "Fire Weather Testbed Evaluations #002: Fire Detection and Dissemination - NESDIS Next Generation Fire System and NWS Hotspot Notification Tool 2025"':
               - /url: /projects/fire-weather-testbed-evaluations-002-fire-detection
       - listitem:
         - paragraph: Hotspot alert thresholds that forecasters can tune with local land managers
-        - paragraph: 1 mention · from 1 project
+        - paragraph: "Project count: 1"
         - list "Projects behind need 5":
           - listitem:
             - 'link "Fire Weather Testbed Evaluations #002: Fire Detection and Dissemination - NESDIS Next Generation Fire System and NWS Hotspot Notification Tool 2025"':
@@ -75,8 +78,8 @@
       - listitem: Field reports from incident personnel and land managers
       - listitem: Data sharing, formats, and access between agencies
     - paragraph: Have a finding that speaks to this area?
-    - link "Submit a Finding":
-      - /url: https://colostate.az1.qualtrics.com/jfe/form/SV_9TrTrMu4YKK5ths
+    - link "Submit a Finding (opens in a new tab)":
+      - /url: https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform
   - navigation "Other topic areas":
     - heading "Other topic areas" [level=2]
     - list:
@@ -89,3 +92,50 @@
       - listitem:
         - link "Governance Strategic Adaptation and Institutional Governance":
           - /url: /topics/governance
+  - paragraph: Researchers inside and outside NOAA submit the projects on this site. Their findings and opinions are their own and do not necessarily reflect the views of NOAA or the U.S. Department of Commerce.
+- contentinfo:
+  - img "NOAA"
+  - img "GSL"
+  - text: The Firehouse
+  - paragraph: A project of the Global Systems Laboratory (GSL), part of the National Oceanic and Atmospheric Administration (NOAA).
+  - navigation "Explore":
+    - heading "Explore" [level=2]
+    - link "About The Firehouse":
+      - /url: /about
+    - link "All projects":
+      - /url: /projects
+    - link "Top needs":
+      - /url: /#top-needs
+    - link "Submit a finding (opens in a new tab)":
+      - /url: https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform
+  - navigation "About GSL":
+    - heading "About GSL" [level=2]
+    - link "gsl.noaa.gov (opens in a new tab)":
+      - /url: https://gsl.noaa.gov
+    - link "Research programs (opens in a new tab)":
+      - /url: https://gsl.noaa.gov/research
+    - link "Contact GSL (opens in a new tab)":
+      - /url: https://gsl.noaa.gov/contact
+    - link "Careers (opens in a new tab)":
+      - /url: https://gsl.noaa.gov/careers
+  - navigation "Federal resources":
+    - heading "Federal resources" [level=2]
+    - link "NOAA.gov (opens in a new tab)":
+      - /url: https://www.noaa.gov
+    - link "Department of Commerce (opens in a new tab)":
+      - /url: https://www.commerce.gov
+    - link "USA.gov (opens in a new tab)":
+      - /url: https://www.usa.gov
+    - link "No FEAR Act (opens in a new tab)":
+      - /url: https://www.noaa.gov/organization/no-fear-act
+    - link "Privacy policy (opens in a new tab)":
+      - /url: https://www.noaa.gov/protecting-your-privacy
+    - link "Accessibility (opens in a new tab)":
+      - /url: https://www.noaa.gov/accessibility
+    - link "FOIA (opens in a new tab)":
+      - /url: https://www.noaa.gov/information-technology/foia
+    - link "Information quality (opens in a new tab)":
+      - /url: https://www.noaa.gov/organization/information-technology/information-quality
+  - text: U.S. Department of Commerce | National Oceanic and Atmospheric Administration
+  - link "usa.gov (opens in a new tab)":
+    - /url: https://www.usa.gov

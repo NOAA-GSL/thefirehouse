@@ -25,7 +25,7 @@ export interface ProjectTileProps {
  *
  * It is a LINK, not a button. It used to open a modal, which meant no URL, no
  * middle-click, no "open in new tab", no right-click-copy-address and nothing to
- * cite — all of which are things people actually do with a list of research, and
+ * share — all of which are things people actually do with a list of research, and
  * all of which a <button> silently swallows.
  *
  * The link sits on the title and is stretched over the whole tile by CSS. A tile-

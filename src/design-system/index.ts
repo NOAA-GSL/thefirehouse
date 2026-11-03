@@ -37,9 +37,6 @@ export type { ProjectTileProps } from './ProjectTile';
    mapping library back into the shared chunk and undo the code split. Import it
    directly from './design-system/RegionMap' (lazily, as LandingPage does). */
 
-export { CitationBlock } from './CitationBlock';
-export type { CitationBlockProps, CitationFormatOption } from './CitationBlock';
-
 export { ProjectDetailModal } from './ProjectDetailModal';
 export type { ProjectDetailModalProps, ProjectPaper } from './ProjectDetailModal';
 

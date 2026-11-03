@@ -29,6 +29,7 @@ function FooterLink({ item }: { item: NavItem }) {
         {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
       >
         {item.label}
+        {external && <span className="fh-visually-hidden"> (opens in a new tab)</span>}
       </a>
     );
   }
@@ -76,6 +77,7 @@ export function SiteFooter({ siteName, blurb, groups, agencyLine, usaGovUrl }: S
           <span>{agencyLine}</span>
           <a className="fh-footer__usa" href={usaGovUrl} target="_blank" rel="noopener noreferrer">
             usa.gov <Icon name="external-link" size={12} />
+            <span className="fh-visually-hidden"> (opens in a new tab)</span>
           </a>
         </div>
       </div>

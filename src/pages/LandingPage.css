@@ -287,8 +287,9 @@
 
 .fh-topics {
   padding-block: var(--space-3xl) var(--space-2xl);
-  /* Clears the sticky header (65px) when reached from "/#top-needs". */
-  scroll-margin-top: 65px;
+  /* Clears the sticky header (65px) when reached from "/#top-needs", with room for
+     the focus ring the section then takes. */
+  scroll-margin-top: calc(65px + var(--space-xs));
 }
 
 @media (max-width: 768px) {
@@ -380,7 +381,7 @@
   inset: 0;
   border-radius: inherit;
   /* Positioned, so it paints above the card's in-flow content and the whole card —
-     needs list, mention counts, the "View topic area and sources" cue — is one
+     needs list, project counts, the "View topic area and sources" cue — is one
      click target. Its containing block is the card because no ancestor between
      them is positioned; that is why the title must stay static. Nothing inside
      this card is interactive, so the overlay can own the entire surface. */
@@ -440,6 +441,19 @@
   color: var(--color-text-tertiary);
 }
 
+/* On a phone the count beside the need left the need a word or two per line, so it
+   drops to a line of its own under the text. */
+@media (max-width: 480px) {
+  .fh-needs__item {
+    grid-template-columns: 24px minmax(0, 1fr);
+    row-gap: var(--space-2xs);
+  }
+
+  .fh-needs__count {
+    grid-column: 2;
+  }
+}
+
 .fh-topic-card__empty {
   margin: 0;
   font: var(--text-body-sm);
@@ -496,6 +510,12 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: var(--space-md) var(--space-xl);
+}
+
+/* It takes focus when reached by link; the global ring's 3px radius would square
+   its corners. */
+.fh-source:focus-visible {
+  border-radius: var(--radius-xl);
 }
 
 .fh-source__copy {

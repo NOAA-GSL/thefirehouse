@@ -26,6 +26,7 @@ const QUERY = /* groq */ `{
     submitLabel,
     submitFormUrl,
     footerBlurb,
+    disclaimer,
     footerGroups[]{heading, links[]{label, to, href}},
     agencyLine,
     usaGovUrl
@@ -75,7 +76,7 @@ const QUERY = /* groq */ `{
     audiences{eyebrow, heading, body, items[]{icon, title, body}},
     process{eyebrow, heading, body, steps[]{title, body}, links[]{label, to, href}},
     team{
-      eyebrow, heading, body,
+      eyebrow, heading, body, email, emailLead,
       members[]{
         name,
         bio,

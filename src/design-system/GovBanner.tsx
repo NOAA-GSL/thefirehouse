@@ -18,15 +18,16 @@ function FlagIcon({ size = 16 }: { size?: number }) {
  * Required U.S. federal ".gov" identification banner with a "Here's how you know"
  * expandable panel.
  *
- * Per the design system readme, the banner deliberately has no dark variant — it
- * stays on the neutral sunken surface in both themes, per federal convention.
+ * It sits on the sunken surface token, which follows the theme like everything else.
+ * It's a labelled region, as in USWDS, so people moving by landmarks reach it rather
+ * than skipping straight to the header.
  */
 export function GovBanner() {
   const [open, setOpen] = useState(false);
   const panelId = useId();
 
   return (
-    <div className="fh-gov">
+    <section className="fh-gov" aria-label="Official website of the United States government">
       <div className="fh-gov__bar fh-container">
         <FlagIcon />
         <span>An official website of the United States government</span>
@@ -65,6 +66,6 @@ export function GovBanner() {
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 }

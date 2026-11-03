@@ -1,6 +1,6 @@
 # The Firehouse — collected project findings
 
-Source document for the topic-area synthesis. It contains all 7 published projects in The Firehouse, NOAA Global Systems Laboratory's hub for fire weather social science. Each project's abstract, takeaways, needs and recommendations are reproduced exactly as the researchers submitted them.
+Source document for the topic-area synthesis. It contains all 8 published projects in The Firehouse, NOAA Global Systems Laboratory's hub for fire weather social science. Each project's abstract, takeaways, needs and recommendations are reproduced exactly as the researchers submitted them.
 
 Topic areas are a lens across the whole collection. No project is assigned to a topic area; a single project may inform several areas or none.
 
@@ -217,11 +217,11 @@ Recommendation: Recommend NWS forecasters exercise professional discretion to is
 
 ### Abstract
 
-This evaluation by the NOAA Fire Weather Testbed assesses the Next Generation Fire System (NGFS) for wildland fire Predictive Services personnel. Based on a May 2025 evaluation with six interagency specialists, NGFSâ€™s high temporal resolution and Fire Radiative Power (FRP) data significantly enhance situational awareness and early wildfire verification. While participants praised its rapid cadence, operational adoption is hindered by usability friction, such as map navigation challenges and visual ambiguities between wildfires and non-fire heat sources like solar arrays. Predictive Services relies on a "trust but verify" workflow across multiple tools; thus, standalone systems risk becoming "one more tab to check". Key recommendations include exposing robust APIs to integrate NGFS data directly into existing Common Operating Platforms, implementing push alerts and user-defined watchboxes, improving visual differentiation of event types, and delivering role-specific training.
+This evaluation by the NOAA Fire Weather Testbed assesses the Next Generation Fire System (NGFS) for wildland fire Predictive Services personnel. Based on a May 2025 evaluation with six interagency specialists, NGFS's high temporal resolution and Fire Radiative Power (FRP) data significantly enhance situational awareness and early wildfire verification. While participants praised its rapid cadence, operational adoption is hindered by usability friction, such as map navigation challenges and visual ambiguities between wildfires and non-fire heat sources like solar arrays. Predictive Services relies on a "trust but verify" workflow across multiple tools; thus, standalone systems risk becoming "one more tab to check". Key recommendations include exposing robust APIs to integrate NGFS data directly into existing Common Operating Platforms, implementing push alerts and user-defined watchboxes, improving visual differentiation of event types, and delivering role-specific training.
 
 ### Major takeaways
 
-- NGFSâ€™s high temporal resolution and rapid 5-minute data cadence significantly enhance situational awareness, enabling fast verification of unconfirmed initial wildfire reports.
+- NGFS's high temporal resolution and rapid 5-minute data cadence significantly enhance situational awareness, enabling fast verification of unconfirmed initial wildfire reports.
 - Operational adoption is hindered by map navigation friction and visual ambiguities, such as misidentifying solar arrays or prescribed burns as wildfires.
 - To avoid becoming "one more tab to check," NGFS data needs robust API integration into existing Common Operating Platforms and automated push notifications.
 
@@ -351,23 +351,17 @@ Recommendation: Recommend ingesting NGFS into NWS Advanced Weather Interactive P
 
 **Entry 2**
 
-Need: Need for adjustable alert thresholds among meteorologists: The capability for meteorologists’ to adjust and customize hotspot alert thresholds is needed to stay informed on emerging hotspots without becoming inundated during high-activity fire periods.
-
-Recommendation: Recommend integrating confidence/uncertainty flags and customizable local alert thresholds pre-determined with local land management partners.
-
-**Entry 3**
-
 Need: Need for contextual data and weather overlays among land managers: Land managers need contextual data, confidence indicators, and representative weather observations alongside hotspot detections to validate thermal anomalies and reduce concerns over false positive detections.
 
 Recommendation: Recommend training materials and documentation that explain the NGFS process (e.g., how it detects fires, integrates known wildland fire information, and incorporates uncertainty) to support land managers in validating detections with other sources.
 
-**Entry 4**
+**Entry 3**
 
 Need: Need for controlled fire detection information flows among meteorologists and land managers: Both groups need information flows to notify land management partners about critical hotspot detections without overwhelming them with unnecessary data.
 
 Recommendation: Recommend adding a confirmation mechanism to “close the loop” between meteorologists and partner agencies to confirm receipt of NWS-provided hotspot notification(s).
 
-**Entry 5**
+**Entry 4**
 
 Need: Need for multi-modal communication options between meteorologists and land managers: Land managers need flexible, multi-modal communication options (including via text message) to ensure time-sensitive hotspot alerts reach field partners reliably despite internet connectivity constraints.
 
@@ -468,49 +462,43 @@ This study evaluates how National Weather Service (NWS) partners (Fire Chiefs, F
 
 **Entry 1**
 
-Need: Need for clear and detailed forecast discussions. Forecast discussions are highly valued for providing insight into forecaster reasoning, allowing fire partners to interpret confidence levels, trends, and nuances not captured in standard forecasts.
-
-Recommendation: Recommend expanding the deliberate use of Forecast Discussions during critical fire weather periods to explicitly highlight forecaster confidence, forecast rationale, and key weather trends (particularly whether a Red Flag Warning is expected in upcoming days).
-
-**Entry 2**
-
 Need: Need for consistent and transparent incorporation of fuels data in RFWs. There is a clear inconsistent use of fuels in Red Flag Warning issuance. Fire partners want clear, documented incorporation of fuel receptiveness into warning decisions.
 
 Recommendation: Recommend incorporating fuels data into RFW issuance more systematically and develop clearer national guidance on fuel integration.
 
-**Entry 3**
+**Entry 2**
 
 Need: Need for better cross-office coordination in product issuance. Jurisdictional boundaries can lead to mismatches in warnings (whether issued at all/criteria/lead time) across neighboring areas. Fire partners want greater alignment across WFOs to ensure cohesive messaging and decision-making.
 
 Recommendation: Recommend encouraging greater coordination between adjacent WFOs to align timing and criteria—especially in overlapping CWAs or regions with prescribed fire operations.
 
+**Entry 3**
+
+Need: Need for inclusion of trend and duration information in RFWs and Forecast Discussions. Fire partners are planning around when conditions will peak, how long they’ll last, and whether a warning spans multiple days. Current RFWs sometimes lack this critical trend detail.
+
+Recommendation: Recommend that forecasters indicate how long critical conditions are expected to last, when they will peak, whether a multi-day event is likely, and overall forecaster confidence/rationale.
+
 **Entry 4**
-
-Need: Need for inclusion of trend and duration information in RFWs. Fire partners are planning around when conditions will peak, how long they’ll last, and whether a warning spans multiple days. Current RFWs sometimes lack this critical trend detail.
-
-Recommendation: Recommend that forecasters indicate how long critical conditions are expected to last, when they will peak, and whether a multi-day event is likely.
-
-**Entry 5**
 
 Recommendation: Recommend hosting regular (biannual or annual to align with Annual Operating Plans) fire partner-forecaster coordination meetings that focus on evaluating and refining RFW/Fire Weather Watch criteria based on real-world impacts.
 
-**Entry 6**
+**Entry 5**
 
 Recommendation: Recommend acknowledging that RFWs serve public communication, validation, and legitimacy roles—even if they are not the initial trigger for decisions. This has changed from their original intent and this description should be updated in official NWS communications and documentation.
 
-**Entry 7**
+**Entry 6**
 
 Need: Need for clearer differentiation and dissemination of Fire Warnings among public safety partners Confusion over how Fire Warnings relate to Red Flag Warnings and evacuation orders raises concerns about public misunderstanding.
 
 Recommendation: Recommend clarifying alert distinctions and transitioning Fire Warnings to Wireless Emergency Alerts (WEA)—leveraging geofenced mobile reach to deliver critical protective actions to mobile populations during imminent threats where traditional Emergency Alert System channels fail to reach them.
 
-**Entry 8**
+**Entry 7**
 
 Need: Need for consistent authority and decision-making protocols for Fire Warnings among multi-agency partners Jurisdictional complexities create uncertainty over who initiates Fire Warnings during multi-agency incidents.
 
 Recommendation: Recommend establishing frameworks that define clear issuance roles among NWS, fire management, and law enforcement, potentially via Integrated Warnings Teams—supported by interagency training—and developing automated request processes to reduce cognitive burden and operational delays during high-stress events.
 
-**Entry 9**
+**Entry 8**
 
 Need: Need for regional flexibility in Fire Warning implementation. Fire partners emphasized that Fire Warnings may not be appropriate in all areas, especially where effective local systems are already in place or fire risk is lower.
 
@@ -521,3 +509,70 @@ Recommendation: Recommend establishing flexible regional implementation guidelin
 - Igniting Insight: Evaluating NWS Red Flag Warnings within a Fire Partner Decision-Making Context — Bulletin of the American Meteorological Society, 2026 — https://doi.org/10.1175/BAMS-D-25-0036.1
 - Operationalizing the Fire Warning: distinguishing structural constraints from training-sensitive perceptions — npj Natural Hazards, 2026 — https://doi.org/10.1038/s44304-026-00247-y
 - From Data to Decisions: Producing Actionable and Accessible Earth Information Systems II — AMS - 105th AMS Annual Meeting — https://ams.confex.com/ams/105ANNUAL/meetingapp.cgi/Session/69350
+
+---
+
+## Project 8: FWT Evaluation 001. WoFS-Smoke
+
+- **Project ID:** R_3e9GnZYuWAjuZM5
+- **Page:** /projects/fwt-evaluation-001-wofs-smoke
+- **Researchers:** Benjamin Hatchett, Jamie L. Vickery, Zach T. Tolby, Thomas A. Jones, Patrick S. Skinner, Emily M. Wells, Kyle J. Thiem
+- **Organization:** Cooperative Institute for Research in the Atmosphere
+- **Completed:** 2024
+- **Project type:** Testbed Evaluation
+- **Data collection:** Focus groups, Other (Notes during evaluation)
+- **Fire cycle phases:** Before (Pre-fire planning, prevention, and mitigation); During (Fire detection, active suppression, and downstream impacts); After (Postfire recovery and rehabilitation)
+- **Geographic areas:** Alaska (AICC); Northwest — OR, WA (NWCC); Rocky Mountain — CO, WY, SD, NE, KS (RMCC); Eastern Area (EACC); Southern Area — incl. PR & USVI (SACC); National / not region-specific
+
+### Abstract
+
+On 30 November 2023, the NOAA Global System Laboratory's Fire Weather Testbed facilitated a one-day virtual training and evaluation of WoFS-Smoke. The primary goal was to “Determine how useful WoFS-Smoke products are to both pre- and active fire decision making processes, and use that information to motivate future WoFS-Smoke development. The evaluation included seven National Weather Service (NWS) participants, four of whom are active Incident Meteorologists representing the Eastern, Central, Western, Southern, and Alaska Regions. The evaluation began with a short training, followed by three scenarios highlighting key capabilities of WoFS-Smoke: (i) a probability of smoke situation based on a prescribed fire, (ii) a Red Flag Threat Index scenario, and (iii) a rapidly changing fire environment scenario. The evaluation concluded with a focus group discussion that included an additional scenario applying WoFS-Smoke to a short-duration, high-intensity postfire rainfall event.
+
+### Major takeaways
+
+- WoFS-Smoke provides actionable probabilistic information to support a range of fire-related management aspects in rapidly changing environments during the main phases of wildland fire including the pre-fire phase (e.g., onset and cessation time, magnitude, and spatial extent of extreme fire weather conditions), the during-fire phase (e.g., alerting fire suppression personnel to wind shifts and providing timing of smoke plume arrival and departure to partners), and the post-fire phase (e.g., guidance regarding short-duration high-intensity precipitation capable of initiating post-fire flooding and debris flows).
+- WoFS-Smoke complements existing operational products (e.g., the NOAA High-Resolution Rapid Refresh Smoke and the National Blend of Models) by providing rapidly-refreshing, high resolution probabilistic guidance.
+- WoFS-Smoke requires additional computational resources and a well-defined prioritization system in order to achieve reliability for operational use and further improving horizontal resolution for applications in complex terrain.
+- Participants noted the importance for the information to be displayed on a visualization platform that allows more interactivity of the user, such as gaining the ability to zoom into the forecast region(s) of concern, inclusion of additional map variables such as topography and critical assets, and the ability to display particulate matter concentrations using air quality index or visibility values.
+
+### End-user needs and recommendations
+
+**Entry 1**
+
+Need: Need for prioritization system among all users.
+
+Recommendation: Recommend assessing if the current system is working or how to improve it.
+
+**Entry 2**
+
+Need: Need for output to be visualized in platform allowing zooming and displaying other geographic information.
+
+Recommendation: Recommend developing pipeline to deliver WoFS output to platforms like AWIPS, DESI, or other common operating platforms
+
+**Entry 3**
+
+Need: Need for additional computational resources to increase availability.
+
+Recommendation: Recommend securing funding for additional domains/repeating domains during high impact weather.
+
+**Entry 4**
+
+Need: Need for ensemble smoke output in AQI units.
+
+Recommendation: Recommend assessing relationships between output variables and AQI to create an AQI parameterization or direct output.
+
+**Entry 5**
+
+Need: Need for additional impact-based verification.
+
+Recommendation: Recommend targeting verification efforts on fire-relevant output such as lightning, air quality, temperature/relative humidity/wind, and high intensity/short duration precipitation.
+
+**Entry 6**
+
+Need: Need for end-to-end training materials involving case studies to highlight capabilities and train users on how to use/interpret output in varied environments.
+
+Recommendation: Recommend developing several cases for training such as Ruidoso fire-to-flood in 2024, McKinney Fire with flooding in 2022, and a southern Great Plains spring wind shift case.
+
+### Publications and resources
+
+- Fire Weather Testbed Evaluation #001: The Warn-on-Forecast System for Smoke — https://doi.org/10.25923/nd0m-4j95
