@@ -14,6 +14,7 @@ npm run schema     # regenerate shared/*.schema.json from types.ts
 npm run seed       # write seed/firehouse-seed.json for the plugin's Import screen
 npm run plugin:css # write the plugin's stylesheet from src/, scoped under .fh-app
                    # (Node 22.18+, and Edge or Chrome installed, as for npm run reference)
+npm run plugin:assets  # write the plugin's icons and logos from the site's own
 npm run reference  # capture the reference the plugin matches (reference/README.md)
 ```
 
@@ -59,7 +60,8 @@ wp-content/plugins/firehouse/
                     loads the content logic in PHP (domain/); the shared
                     vocabularies and test cases; and the PHP tests.
                     assets/css/firehouse.css is generated from src/;
-                    assets/fonts/ and assets/css/fonts.css hold the fonts.
+                    assets/fonts/ and assets/css/fonts.css hold the fonts;
+                    assets/icons/ and assets/logos/ are generated from src/.
 ```
 
 ### The design system
@@ -398,6 +400,14 @@ one is missing.
   point the three font tokens in `src/styles/tokens/typography.css` at Montserrat and
   Nunito Sans. The static build would then need its own way to load those, or it falls
   back to system fonts.
+
+`assets/icons/` holds every icon in the site's registry (`ICON_NAMES` in
+`src/design-system/Icon.tsx`) as an SVG file, drawn by the site's own `Icon` component,
+and `assets/logos/` the four Firehouse images `BrandMark` shows. Don't edit either:
+`npm run plugin:assets` writes both from `src/`, and CI fails if they fall behind. An
+icon file leaves out what belongs to one use of it (size, class, `aria-hidden`,
+`focusable`): the plugin adds those where it inlines the icon, as `Icon` does. The NOAA
+and GSL logos stay with the static build, since GSL's header carries its own.
 
 The local WordPress runs in Docker and borrows GSL's theme, WordPress images and
 database from a checkout of GSL's internal gsl-wordpress repository beside this one

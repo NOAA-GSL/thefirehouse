@@ -846,6 +846,11 @@ ones.
   enqueue gives them one, or a refresh can be served stale from a cache. The templates
   load `fonts.css` before `firehouse.css` and keep it in `assets/css/`, where its
   `../fonts/` paths resolve; preloading the two latin files would shorten the swap.*
+  *Icons and logos done 6 November: `npm run plugin:assets` draws every icon in the
+  site's registry through its own `Icon` component into `assets/icons/<name>.svg`, and
+  copies `BrandMark`'s four images into `assets/logos/`; CI checks both are current.
+  Phase 4's templates inline an icon with the attributes `Icon` adds: its size,
+  `aria-hidden="true"` and `focusable="false"`.*
 - Firehouse page templates, chosen with the `template_include` filter, that call
   GSL's `get_header()` and `get_footer()`, with full-width sections between them.
   GSL's theme is classic, so no Site Editor copy of a template can override the

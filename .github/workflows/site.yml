@@ -2,7 +2,7 @@ name: Site
 
 # Type check and tests for the React site, the shared test cases and vocabulary in
 # wp-content/plugins/firehouse/shared, and checks that the project and topic schemas
-# and the plugin's stylesheet (assets/css/firehouse.css) are current.
+# and the plugin's stylesheet (assets/css/firehouse.css), icons and logos are current.
 
 on:
   push:
@@ -10,8 +10,7 @@ on:
       - 'src/**'
       - 'scripts/**'
       - 'wp-content/plugins/firehouse/shared/**'
-      - 'wp-content/plugins/firehouse/assets/css/**'
-      - 'wp-content/plugins/firehouse/assets/fonts/**'
+      - 'wp-content/plugins/firehouse/assets/**'
       - 'index.html'
       - 'package.json'
       - 'package-lock.json'
@@ -23,8 +22,7 @@ on:
       - 'src/**'
       - 'scripts/**'
       - 'wp-content/plugins/firehouse/shared/**'
-      - 'wp-content/plugins/firehouse/assets/css/**'
-      - 'wp-content/plugins/firehouse/assets/fonts/**'
+      - 'wp-content/plugins/firehouse/assets/**'
       - 'index.html'
       - 'package.json'
       - 'package-lock.json'
@@ -63,3 +61,6 @@ jobs:
 
       - name: Plugin stylesheet is current
         run: npm run plugin:css:check
+
+      - name: Plugin icons and logos are current
+        run: npm run plugin:assets:check
