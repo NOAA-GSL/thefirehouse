@@ -2,10 +2,11 @@
 /**
  * Every Firehouse page: the theme's header, the Firehouse wrapper, the theme's footer.
  *
- * The wrapper is the page's main landmark, outside the theme's content wrappers. Its
- * skip link sits at the top of the wrapper and leads past the Firehouse bar to the
- * page's content: the theme prints no wp_body_open hook, so nothing can go before its
- * header. Phase 4 fills the content; until then it holds a placeholder.
+ * The wrapper sits outside the theme's content wrappers and holds a skip link, the
+ * Firehouse bar (the `firehouse/subnav` block) and the page's main landmark. The skip
+ * link sits at the top of the wrapper and leads past the bar to the main landmark: the
+ * theme prints no wp_body_open hook, so nothing can go before its header. Phase 4 fills
+ * the main landmark; until then it holds a placeholder.
  *
  * @package Firehouse
  */
@@ -18,11 +19,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 get_header();
 ?>
-<main id="fh-main" class="fh-app">
+<div class="fh-app">
 	<a class="fh-skip-link" href="#fh-content"><?php esc_html_e( 'Skip to main content', 'firehouse' ); ?></a>
-	<div id="fh-content" tabindex="-1">
+	<?php echo do_blocks( '<!-- wp:firehouse/subnav /-->' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- the plugin's own block, which escapes what it prints. ?>
+	<main id="fh-content" tabindex="-1">
 		<?php \Firehouse\Frame::placeholder(); ?>
-	</div>
-</main>
+	</main>
+</div>
 <?php
 get_footer();

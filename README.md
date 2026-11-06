@@ -60,8 +60,9 @@ wp-content/plugins/firehouse/
                     The WordPress plugin, below). So far: firehouse.php, which
                     loads the content logic in PHP (domain/) and what hooks
                     into WordPress (includes/); templates/frame.php, the frame
-                    every Firehouse page sits in; the shared vocabularies and
-                    test cases; and the PHP tests.
+                    every Firehouse page sits in; blocks/, the server-rendered
+                    blocks the templates place (so far the Firehouse bar); the
+                    shared vocabularies and test cases; and the PHP tests.
                     assets/css/firehouse.css is generated from src/, and
                     assets/css/frame.css is written by hand;
                     assets/fonts/ and assets/css/fonts.css hold the fonts;
@@ -294,20 +295,32 @@ nothing from the database. Each class's docblock has the detail; this is the map
 - `Frame` puts every Firehouse request in `templates/frame.php`: the project archive, a
   project, a topic, a page in the `firehouse` tree (a draft's preview included), and a
   missing address under `/firehouse/`. It decides from the query WordPress ran, not
-  the request's own variables, and leaves embeds to WordPress's embed template. When an
-  address there is missing, WordPress's guess at what was meant stays among projects or
-  topics, so a link cut short still finds its project; anything else gets the frame's
-  not-found page, never a page elsewhere on the site. That is the theme's own `get_header()` and `get_footer()`
-  around `main.fh-app`, outside the theme's content wrappers. It loads `fonts.css`,
-  `firehouse.css` and `frame.css` after the theme's stylesheet, at the plugin's
-  version and each file's modified time, and adds `fh-page` to the body. Nothing
-  depends on the fonts, so dequeuing `firehouse-fonts` drops only them. `assets/css/frame.css`, written by hand,
-  holds what Firehouse needs only inside the theme's page:
+  the request's own variables, and leaves embeds to WordPress's embed template.
+  - **The template** is the theme's own `get_header()` and `get_footer()` around
+    `div.fh-app`, outside the theme's content wrappers. The wrapper holds a skip link,
+    the Firehouse bar (the `firehouse/subnav` block) and the page's one `main`, which
+    the skip link leads to.
+  - **Stylesheets:** it loads `fonts.css`, `firehouse.css` and `frame.css` after the
+    theme's stylesheet, at the plugin's version and each file's modified time, and adds
+    `fh-page` to the body. Nothing depends on the fonts, so dequeuing `firehouse-fonts`
+    drops only them.
+  - **Missing addresses:** under `/firehouse/`, WordPress's guess at what was meant
+    stays among projects or topics, so a link cut short still finds its project.
+    Anything else gets the frame's not-found page, never a page elsewhere on the site.
+
+  `assets/css/frame.css`, written by hand, holds what Firehouse needs only inside the
+  theme's page:
   - it clips the fixed atmosphere to the Firehouse area;
   - it drops the static build's full-window height, so a short page doesn't push the
     footer down;
   - it sets `color-scheme` to match the page's light or dark mode, and makes
     `[hidden]` hide;
+  - it draws the skip link target's focus ring inside the clip, and stops anything
+    focus scrolls into view below the pinned bar;
+  - it puts the pinned Firehouse bar below WordPress's toolbar when there is one (at
+    the top on phones), and without JavaScript, below 1024px, it keeps the links in
+    the bar on a row of their own, with the Submit button after them, and lets the
+    bar scroll with the page;
   - on Firehouse pages only, it hides the theme's hero background and the mission
     section above its footer.
 
@@ -315,6 +328,34 @@ nothing from the database. Each class's docblock has the detail; this is the map
   `scripts/frame-css.test.mjs` holds it to that.
 
   The pages come in Phase 4; until then the frame holds a placeholder.
+- `Blocks` registers each block named in `Blocks::NAMES`, one folder each in `blocks/`,
+  from its `block.json`.
+  - Each block renders on the server (`render.php`) and stays out of the inserter: the
+    templates place it.
+  - An interactive block has a view script module for WordPress's Interactivity API.
+    It's plain JavaScript with no build step: WordPress maps its
+    `@wordpress/interactivity` import, which `view.asset.php` declares.
+  - `tests/BlocksTest.php` holds each folder to that shape, and fails on a folder
+    missing from the list.
+- `Subnav` is the Firehouse bar, `firehouse/subnav`: the site's `SiteHeader` without
+  the NOAA and GSL logos and the theme toggle, which the theme's header already has.
+  - It has the wordmark, the Settings screen's link labels, and the Submit a Finding
+    button, which is left out until a survey address is set. A survey on another site
+    opens in a new tab and tells screen readers so.
+  - It marks the current page's link with `aria-current="page"`: Home on the landing
+    page, Explore Projects on the explorer and every project, About on the About page
+    and any page under it. A topic or a missing address marks none.
+  - It's a `div`, not a `header`, since the theme's header is the page's banner. Its two
+    navs, the bar's and the drawer's, are both labelled "Firehouse".
+  - It stays pinned once the theme's header has scrolled away.
+  - Below 1024px its links and Submit button fold into a drawer that the menu button
+    opens and closes (`blocks/subnav/view.js`). Escape closes it and returns focus to
+    the menu button, and focus leaving the bar closes it. The button is named
+    "Firehouse menu" whether open or shut, since the theme's header has a menu button
+    too; `aria-expanded` says which.
+- `Icons` inlines an icon from `assets/icons/` by a name in the vocabulary, never by a
+  path. It replaces the file's 24×24 size and marks the icon decorative. An unknown
+  name gives an empty string, not an error.
 - `Post_Types` registers `fh_project` and `fh_topic` at the React site's addresses:
   `/firehouse/projects/`, `/firehouse/projects/{slug}/` and `/firehouse/topics/{key}/`
   (no topic archive). Neither is in the REST API, and their edit screens have no form

@@ -48,4 +48,12 @@
   <rule ref="WordPress.WP.AlternativeFunctions">
     <exclude-pattern>*/tests/*</exclude-pattern>
   </rule>
+
+  <!--
+    A block's view.asset.php is named by WordPress's own convention: register_block_type
+    reads the file beside view.js with that name.
+  -->
+  <rule ref="WordPress.Files.FileName">
+    <exclude-pattern>*/blocks/*/*.asset.php</exclude-pattern>
+  </rule>
 </ruleset>

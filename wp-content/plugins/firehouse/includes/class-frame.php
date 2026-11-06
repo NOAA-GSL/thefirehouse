@@ -20,8 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * A Firehouse request is the project archive, a project, a topic, a page in the
  * Firehouse tree, or a missing address under /firehouse/. The template calls the
  * theme's own get_header() and get_footer(), and puts the Firehouse wrapper,
- * `main.fh-app`, between them, outside the theme's content wrappers, whose rules
- * would beat the inward reset (rule 9).
+ * `div.fh-app`, between them, outside the theme's content wrappers, whose rules
+ * would beat the inward reset (rule 9). The wrapper holds the skip link, the
+ * Firehouse bar and the page's main landmark.
  *
  * The stylesheets load after the theme's, so ties go to Firehouse: the fonts, the
  * site's CSS scoped under `.fh-app` (assets/css/firehouse.css, generated from the

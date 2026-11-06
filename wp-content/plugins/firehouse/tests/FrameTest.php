@@ -274,4 +274,43 @@ final class FrameTest extends WordPressTestCase {
 		$this->assertStringNotContainsString( '<script>', $output );
 		$this->assertStringContainsString( '<h1>&lt;script&gt;x&lt;/script&gt;</h1>', $output );
 	}
+
+	/**
+	 * The bar's block, typed into a post anywhere else, renders nothing.
+	 *
+	 * @param array<string, mixed> $query What the query found.
+	 */
+	#[DataProvider( 'other_requests' )]
+	public function test_the_bar_renders_only_on_a_firehouse_page( array $query ): void {
+		self::resolve( $query );
+
+		ob_start();
+		require dirname( __DIR__ ) . '/blocks/subnav/render.php';
+		$this->assertSame( '', ob_get_clean() );
+	}
+
+	/**
+	 * The template is the theme's header, then the wrapper: the skip link, the Firehouse
+	 * bar and the page's one main landmark, which the skip link leads to; then the
+	 * theme's footer.
+	 */
+	public function test_the_template_orders_the_page(): void {
+		Functions\when( 'get_header' )->alias( static fn() => print '[theme header]' );
+		Functions\when( 'get_footer' )->alias( static fn() => print '[theme footer]' );
+		Functions\expect( 'do_blocks' )->once()->with( '<!-- wp:firehouse/subnav /-->' )->andReturn( '[bar]' );
+		Functions\when( 'esc_html' )->alias( static fn( string $text ): string => htmlspecialchars( $text, ENT_QUOTES ) );
+		Functions\when( 'is_404' )->justReturn( false );
+
+		ob_start();
+		require dirname( __DIR__ ) . '/templates/frame.php';
+		$html = (string) ob_get_clean();
+
+		$at = 0;
+		foreach ( array( '[theme header]', '<div class="fh-app">', '<a class="fh-skip-link" href="#fh-content">', '[bar]', '<main id="fh-content" tabindex="-1">', '<h1>The Firehouse</h1>', '</main>', '</div>', '[theme footer]' ) as $part ) {
+			$found = strpos( $html, $part, $at );
+			$this->assertNotFalse( $found, $part . ' should come next in ' . $html );
+			$at = $found + strlen( $part );
+		}
+		$this->assertSame( 1, substr_count( $html, '<main' ) );
+	}
 }

@@ -178,7 +178,8 @@ A Firehouse page is stacked like this:
    today's header without the NOAA and GSL logos and the theme toggle, which GSL's
    header already has. Below 1024px the links fold into a drawer, as they do today.
    Today's header stays pinned while the page scrolls; whether the bar does depends on
-   how GSL's header behaves, and is settled in Phase 3.
+   how GSL's header behaves, and is settled in Phase 3. *Settled: GSL's header scrolls
+   away, so the bar stays pinned, as today's header does.*
 3. **The Firehouse page** in the current design: the atmosphere background, glass
    panels, Archivo and Public Sans (open question 10), the cards and the ember accent,
    all scoped under `.fh-app` (rule 9). It ends with the disclaimer.
@@ -764,6 +765,14 @@ as in `shared/vocabulary.json`, which takes its labels from the form.
 
 ## Phased plan
 
+**Where each phase is reviewed (Eric, 6 November).** Each release goes through GSL's
+security review, so the plugin reaches the test site near the end, not phase by phase.
+Until then, Stephanie and Emily review each phase with Eric on his local copy of
+GSL's WordPress (the `docker-compose.yml` stack, with GSL's theme), and a phase's
+"Done when" that names the test site is met there. The checks that depend on the
+test site's own setup wait for the first release: outbound network, Cloudflare and
+link-preview bots, caching, and `noindex`.
+
 ### Phase 0 — Reference, decisions, groundwork (1–1.5 weeks)
 
 - **Capture the reference.** Screenshots and accessibility-tree snapshots of every
@@ -803,8 +812,8 @@ empty plugin passes PHPCS and Plugin Check.
 
 *Built 1 November and working in the local WordPress: the post types, meta, rewrites,
 `year` fix, role, settings screen and Import screen are in `includes/`, and the seed
-bundle loads with every slug intact. Phase 1 closes when a reviewed release reaches
-the test site (open question 2).*
+bundle loads with every slug intact. The same load runs on the test site with the
+first release (see Where each phase is reviewed, above).*
 
 **Done when:** the seed bundle loads on the test site with every slug intact, and the
 editor role cannot edit anything outside Firehouse.
@@ -865,8 +874,8 @@ ones.
     `display: inline-flex; flex-shrink: 0`. A topic tag's thicker stroke (2.25) changes
     `stroke-width` only, keeping `currentColor`.*
   - *Every icon is decorative. An icon-only control takes its name from the control:
-    visually hidden text (close, the menu, which swaps with `aria-expanded`) or
-    `aria-label` (clear search, remove filter). The `external-link` icon travels with
+    visually hidden text (close; the Firehouse bar's menu, which keeps one name while
+    `aria-expanded` carries its state) or `aria-label` (clear search, remove filter). The `external-link` icon travels with
     its hidden "(opens in a new tab)".*
   - *A logo beside the site's name in text has `alt=""` (the Firehouse bar, the
     footer). The hero's wordmark has its alt text and is always the `-on-dark` image.
@@ -910,8 +919,8 @@ ones.
     page. It belongs before the theme's header, hidden by clipping. *The theme prints
     no `wp_body_open` hook, so nothing can go before its header. The skip link sits at
     the top of the wrapper instead, clipped with it until focused, and leads to the
-    content, past the Firehouse bar once there is one. Its target fills the clipped
-    wrapper, so its focus ring is drawn inside it. Moving the link before the header
+    content, past the Firehouse bar. Its target spans the clipped wrapper's sides and
+    bottom, so its focus ring is drawn inside it. Moving the link before the header
     needs that hook in GSL's theme (the README's checklist).*
   - The wrapper sits outside the theme's content wrappers, whose rules beat the reset,
     and `firehouse.css` loads after the theme's stylesheet, so ties go to Firehouse.
@@ -945,7 +954,40 @@ ones.
   header, the Firehouse area and the footer dark together. The contrast audits in both
   themes run on the real pages in Phase 4.*
 - The Firehouse bar (`firehouse/subnav`), including whether it stays pinned under
-  GSL's header (see [Look and feel](#look-and-feel)).
+  GSL's header (see [Look and feel](#look-and-feel)). *Done 6 November
+  (`blocks/subnav/`, `includes/class-subnav.php`, `class-blocks.php` and
+  `class-icons.php`):*
+  - *GSL's header scrolls away, so the bar stays pinned at the top, as today's header
+    does, and below WordPress's toolbar for someone signed in.*
+  - *The wrapper is now a `div`, holding the skip link, the bar and the page's one
+    `main`. The bar is a `div` too, since the theme's header is the page's banner.*
+  - *Its view script is plain JavaScript with no build step: WordPress maps its
+    `@wordpress/interactivity` import, which `view.asset.php` declares.
+    `@wordpress/scripts` comes in when a block needs an editor script.*
+  - *Without JavaScript, below 1024px the links stay in the bar on a row of their own,
+    with the Submit button after them (`@media (scripting: none)`), so the menu never
+    strands them. The bar is then too tall to pin, so it scrolls with the page. That covers JavaScript switched off, not a script that fails
+    to load; keying the drawer on a class the script sets would cover both, at the cost
+    of the bar's links showing, then folding, as each phone page loads.*
+  - *Going Back to a page the browser kept in memory closes the drawer, as a route
+    change does on the site.*
+  - *Checked in the local copy of GSL's WordPress at 1280, 390 and 320px:*
+    - *the bar fits the window and stays pinned on a long page;*
+    - *the current link is marked;*
+    - *the menu opens and closes, and Escape returns focus to its button;*
+    - *with JavaScript off, the links stay in the bar;*
+    - *the page raises no PHP notices or script errors.*
+  - *From the Section 508 review:*
+    - *content scrolled into view by focus or the skip link stops below the bar;*
+    - *the open drawer scrolls within the window, so its last item can be reached on a
+      short screen, and closes when focus leaves the bar or the window widens past
+      1024px;*
+    - *the menu button is "Firehouse menu" whether open or shut, since the theme's
+      header has a menu button of its own;*
+    - *in forced colours the current link keeps a distinct underline.*
+
+    *The drawer, widening and forced-colours fixes are in `SiteHeader.css`, so the site
+    has them too.*
 - Stephanie and Emily see the frame on the test site (or in screenshots, if the VPN
   gets in the way), in light and dark and at phone width, before Phase 4 builds pages
   on it. The header is the part of the design that changes most, so this is the
@@ -957,8 +999,8 @@ ones.
   plugin's template: the preview put the static site's pages into GSL's page by
   script. The template matches them in the computed-style check above.*
 
-**Done when:** an empty Firehouse page on the test site sits inside GSL's header and
-footer, with no styles leaking in either direction, and Stephanie and Emily have
+**Done when:** an empty Firehouse page on the local copy of GSL's WordPress sits inside
+GSL's header and footer, with no styles leaking in either direction, and Stephanie and Emily have
 signed off on the frame.
 
 ### Phase 4 — Display-only pages (2–2.5 weeks)
@@ -973,8 +1015,14 @@ signed off on the frame.
   compressed, all of it render-blocking, and about a third of it comments. Minify what
   the plugin loads (the checks run on the minified file), split the project, topic
   and About sections by template in `wp_enqueue_scripts`, preload the latin Public Sans
-  file, and drop the italic faces nothing uses.
+  file, and drop the italic faces nothing uses. Once the blocks build with
+  `@wordpress/scripts`, register them from its generated manifest
+  (`wp_register_block_types_from_metadata_collection()`), not by reading each
+  `block.json` on every request.
 - Rerun the frame's style and focus checks on the real pages.
+- Keep the Firehouse bar to one per page once a page's own content renders blocks. The
+  bar's block prints on any Firehouse page, so its comment typed into a page in the tree
+  would print a second bar, with a duplicate drawer ID.
 
 **Done when:** these pages match the reference screenshots and accessibility
 snapshots, and Stephanie and Emily can review them on the test site.
@@ -1077,7 +1125,7 @@ starts when its trigger is met.
 
 ### At a glance
 
-| Phase | Work | Size | Visible on the test site |
+| Phase | Work | Size | What Stephanie and Emily see |
 | --- | --- | --- | --- |
 | 0 | Reference, decisions, groundwork | 1–1.5 wk | — |
 | 1 | Content model and first data load | 2 wk | Empty plugin, data in wp-admin |
@@ -1085,7 +1133,7 @@ starts when its trigger is met.
 | 3 | Design system and frame | 2 wk | Firehouse frame inside GSL's chrome |
 | 4 | Display-only pages | 2–2.5 wk | Pages to read and review |
 | 5 | Interactive pieces | 3–3.5 wk | Feature parity |
-| 6 | Editing screens | 2–2.5 wk | Editors working on test |
+| 6 | Editing screens | 2–2.5 wk | Editors working in wp-admin |
 | 7a | The survey form | 2–3 wk | Test submissions arriving as drafts |
 | 7b | Analyze results | 1–1.5 wk | A synthesis run from the dashboard |
 | 8 | Review, launch, cutover | 1.5–2 wk | → gsl.noaa.gov |

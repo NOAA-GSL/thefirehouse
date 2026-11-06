@@ -24,10 +24,71 @@
   color-scheme: dark;
 }
 
-/* The skip link's target fills the wrapper, so the clip would cut away its whole
-   focus ring, which sits outside it; drawn inside, the ring shows where focus landed. */
+/* The skip link's target runs to the wrapper's sides and bottom, so the clip would cut
+   away most of its focus ring, which sits outside it; drawn inside, the ring shows
+   where focus landed. */
 .fh-app #fh-content:focus-visible {
   outline-offset: calc(-1 * var(--focus-ring-width));
+}
+
+/* The Firehouse bar stays pinned once the theme's header, which isn't, has scrolled
+   away: below WordPress's toolbar when someone signed in has one, and at the top on a
+   phone, where the toolbar scrolls away itself. */
+.fh-app .fh-header {
+  top: var(--wp-admin--admin-bar--height, 0px);
+}
+
+@media screen and (max-width: 600px) {
+  .fh-app .fh-header {
+    top: 0;
+  }
+}
+
+/* The drawer scrolls within the window below the bar, the toolbar included. */
+.fh-app .fh-header__drawer {
+  max-height: calc(100dvh - 65px - var(--wp-admin--admin-bar--height, 0px));
+}
+
+/* Whatever is scrolled into view in the page, by the skip link or by moving focus,
+   stops below the pinned bar (65px) and the toolbar instead of under them. `:where()`
+   keeps it below any Firehouse rule that sets its own, such as the landing page's. */
+.fh-app :where(#fh-content, #fh-content *) {
+  scroll-margin-top: calc(72px + var(--wp-admin--admin-bar--height, 0px));
+}
+
+/* The menu button's two icons, one shown at a time; WordPress can't bind `hidden` on
+   an `<svg>` when it renders the page, so each has a wrapper that leaves it laid out
+   as the site's header lays it out. */
+.fh-app .fh-header__menu-state {
+  display: contents;
+}
+
+/* Without JavaScript the menu button can't open the drawer, so below the desktop
+   breakpoint the bar keeps its links, on a row of their own, and its Submit button
+   after them, in the order focus moves. Three rows are too tall to pin on a phone, and
+   taller than the scroll offset above allows for, so the bar scrolls with the page. */
+@media (scripting: none) and (max-width: 1023px) {
+  .fh-app .fh-header {
+    position: relative;
+  }
+
+  .fh-app .fh-header__bar {
+    flex-wrap: wrap;
+  }
+
+  .fh-app .fh-header__nav {
+    display: flex;
+    flex-wrap: wrap;
+    flex-basis: 100%;
+  }
+
+  .fh-app .fh-header__cta {
+    display: inline;
+  }
+
+  .fh-app .fh-header__menu-btn {
+    display: none;
+  }
 }
 
 /* `hidden` hides, whatever display a Firehouse rule gives the element. */
