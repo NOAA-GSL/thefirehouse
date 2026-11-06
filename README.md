@@ -213,15 +213,13 @@ overrides are isolated so a re-sync doesn't lose them.
       November, in one reply signed by both. On 6 November Stephanie, relayed by Eric,
       answered the ranking question, saying the About page should say "something
       like": "Order of the top 5 needs is determined by project count; in the event of a tie, the need with broader interagency or multi-regional applicability is prioritized." The About page's second process step now carries it, with "The"
-      added; they confirm the step as the page shows it. Still open, for when they
+      added. Eric confirmed on 6 November that this is the approved wording: the
+      sentence is Stephanie's own, given for that page. Still open, for when they
       review the pages:
       - the three lines that say "how often" or "frequency": "ranked by frequency"
         (`about.json`), "with how often each one came up" (`landing.json`) and
         "ranked by how often they come up" (written into `LandingPage.tsx`);
-      - whether the step should say five needs *in each* topic area, and whether the
-        tie-break also decides which need makes the five when one ties with the fifth;
-      - whether the synthesis needs its own line saying whose it is, and whether the
-        reader should know the tie-break is the team's judgement.
+      - whether the synthesis needs its own line saying whose it is.
 - [ ] **Bring in the team's synthesis prompt.** Their "FireHouse Prompt (Final)", which
       Stephanie describes as being in their Gemini notebook, orders needs by project
       count with that tie-break. It assigns an entry that spans several topic areas by
