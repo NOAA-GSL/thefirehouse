@@ -68,14 +68,18 @@ final class InlineIconsTest extends WordPressTestCase {
 				'Upper'     => 'y',
 				'1st'       => 'y',
 				'data-wp-a' => '!context.open',
+				'style'     => 'color:red',
+				'width'     => '99',
+				'stroke'    => 'red',
 			)
 		);
 
 		$this->assertStringContainsString( ' class="a&quot;&gt;&lt;script&gt;b"', $svg );
 		$this->assertStringContainsString( ' hidden ', $svg );
 		$this->assertStringContainsString( ' data-wp-a="!context.open"', $svg );
-		foreach ( array( 'onload', ' on=', 'data x', 'Upper', '1st', '<script>' ) as $absent ) {
+		foreach ( array( 'onload', ' on=', 'data x', 'Upper', '1st', '<script>', 'color:red', '99', '"red"' ) as $absent ) {
 			$this->assertStringNotContainsString( $absent, $svg );
 		}
+		$this->assertSame( 1, substr_count( $svg, ' style="' ) );
 	}
 }

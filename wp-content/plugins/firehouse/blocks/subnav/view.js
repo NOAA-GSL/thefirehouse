@@ -1,8 +1,9 @@
 /**
  * The Firehouse bar's menu, below 1024px: the button opens and closes the drawer, and
- * Escape closes it, as the site's `SiteHeader` does. The bar's markup carries the state
- * (`data-wp-context`) and binds `aria-expanded`, the icon, the button's name and the
- * drawer's `hidden` to it (includes/class-subnav.php).
+ * Escape closes it, as the site's `SiteHeader` does. Focus moving out of the bar closes
+ * it, and so does coming Back to a page the browser kept in memory, as a route change
+ * does on the site. The bar's markup carries the state (`data-wp-context`) and binds
+ * `aria-expanded`, the icon and the drawer's `hidden` to it (includes/class-subnav.php).
  *
  * A plain ES module, with no build step: WordPress maps the import (view.asset.php).
  */
@@ -26,6 +27,19 @@ store( 'firehouse/subnav', {
 				ref.querySelector( '.fh-header__menu-btn' )?.focus();
 			}
 			context.open = false;
+		},
+		closeOnFocusOut( event ) {
+			// Focus moving on past the drawer would land on the page behind it, under the
+			// pinned bar, so the drawer closes. Focus leaving the window isn't a move.
+			const { ref } = getElement();
+			if ( event.relatedTarget && !ref.contains( event.relatedTarget ) ) {
+				getContext().open = false;
+			}
+		},
+		closeOnRestore( event ) {
+			if ( event.persisted ) {
+				getContext().open = false;
+			}
 		},
 	},
 } );

@@ -132,6 +132,20 @@ final class SettingsTest extends WordPressTestCase {
 	}
 
 	/**
+	 * A stored survey address the screen would refuse, written some other way, is read
+	 * as no address; a good one is read as stored.
+	 */
+	public function test_a_stored_address_the_screen_would_refuse_is_dropped(): void {
+		foreach ( array( 'javascript:alert(1)', 'http://forms.example.org/a', 'https://', '/firehouse/submit/', array( 'https://forms.example.org/a' ), 42 ) as $url ) {
+			Functions\when( 'get_option' )->justReturn( array( 'submitFormUrl' => $url ) );
+			$this->assertSame( '', Settings::get()['submitFormUrl'], var_export( $url, true ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export -- the failing value, in the message.
+		}
+
+		Functions\when( 'get_option' )->justReturn( array( 'submitFormUrl' => 'https://forms.example.org/a' ) );
+		$this->assertSame( 'https://forms.example.org/a', Settings::get()['submitFormUrl'] );
+	}
+
+	/**
 	 * A valid submission is saved as given, with no errors.
 	 */
 	public function test_a_valid_submission_is_saved(): void {

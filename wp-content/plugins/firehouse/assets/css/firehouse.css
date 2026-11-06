@@ -312,9 +312,22 @@
   display: none;
 }
 
+/* The drawer opens inside the sticky header, so on a short screen (a phone turned
+   sideways, or zoomed in) it scrolls within itself rather than running off the bottom
+   where the page can't bring it up. 65px is the bar's own height. */
 .fh-app .fh-header__drawer {
   border-top: 1px solid var(--color-border);
   background: var(--color-bg-surface);
+  max-height: calc(100dvh - 65px);
+  overflow-y: auto;
+}
+
+/* At desktop width the links are in the bar, so a drawer left open while the window
+   widened would repeat them, with its close button hidden. */
+@media (min-width: 1024px) {
+  .fh-app .fh-header__drawer {
+    display: none;
+  }
 }
 
 .fh-app .fh-header__drawer-nav {
@@ -333,6 +346,20 @@
 
 .fh-app .fh-header__drawer-nav .fh-header__link--active {
   border-bottom-color: var(--color-accent);
+}
+
+/* Forced colours paint every border, the bar links' transparent ones included, so the
+   current page's underline would look like all the others: theirs take the background
+   and the current one the highlight. */
+@media (forced-colors: active) {
+  .fh-app .fh-header__nav .fh-header__link {
+    border-bottom-color: Canvas;
+  }
+
+  .fh-app .fh-header__nav .fh-header__link--active,
+  .fh-app .fh-header__drawer-nav .fh-header__link--active {
+    border-bottom-color: Highlight;
+  }
 }
 
 /* Below the desktop breakpoint the inline nav and header CTA collapse into the

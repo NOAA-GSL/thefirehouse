@@ -178,19 +178,39 @@ final class SubnavTest extends WordPressTestCase {
 
 	/**
 	 * The menu: the button controls the drawer, which starts hidden, and the Interactivity
-	 * API binds both to the context. No directive sits on an `<svg>`, which WordPress
-	 * can't process when it renders the page.
+	 * API binds both to the context. The button keeps one name, and `aria-expanded`
+	 * carries the state. No directive sits on an `<svg>`, which WordPress can't process
+	 * when it renders the page.
 	 */
 	public function test_the_menu_starts_closed_and_binds_to_its_context(): void {
 		$html = Subnav::render();
 
-		$this->assertStringContainsString( '<div class="fh-header" data-wp-interactive="firehouse/subnav" data-wp-context=\'{"open":false}\' data-wp-on-document--keydown="actions.closeOnEscape">', $html );
+		$this->assertStringContainsString( '<div class="fh-header" data-wp-interactive="firehouse/subnav" data-wp-context=\'{"open":false}\' data-wp-on-document--keydown="actions.closeOnEscape" data-wp-on-window--pageshow="actions.closeOnRestore" data-wp-on--focusout="actions.closeOnFocusOut">', $html );
 		$this->assertStringContainsString( 'aria-expanded="false" aria-controls="' . Subnav::DRAWER_ID . '" data-wp-bind--aria-expanded="context.open" data-wp-on--click="actions.toggle"', $html );
 		$this->assertStringContainsString( '<div id="' . Subnav::DRAWER_ID . '" class="fh-header__drawer" hidden data-wp-bind--hidden="!context.open">', $html );
-		$this->assertMatchesRegularExpression( '#<span class="fh-header__menu-state" data-wp-bind--hidden="context.open">\s*<svg[^>]*>.*?</svg>\s*<span class="fh-visually-hidden">Open menu</span>#s', $html );
-		$this->assertMatchesRegularExpression( '#<span class="fh-header__menu-state" hidden data-wp-bind--hidden="!context.open">\s*<svg[^>]*>.*?</svg>\s*<span class="fh-visually-hidden">Close menu</span>#s', $html );
+		$this->assertMatchesRegularExpression( '#<span class="fh-header__menu-state" data-wp-bind--hidden="context.open"><svg[^>]*>.*?</svg></span>#s', $html );
+		$this->assertMatchesRegularExpression( '#<span class="fh-header__menu-state" hidden data-wp-bind--hidden="!context.open"><svg[^>]*>.*?</svg></span>#s', $html );
+		$this->assertMatchesRegularExpression( '#<span class="fh-visually-hidden">Firehouse menu</span>\s*</button>#', $html );
+		$this->assertStringNotContainsString( 'Open menu', $html );
 		$this->assertDoesNotMatchRegularExpression( '#<svg[^>]*data-wp-#', $html );
 		$this->assertSame( substr_count( $html, '<svg' ), substr_count( $html, 'aria-hidden="true" focusable="false"' ) );
+	}
+
+	/**
+	 * The store and every action the markup names are ones view.js defines, so a rename
+	 * on either side can't leave the menu dead.
+	 */
+	public function test_the_markup_names_what_view_js_defines(): void {
+		$js   = (string) file_get_contents( dirname( __DIR__ ) . '/blocks/subnav/view.js' );
+		$html = Subnav::render();
+
+		$this->assertSame( 1, preg_match( '/data-wp-interactive="([^"]+)"/', $html, $store ) );
+		$this->assertStringContainsString( "store( '" . $store[1] . "', {", $js );
+		preg_match_all( '/"actions\.(\w+)"/', $html, $actions );
+		$this->assertSame( array( 'closeOnEscape', 'closeOnRestore', 'closeOnFocusOut', 'toggle' ), array_values( array_unique( $actions[1] ) ) );
+		foreach ( $actions[1] as $action ) {
+			$this->assertMatchesRegularExpression( '/^\t\t' . $action . '\(/m', $js, $action );
+		}
 	}
 
 	/**

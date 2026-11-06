@@ -866,8 +866,8 @@ ones.
     `display: inline-flex; flex-shrink: 0`. A topic tag's thicker stroke (2.25) changes
     `stroke-width` only, keeping `currentColor`.*
   - *Every icon is decorative. An icon-only control takes its name from the control:
-    visually hidden text (close, the menu, which swaps with `aria-expanded`) or
-    `aria-label` (clear search, remove filter). The `external-link` icon travels with
+    visually hidden text (close; the Firehouse bar's menu, which keeps one name while
+    `aria-expanded` carries its state) or `aria-label` (clear search, remove filter). The `external-link` icon travels with
     its hidden "(opens in a new tab)".*
   - *A logo beside the site's name in text has `alt=""` (the Firehouse bar, the
     footer). The hero's wordmark has its alt text and is always the `-on-dark` image.
@@ -911,8 +911,8 @@ ones.
     page. It belongs before the theme's header, hidden by clipping. *The theme prints
     no `wp_body_open` hook, so nothing can go before its header. The skip link sits at
     the top of the wrapper instead, clipped with it until focused, and leads to the
-    content, past the Firehouse bar. Its target fills the clipped
-    wrapper, so its focus ring is drawn inside it. Moving the link before the header
+    content, past the Firehouse bar. Its target spans the clipped wrapper's sides and
+    bottom, so its focus ring is drawn inside it. Moving the link before the header
     needs that hook in GSL's theme (the README's checklist).*
   - The wrapper sits outside the theme's content wrappers, whose rules beat the reset,
     and `firehouse.css` loads after the theme's stylesheet, so ties go to Firehouse.
@@ -956,14 +956,30 @@ ones.
   - *Its view script is plain JavaScript with no build step: WordPress maps its
     `@wordpress/interactivity` import, which `view.asset.php` declares.
     `@wordpress/scripts` comes in when a block needs an editor script.*
-  - *Without JavaScript, below 1024px the links and the Submit button stay in the bar
-    on a second row (`@media (scripting: none)`), so the menu never strands them.*
+  - *Without JavaScript, below 1024px the links stay in the bar on a second row and
+    the Submit button stays on the first (`@media (scripting: none)`), so the menu
+    never strands them. That covers JavaScript switched off, not a script that fails
+    to load; keying the drawer on a class the script sets would cover both, at the cost
+    of the bar's links showing, then folding, as each phone page loads.*
+  - *Going Back to a page the browser kept in memory closes the drawer, as a route
+    change does on the site.*
   - *Checked in the local copy of GSL's WordPress at 1280, 390 and 320px:*
     - *the bar fits the window and stays pinned on a long page;*
     - *the current link is marked;*
     - *the menu opens and closes, and Escape returns focus to its button;*
     - *with JavaScript off, the links stay in the bar;*
     - *the page raises no PHP notices or script errors.*
+  - *From the Section 508 review:*
+    - *content scrolled into view by focus or the skip link stops below the bar;*
+    - *the open drawer scrolls within the window, so its last item can be reached on a
+      short screen, and closes when focus leaves the bar or the window widens past
+      1024px;*
+    - *the menu button is "Firehouse menu" whether open or shut, since the theme's
+      header has a menu button of its own;*
+    - *in forced colours the current link keeps a distinct underline.*
+
+    *The drawer, widening and forced-colours fixes are in `SiteHeader.css`, so the site
+    has them too.*
 - Stephanie and Emily see the frame on the test site (or in screenshots, if the VPN
   gets in the way), in light and dark and at phone width, before Phase 4 builds pages
   on it. The header is the part of the design that changes most, so this is the
@@ -991,7 +1007,10 @@ signed off on the frame.
   compressed, all of it render-blocking, and about a third of it comments. Minify what
   the plugin loads (the checks run on the minified file), split the project, topic
   and About sections by template in `wp_enqueue_scripts`, preload the latin Public Sans
-  file, and drop the italic faces nothing uses.
+  file, and drop the italic faces nothing uses. Once the blocks build with
+  `@wordpress/scripts`, register them from its generated manifest
+  (`wp_register_block_types_from_metadata_collection()`), not by reading each
+  `block.json` on every request.
 - Rerun the frame's style and focus checks on the real pages.
 
 **Done when:** these pages match the reference screenshots and accessibility

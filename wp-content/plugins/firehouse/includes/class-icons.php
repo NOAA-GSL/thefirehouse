@@ -33,6 +33,12 @@ final class Icons {
 	private const HEAD = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" ';
 
 	/**
+	 * The attributes this sets on every icon, or the file does, which a caller's can't
+	 * repeat: HTML keeps the first of a pair, so a second would be lost or win wrongly.
+	 */
+	private const OWN = array( 'xmlns', 'width', 'height', 'aria-hidden', 'focusable', 'style', 'viewbox', 'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin' );
+
+	/**
 	 * The files read so far, by name.
 	 *
 	 * @var array<string, string>
@@ -46,8 +52,9 @@ final class Icons {
 	 * @param int                        $size       Its width and height, in pixels.
 	 * @param array<string, string|true> $attributes More attributes, such as a class;
 	 *                                               `true` writes the name alone. A name
-	 *                                               that isn't a plain attribute name, or
-	 *                                               is an event handler's, is left out.
+	 *                                               that isn't a plain attribute name, is
+	 *                                               an event handler's, or is one this
+	 *                                               sets itself, is left out.
 	 */
 	public static function svg( string $name, int $size, array $attributes = array() ): string {
 		if ( ! in_array( $name, Vocabulary::icons(), true ) ) {
@@ -63,7 +70,7 @@ final class Icons {
 
 		$added = sprintf( ' width="%1$d" height="%1$d" aria-hidden="true" focusable="false"', $size );
 		foreach ( $attributes as $attribute => $value ) {
-			if ( 1 !== preg_match( '/^[a-z][a-z0-9-]*$/', $attribute ) || str_starts_with( $attribute, 'on' ) ) {
+			if ( 1 !== preg_match( '/^[a-z][a-z0-9-]*$/', $attribute ) || str_starts_with( $attribute, 'on' ) || in_array( $attribute, self::OWN, true ) ) {
 				continue;
 			}
 			$added .= true === $value ? ' ' . $attribute : sprintf( ' %s="%s"', $attribute, esc_attr( $value ) );

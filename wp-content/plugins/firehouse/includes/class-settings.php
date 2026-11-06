@@ -85,7 +85,9 @@ final class Settings {
 
 	/**
 	 * The settings: what is stored, over the defaults. Anything stored that isn't a
-	 * setting is left out.
+	 * setting is left out, and so is a survey address the screen would refuse, which
+	 * only a write that skipped it could have stored: the public pages show no Submit
+	 * button rather than one that goes nowhere (rule 6).
 	 *
 	 * @return array{siteName: string, submitLabel: string, submitFormUrl: string, navLabels: array<string, string>}
 	 */
@@ -96,10 +98,13 @@ final class Settings {
 			return $defaults;
 		}
 		$settings = $defaults;
-		foreach ( array( 'siteName', 'submitLabel', 'submitFormUrl' ) as $key ) {
+		foreach ( array( 'siteName', 'submitLabel' ) as $key ) {
 			if ( is_string( $stored[ $key ] ?? null ) ) {
 				$settings[ $key ] = $stored[ $key ];
 			}
+		}
+		if ( '' !== ( $stored['submitFormUrl'] ?? '' ) ) {
+			$settings['submitFormUrl'] = self::https_url( $stored['submitFormUrl'] ) ?? '';
 		}
 		foreach ( array_keys( self::NAV ) as $key ) {
 			if ( is_string( $stored['navLabels'][ $key ] ?? null ) ) {

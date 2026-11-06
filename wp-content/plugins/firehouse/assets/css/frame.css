@@ -24,8 +24,9 @@
   color-scheme: dark;
 }
 
-/* The skip link's target fills the wrapper, so the clip would cut away its whole
-   focus ring, which sits outside it; drawn inside, the ring shows where focus landed. */
+/* The skip link's target runs to the wrapper's sides and bottom, so the clip would cut
+   away most of its focus ring, which sits outside it; drawn inside, the ring shows
+   where focus landed. */
 .fh-app #fh-content:focus-visible {
   outline-offset: calc(-1 * var(--focus-ring-width));
 }
@@ -43,15 +44,28 @@
   }
 }
 
-/* The menu button's icon and name come in pairs, one shown at a time; WordPress can't
-   bind `hidden` on an `<svg>` when it renders the page, so each pair has a wrapper that
-   leaves the icon laid out as the site's header lays it out. */
+/* The drawer scrolls within the window below the bar, the toolbar included. */
+.fh-app .fh-header__drawer {
+  max-height: calc(100dvh - 65px - var(--wp-admin--admin-bar--height, 0px));
+}
+
+/* Whatever is scrolled into view in the page, by the skip link or by moving focus,
+   stops below the pinned bar (65px) and the toolbar instead of under them. */
+.fh-app #fh-content,
+.fh-app #fh-content * {
+  scroll-margin-top: calc(72px + var(--wp-admin--admin-bar--height, 0px));
+}
+
+/* The menu button's two icons, one shown at a time; WordPress can't bind `hidden` on
+   an `<svg>` when it renders the page, so each has a wrapper that leaves it laid out
+   as the site's header lays it out. */
 .fh-app .fh-header__menu-state {
   display: contents;
 }
 
 /* Without JavaScript the menu button can't open the drawer, so below the desktop
-   breakpoint the bar keeps its links and the Submit button, on a second row. */
+   breakpoint the bar keeps its links, on a row of their own, and its Submit button
+   after them, in the order focus moves. */
 @media (scripting: none) and (max-width: 1023px) {
   .fh-app .fh-header__bar {
     flex-wrap: wrap;
@@ -61,7 +75,6 @@
     display: flex;
     flex-wrap: wrap;
     flex-basis: 100%;
-    order: 3;
   }
 
   .fh-app .fh-header__cta {

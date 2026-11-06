@@ -276,6 +276,20 @@ final class FrameTest extends WordPressTestCase {
 	}
 
 	/**
+	 * The bar's block, typed into a post anywhere else, renders nothing.
+	 *
+	 * @param array<string, mixed> $query What the query found.
+	 */
+	#[DataProvider( 'other_requests' )]
+	public function test_the_bar_renders_only_on_a_firehouse_page( array $query ): void {
+		self::resolve( $query );
+
+		ob_start();
+		require dirname( __DIR__ ) . '/blocks/subnav/render.php';
+		$this->assertSame( '', ob_get_clean() );
+	}
+
+	/**
 	 * The template is the theme's header, then the wrapper: the skip link, the Firehouse
 	 * bar and the page's one main landmark, which the skip link leads to; then the
 	 * theme's footer.
