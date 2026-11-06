@@ -1,29 +1,37 @@
-import { copyFileSync, existsSync, readdirSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { copyFileSync, existsSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { scopeFirehouse } from './scripts/scope-css';
 
 const OUT_DIR = 'dist';
-const FONTS_DIR = 'wp-content/plugins/firehouse/assets/fonts';
+// From this file's own place, so a build started from another directory finds it.
+const FONTS_DIR = fileURLToPath(new URL('./wp-content/plugins/firehouse/assets/fonts/', import.meta.url));
 
 /**
  * Ships the fonts' licences with the fonts. The SIL Open Font License asks every copy
- * of the fonts to carry it, and the build copies the fonts into `assets/`, so each
- * family's `<family>-OFL.txt` goes there too, under its own name. A family without
- * its licence beside it in the plugin stops the build.
+ * of the fonts to carry it, so for each family whose fonts the build emits, its
+ * `<family>-OFL.txt` from the plugin goes in the same folder, under its own name. A
+ * font whose name doesn't say its family, or a family without its licence beside it
+ * in the plugin, stops the build. A build that emits no fonts emits no licences.
  */
 function fontLicences(): Plugin {
   return {
     name: 'firehouse-font-licences',
     apply: 'build',
-    generateBundle() {
-      const files = readdirSync(resolve(FONTS_DIR));
-      const families = new Set(files.filter((name) => name.endsWith('.woff2')).map((name) => name.replace(/-(?:normal|italic)-.*$/, '')));
-      for (const family of families) {
-        const licence = `${family}-OFL.txt`;
-        if (!files.includes(licence)) throw new Error(`${FONTS_DIR}/${licence} is missing: the ${family} fonts can't ship without it.`);
-        this.emitFile({ type: 'asset', fileName: `assets/${licence}`, source: readFileSync(resolve(FONTS_DIR, licence)) });
+    generateBundle(_, bundle) {
+      const emitted = new Map<string, string>();
+      for (const file of Object.values(bundle)) {
+        if (file.type !== 'asset' || !file.fileName.endsWith('.woff2')) continue;
+        const family = /^([a-z0-9-]+?)-(?:normal|italic)-/.exec(file.fileName.split('/').pop() ?? '')?.[1];
+        if (!family) throw new Error(`${file.fileName} doesn't name its family, so its licence can't be found.`);
+        emitted.set(family, dirname(file.fileName));
+      }
+      for (const [family, folder] of emitted) {
+        const licence = resolve(FONTS_DIR, `${family}-OFL.txt`);
+        if (!existsSync(licence)) throw new Error(`${licence} is missing: the ${family} fonts can't ship without it.`);
+        this.emitFile({ type: 'asset', fileName: `${folder}/${family}-OFL.txt`, source: readFileSync(licence) });
       }
     },
   };
@@ -42,16 +50,18 @@ function fontLicences(): Plugin {
  */
 function spaFallback(): Plugin {
   let writes = true;
+  let outDir = OUT_DIR;
   return {
     name: 'firehouse-spa-fallback',
     apply: 'build',
     configResolved(config) {
       writes = config.build.write !== false;
+      outDir = resolve(config.root, config.build.outDir);
     },
     closeBundle() {
       if (!writes) return;
-      const index = resolve(OUT_DIR, 'index.html');
-      if (existsSync(index)) copyFileSync(index, resolve(OUT_DIR, '404.html'));
+      const index = resolve(outDir, 'index.html');
+      if (existsSync(index)) copyFileSync(index, resolve(outDir, '404.html'));
     },
   };
 }

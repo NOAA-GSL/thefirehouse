@@ -22,6 +22,57 @@ const SRC = /^url\('\.\.\/fonts\/([a-z0-9-]+\.woff2)'\) format\('woff2'\)$/;
 const FAMILIES = ["'Archivo'", "'Public Sans'"];
 const DESCRIPTORS = ['font-family', 'font-style', 'font-weight', 'font-stretch', 'font-display', 'src', 'unicode-range'];
 
+/**
+ * fonts.css line by line, as scripts/fetch-fonts.mjs writes it. PostCSS and a browser
+ * tokenize some CSS differently (a backslash before `/*`, say), so text PostCSS reads
+ * as a comment can be rules to a browser. This grammar has no room for that: no
+ * backslash, no comment but the header and the subset labels, and each descriptor
+ * with the one shape its value can take.
+ */
+const LINE = [
+  /^$/,
+  /^\/\* [a-z-]+ \*\/$/,
+  /^@font-face \{$/,
+  /^  font-family: '(?:Archivo|Public Sans)';$/,
+  /^  font-style: (?:normal|italic);$/,
+  /^  font-weight: [1-9]00;$/,
+  /^  font-stretch: 100%;$/,
+  /^  font-display: swap;$/,
+  /^  src: url\('\.\.\/fonts\/[a-z0-9-]+\.woff2'\) format\('woff2'\);$/,
+  /^  unicode-range: U\+[0-9A-F?]+(?:-[0-9A-F]+)?(?:, U\+[0-9A-F?]+(?:-[0-9A-F]+)?)*;$/,
+  /^\}$/,
+];
+const REQUIRED = ['font-family', 'font-style', 'font-weight', 'font-display', 'src', 'unicode-range'];
+
+describe('fonts.css, line by line', () => {
+  const lines = css.replace(/\r\n/g, '\n').split('\n');
+  const headerEnd = lines.indexOf(' */');
+
+  it('opens with one comment that closes only on its last line', () => {
+    expect(lines[0]).toBe('/*');
+    expect(headerEnd).toBeGreaterThan(0);
+    for (const line of lines.slice(1, headerEnd)) expect(line, line).toMatch(/^ \*(?: [^*\\]*(?:\*(?!\/)[^*\\]*)*)?$/);
+  });
+
+  it('holds nothing but the generated lines, with no backslash anywhere', () => {
+    expect(css).not.toContain('\\');
+    for (const line of lines.slice(headerEnd + 1)) {
+      expect(LINE.some((pattern) => pattern.test(line)), JSON.stringify(line)).toBe(true);
+    }
+  });
+
+  it('gives every @font-face each descriptor it needs, once', () => {
+    const blocks = css.slice(css.indexOf(' */\n') + 4).split('@font-face {').slice(1);
+    expect(blocks.length).toBeGreaterThan(0);
+    for (const block of blocks) {
+      const body = block.slice(0, block.indexOf('}'));
+      const names = [...body.matchAll(/^  ([a-z-]+):/gm)].map((match) => match[1]);
+      expect(names, body).toEqual([...new Set(names)]);
+      for (const name of REQUIRED) expect(names, body).toContain(name);
+    }
+  });
+});
+
 describe('fonts.css', () => {
   const root = postcss.parse(css);
   const faces = root.nodes.filter((node) => node.type !== 'comment');
@@ -48,13 +99,13 @@ describe('fonts.css', () => {
     const referenced = new Set();
     for (const face of faces) {
       for (const node of face.nodes) {
-        if (node.prop === 'src') {
+        if (decodeCssEscapes(node.prop).toLowerCase() === 'src') {
           const file = SRC.exec(node.value)?.[1];
           expect(file, node.value).toBeTruthy();
           expect(existsSync(resolve(FONTS, file)), file).toBe(true);
           referenced.add(file);
         } else {
-          expect(decodeCssEscapes(node.value), `${node.prop}: ${node.value}`).not.toMatch(/url\(|src\(|image/i);
+          expect(decodeCssEscapes(node.value), `${node.prop}: ${node.value}`).not.toMatch(/url\(|src\(|local\(|image/i);
         }
       }
     }
@@ -77,7 +128,10 @@ describe('assets/fonts', () => {
       expect(source).toMatch(/^https:\/\/fonts\.gstatic\.com\/s\//);
       expect(data.subarray(0, 4).toString('latin1')).toBe('wOF2');
     } else {
-      expect(source).toMatch(/^https:\/\/raw\.githubusercontent\.com\/google\/fonts\/[0-9a-f]{40}\/ofl\//);
+      // Each family's licence from that family's own folder: public-sans from ofl/publicsans/.
+      const family = name.replace(/-OFL\.txt$/, '').replace(/-/g, '');
+      expect(source).toBe(source.replace(/\/ofl\/[a-z]+\/OFL\.txt$/, `/ofl/${family}/OFL.txt`));
+      expect(source).toMatch(/^https:\/\/raw\.githubusercontent\.com\/google\/fonts\/[0-9a-f]{40}\/ofl\/[a-z]+\/OFL\.txt$/);
       expect(data.toString('utf8')).toContain('SIL OPEN FONT LICENSE Version 1.1');
     }
   });
