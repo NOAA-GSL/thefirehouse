@@ -17,6 +17,8 @@
     "schema:check": "node scripts/project-schema.mjs --check",
     "plugin:css": "node scripts/plugin-css.mjs",
     "plugin:css:check": "node scripts/plugin-css.mjs --check",
+    "plugin:assets": "node scripts/plugin-assets.mjs",
+    "plugin:assets:check": "node scripts/plugin-assets.mjs --check",
     "seed": "node scripts/seed-bundle.mjs",
     "reference": "node scripts/capture-reference.mjs"
   },

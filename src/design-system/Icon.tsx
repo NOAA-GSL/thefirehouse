@@ -45,7 +45,8 @@ import type { CSSProperties } from 'react';
  * system component code ports over as-is.
  *
  * Registry is explicit rather than dynamic so an unknown name is a type error at
- * build time instead of a blank space at runtime.
+ * build time instead of a blank space at runtime. After adding or changing one, run
+ * `npm run plugin:assets` so the plugin's SVG copies follow (CI checks).
  */
 const REGISTRY = {
   'arrow-left': ArrowLeft,

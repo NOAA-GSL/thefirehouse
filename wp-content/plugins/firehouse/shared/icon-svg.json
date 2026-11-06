@@ -1,0 +1,31 @@
+{
+  "$comment": "What an icon file in assets/icons/ may hold. scripts/plugin-assets.mjs checks every icon against this before writing it, and tests/IconsTest.php checks the files that ship. Only Lucide's plain shapes and drawing attributes: nothing that runs, links or loads, and no text. A value may hold only the characters in `value`; `xmlns` must be `namespace`. An icon's name, which becomes its file name, must match `name`. The templates inline these files into GSL's pages (WORDPRESS-PLAN.md, Phase 3).",
+  "elements": ["svg", "g", "path", "rect", "circle", "ellipse", "line", "polyline", "polygon"],
+  "attributes": [
+    "xmlns",
+    "viewBox",
+    "width",
+    "height",
+    "fill",
+    "stroke",
+    "stroke-width",
+    "stroke-linecap",
+    "stroke-linejoin",
+    "d",
+    "x",
+    "y",
+    "rx",
+    "ry",
+    "cx",
+    "cy",
+    "r",
+    "x1",
+    "x2",
+    "y1",
+    "y2",
+    "points"
+  ],
+  "value": "^[0-9a-zA-Z .,-]*$",
+  "namespace": "http://www.w3.org/2000/svg",
+  "name": "^[a-z0-9-]+$"
+}
