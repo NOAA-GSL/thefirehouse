@@ -535,7 +535,10 @@ Next to it is the **synthesis screen**, where the AI pass comes back in:
 2. **Validate.** A need that names an unknown project, or one that is not published, is
    flagged with the entry quoted: the synthesis may only draw on what the site shows.
    Needs count once per project, so the screen also flags any need whose count differs
-   from the number of projects it lists.
+   from the number of projects it lists, and any topic area whose needs don't run by
+   project count, highest first, as the About page says. A project unpublished later
+   lowers the counts the pages show, so publishing or unpublishing a project checks
+   the order again (decided with the screen in Phase 6: flag it, or sort at render).
 3. **Compare.** The screen shows what changes against the published synthesis: needs
    added, dropped or reworded, rank and count changes, and sources gained or lost. This
    is what the reviewer signs off on.
@@ -911,7 +914,9 @@ behaves the same, and the accessibility snapshots match.
 - Landing and About layouts locked to text-only edits.
 - Whether an editor can reword the cleared disclaimer.
 - The synthesis screen: paste, validation, the comparison against the published
-  synthesis, and **Mark reviewed**.
+  synthesis, and **Mark reviewed**. Validation includes the order: each topic area's
+  needs by project count, highest first, since the About page says so (ties go by
+  broader interagency or multi-regional applicability, which the reviewer judges).
 - Download NotebookLM source, for the paste-in fallback.
 - Submit buttons bound to the settings.
 - Validation notices.
