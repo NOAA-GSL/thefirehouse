@@ -92,7 +92,11 @@ export interface TopNeed {
 
 export interface TopicSummary {
   topic: TopicKey;
-  /** Most important first. The site shows up to five. */
+  /**
+   * By project count, highest first; a tie goes to the need with broader interagency
+   * or multi-regional applicability (the About page; src/content/synthesis.test.ts
+   * checks the count order). The site shows them in this order, up to five.
+   */
   topNeeds: TopNeed[];
   /** ISO date of the last review pass; surfaced so readers know how fresh this is. */
   updatedAt?: string;

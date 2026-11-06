@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { localAdapter } from './adapters/local';
+import { needMentions } from './derive';
 import type { TopicSummary } from './types';
 
 /**
@@ -32,14 +34,15 @@ describe('topicSummaries.json', () => {
   });
 
   // The About page says the order of the top needs is determined by project count,
-  // with ties broken by broader interagency or multi-regional applicability
-  // (Stephanie and Emily, 6 November). The tie-break is a judgement made in review;
-  // the count order is checked here.
-  it('lists each topic area’s needs by project count, highest first', () => {
-    for (const summary of summaries) {
-      const counts = summary.topNeeds
-        .filter((need) => typeof need !== 'string')
-        .map((need) => need.mentions ?? need.projects?.length ?? 0);
+  // with ties going to the need with broader interagency or multi-regional
+  // applicability: Stephanie's answer of 6 November, relayed by Eric. The tie-break
+  // is a reviewer's judgement; the count order is checked here, on the content the
+  // pages render, so a project unpublished later, which lowers the counts shown,
+  // fails it too.
+  it('lists each topic area’s needs by project count, highest first, as the pages show them', async () => {
+    const content = await localAdapter.load();
+    for (const summary of content.topicSummaries) {
+      const counts = summary.topNeeds.map(needMentions);
       expect(counts, summary.topic).toEqual([...counts].sort((a, b) => b - a));
     }
   });

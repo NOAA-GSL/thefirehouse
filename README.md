@@ -195,9 +195,9 @@ overrides are isolated so a re-sync doesn't lose them.
       draft on the site was made from four of the eight published projects, with every
       need traced to the survey entries it counts in
       `notebooklm/draft-synthesis-2026-09-17.md`. Nothing is reviewed yet, so the site
-      labels it a draft on every surface that shows it — rerun it across all eight
-      with the prompt in `notebooklm/README.md`, edit the wording, then set
-      `reviewedBy` to clear the label. The draft also counts some needs more than once
+      labels it a draft on every surface that shows it. Stephanie and Emily reran it
+      across all eight on 27 October with their own prompt (see the next items); its
+      reviewed table replaces the draft, with `reviewedBy` set to clear the label. The draft also counts some needs more than once
       per project, so four of its "Project count" figures exceed the projects listed
       under them (`src/content/synthesis.test.ts` pins the four). The rerun has to
       replace it before any copy goes up, the test site's included.
@@ -210,17 +210,28 @@ overrides are isolated so a re-sync doesn't lose them.
       for Landing Page, About Page, Project Pages" on 3 November. It speaks for NOAA, so it goes
       through clearance before gsl.noaa.gov.
 - [ ] **Finish the 3 November wording round.** Stephanie and Emily answered on 3
-      November, in one reply signed by both, and Stephanie on 6 November: the needs
-      are ordered by project count, ties going to the need with broader interagency or
-      multi-regional applicability, which the About page now says. Still open: the
-      lines that say "how often" or "frequency", which they'll adjust when they review
-      the pages, and whether the synthesis needs its own line saying whose it is.
-- [ ] **Bring in the team's synthesis prompt.** Their "FireHouse Prompt (Final)", in
-      their Gemini notebook, orders needs by project count with that tie-break, and
-      assigns an entry that spans several topic areas by a fixed hierarchy (governance,
-      then warnings, then forecasts, then observations). The prompt in
-      `notebooklm/README.md` differs: it ranks by importance and lets an entry count in
-      several areas. Its full text replaces that one, through the Prompt Engineer.
+      November, in one reply signed by both. On 6 November Stephanie, relayed by Eric,
+      answered the ranking question, saying the About page should say "something
+      like": "Order of the top 5 needs is determined by project count; in the event of a tie, the need with broader interagency or multi-regional applicability is prioritized." The About page's second process step now carries it, with "The"
+      added; they confirm the step as the page shows it. Still open, for when they
+      review the pages:
+      - the three lines that say "how often" or "frequency": "ranked by frequency"
+        (`about.json`), "with how often each one came up" (`landing.json`) and
+        "ranked by how often they come up" (written into `LandingPage.tsx`);
+      - whether the step should say five needs *in each* topic area, and whether the
+        tie-break also decides which need makes the five when one ties with the fifth;
+      - whether the synthesis needs its own line saying whose it is, and whether the
+        reader should know the tie-break is the team's judgement.
+- [ ] **Bring in the team's synthesis prompt.** Their "FireHouse Prompt (Final)", which
+      Stephanie describes as being in their Gemini notebook, orders needs by project
+      count with that tie-break. It assigns an entry that spans several topic areas by
+      a fixed hierarchy: governance, then warnings, then forecasts, then observations.
+      The prompt in `notebooklm/README.md` differs: it ranks by importance and lets an
+      entry count in several areas. The team's full text replaces it, through the
+      Prompt Engineer, after old and new are run on the same projects (CLAUDE.md). It
+      has to keep, or come with updates to, what other docs rely on: the JSON shape
+      in `notebooklm/README.md` and the once-per-project count in the plan. The
+      plan's "Need counts" row then records the hierarchy too.
 - [ ] **Review the topic-area `covers` copy** in `topics.json` — the bullet list in
       the callout, and now the only area copy on `/topics/…`. The longer `intro`
       paragraphs are no longer rendered (September 2026 review) but are kept in the
