@@ -50,9 +50,9 @@
 }
 
 /* Whatever is scrolled into view in the page, by the skip link or by moving focus,
-   stops below the pinned bar (65px) and the toolbar instead of under them. */
-.fh-app #fh-content,
-.fh-app #fh-content * {
+   stops below the pinned bar (65px) and the toolbar instead of under them. `:where()`
+   keeps it below any Firehouse rule that sets its own, such as the landing page's. */
+.fh-app :where(#fh-content, #fh-content *) {
   scroll-margin-top: calc(72px + var(--wp-admin--admin-bar--height, 0px));
 }
 

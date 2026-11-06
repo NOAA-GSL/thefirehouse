@@ -1012,6 +1012,9 @@ signed off on the frame.
   (`wp_register_block_types_from_metadata_collection()`), not by reading each
   `block.json` on every request.
 - Rerun the frame's style and focus checks on the real pages.
+- Keep the Firehouse bar to one per page once a page's own content renders blocks. The
+  bar's block prints on any Firehouse page, so its comment typed into a page in the tree
+  would print a second bar, with a duplicate drawer ID.
 
 **Done when:** these pages match the reference screenshots and accessibility
 snapshots, and Stephanie and Emily can review them on the test site.
