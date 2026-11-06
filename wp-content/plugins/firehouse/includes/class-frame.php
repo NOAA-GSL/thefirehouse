@@ -17,15 +17,15 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Puts every Firehouse request in templates/frame.php and loads the Firehouse
  * stylesheets for it, on those requests only (WORDPRESS-PLAN.md, Look and feel).
  *
- * A Firehouse request is what Query::is_firehouse() says: the project archive, a
- * project, a topic, a page in the Firehouse tree, or a missing address under any of
- * them. The template calls the theme's own get_header() and get_footer(), and puts
- * the Firehouse wrapper, `main.fh-app`, between them, outside the theme's content
- * wrappers, whose rules would beat the inward reset (rule 9).
+ * A Firehouse request is the project archive, a project, a topic, a page in the
+ * Firehouse tree, or a missing address under /firehouse/. The template calls the
+ * theme's own get_header() and get_footer(), and puts the Firehouse wrapper,
+ * `main.fh-app`, between them, outside the theme's content wrappers, whose rules
+ * would beat the inward reset (rule 9).
  *
  * The stylesheets load after the theme's, so ties go to Firehouse: the fonts, the
  * site's CSS scoped under `.fh-app` (assets/css/firehouse.css, generated from the
- * site), and frame.css, the little the wrapper needs only inside a theme's page.
+ * site), and frame.css, the little Firehouse needs only inside a theme's page.
  */
 final class Frame {
 
@@ -52,11 +52,27 @@ final class Frame {
 	}
 
 	/**
-	 * Whether the main request is a Firehouse request.
+	 * Whether the main request is a Firehouse request, decided from the query
+	 * WordPress ran, so the hooks here must run after it.
+	 *
+	 * The request's own query variables can't decide it. A preview of a draft page
+	 * arrives as `?page_id=`, which names no path, and core's rules send a missing
+	 * address under /firehouse/ elsewhere when no page is there. An embed keeps
+	 * WordPress's own embed template.
 	 */
 	public static function is_firehouse_request(): bool {
+		if ( is_embed() ) {
+			return false;
+		}
+		if ( is_singular( array( Post_Types::PROJECT, Post_Types::TOPIC ) ) || is_post_type_archive( Post_Types::PROJECT ) ) {
+			return true;
+		}
+		if ( is_page() ) {
+			$page = get_queried_object();
+			return $page instanceof \WP_Post && Capabilities::in_tree( $page );
+		}
 		global $wp;
-		return $wp instanceof \WP && Query::is_firehouse( (array) $wp->query_vars );
+		return is_404() && $wp instanceof \WP && Query::under_root( $wp->request );
 	}
 
 	/**
@@ -69,18 +85,32 @@ final class Frame {
 	}
 
 	/**
-	 * Loads the Firehouse stylesheets on a Firehouse request, each depending on the
-	 * one before it. The plugin's version is in each URL, so a release isn't served
-	 * from a stale cache.
+	 * Loads the Firehouse stylesheets on a Firehouse request, in order. frame.css
+	 * depends on firehouse.css; nothing depends on the fonts, so a site that wants its
+	 * own can dequeue `firehouse-fonts` and lose nothing else.
 	 */
 	public static function enqueue(): void {
 		if ( ! self::is_firehouse_request() ) {
 			return;
 		}
-		$main = dirname( __DIR__ ) . '/firehouse.php';
-		wp_enqueue_style( self::FONTS, plugins_url( 'assets/css/fonts.css', $main ), array(), VERSION );
-		wp_enqueue_style( self::STYLE, plugins_url( 'assets/css/firehouse.css', $main ), array( self::FONTS ), VERSION );
-		wp_enqueue_style( self::FRAME, plugins_url( 'assets/css/frame.css', $main ), array( self::STYLE ), VERSION );
+		self::style( self::FONTS, 'fonts.css', array() );
+		self::style( self::STYLE, 'firehouse.css', array() );
+		self::style( self::FRAME, 'frame.css', array( self::STYLE ) );
+	}
+
+	/**
+	 * Enqueues a stylesheet from assets/css/. Its URL carries the plugin's version
+	 * and the file's modified time, so a changed file is never served from a stale
+	 * cache, even when the version hasn't moved.
+	 *
+	 * @param string             $handle The style handle.
+	 * @param string             $file   The file's name in assets/css/.
+	 * @param array<int, string> $deps   The handles it loads after.
+	 */
+	private static function style( string $handle, string $file, array $deps ): void {
+		$root = dirname( __DIR__ );
+		$path = $root . '/assets/css/' . $file;
+		wp_enqueue_style( $handle, plugins_url( 'assets/css/' . $file, $root . '/firehouse.php' ), $deps, VERSION . '-' . (int) filemtime( $path ) );
 	}
 
 	/**

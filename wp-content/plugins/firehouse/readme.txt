@@ -16,17 +16,18 @@ phases; WORDPRESS-PLAN.md in https://github.com/NOAA-GSL/thefirehouse describes 
 It registers the project and topic post types and their fields. Projects are at
 /firehouse/projects/ and topics at /firehouse/topics/{key}/. It adds the Firehouse
 Editor role, a Firehouse settings screen, and an Import screen that loads the site's
-content from a seed bundle. Every Firehouse address gets the plugin's frame: the
-theme's header and footer around the Firehouse area, with its own stylesheets and
-fonts. The pages themselves come in a later phase; until then the frame holds a
-placeholder.
+content from a seed bundle. Every Firehouse address (projects, topics and pages under
+/firehouse/) gets the plugin's frame: the theme's header and footer, with the
+Firehouse area between them in the plugin's own stylesheets and fonts. The theme's
+hero background is hidden on those pages. The pages themselves come in a later
+phase; until then the frame shows a placeholder.
 
 The fonts in assets/fonts/, Archivo and Public Sans, are third-party, under the SIL
 Open Font License 1.1, whose text is beside them. assets/fonts/SOURCES.json records
 where each file came from.
 
-The icons in assets/icons/ are Lucide's, under the ISC License (with portions from
-Feather under the MIT License), whose text is beside them in LICENSE.txt.
+The icons in assets/icons/ are Lucide's, under the ISC License, whose text is beside
+them in LICENSE.txt. Lucide credits portions of them to Feather (MIT) there.
 
 The Import screen keeps nothing it doesn't import: the uploaded file isn't saved, and
 the checked content waits briefly for the confirmation and is then cleared. The plugin

@@ -157,5 +157,12 @@ if ( ! class_exists( 'WP' ) ) {
 		 * @var array<string, mixed>
 		 */
 		public array $query_vars = array();
+
+		/**
+		 * The request's path, without its leading or trailing slash.
+		 *
+		 * @var string
+		 */
+		public string $request = '';
 	}
 }

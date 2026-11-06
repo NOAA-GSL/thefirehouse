@@ -23,6 +23,12 @@
   color-scheme: dark;
 }
 
+/* The skip link's target fills the wrapper, so the clip would cut away its whole
+   focus ring, which sits outside it; drawn inside, the ring shows where focus landed. */
+.fh-app #fh-content:focus-visible {
+  outline-offset: calc(-1 * var(--focus-ring-width));
+}
+
 /* `hidden` hides, whatever display a Firehouse rule gives the element. */
 .fh-app [hidden] {
   display: none !important;

@@ -52,6 +52,63 @@ final class QueryTest extends WordPressTestCase {
 	}
 
 	/**
+	 * A project or topic variable that names no post is dropped, on any address, and
+	 * doesn't make the request a Firehouse one, so `year` stays (rule 13).
+	 *
+	 * @param array<string, mixed> $vars     The request's query variables.
+	 * @param array<string, mixed> $expected What WordPress's query gets.
+	 */
+	#[DataProvider( 'variables_that_name_no_post' )]
+	public function test_a_variable_that_names_no_post_is_dropped( array $vars, array $expected ): void {
+		$this->assertSame( $expected, Query::request( $vars ) );
+	}
+
+	/**
+	 * Arrays, empty strings and `0`, which WordPress reads as empty.
+	 *
+	 * @return array<string, array{array<string, mixed>, array<string, mixed>}>
+	 */
+	public static function variables_that_name_no_post(): array {
+		return array(
+			'an array on the project archive'  => array(
+				array(
+					'post_type'  => 'fh_project',
+					'fh_project' => array( 'x' ),
+				),
+				array( 'post_type' => 'fh_project' ),
+			),
+			'an array on a page of the theme'  => array(
+				array(
+					'pagename'   => 'about',
+					'fh_project' => array( 'x' ),
+				),
+				array( 'pagename' => 'about' ),
+			),
+			'an empty topic on a page'         => array(
+				array(
+					'pagename' => 'about',
+					'fh_topic' => '',
+				),
+				array( 'pagename' => 'about' ),
+			),
+			'an empty topic on a date archive' => array(
+				array(
+					'year'     => '2025',
+					'fh_topic' => '',
+				),
+				array( 'year' => '2025' ),
+			),
+			'a 0 project on the posts'         => array(
+				array(
+					'fh_project' => '0',
+					'year'       => '2025',
+				),
+				array( 'year' => '2025' ),
+			),
+		);
+	}
+
+	/**
 	 * Anywhere else, `year` means what WordPress means by it.
 	 *
 	 * @param array<string, mixed> $vars The request's query variables.

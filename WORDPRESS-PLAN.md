@@ -410,7 +410,8 @@ in a rewrite.
     drops any parameter it doesn't recognize. PHP is less forgiving: `?phase[]=x`
     arrives as an array, and string functions given an array throw, so a scanner's
     probe becomes a server error. Every parameter the explorer and the map read is
-    checked to be a string first.
+    checked to be a string first. *The plugin's project and topic query variables
+    are dropped the same way, on any address (`Query::request`).*
 
 ---
 
@@ -846,6 +847,9 @@ ones.
   enqueue gives them one, or a refresh can be served stale from a cache. The templates
   load `fonts.css` before `firehouse.css` and keep it in `assets/css/`, where its
   `../fonts/` paths resolve; preloading the two latin files would shorten the swap.*
+  *The frame versions each stylesheet by the plugin's version and the file's modified
+  time. The font files inside `fonts.css` still carry none, so the next refresh puts
+  each file's hash in its name. Preloading moves to Phase 4.*
   *Icons and logos done 6 November: `npm run plugin:assets` draws every icon in the
   site's registry through its own `Icon` component into `assets/icons/<name>.svg`, and
   copies the images `BrandMark` imports into `assets/logos/`; CI checks both are
@@ -882,6 +886,11 @@ ones.
   - *Inside it, the static site's About, explorer, topic and project markup, dropped
     into the real template, matches the static site at rest and with keyboard focus:
     845 elements and 42 focus rings, in both themes.*
+  - *The frame decides from the query WordPress ran. The request's own variables let
+    an empty `?fh_topic=` claim any page, and miss a draft's preview (found in
+    review).*
+  - *Both checks ran by hand: they need GSL's theme, which isn't in this repository.
+    Phase 4 runs them again on the real pages.*
   - *How each item below landed is marked on it.*
 
   Found while scoping the CSS, and settled here against the real theme:
@@ -901,8 +910,9 @@ ones.
     page. It belongs before the theme's header, hidden by clipping. *The theme prints
     no `wp_body_open` hook, so nothing can go before its header. The skip link sits at
     the top of the wrapper instead, clipped with it until focused, and leads to the
-    content, past the Firehouse bar once there is one. Moving it before the header
-    needs that hook in GSL's theme.*
+    content, past the Firehouse bar once there is one. Its target fills the clipped
+    wrapper, so its focus ring is drawn inside it. Moving the link before the header
+    needs that hook in GSL's theme (the README's checklist).*
   - The wrapper sits outside the theme's content wrappers, whose rules beat the reset,
     and `firehouse.css` loads after the theme's stylesheet, so ties go to Firehouse.
     *Done.*
@@ -912,7 +922,7 @@ ones.
     top of whatever follows, unless the page switches it off. Firehouse pages switch
     it off, or the Firehouse bar and hero sit under it (seen in the 6 November
     preview). *Done: the theme offers no switch for a plugin's archive or missing
-    pages, so `frame.css` hides it on Firehouse pages only (`body.fh-page`).*
+    pages, so `frame.css` hides it on Firehouse pages only (the `fh-page` body class).*
   - The wrapper sets `color-scheme`, which nothing else on the theme's page does, and
     a `[hidden]` rule that wins over Firehouse's own `display` values before the
     Interactivity API starts setting `hidden`. *Done in `frame.css`.*
@@ -943,6 +953,12 @@ signed off on the frame.
 - Description and Open Graph tags.
 - Check that projects appear in the sitemap.
 - Test link previews in Slack and Teams.
+- Weight, measured on the frame (6 November): `firehouse.css` is about 28 KB
+  compressed, all of it render-blocking, and about a third of it comments. Minify what
+  the plugin loads (the checks run on the minified file), split the project, topic
+  and About sections by template in `wp_enqueue_scripts`, preload the latin Public Sans
+  file, and drop the italic faces nothing uses.
+- Rerun the frame's style and focus checks on the real pages.
 
 **Done when:** these pages match the reference screenshots and accessibility
 snapshots, and Stephanie and Emily can review them on the test site.
