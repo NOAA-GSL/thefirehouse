@@ -929,8 +929,10 @@ ones.
     by the same rule as the hero, which reaches the project archive too.*
   - WordPress answers a missing address by redirecting to its best guess at a post
     anywhere on the site, so a missing `/firehouse/about/` landed on the site's own
-    About page. *Done: no guessing under `/firehouse/`, which gets the frame's
-    not-found page.*
+    About page. *Done: under `/firehouse/`, only a project's or topic's address keeps
+    the guess, which looks among its own type, so a shared link cut short still finds
+    its project (rule 5). Any other missing address there gets the frame's not-found
+    page.*
   - The wrapper sets `color-scheme`, which nothing else on the theme's page does, and
     a `[hidden]` rule that wins over Firehouse's own `display` values before the
     Interactivity API starts setting `hidden`. *Done in `frame.css`.*

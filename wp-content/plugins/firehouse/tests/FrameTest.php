@@ -170,18 +170,41 @@ final class FrameTest extends WordPressTestCase {
 	}
 
 	/**
-	 * A missing address under /firehouse/ is never redirected to a guess, which could
-	 * land outside the Firehouse; anywhere else WordPress decides, as before.
+	 * A missing address under /firehouse/ isn't redirected to a guess of any type, which
+	 * could land outside the Firehouse; a project's or topic's address keeps the guess,
+	 * which stays among its own type. Anywhere else WordPress decides, as before.
 	 */
-	public function test_a_missing_firehouse_address_is_not_redirected_to_a_guess(): void {
-		foreach ( array( 'firehouse', 'firehouse/about', 'firehouse/projects/no-such-project' ) as $path ) {
+	public function test_a_guess_at_a_missing_firehouse_address_stays_in_the_firehouse(): void {
+		$cases = array(
+			array( 'firehouse', '', false ),
+			array( 'firehouse/about', '', false ),
+			array( 'firehouse/a/b', 'page', false ),
+			array( 'firehouse/projects/california-tribal', 'fh_project', true ),
+			array( 'firehouse/topics/gov', 'fh_topic', true ),
+			array( 'firehouse/projects/x', array( 'fh_project' ), false ),
+			array( 'about', '', true ),
+			array( 'firehouses', '', true ),
+			array( 'about/firehouse', 'post', true ),
+		);
+		foreach ( $cases as list( $path, $type, $guess ) ) {
 			self::resolve( array( 'missing' => $path ) );
-			$this->assertFalse( Frame::guess_404_permalink( true ), $path );
-		}
-		foreach ( array( 'about', 'firehouses', 'about/firehouse' ) as $path ) {
-			self::resolve( array( 'missing' => $path ) );
-			$this->assertTrue( Frame::guess_404_permalink( true ), $path );
+			Functions\when( 'get_query_var' )->alias( static fn( string $name ): mixed => 'post_type' === $name ? $type : '' );
+			$this->assertSame( $guess, Frame::guess_404_permalink( true ), $path );
 			$this->assertFalse( Frame::guess_404_permalink( false ), $path );
+		}
+	}
+
+	/**
+	 * Whatever an earlier filter left, the answer is a boolean and nothing throws.
+	 */
+	public function test_the_guess_filter_takes_any_value(): void {
+		self::resolve( array( 'missing' => 'about' ) );
+		Functions\when( 'get_query_var' )->justReturn( '' );
+		foreach ( array( null, 0, '', array() ) as $value ) {
+			$this->assertFalse( Frame::guess_404_permalink( $value ) );
+		}
+		foreach ( array( 1, '1', array( 'x' ) ) as $value ) {
+			$this->assertTrue( Frame::guess_404_permalink( $value ) );
 		}
 	}
 

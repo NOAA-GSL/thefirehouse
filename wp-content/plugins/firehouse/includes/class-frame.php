@@ -54,17 +54,25 @@ final class Frame {
 	}
 
 	/**
-	 * Keeps WordPress from guessing where a missing address under /firehouse/ meant to
-	 * go. It redirects to any published post whose slug starts with the address's last
-	 * part, so /firehouse/about/ would land on the site's own About page, outside the
-	 * Firehouse. Missing Firehouse addresses get the frame's not-found page instead.
-	 * Anywhere else, WordPress guesses as usual.
+	 * Keeps WordPress's guess at a missing address under /firehouse/ inside the
+	 * Firehouse. WordPress redirects to a published post whose slug starts with the
+	 * address's last part, of any type unless the address names one. So
+	 * /firehouse/about/ would land on the site's own About page, and gets the frame's
+	 * not-found page instead. A project's or topic's address keeps the guess, which
+	 * looks only among its own type: a shared link cut short still finds its project
+	 * (rule 5). Anywhere else, WordPress guesses as usual.
 	 *
-	 * @param bool $guess Whether WordPress would guess.
+	 * Runs on every missing address on the site, after any other plugin's filter, so
+	 * it takes whatever value that left.
+	 *
+	 * @param mixed $guess Whether WordPress would guess.
 	 */
-	public static function guess_404_permalink( bool $guess ): bool {
+	public static function guess_404_permalink( mixed $guess ): bool {
 		global $wp;
-		return $guess && ! ( $wp instanceof \WP && Query::under_root( $wp->request ) );
+		if ( ! $guess || ! ( $wp instanceof \WP && Query::under_root( $wp->request ) ) ) {
+			return (bool) $guess;
+		}
+		return in_array( get_query_var( 'post_type' ), array( Post_Types::PROJECT, Post_Types::TOPIC ), true );
 	}
 
 	/**
