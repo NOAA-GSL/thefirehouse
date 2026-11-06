@@ -294,7 +294,9 @@ nothing from the database. Each class's docblock has the detail; this is the map
 - `Frame` puts every Firehouse request in `templates/frame.php`: the project archive, a
   project, a topic, a page in the `firehouse` tree (a draft's preview included), and a
   missing address under `/firehouse/`. It decides from the query WordPress ran, not
-  the request's own variables, and leaves embeds to WordPress's embed template. That is the theme's own `get_header()` and `get_footer()`
+  the request's own variables, and leaves embeds to WordPress's embed template. A
+  missing address there gets the frame's not-found page, never WordPress's guess at a
+  page elsewhere on the site. That is the theme's own `get_header()` and `get_footer()`
   around `main.fh-app`, outside the theme's content wrappers. It loads `fonts.css`,
   `firehouse.css` and `frame.css` after the theme's stylesheet, at the plugin's
   version and each file's modified time, and adds `fh-page` to the body. Nothing
@@ -305,7 +307,8 @@ nothing from the database. Each class's docblock has the detail; this is the map
     footer down;
   - it sets `color-scheme` to match the page's light or dark mode, and makes
     `[hidden]` hide;
-  - on Firehouse pages only, it hides the theme's hero background.
+  - on Firehouse pages only, it hides the theme's hero background and the mission
+    section above its footer.
 
   Every rule stays inside the wrapper except the last, and
   `scripts/frame-css.test.mjs` holds it to that.

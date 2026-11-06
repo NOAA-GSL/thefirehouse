@@ -42,13 +42,29 @@ final class Frame {
 	public const BODY_CLASS = 'fh-page';
 
 	/**
-	 * Hooks the template, the stylesheets and the body class. The stylesheets enqueue
-	 * at priority 20, after a theme's at the default 10, so they print after it.
+	 * Hooks the template, the stylesheets, the body class and the not-found redirect.
+	 * The stylesheets enqueue at priority 20, after a theme's at the default 10, so
+	 * they print after it.
 	 */
 	public static function hook(): void {
 		add_filter( 'template_include', array( self::class, 'template' ), 99 );
 		add_action( 'wp_enqueue_scripts', array( self::class, 'enqueue' ), 20 );
 		add_filter( 'body_class', array( self::class, 'body_class' ) );
+		add_filter( 'do_redirect_guess_404_permalink', array( self::class, 'guess_404_permalink' ) );
+	}
+
+	/**
+	 * Keeps WordPress from guessing where a missing address under /firehouse/ meant to
+	 * go. It redirects to any published post whose slug starts with the address's last
+	 * part, so /firehouse/about/ would land on the site's own About page, outside the
+	 * Firehouse. Missing Firehouse addresses get the frame's not-found page instead.
+	 * Anywhere else, WordPress guesses as usual.
+	 *
+	 * @param bool $guess Whether WordPress would guess.
+	 */
+	public static function guess_404_permalink( bool $guess ): bool {
+		global $wp;
+		return $guess && ! ( $wp instanceof \WP && Query::under_root( $wp->request ) );
 	}
 
 	/**

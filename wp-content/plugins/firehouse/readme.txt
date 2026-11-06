@@ -19,8 +19,9 @@ Editor role, a Firehouse settings screen, and an Import screen that loads the si
 content from a seed bundle. Every Firehouse address (projects, topics and pages under
 /firehouse/) gets the plugin's frame: the theme's header and footer, with the
 Firehouse area between them in the plugin's own stylesheets and fonts. The theme's
-hero background is hidden on those pages. The pages themselves come in a later
-phase; until then the frame shows a placeholder.
+hero background and the mission section above its footer are hidden on those pages.
+The pages themselves come in a later phase; until then the frame shows a
+placeholder.
 
 The fonts in assets/fonts/, Archivo and Public Sans, are third-party, under the SIL
 Open Font License 1.1, whose text is beside them. assets/fonts/SOURCES.json records

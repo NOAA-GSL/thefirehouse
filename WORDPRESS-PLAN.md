@@ -923,6 +923,14 @@ ones.
     it off, or the Firehouse bar and hero sit under it (seen in the 6 November
     preview). *Done: the theme offers no switch for a plugin's archive or missing
     pages, so `frame.css` hides it on Firehouse pages only (the `fh-page` body class).*
+  - The theme's footer prints a mission section (Our Mission, Research Areas) above
+    its own footer, with a per-page switch on the edit screen for pages and posts.
+    Firehouse pages don't need it; GSL's footer stays (Eric, 6 November). *Done: hidden
+    by the same rule as the hero, which reaches the project archive too.*
+  - WordPress answers a missing address by redirecting to its best guess at a post
+    anywhere on the site, so a missing `/firehouse/about/` landed on the site's own
+    About page. *Done: no guessing under `/firehouse/`, which gets the frame's
+    not-found page.*
   - The wrapper sets `color-scheme`, which nothing else on the theme's page does, and
     a `[hidden]` rule that wins over Firehouse's own `display` values before the
     Interactivity API starts setting `hidden`. *Done in `frame.css`.*

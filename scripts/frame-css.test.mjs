@@ -10,10 +10,11 @@ import { outputProblems } from './scope-css.ts';
  * so it gets the same checks, read as PostCSS reads it and as a browser does: every
  * rule inside `.fh-app`, no at-rule that reaches the whole page, nothing that loads.
  * The one rule allowed outside the wrapper is on Firehouse pages only (the body class
- * includes/class-frame.php adds), and hides the theme's hero background.
+ * includes/class-frame.php adds), and hides the theme's hero background and the mission
+ * section above its footer.
  */
 const css = readFileSync(fileURLToPath(new URL('../wp-content/plugins/firehouse/assets/css/frame.css', import.meta.url)), 'utf8');
-const ALLOWED_OUTSIDE = ['.fh-page .gsl-hero-section'];
+const ALLOWED_OUTSIDE = ['.fh-page .gsl-hero-section', '.fh-page .footer-mission'];
 const beyondAllowed = (problems) =>
   problems.filter((problem) => !ALLOWED_OUTSIDE.some((selector) => problem === `unscoped ${selector}`));
 

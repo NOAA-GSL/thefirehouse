@@ -170,6 +170,22 @@ final class FrameTest extends WordPressTestCase {
 	}
 
 	/**
+	 * A missing address under /firehouse/ is never redirected to a guess, which could
+	 * land outside the Firehouse; anywhere else WordPress decides, as before.
+	 */
+	public function test_a_missing_firehouse_address_is_not_redirected_to_a_guess(): void {
+		foreach ( array( 'firehouse', 'firehouse/about', 'firehouse/projects/no-such-project' ) as $path ) {
+			self::resolve( array( 'missing' => $path ) );
+			$this->assertFalse( Frame::guess_404_permalink( true ), $path );
+		}
+		foreach ( array( 'about', 'firehouses', 'about/firehouse' ) as $path ) {
+			self::resolve( array( 'missing' => $path ) );
+			$this->assertTrue( Frame::guess_404_permalink( true ), $path );
+			$this->assertFalse( Frame::guess_404_permalink( false ), $path );
+		}
+	}
+
+	/**
 	 * The fonts, the site's stylesheet and the frame load in that order, from the
 	 * plugin's assets/css/, each at the plugin's version and the file's modified time.
 	 * Only the frame depends on another; nothing depends on the fonts.

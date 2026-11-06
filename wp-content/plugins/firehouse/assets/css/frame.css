@@ -4,9 +4,10 @@
  * Firehouse pages only (includes/class-frame.php). Written by hand, not generated;
  * scripts/frame-css.test.mjs holds it to the rules below.
  *
- * Every rule stays inside the wrapper but one, which is on Firehouse pages only: the
- * theme's hero background, which GSL's header prints over the top of whatever follows
- * it, with no switch a plugin's pages can use.
+ * Every rule stays inside the wrapper but one, which is on Firehouse pages only. It
+ * hides two parts of GSL's theme that a page can switch off but a plugin's archive
+ * can't: the hero background, which the header prints over the top of whatever
+ * follows it, and the mission section above the footer. The footer itself stays.
  */
 
 /* The atmosphere layer is fixed to the window; clipping the wrapper keeps it inside
@@ -34,6 +35,7 @@
   display: none !important;
 }
 
-.fh-page .gsl-hero-section {
+.fh-page .gsl-hero-section,
+.fh-page .footer-mission {
   display: none;
 }
