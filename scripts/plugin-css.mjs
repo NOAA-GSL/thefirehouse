@@ -13,9 +13,11 @@
  *
  * Left out (`LEFT_OUT`): the static build's page shell, gov banner and footer,
  * because GSL's theme does their job under the plugin, and the fonts' stylesheet,
- * which the plugin loads on its own so a switch to GSL's fonts stays one change.
- * They're found among the JS imports, so each has to stay imported from a module,
- * not by a CSS `@import`. Left for later: the coverage map's chunk, which loads with
+ * which the plugin will load on its own, so switching to GSL's fonts never touches
+ * this file. They're found among the JS imports, so each has to stay imported from a
+ * module, not by a CSS `@import`. All but the fonts must be found, so a stylesheet
+ * that moved isn't let in unnoticed; the fonts may go, when the site stops loading
+ * them. Left for later: the coverage map's chunk, which loads with
  * the map (`DEFERRED`, Phase 5). Any other stylesheet the build makes stops the
  * script, so none is dropped unnoticed.
  *
@@ -46,10 +48,12 @@ const LEFT_OUT = [
   'src/design-system/SiteFooter.css',
   'wp-content/plugins/firehouse/assets/css/fonts.css',
 ];
+const MAY_GO = ['wp-content/plugins/firehouse/assets/css/fonts.css'];
 const DEFERRED = ['RegionMap'];
 
 const posix = (path) => path.replace(/\\/g, '/');
 const leftOut = new Set(LEFT_OUT.map((file) => posix(resolve(ROOT, file))));
+const mayGo = new Set(MAY_GO.map((file) => posix(resolve(ROOT, file))));
 
 /** Loads each left-out stylesheet as empty, so the rest keep their places. */
 function leaveOut() {
@@ -64,8 +68,8 @@ function leaveOut() {
       return '';
     },
     buildEnd() {
-      const missing = [...leftOut].filter((file) => !seen.has(file));
-      if (missing.length) throw new Error(`No longer imported from a component, so nothing to leave out: ${missing.join(', ')}`);
+      const missing = [...leftOut].filter((file) => !seen.has(file) && !mayGo.has(file));
+      if (missing.length) throw new Error(`No longer imported from a module, so nothing to leave out: ${missing.join(', ')}`);
     },
   };
 }
@@ -124,7 +128,7 @@ const css = `/*
 ${body}
 `;
 
-// Fail closed: whatever the strip above missed, or a later change adds, stops here.
+// Fail closed: anything a source stylesheet or a later change adds stops here.
 // PostCSS reads it first, then a browser reads the exact text that would be written.
 const problems = outputProblems(postcss.parse(css));
 const browser = await openBrowser();

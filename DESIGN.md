@@ -196,7 +196,7 @@ Palette character: cool maritime neutrals with a single hot ember signal; topic 
 - **Stat** (800, 44px / 1, Expanded): Live counters; 36px below 768px.
 
 ### Named Rules
-**The Expanded Reserve Rule.** Archivo Expanded appears on stats and the Firehouse wordmark — not on body copy or buttons.
+**The Expanded Reserve Rule.** Archivo Expanded appears on stats and the Firehouse wordmark — not on body copy or buttons. (Google Fonts serves no Archivo Expanded, so today these render in Archivo; Archivo's width axis could supply it, which would change how they look.)
 
 **The Uppercase Label Rule.** Uppercase + `letter-spacing-label` is for metadata (eyebrows, chips, field labels), never for long sentences.
 

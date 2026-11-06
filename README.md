@@ -120,7 +120,9 @@ editable.
 
 ## Deliberate deviations from the design
 
-Everything below is an addition or correction, with the reason. Nothing was dropped.
+Everything below is an addition or correction, with the reason. Nothing was dropped
+but the Google Fonts `@import` in `tokens/typography.css`: the same fonts are
+self-hosted instead (see The WordPress plugin), so no page calls a third-party CDN.
 
 **Required by the brief (§9.2), absent from the design:**
 
@@ -363,11 +365,20 @@ page templates come later in Phase 3.
 `assets/fonts/` holds Archivo and Public Sans, Google Fonts' own files with their SIL
 Open Font License, and `assets/css/fonts.css` their `@font-face` rules. The static
 build imports that file (`src/main.tsx`), and the plugin will load it with its
-templates, so no page calls Google. `node scripts/fetch-fonts.mjs` refreshes both from
-Google, which only that script ever reaches. Google serves no Archivo Expanded, so the
-stats fall back to Archivo, as they always have. To switch to GSL's fonts, stop loading
-`fonts.css` and point the three font tokens in `src/styles/tokens/typography.css` at
-Montserrat and Nunito Sans.
+templates, so no page calls Google.
+- `node scripts/fetch-fonts.mjs` refreshes them: the fonts from Google, the licences
+  from a pinned commit of Google's fonts repository on GitHub. Only that script reaches
+  either. The families, weights and styles are listed in the script, so a new weight
+  starts there.
+- `assets/fonts/SOURCES.json` records where each file came from, with its SHA-256, and
+  `scripts/fonts.test.mjs` checks the committed files against it. It also checks that
+  `fonts.css` holds only the two families' `@font-face` rules, pointing at those files.
+- Google serves no Archivo Expanded, so the stats, the wordmark and the About page's
+  expanded heading fall back to Archivo, as they always have.
+- To switch to GSL's fonts, stop loading `fonts.css` (here and in the plugin) and
+  point the three font tokens in `src/styles/tokens/typography.css` at Montserrat and
+  Nunito Sans. The static build would then need its own way to load those, or it falls
+  back to system fonts.
 
 The local WordPress runs in Docker and borrows GSL's theme, WordPress images and
 database from a checkout of GSL's internal gsl-wordpress repository beside this one
