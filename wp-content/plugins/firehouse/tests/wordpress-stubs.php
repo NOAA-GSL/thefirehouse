@@ -144,3 +144,25 @@ if ( ! class_exists( 'WP_Error' ) ) {
 		}
 	}
 }
+
+if ( ! class_exists( 'WP' ) ) {
+	/**
+	 * The main request: its parsed query variables.
+	 */
+	final class WP {
+
+		/**
+		 * The request's query variables.
+		 *
+		 * @var array<string, mixed>
+		 */
+		public array $query_vars = array();
+
+		/**
+		 * The request's path, without its leading or trailing slash.
+		 *
+		 * @var string
+		 */
+		public string $request = '';
+	}
+}

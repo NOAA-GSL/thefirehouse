@@ -58,9 +58,12 @@ public/             Copied as-is to the build's base path (the site root, or /fi
 wp-content/plugins/firehouse/
                     The WordPress plugin that will replace this app (see
                     The WordPress plugin, below). So far: firehouse.php, which
-                    loads the content logic in PHP (domain/); the shared
-                    vocabularies and test cases; and the PHP tests.
-                    assets/css/firehouse.css is generated from src/;
+                    loads the content logic in PHP (domain/) and what hooks
+                    into WordPress (includes/); templates/frame.php, the frame
+                    every Firehouse page sits in; the shared vocabularies and
+                    test cases; and the PHP tests.
+                    assets/css/firehouse.css is generated from src/, and
+                    assets/css/frame.css is written by hand;
                     assets/fonts/ and assets/css/fonts.css hold the fonts;
                     assets/icons/ and assets/logos/ are generated from src/.
 ```
@@ -252,6 +255,9 @@ overrides are isolated so a re-sync doesn't lose them.
       Archivo and Public Sans now come from the site itself: Google's own files,
       saved in the plugin's `assets/fonts/` and loaded from `assets/css/fonts.css`
       (see The WordPress plugin, below).
+- [ ] **Ask GSL for a `wp_body_open()` hook** in its theme. Firehouse's skip link then
+      moves before the theme's header; until then it sits at the top of the Firehouse
+      area, after the header's links (plan, Phase 3).
 - [ ] **Run an audit with a real screen reader**, and check the remaining federal
       requirements the brief flags as unconfirmed (USWDS conventions, privacy
       notice, .gov branding).
@@ -285,6 +291,30 @@ nothing from the database. Each class's docblock has the detail; this is the map
 
 `includes/`:
 
+- `Frame` puts every Firehouse request in `templates/frame.php`: the project archive, a
+  project, a topic, a page in the `firehouse` tree (a draft's preview included), and a
+  missing address under `/firehouse/`. It decides from the query WordPress ran, not
+  the request's own variables, and leaves embeds to WordPress's embed template. When an
+  address there is missing, WordPress's guess at what was meant stays among projects or
+  topics, so a link cut short still finds its project; anything else gets the frame's
+  not-found page, never a page elsewhere on the site. That is the theme's own `get_header()` and `get_footer()`
+  around `main.fh-app`, outside the theme's content wrappers. It loads `fonts.css`,
+  `firehouse.css` and `frame.css` after the theme's stylesheet, at the plugin's
+  version and each file's modified time, and adds `fh-page` to the body. Nothing
+  depends on the fonts, so dequeuing `firehouse-fonts` drops only them. `assets/css/frame.css`, written by hand,
+  holds what Firehouse needs only inside the theme's page:
+  - it clips the fixed atmosphere to the Firehouse area;
+  - it drops the static build's full-window height, so a short page doesn't push the
+    footer down;
+  - it sets `color-scheme` to match the page's light or dark mode, and makes
+    `[hidden]` hide;
+  - on Firehouse pages only, it hides the theme's hero background and the mission
+    section above its footer.
+
+  Every rule stays inside the wrapper except the last, and
+  `scripts/frame-css.test.mjs` holds it to that.
+
+  The pages come in Phase 4; until then the frame holds a placeholder.
 - `Post_Types` registers `fh_project` and `fh_topic` at the React site's addresses:
   `/firehouse/projects/`, `/firehouse/projects/{slug}/` and `/firehouse/topics/{key}/`
   (no topic archive). Neither is in the REST API, and their edit screens have no form
@@ -297,7 +327,9 @@ nothing from the database. Each class's docblock has the detail; this is the map
   holds post IDs, not slugs (rule 5).
 - `Store` reads posts back as the fields of `types.ts`, numbers and booleans typed and
   a need's `projects` still post IDs, and saves them.
-- `Query` drops WordPress's `year` query variable from Firehouse requests (rule 7).
+- `Query` drops WordPress's `year` query variable from Firehouse requests (rule 7), and
+  a project or topic variable that names no post (`?fh_project[]=x`, `?fh_topic=`) from
+  any request (rule 13).
 - `Capabilities` defines the Firehouse Editor role: projects, topics, the Firehouse
   settings and the `firehouse` page tree, and nothing else on the site. The role
   stores `read` and Firehouse's own capabilities; WordPress's page capabilities are
@@ -379,13 +411,13 @@ and stops on any request, unscoped rule or loading value it finds there, since
 PostCSS and a browser tokenize some CSS differently.
 `src/styles/inward-reset.css` undoes GSL's element styles inside the wrapper, and
 `src/styles/page-shell.css`, which styles the static build's own `<html>` and
-`<body>`, is the one stylesheet left unscoped. Nothing loads the plugin's copy yet: the
-page templates come later in Phase 3.
+`<body>`, is the one stylesheet left unscoped. The plugin loads `firehouse.css` on Firehouse
+pages, through `Frame` (above).
 
 `assets/fonts/` holds Archivo and Public Sans, Google Fonts' own files with their SIL
 Open Font License, and `assets/css/fonts.css` their `@font-face` rules. The static
-build imports that file (`src/main.tsx`), and the plugin will load it with its
-templates, so no page calls Google. The static build copies each family's licence into
+build imports that file (`src/main.tsx`), and the plugin loads it on Firehouse pages
+through `Frame`, so no page calls Google. The static build copies each family's licence into
 `dist/assets/` beside its fonts (`vite.config.ts`), as the licence asks, and stops if
 one is missing.
 - `node scripts/fetch-fonts.mjs` refreshes them: the fonts from Google, the licences
@@ -397,7 +429,8 @@ one is missing.
   `fonts.css` holds only the two families' `@font-face` rules, pointing at those files.
 - Google serves no Archivo Expanded, so the stats, the wordmark and the About page's
   expanded heading fall back to Archivo, as they always have.
-- To switch to GSL's fonts, stop loading `fonts.css` (here and in the plugin) and
+- To switch to GSL's fonts, stop loading `fonts.css` (in `src/main.tsx`, and in
+  `Frame::enqueue()`) and
   point the three font tokens in `src/styles/tokens/typography.css` at Montserrat and
   Nunito Sans. The static build would then need its own way to load those, or it falls
   back to system fonts.

@@ -21,6 +21,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  * which is the migration date for all of them, and a Firehouse page with `?year=` would
  * find nothing. It is dropped from the main query on Firehouse requests, and the
  * explorer reads the parameter itself.
+ *
+ * The project and topic query variables are dropped too when they don't name a post,
+ * as WordPress drops its own (rule 13). `?fh_project[]=x` would otherwise reach
+ * WordPress's query as an array and stop the page with an error, on any address, and
+ * an empty `?fh_topic=` would make any page look like a Firehouse request.
  */
 final class Query {
 
@@ -37,12 +42,18 @@ final class Query {
 	}
 
 	/**
-	 * Drops `year` from a Firehouse request's query variables.
+	 * Drops a project or topic query variable that names no post, then `year` from a
+	 * Firehouse request's query variables.
 	 *
 	 * @param array<string, mixed> $vars The request's query variables.
 	 * @return array<string, mixed>
 	 */
 	public static function request( array $vars ): array {
+		foreach ( array( Post_Types::PROJECT, Post_Types::TOPIC ) as $type ) {
+			if ( array_key_exists( $type, $vars ) && ! self::names_a_post( $vars[ $type ] ) ) {
+				unset( $vars[ $type ] );
+			}
+		}
 		if ( array_key_exists( 'year', $vars ) && self::is_firehouse( $vars ) ) {
 			unset( $vars['year'] );
 		}
@@ -61,11 +72,30 @@ final class Query {
 			return true;
 		}
 		foreach ( $types as $type ) {
-			if ( isset( $vars[ $type ] ) ) {
+			if ( self::names_a_post( $vars[ $type ] ?? null ) ) {
 				return true;
 			}
 		}
 		$pagename = $vars['pagename'] ?? null;
-		return is_string( $pagename ) && ( self::ROOT_PATH === $pagename || str_starts_with( $pagename, self::ROOT_PATH . '/' ) );
+		return is_string( $pagename ) && self::under_root( $pagename );
+	}
+
+	/**
+	 * Whether a path is the Firehouse root or under it.
+	 *
+	 * @param string $path A path without its leading or trailing slash.
+	 */
+	public static function under_root( string $path ): bool {
+		return self::ROOT_PATH === $path || str_starts_with( $path, self::ROOT_PATH . '/' );
+	}
+
+	/**
+	 * Whether a query variable's value could name a post: a string WordPress doesn't
+	 * read as empty, which it ignores.
+	 *
+	 * @param mixed $value The value.
+	 */
+	private static function names_a_post( mixed $value ): bool {
+		return is_string( $value ) && '' !== $value && '0' !== $value;
 	}
 }

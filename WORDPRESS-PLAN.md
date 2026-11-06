@@ -410,7 +410,8 @@ in a rewrite.
     drops any parameter it doesn't recognize. PHP is less forgiving: `?phase[]=x`
     arrives as an array, and string functions given an array throw, so a scanner's
     probe becomes a server error. Every parameter the explorer and the map read is
-    checked to be a string first.
+    checked to be a string first. *The plugin's project and topic query variables
+    are dropped the same way, on any address (`Query::request`).*
 
 ---
 
@@ -846,6 +847,9 @@ ones.
   enqueue gives them one, or a refresh can be served stale from a cache. The templates
   load `fonts.css` before `firehouse.css` and keep it in `assets/css/`, where its
   `../fonts/` paths resolve; preloading the two latin files would shorten the swap.*
+  *The frame versions each stylesheet by the plugin's version and the file's modified
+  time. The font files inside `fonts.css` still carry none, so the next refresh puts
+  each file's hash in its name. Preloading moves to Phase 4.*
   *Icons and logos done 6 November: `npm run plugin:assets` draws every icon in the
   site's registry through its own `Icon` component into `assets/icons/<name>.svg`, and
   copies the images `BrandMark` imports into `assets/logos/`; CI checks both are
@@ -874,39 +878,84 @@ ones.
 - Firehouse page templates, chosen with the `template_include` filter, that call
   GSL's `get_header()` and `get_footer()`, with full-width sections between them.
   GSL's theme is classic, so no Site Editor copy of a template can override the
-  plugin's. Found while scoping the CSS, and settled here against the real theme:
+  plugin's. *Frame done 6 November (`includes/class-frame.php`,
+  `templates/frame.php`, `assets/css/frame.css`). In the local copy of GSL's
+  WordPress:*
+  - *No style leaks either way. Outside the wrapper, no computed style changes when
+    Firehouse's stylesheets switch on, in either theme.*
+  - *Inside it, the static site's About, explorer, topic and project markup, dropped
+    into the real template, matches the static site at rest and with keyboard focus:
+    845 elements and 42 focus rings, in both themes.*
+  - *The frame decides from the query WordPress ran. The request's own variables let
+    an empty `?fh_topic=` claim any page, and miss a draft's preview (found in
+    review).*
+  - *Both checks ran by hand: they need GSL's theme, which isn't in this repository.
+    Phase 4 runs them again on the real pages.*
+  - *How each item below landed is marked on it.*
+
+  Found while scoping the CSS, and settled here against the real theme:
   - The atmosphere layer is fixed to the viewport and joins whatever stacking context
     holds the wrapper. Inside a theme wrapper that forms one, it paints over the
     footer, hiding links that stay focusable; elsewhere it shows through transparent
     parts of the header and footer, or hides behind an opaque wrapper. It has to be
     contained to the wrapper's box, and the contrast audits re-run against the result.
+    *Done: `frame.css` clips the wrapper, so the layer stays in the Firehouse area.
+    Inside it every computed colour matches the static site; the live audit re-runs
+    on the real pages in Phase 4.*
   - The project dialog's overlay sits below a theme header with a higher stacking
     order, close button included. A native `<dialog>` opened with `showModal()`
-    (rule 10) sits above everything and makes the rest of the page inert.
+    (rule 10) sits above everything and makes the rest of the page inert. *Moves to
+    Phase 5 with the explorer, whose quick look it is.*
   - The skip link hides by sitting above its wrapper, which works only at the top of a
-    page. It belongs before the theme's header, hidden by clipping.
+    page. It belongs before the theme's header, hidden by clipping. *The theme prints
+    no `wp_body_open` hook, so nothing can go before its header. The skip link sits at
+    the top of the wrapper instead, clipped with it until focused, and leads to the
+    content, past the Firehouse bar once there is one. Its target fills the clipped
+    wrapper, so its focus ring is drawn inside it. Moving the link before the header
+    needs that hook in GSL's theme (the README's checklist).*
   - The wrapper sits outside the theme's content wrappers, whose rules beat the reset,
     and `firehouse.css` loads after the theme's stylesheet, so ties go to Firehouse.
-  - The wrapper's `min-height: 100vh` pushes the footer down on a short page.
+    *Done.*
+  - The wrapper's `min-height: 100vh` pushes the footer down on a short page. *Done:
+    `frame.css` lets it end with its content.*
   - The theme's header can print a full-height hero background, positioned over the
     top of whatever follows, unless the page switches it off. Firehouse pages switch
     it off, or the Firehouse bar and hero sit under it (seen in the 6 November
-    preview).
+    preview). *Done: the theme offers no switch for a plugin's archive or missing
+    pages, so `frame.css` hides it on Firehouse pages only (the `fh-page` body class).*
+  - The theme's footer prints a mission section (Our Mission, Research Areas) above
+    its own footer, with a per-page switch on the edit screen for pages and posts.
+    Firehouse pages don't need it; GSL's footer stays (Eric, 6 November). *Done: hidden
+    by the same rule as the hero, which reaches the project archive too.*
+  - WordPress answers a missing address by redirecting to its best guess at a post
+    anywhere on the site, so a missing `/firehouse/about/` landed on the site's own
+    About page. *Done: under `/firehouse/`, only a project's or topic's address keeps
+    the guess, which looks among its own type, so a shared link cut short still finds
+    its project (rule 5). Any other missing address there gets the frame's not-found
+    page.*
   - The wrapper sets `color-scheme`, which nothing else on the theme's page does, and
     a `[hidden]` rule that wins over Firehouse's own `display` values before the
-    Interactivity API starts setting `hidden`.
+    Interactivity API starts setting `hidden`. *Done in `frame.css`.*
   - The computed-style check re-runs inside the real template, with WordPress's own
-    styles, on hover and focus as well as at rest.
+    styles, on hover and focus as well as at rest. *Done at rest and with keyboard
+    focus, above; hover isn't checked.*
 - Dark colors keyed to GSL's light/dark toggle (kept: open question 9). *The scoped CSS
-  already keeps the theme condition on `<html>`, where the toggle sets it. Left for the
-  templates: `color-scheme` on the wrapper, and the visual and contrast checks in both
-  themes inside the real theme.*
+  already keeps the theme condition on `<html>`, where the toggle sets it. The frame
+  sets `color-scheme` on the wrapper, and in the real theme GSL's switch turns the
+  header, the Firehouse area and the footer dark together. The contrast audits in both
+  themes run on the real pages in Phase 4.*
 - The Firehouse bar (`firehouse/subnav`), including whether it stays pinned under
   GSL's header (see [Look and feel](#look-and-feel)).
 - Stephanie and Emily see the frame on the test site (or in screenshots, if the VPN
   gets in the way), in light and dark and at phone width, before Phase 4 builds pages
   on it. The header is the part of the design that changes most, so this is the
-  cheapest point to change it.
+  cheapest point to change it. *Signed off 6 November: Emily approved the screenshots
+  from the 6 November preview, as Eric relayed. Eric takes that as the frame's
+  sign-off. The screenshots show the landing, About, project and topic pages inside
+  GSL's header and footer, in light and dark at desktop width and light at phone
+  width, with the theme's hero removed, as the frame now does. They predate the
+  plugin's template: the preview put the static site's pages into GSL's page by
+  script. The template matches them in the computed-style check above.*
 
 **Done when:** an empty Firehouse page on the test site sits inside GSL's header and
 footer, with no styles leaking in either direction, and Stephanie and Emily have
@@ -920,6 +969,12 @@ signed off on the frame.
 - Description and Open Graph tags.
 - Check that projects appear in the sitemap.
 - Test link previews in Slack and Teams.
+- Weight, measured on the frame (6 November): `firehouse.css` is about 28 KB
+  compressed, all of it render-blocking, and about a third of it comments. Minify what
+  the plugin loads (the checks run on the minified file), split the project, topic
+  and About sections by template in `wp_enqueue_scripts`, preload the latin Public Sans
+  file, and drop the italic faces nothing uses.
+- Rerun the frame's style and focus checks on the real pages.
 
 **Done when:** these pages match the reference screenshots and accessibility
 snapshots, and Stephanie and Emily can review them on the test site.
