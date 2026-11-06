@@ -37,7 +37,7 @@ A shared home for **synthesized fire weather social-science needs and recommenda
 
 **Hard constraints:** WCAG 2.1 AA / Section 508; NOAA–GSL branding and federal chrome; no invented citations, testimonials, or project takeaways; team biographies published verbatim as written by their subjects; hero photo still missing (gradient stand-in until then); About portraits are real photographs of staff and need their subjects' consent before public launch.
 
-**Open decisions:** hosting placement (static build; optional `VITE_BASE_PATH` for subpath); which CMS to stand up; self-hosted vs Google Fonts CDN for Archivo / Public Sans; tests — not built yet.
+**Open decisions:** see the open questions in `WORDPRESS-PLAN.md`. The site moves into GSL's WordPress as a plugin, and both the site and the plugin have tests.
 
 ## Brand Commitments
 

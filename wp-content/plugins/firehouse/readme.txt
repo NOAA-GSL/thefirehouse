@@ -19,6 +19,10 @@ Editor role, a Firehouse settings screen, and an Import screen that loads the si
 content from a seed bundle. It has no page templates yet, so the site's theme shows
 those addresses with its own templates.
 
+The fonts in assets/fonts/, Archivo and Public Sans, are third-party, under the SIL
+Open Font License 1.1, whose text is beside them. assets/fonts/SOURCES.json records
+where each file came from.
+
 The Import screen keeps nothing it doesn't import: the uploaded file isn't saved, and
 the checked content waits briefly for the confirmation and is then cleared. The plugin
 stores only what the site publishes.

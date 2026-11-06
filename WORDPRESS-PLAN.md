@@ -833,7 +833,16 @@ ones.
   from three tokens (`--font-display`, `--font-display-expanded`, `--font-body`), so
   switching to GSL's fonts means pointing those at Montserrat and Nunito Sans and not
   loading the files. GSL loads Montserrat at one weight, so the display weights would
-  need checking then.
+  need checking then. *Fonts done 6 November: `scripts/fetch-fonts.mjs` saved Google's
+  own files and licence in `assets/fonts/`, with where each came from in
+  `SOURCES.json`, and their rules in `assets/css/fonts.css`, which `firehouse.css`
+  leaves out and `scripts/fonts.test.mjs` checks. The static build loads the same file,
+  and its screenshots match the build that loaded Google's stylesheet, pixel for pixel.
+  Google serves no Archivo Expanded, so the stats and the wordmark fall back to
+  Archivo, as before. The plugin's font URLs carry no version, so the templates'
+  enqueue gives them one, or a refresh can be served stale from a cache. The templates
+  load `fonts.css` before `firehouse.css` and keep it in `assets/css/`, where its
+  `../fonts/` paths resolve; preloading the two latin files would shorten the swap.*
 - Firehouse page templates, chosen with the `template_include` filter, that call
   GSL's `get_header()` and `get_footer()`, with full-width sections between them.
   GSL's theme is classic, so no Site Editor copy of a template can override the
@@ -851,6 +860,10 @@ ones.
   - The wrapper sits outside the theme's content wrappers, whose rules beat the reset,
     and `firehouse.css` loads after the theme's stylesheet, so ties go to Firehouse.
   - The wrapper's `min-height: 100vh` pushes the footer down on a short page.
+  - The theme's header can print a full-height hero background, positioned over the
+    top of whatever follows, unless the page switches it off. Firehouse pages switch
+    it off, or the Firehouse bar and hero sit under it (seen in the 6 November
+    preview).
   - The wrapper sets `color-scheme`, which nothing else on the theme's page does, and
     a `[hidden]` rule that wins over Firehouse's own `display` values before the
     Interactivity API starts setting `hidden`.

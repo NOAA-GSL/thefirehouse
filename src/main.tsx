@@ -2,6 +2,8 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { App } from './App';
+// The fonts, self-hosted beside the plugin, which will load the same file on its own.
+import '../wp-content/plugins/firehouse/assets/css/fonts.css';
 import './styles/page-shell.css';
 import './styles/global.css';
 
