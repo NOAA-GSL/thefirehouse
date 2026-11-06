@@ -210,9 +210,17 @@ overrides are isolated so a re-sync doesn't lose them.
       for Landing Page, About Page, Project Pages" on 3 November. It speaks for NOAA, so it goes
       through clearance before gsl.noaa.gov.
 - [ ] **Finish the 3 November wording round.** Stephanie and Emily answered on 3
-      November, in one reply signed by both. Still open: whether the needs are ranked strictly by project
-      count, as the About page says; the three lines that still say "how often" or
-      "frequency"; and whether the synthesis needs its own line saying whose it is.
+      November, in one reply signed by both, and Stephanie on 6 November: the needs
+      are ordered by project count, ties going to the need with broader interagency or
+      multi-regional applicability, which the About page now says. Still open: the
+      lines that say "how often" or "frequency", which they'll adjust when they review
+      the pages, and whether the synthesis needs its own line saying whose it is.
+- [ ] **Bring in the team's synthesis prompt.** Their "FireHouse Prompt (Final)", in
+      their Gemini notebook, orders needs by project count with that tie-break, and
+      assigns an entry that spans several topic areas by a fixed hierarchy (governance,
+      then warnings, then forecasts, then observations). The prompt in
+      `notebooklm/README.md` differs: it ranks by importance and lets an entry count in
+      several areas. Its full text replaces that one, through the Prompt Engineer.
 - [ ] **Review the topic-area `covers` copy** in `topics.json` — the bullet list in
       the callout, and now the only area copy on `/topics/…`. The longer `intro`
       paragraphs are no longer rendered (September 2026 review) but are kept in the

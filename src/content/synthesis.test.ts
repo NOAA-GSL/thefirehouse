@@ -30,4 +30,17 @@ describe('topicSummaries.json', () => {
       .map((need) => need.text);
     expect(mismatched.sort()).toEqual([...DRAFT_2026_09_17].sort());
   });
+
+  // The About page says the order of the top needs is determined by project count,
+  // with ties broken by broader interagency or multi-regional applicability
+  // (Stephanie and Emily, 6 November). The tie-break is a judgement made in review;
+  // the count order is checked here.
+  it('lists each topic area’s needs by project count, highest first', () => {
+    for (const summary of summaries) {
+      const counts = summary.topNeeds
+        .filter((need) => typeof need !== 'string')
+        .map((need) => need.mentions ?? need.projects?.length ?? 0);
+      expect(counts, summary.topic).toEqual([...counts].sort((a, b) => b - a));
+    }
+  });
 });
