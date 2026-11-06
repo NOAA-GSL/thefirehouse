@@ -14,7 +14,8 @@ npm run schema     # regenerate shared/*.schema.json from types.ts
 npm run seed       # write seed/firehouse-seed.json for the plugin's Import screen
 npm run plugin:css # write the plugin's stylesheet from src/, scoped under .fh-app
                    # (Node 22.18+, and Edge or Chrome installed, as for npm run reference)
-npm run plugin:assets  # write the plugin's icons and logos from the site's own
+npm run plugin:assets
+                   # write the plugin's icons and logos from the site's own
 npm run reference  # capture the reference the plugin matches (reference/README.md)
 ```
 
@@ -403,11 +404,15 @@ one is missing.
 
 `assets/icons/` holds every icon in the site's registry (`ICON_NAMES` in
 `src/design-system/Icon.tsx`) as an SVG file, drawn by the site's own `Icon` component,
-and `assets/logos/` the four Firehouse images `BrandMark` shows. Don't edit either:
-`npm run plugin:assets` writes both from `src/`, and CI fails if they fall behind. An
-icon file leaves out what belongs to one use of it (size, class, `aria-hidden`,
-`focusable`): the plugin adds those where it inlines the icon, as `Icon` does. The NOAA
-and GSL logos stay with the static build, since GSL's header carries its own.
+and `assets/logos/` the images `BrandMark` imports. Don't edit either: `npm run
+plugin:assets` writes both from `src/`, and CI fails if they fall behind. An icon file
+keeps the drawing exactly as the site renders it, at Lucide's 24×24, and leaves off what
+belongs to one use (class, inline style, `aria-hidden`, `focusable`). Where the plugin
+inlines an icon it adds those and replaces the size, as `Icon` does. Every icon may hold
+only the plain shapes and drawing attributes `shared/icon-svg.json` lists: the script
+refuses anything else, and `tests/IconsTest.php` checks the files that ship. Lucide's
+licence sits beside them as `LICENSE.txt`. The NOAA and GSL logos stay with the static
+build, since GSL's header carries its own.
 
 The local WordPress runs in Docker and borrows GSL's theme, WordPress images and
 database from a checkout of GSL's internal gsl-wordpress repository beside this one
@@ -612,7 +617,7 @@ brand files in `src/assets/logos/source/`. Icons use the isolated house-and-flam
 on a white tile, so its slate outline still reads on a dark browser tab. The UI copies
 in `src/assets/logos/` include `-on-dark` variants with the slate recoloured light for
 the dark header and hero. There is no vector source yet — if one arrives, regenerate
-from it.
+from it, then run `npm run plugin:assets` so the plugin's copies follow.
 
 ## License
 

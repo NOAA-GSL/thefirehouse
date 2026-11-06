@@ -23,6 +23,9 @@ The fonts in assets/fonts/, Archivo and Public Sans, are third-party, under the 
 Open Font License 1.1, whose text is beside them. assets/fonts/SOURCES.json records
 where each file came from.
 
+The icons in assets/icons/ are Lucide's, under the ISC License (with portions from
+Feather under the MIT License), whose text is beside them in LICENSE.txt.
+
 The Import screen keeps nothing it doesn't import: the uploaded file isn't saved, and
 the checked content waits briefly for the confirmation and is then cleared. The plugin
 stores only what the site publishes.

@@ -138,7 +138,7 @@ The alternatives, and why not:
 | React Router, `ContentProvider`, the adapters, `RouteFocusManager` | Retired. Full page loads make them unnecessary. |
 | `SiteHeader`, `GovBanner`, `SiteFooter` | The Firehouse bar (`firehouse/subnav`) sits under GSL's header. GSL's header and footer take over the gov banner, the NOAA and GSL logos and the footer (see [Look and feel](#look-and-feel)). |
 | `ThemeProvider` and its light/dark toggle | Retired. GSL's header has its own toggle, which sets the same `data-theme` attribute Firehouse's dark colors key off (open question 9). |
-| `lucide-react` | The same icons as inline SVG from Lucide's static set |
+| `lucide-react` | The same icons as inline SVG, drawn by the site's `Icon` into `assets/icons/` (`npm run plugin:assets`) |
 | `landing.json`, `about.json` | Pages built from blocks, locked so editors change words but not layout |
 | `projects.json` | `fh_project` posts |
 | `topics.json`, `topicSummaries.json` | Four fixed `fh_topic` posts, each carrying its own synthesis |
@@ -848,9 +848,29 @@ ones.
   `../fonts/` paths resolve; preloading the two latin files would shorten the swap.*
   *Icons and logos done 6 November: `npm run plugin:assets` draws every icon in the
   site's registry through its own `Icon` component into `assets/icons/<name>.svg`, and
-  copies `BrandMark`'s four images into `assets/logos/`; CI checks both are current.
-  Phase 4's templates inline an icon with the attributes `Icon` adds: its size,
-  `aria-hidden="true"` and `focusable="false"`.*
+  copies the images `BrandMark` imports into `assets/logos/`; CI checks both are
+  current. The templates and Phase 4's pages place them as the site does:*
+  - *An icon is inlined only by a name in `Vocabulary::icons()` (`shared/vocabulary.json`,
+    which the tests hold to the registry and the files), never a path built from a
+    block attribute or content: the About cards name their icons. What it adds (size,
+    class) is escaped with `esc_attr()` and goes in at the `<svg ` the files start
+    with. `tests/IconsTest.php` holds every file to `shared/icon-svg.json`.*
+  - *An icon is inlined, never an `<img>`, so its `currentColor` stroke follows the
+    text colour, forced colours included. It gets what `Icon` adds: its size in place of
+    the file's 24×24, `aria-hidden="true"`, `focusable="false"`, its class and
+    `display: inline-flex; flex-shrink: 0`. A topic tag's thicker stroke (2.25) changes
+    `stroke-width` only, keeping `currentColor`.*
+  - *Every icon is decorative. An icon-only control takes its name from the control:
+    visually hidden text (close, the menu, which swaps with `aria-expanded`) or
+    `aria-label` (clear search, remove filter). The `external-link` icon travels with
+    its hidden "(opens in a new tab)".*
+  - *A logo beside the site's name in text has `alt=""` (the Firehouse bar, the
+    footer). The hero's wordmark has its alt text and is always the `-on-dark` image.
+    A logo that follows the theme is both images with the `fh-brand__img--light` and
+    `--dark` classes, which `firehouse.css` swaps from `[data-theme]` with no
+    script. Both get the same `alt`, and `display: none` hides the other; not
+    `BrandMark`'s `aria-hidden` on the dark image, which would hide a non-empty name
+    in the dark theme.*
 - Firehouse page templates, chosen with the `template_include` filter, that call
   GSL's `get_header()` and `get_footer()`, with full-width sections between them.
   GSL's theme is classic, so no Site Editor copy of a template can override the
