@@ -964,9 +964,9 @@ ones.
   - *Its view script is plain JavaScript with no build step: WordPress maps its
     `@wordpress/interactivity` import, which `view.asset.php` declares.
     `@wordpress/scripts` comes in when a block needs an editor script.*
-  - *Without JavaScript, below 1024px the links stay in the bar on a second row and
-    the Submit button stays on the first (`@media (scripting: none)`), so the menu
-    never strands them. That covers JavaScript switched off, not a script that fails
+  - *Without JavaScript, below 1024px the links stay in the bar on a row of their own,
+    with the Submit button after them (`@media (scripting: none)`), so the menu never
+    strands them. The bar is then too tall to pin, so it scrolls with the page. That covers JavaScript switched off, not a script that fails
     to load; keying the drawer on a class the script sets would cover both, at the cost
     of the bar's links showing, then folding, as each phone page loads.*
   - *Going Back to a page the browser kept in memory closes the drawer, as a route

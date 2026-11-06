@@ -318,8 +318,9 @@ nothing from the database. Each class's docblock has the detail; this is the map
   - it draws the skip link target's focus ring inside the clip, and stops anything
     focus scrolls into view below the pinned bar;
   - it puts the pinned Firehouse bar below WordPress's toolbar when there is one (at
-    the top on phones), and without JavaScript, below 1024px, it keeps the Submit
-    button in the bar and the links on a second row;
+    the top on phones), and without JavaScript, below 1024px, it keeps the links in
+    the bar on a row of their own, with the Submit button after them, and lets the
+    bar scroll with the page;
   - on Firehouse pages only, it hides the theme's hero background and the mission
     section above its footer.
 

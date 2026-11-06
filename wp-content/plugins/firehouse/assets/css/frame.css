@@ -65,8 +65,13 @@
 
 /* Without JavaScript the menu button can't open the drawer, so below the desktop
    breakpoint the bar keeps its links, on a row of their own, and its Submit button
-   after them, in the order focus moves. */
+   after them, in the order focus moves. Three rows are too tall to pin on a phone, and
+   taller than the scroll offset above allows for, so the bar scrolls with the page. */
 @media (scripting: none) and (max-width: 1023px) {
+  .fh-app .fh-header {
+    position: relative;
+  }
+
   .fh-app .fh-header__bar {
     flex-wrap: wrap;
   }
