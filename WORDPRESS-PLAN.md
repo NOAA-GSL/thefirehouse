@@ -765,6 +765,14 @@ as in `shared/vocabulary.json`, which takes its labels from the form.
 
 ## Phased plan
 
+**Where each phase is reviewed (Eric, 6 November).** Each release goes through GSL's
+security review, so the plugin reaches the test site near the end, not phase by phase.
+Until then, Stephanie and Emily review each phase with Eric on his local copy of
+GSL's WordPress (the `docker-compose.yml` stack, with GSL's theme), and a phase's
+"Done when" that names the test site is met there. The checks that depend on the
+test site's own setup wait for the first release: outbound network, Cloudflare and
+link-preview bots, caching, and `noindex`.
+
 ### Phase 0 — Reference, decisions, groundwork (1–1.5 weeks)
 
 - **Capture the reference.** Screenshots and accessibility-tree snapshots of every
@@ -804,8 +812,8 @@ empty plugin passes PHPCS and Plugin Check.
 
 *Built 1 November and working in the local WordPress: the post types, meta, rewrites,
 `year` fix, role, settings screen and Import screen are in `includes/`, and the seed
-bundle loads with every slug intact. Phase 1 closes when a reviewed release reaches
-the test site (open question 2).*
+bundle loads with every slug intact. The same load runs on the test site with the
+first release (see Where each phase is reviewed, above).*
 
 **Done when:** the seed bundle loads on the test site with every slug intact, and the
 editor role cannot edit anything outside Firehouse.
@@ -991,8 +999,8 @@ ones.
   plugin's template: the preview put the static site's pages into GSL's page by
   script. The template matches them in the computed-style check above.*
 
-**Done when:** an empty Firehouse page on the test site sits inside GSL's header and
-footer, with no styles leaking in either direction, and Stephanie and Emily have
+**Done when:** an empty Firehouse page on the local copy of GSL's WordPress sits inside
+GSL's header and footer, with no styles leaking in either direction, and Stephanie and Emily have
 signed off on the frame.
 
 ### Phase 4 — Display-only pages (2–2.5 weeks)
@@ -1117,7 +1125,7 @@ starts when its trigger is met.
 
 ### At a glance
 
-| Phase | Work | Size | Visible on the test site |
+| Phase | Work | Size | What Stephanie and Emily see |
 | --- | --- | --- | --- |
 | 0 | Reference, decisions, groundwork | 1–1.5 wk | — |
 | 1 | Content model and first data load | 2 wk | Empty plugin, data in wp-admin |
@@ -1125,7 +1133,7 @@ starts when its trigger is met.
 | 3 | Design system and frame | 2 wk | Firehouse frame inside GSL's chrome |
 | 4 | Display-only pages | 2–2.5 wk | Pages to read and review |
 | 5 | Interactive pieces | 3–3.5 wk | Feature parity |
-| 6 | Editing screens | 2–2.5 wk | Editors working on test |
+| 6 | Editing screens | 2–2.5 wk | Editors working in wp-admin |
 | 7a | The survey form | 2–3 wk | Test submissions arriving as drafts |
 | 7b | Analyze results | 1–1.5 wk | A synthesis run from the dashboard |
 | 8 | Review, launch, cutover | 1.5–2 wk | → gsl.noaa.gov |
