@@ -12,6 +12,7 @@ namespace Firehouse\Tests;
 use Brain\Monkey\Actions;
 use Brain\Monkey\Filters;
 use Brain\Monkey\Functions;
+use Firehouse\Blocks;
 use Firehouse\Capabilities;
 use Firehouse\Frame;
 use Firehouse\Import_Screen;
@@ -108,5 +109,14 @@ final class HooksTest extends WordPressTestCase {
 		Filters\expectAdded( 'do_redirect_guess_404_permalink' )->once()->with( array( Frame::class, 'guess_404_permalink' ), 10, 1 );
 
 		Frame::hook();
+	}
+
+	/**
+	 * The blocks register on init.
+	 */
+	public function test_blocks_register_on_init(): void {
+		Actions\expectAdded( 'init' )->once()->with( array( Blocks::class, 'register' ), 10, 1 );
+
+		Blocks::hook();
 	}
 }

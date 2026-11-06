@@ -178,7 +178,8 @@ A Firehouse page is stacked like this:
    today's header without the NOAA and GSL logos and the theme toggle, which GSL's
    header already has. Below 1024px the links fold into a drawer, as they do today.
    Today's header stays pinned while the page scrolls; whether the bar does depends on
-   how GSL's header behaves, and is settled in Phase 3.
+   how GSL's header behaves, and is settled in Phase 3. *Settled: GSL's header scrolls
+   away, so the bar stays pinned, as today's header does.*
 3. **The Firehouse page** in the current design: the atmosphere background, glass
    panels, Archivo and Public Sans (open question 10), the cards and the ember accent,
    all scoped under `.fh-app` (rule 9). It ends with the disclaimer.
@@ -910,7 +911,7 @@ ones.
     page. It belongs before the theme's header, hidden by clipping. *The theme prints
     no `wp_body_open` hook, so nothing can go before its header. The skip link sits at
     the top of the wrapper instead, clipped with it until focused, and leads to the
-    content, past the Firehouse bar once there is one. Its target fills the clipped
+    content, past the Firehouse bar. Its target fills the clipped
     wrapper, so its focus ring is drawn inside it. Moving the link before the header
     needs that hook in GSL's theme (the README's checklist).*
   - The wrapper sits outside the theme's content wrappers, whose rules beat the reset,
@@ -945,7 +946,24 @@ ones.
   header, the Firehouse area and the footer dark together. The contrast audits in both
   themes run on the real pages in Phase 4.*
 - The Firehouse bar (`firehouse/subnav`), including whether it stays pinned under
-  GSL's header (see [Look and feel](#look-and-feel)).
+  GSL's header (see [Look and feel](#look-and-feel)). *Done 6 November
+  (`blocks/subnav/`, `includes/class-subnav.php`, `class-blocks.php` and
+  `class-icons.php`):*
+  - *GSL's header scrolls away, so the bar stays pinned at the top, as today's header
+    does, and below WordPress's toolbar for someone signed in.*
+  - *The wrapper is now a `div`, holding the skip link, the bar and the page's one
+    `main`. The bar is a `div` too, since the theme's header is the page's banner.*
+  - *Its view script is plain JavaScript with no build step: WordPress maps its
+    `@wordpress/interactivity` import, which `view.asset.php` declares.
+    `@wordpress/scripts` comes in when a block needs an editor script.*
+  - *Without JavaScript, below 1024px the links and the Submit button stay in the bar
+    on a second row (`@media (scripting: none)`), so the menu never strands them.*
+  - *Checked in the local copy of GSL's WordPress at 1280, 390 and 320px:*
+    - *the bar fits the window and stays pinned on a long page;*
+    - *the current link is marked;*
+    - *the menu opens and closes, and Escape returns focus to its button;*
+    - *with JavaScript off, the links stay in the bar;*
+    - *the page raises no PHP notices or script errors.*
 - Stephanie and Emily see the frame on the test site (or in screenshots, if the VPN
   gets in the way), in light and dark and at phone width, before Phase 4 builds pages
   on it. The header is the part of the design that changes most, so this is the

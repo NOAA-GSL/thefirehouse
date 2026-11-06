@@ -30,6 +30,49 @@
   outline-offset: calc(-1 * var(--focus-ring-width));
 }
 
+/* The Firehouse bar stays pinned once the theme's header, which isn't, has scrolled
+   away: below WordPress's toolbar when someone signed in has one, and at the top on a
+   phone, where the toolbar scrolls away itself. */
+.fh-app .fh-header {
+  top: var(--wp-admin--admin-bar--height, 0px);
+}
+
+@media screen and (max-width: 600px) {
+  .fh-app .fh-header {
+    top: 0;
+  }
+}
+
+/* The menu button's icon and name come in pairs, one shown at a time; WordPress can't
+   bind `hidden` on an `<svg>` when it renders the page, so each pair has a wrapper that
+   leaves the icon laid out as the site's header lays it out. */
+.fh-app .fh-header__menu-state {
+  display: contents;
+}
+
+/* Without JavaScript the menu button can't open the drawer, so below the desktop
+   breakpoint the bar keeps its links and the Submit button, on a second row. */
+@media (scripting: none) and (max-width: 1023px) {
+  .fh-app .fh-header__bar {
+    flex-wrap: wrap;
+  }
+
+  .fh-app .fh-header__nav {
+    display: flex;
+    flex-wrap: wrap;
+    flex-basis: 100%;
+    order: 3;
+  }
+
+  .fh-app .fh-header__cta {
+    display: inline;
+  }
+
+  .fh-app .fh-header__menu-btn {
+    display: none;
+  }
+}
+
 /* `hidden` hides, whatever display a Firehouse rule gives the element. */
 .fh-app [hidden] {
   display: none !important;

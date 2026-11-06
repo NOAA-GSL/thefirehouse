@@ -294,20 +294,28 @@ nothing from the database. Each class's docblock has the detail; this is the map
 - `Frame` puts every Firehouse request in `templates/frame.php`: the project archive, a
   project, a topic, a page in the `firehouse` tree (a draft's preview included), and a
   missing address under `/firehouse/`. It decides from the query WordPress ran, not
-  the request's own variables, and leaves embeds to WordPress's embed template. When an
-  address there is missing, WordPress's guess at what was meant stays among projects or
-  topics, so a link cut short still finds its project; anything else gets the frame's
-  not-found page, never a page elsewhere on the site. That is the theme's own `get_header()` and `get_footer()`
-  around `main.fh-app`, outside the theme's content wrappers. It loads `fonts.css`,
-  `firehouse.css` and `frame.css` after the theme's stylesheet, at the plugin's
-  version and each file's modified time, and adds `fh-page` to the body. Nothing
-  depends on the fonts, so dequeuing `firehouse-fonts` drops only them. `assets/css/frame.css`, written by hand,
-  holds what Firehouse needs only inside the theme's page:
+  the request's own variables, and leaves embeds to WordPress's embed template.
+  - **The template** is the theme's own `get_header()` and `get_footer()` around
+    `div.fh-app`, outside the theme's content wrappers. The wrapper holds a skip link,
+    the Firehouse bar (the `firehouse/subnav` block) and the page's one `main`, which
+    the skip link leads to.
+  - **Stylesheets:** it loads `fonts.css`, `firehouse.css` and `frame.css` after the
+    theme's stylesheet, at the plugin's version and each file's modified time, and adds
+    `fh-page` to the body. Nothing depends on the fonts, so dequeuing `firehouse-fonts`
+    drops only them.
+  - **Missing addresses:** under `/firehouse/`, WordPress's guess at what was meant
+    stays among projects or topics, so a link cut short still finds its project.
+    Anything else gets the frame's not-found page, never a page elsewhere on the site.
+
+  `assets/css/frame.css`, written by hand, holds what Firehouse needs only inside the
+  theme's page:
   - it clips the fixed atmosphere to the Firehouse area;
   - it drops the static build's full-window height, so a short page doesn't push the
     footer down;
   - it sets `color-scheme` to match the page's light or dark mode, and makes
     `[hidden]` hide;
+  - it pins the Firehouse bar below WordPress's toolbar when there is one, and keeps
+    the bar's links in place when there's no JavaScript to open its menu;
   - on Firehouse pages only, it hides the theme's hero background and the mission
     section above its footer.
 
@@ -315,6 +323,27 @@ nothing from the database. Each class's docblock has the detail; this is the map
   `scripts/frame-css.test.mjs` holds it to that.
 
   The pages come in Phase 4; until then the frame holds a placeholder.
+- `Blocks` registers each block in `blocks/` from its `block.json`.
+  - Each block renders on the server (`render.php`) and stays out of the inserter: the
+    templates place it.
+  - An interactive block has a view script module for WordPress's Interactivity API.
+    It's plain JavaScript with no build step: WordPress maps its
+    `@wordpress/interactivity` import, which `view.asset.php` declares.
+  - `tests/BlocksTest.php` holds each folder to that shape.
+- `Subnav` is the Firehouse bar, `firehouse/subnav`: the site's `SiteHeader` without
+  the NOAA and GSL logos and the theme toggle, which the theme's header already has.
+  - It has the wordmark, the Settings screen's link labels, and the Submit a Finding
+    button, which is left out until a survey address is set. A survey on another site
+    opens in a new tab and says so.
+  - It marks the current page's link: Home on the landing page, Explore Projects on the
+    explorer and every project, About on the About page.
+  - It's a `div`, not a `header`, since the theme's header is the page's banner. Its nav
+    is labelled "Firehouse".
+  - It stays pinned once the theme's header has scrolled away.
+  - Below 1024px its links fold into a drawer. `blocks/subnav/view.js` opens and closes
+    it, and Escape closes it.
+- `Icons` inlines an icon from `assets/icons/` by a name in the vocabulary, never by a
+  path. It replaces the file's 24×24 size and marks the icon decorative.
 - `Post_Types` registers `fh_project` and `fh_topic` at the React site's addresses:
   `/firehouse/projects/`, `/firehouse/projects/{slug}/` and `/firehouse/topics/{key}/`
   (no topic archive). Neither is in the REST API, and their edit screens have no form
