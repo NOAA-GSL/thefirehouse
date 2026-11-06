@@ -32,9 +32,15 @@ describe('fonts.css', () => {
       expect(face.type === 'atrule' && face.name === 'font-face', `${face.toString().slice(0, 60)}`).toBe(true);
       for (const node of face.nodes) {
         expect(node.type).toBe('decl');
-        expect(DESCRIPTORS).toContain(node.prop);
+        expect(DESCRIPTORS).toContain(decodeCssEscapes(node.prop).toLowerCase());
       }
-      expect(FAMILIES).toContain(decodeCssEscapes(face.nodes.find((node) => node.prop === 'font-family')?.value ?? ''));
+      // A browser takes the last of a repeated descriptor, so a second font-family
+      // could register a family outside the list: each may appear once.
+      const props = face.nodes.map((node) => decodeCssEscapes(node.prop).toLowerCase());
+      expect(props, face.toString().slice(0, 80)).toEqual([...new Set(props)]);
+      const families = face.nodes.filter((node) => decodeCssEscapes(node.prop).toLowerCase() === 'font-family');
+      expect(families).toHaveLength(1);
+      expect(FAMILIES).toContain(decodeCssEscapes(families[0].value));
     }
   });
 

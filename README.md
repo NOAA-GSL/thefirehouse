@@ -365,7 +365,9 @@ page templates come later in Phase 3.
 `assets/fonts/` holds Archivo and Public Sans, Google Fonts' own files with their SIL
 Open Font License, and `assets/css/fonts.css` their `@font-face` rules. The static
 build imports that file (`src/main.tsx`), and the plugin will load it with its
-templates, so no page calls Google.
+templates, so no page calls Google. The static build copies each family's licence into
+`dist/assets/` beside its fonts (`vite.config.ts`), as the licence asks, and stops if
+one is missing.
 - `node scripts/fetch-fonts.mjs` refreshes them: the fonts from Google, the licences
   from a pinned commit of Google's fonts repository on GitHub. Only that script reaches
   either. The families, weights and styles are listed in the script, so a new weight

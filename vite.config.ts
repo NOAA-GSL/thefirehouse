@@ -1,10 +1,33 @@
-import { copyFileSync, existsSync } from 'node:fs';
+import { copyFileSync, existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { scopeFirehouse } from './scripts/scope-css';
 
 const OUT_DIR = 'dist';
+const FONTS_DIR = 'wp-content/plugins/firehouse/assets/fonts';
+
+/**
+ * Ships the fonts' licences with the fonts. The SIL Open Font License asks every copy
+ * of the fonts to carry it, and the build copies the fonts into `assets/`, so each
+ * family's `<family>-OFL.txt` goes there too, under its own name. A family without
+ * its licence beside it in the plugin stops the build.
+ */
+function fontLicences(): Plugin {
+  return {
+    name: 'firehouse-font-licences',
+    apply: 'build',
+    generateBundle() {
+      const files = readdirSync(resolve(FONTS_DIR));
+      const families = new Set(files.filter((name) => name.endsWith('.woff2')).map((name) => name.replace(/-(?:normal|italic)-.*$/, '')));
+      for (const family of families) {
+        const licence = `${family}-OFL.txt`;
+        if (!files.includes(licence)) throw new Error(`${FONTS_DIR}/${licence} is missing: the ${family} fonts can't ship without it.`);
+        this.emitFile({ type: 'asset', fileName: `assets/${licence}`, source: readFileSync(resolve(FONTS_DIR, licence)) });
+      }
+    },
+  };
+}
 
 /**
  * Emits `404.html` as a copy of `index.html`.
@@ -92,7 +115,7 @@ function siteMeta(): Plugin {
 export default defineConfig({
   base: process.env.VITE_BASE_PATH ?? '/',
   build: { outDir: OUT_DIR },
-  plugins: [react(), siteMeta(), spaFallback()],
+  plugins: [react(), siteMeta(), spaFallback(), fontLicences()],
   // Every rule is scoped under `.fh-app` (`#root` here), as the plugin needs inside
   // GSL's theme (WORDPRESS-PLAN.md rule 9), so the site runs on the same scoped CSS the
   // plugin gets. The page shell styles the static build's own `<html>` and `<body>` and
