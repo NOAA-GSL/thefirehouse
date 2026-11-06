@@ -939,7 +939,13 @@ ones.
 - Stephanie and Emily see the frame on the test site (or in screenshots, if the VPN
   gets in the way), in light and dark and at phone width, before Phase 4 builds pages
   on it. The header is the part of the design that changes most, so this is the
-  cheapest point to change it.
+  cheapest point to change it. *Signed off 6 November: Emily approved the screenshots
+  from the 6 November preview, as Eric relayed. Eric takes that as the frame's
+  sign-off. The screenshots show the landing, About, project and topic pages inside
+  GSL's header and footer, in light and dark at desktop width and light at phone
+  width, with the theme's hero removed, as the frame now does. They predate the
+  plugin's template: the preview put the static site's pages into GSL's page by
+  script. The template matches them in the computed-style check above.*
 
 **Done when:** an empty Firehouse page on the test site sits inside GSL's header and
 footer, with no styles leaking in either direction, and Stephanie and Emily have
