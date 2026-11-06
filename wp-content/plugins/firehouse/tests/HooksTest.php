@@ -13,6 +13,7 @@ use Brain\Monkey\Actions;
 use Brain\Monkey\Filters;
 use Brain\Monkey\Functions;
 use Firehouse\Capabilities;
+use Firehouse\Frame;
 use Firehouse\Import_Screen;
 use Firehouse\Installer;
 use Firehouse\Meta;
@@ -94,5 +95,17 @@ final class HooksTest extends WordPressTestCase {
 		Actions\expectAdded( 'admin_menu' )->once()->with( array( Import_Screen::class, 'add_page' ), 10, 1 );
 
 		Import_Screen::hook();
+	}
+
+	/**
+	 * The frame takes the template late, loads its stylesheets after the theme's, and
+	 * adds its body class.
+	 */
+	public function test_frame_hooks(): void {
+		Filters\expectAdded( 'template_include' )->once()->with( array( Frame::class, 'template' ), 99, 1 );
+		Actions\expectAdded( 'wp_enqueue_scripts' )->once()->with( array( Frame::class, 'enqueue' ), 20, 1 );
+		Filters\expectAdded( 'body_class' )->once()->with( array( Frame::class, 'body_class' ), 10, 1 );
+
+		Frame::hook();
 	}
 }

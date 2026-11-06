@@ -16,8 +16,10 @@ phases; WORDPRESS-PLAN.md in https://github.com/NOAA-GSL/thefirehouse describes 
 It registers the project and topic post types and their fields. Projects are at
 /firehouse/projects/ and topics at /firehouse/topics/{key}/. It adds the Firehouse
 Editor role, a Firehouse settings screen, and an Import screen that loads the site's
-content from a seed bundle. It has no page templates yet, so the site's theme shows
-those addresses with its own templates.
+content from a seed bundle. Every Firehouse address gets the plugin's frame: the
+theme's header and footer around the Firehouse area, with its own stylesheets and
+fonts. The pages themselves come in a later phase; until then the frame holds a
+placeholder.
 
 The fonts in assets/fonts/, Archivo and Public Sans, are third-party, under the SIL
 Open Font License 1.1, whose text is beside them. assets/fonts/SOURCES.json records

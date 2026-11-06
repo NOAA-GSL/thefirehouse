@@ -14,10 +14,11 @@
  *
  * Registers the project and topic post types and their fields at the Firehouse
  * addresses, the Firehouse Editor role, and the Firehouse settings and Import
- * screens, and keeps WordPress's `year` query variable off Firehouse pages. domain/
- * holds the content logic, plain PHP that adds no hooks; includes/ holds what does.
- * WORDPRESS-PLAN.md in the repository describes what this plugin becomes, phase by
- * phase.
+ * screens, keeps WordPress's `year` query variable off Firehouse pages, and puts
+ * every Firehouse page in the theme's header and footer with its own stylesheets
+ * (templates/frame.php). domain/ holds the content logic, plain PHP that adds no
+ * hooks; includes/ holds what does. WORDPRESS-PLAN.md in the repository describes
+ * what this plugin becomes, phase by phase.
  *
  * @package Firehouse
  */
@@ -55,6 +56,7 @@ require_once __DIR__ . '/includes/class-store.php';
 require_once __DIR__ . '/includes/class-seed-bundle.php';
 require_once __DIR__ . '/includes/class-importer.php';
 require_once __DIR__ . '/includes/class-import-screen.php';
+require_once __DIR__ . '/includes/class-frame.php';
 
 Post_Types::hook();
 Meta::hook();
@@ -63,3 +65,4 @@ Capabilities::hook();
 Installer::hook( __FILE__ );
 Settings::hook();
 Import_Screen::hook();
+Frame::hook();

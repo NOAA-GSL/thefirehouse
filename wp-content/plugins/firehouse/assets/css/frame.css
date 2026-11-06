@@ -1,0 +1,33 @@
+/*
+ * The frame: what the Firehouse wrapper needs inside a theme's page that the static
+ * build, where the wrapper is the whole page, doesn't. Loaded after firehouse.css on
+ * Firehouse pages only (includes/class-frame.php). Written by hand, not generated;
+ * scripts/frame-css.test.mjs holds it to the rules below.
+ *
+ * Every rule stays inside the wrapper but one, which is on Firehouse pages only: the
+ * theme's hero background, which GSL's header prints over the top of whatever follows
+ * it, with no switch a plugin's pages can use.
+ */
+
+/* The atmosphere layer is fixed to the window; clipping the wrapper keeps it inside
+   the Firehouse area, where the static build has it, instead of over or under the
+   theme's header and footer. The wrapper is as tall as its content, so a short page
+   doesn't push the theme's footer down, and native controls follow the theme. */
+.fh-app {
+  clip-path: inset(0);
+  min-height: 0;
+  color-scheme: light;
+}
+
+[data-theme='dark'] .fh-app {
+  color-scheme: dark;
+}
+
+/* `hidden` hides, whatever display a Firehouse rule gives the element. */
+.fh-app [hidden] {
+  display: none !important;
+}
+
+.fh-page .gsl-hero-section {
+  display: none;
+}

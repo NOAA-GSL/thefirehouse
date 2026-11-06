@@ -874,33 +874,56 @@ ones.
 - Firehouse page templates, chosen with the `template_include` filter, that call
   GSL's `get_header()` and `get_footer()`, with full-width sections between them.
   GSL's theme is classic, so no Site Editor copy of a template can override the
-  plugin's. Found while scoping the CSS, and settled here against the real theme:
+  plugin's. *Frame done 6 November (`includes/class-frame.php`,
+  `templates/frame.php`, `assets/css/frame.css`). In the local copy of GSL's
+  WordPress:*
+  - *No style leaks either way. Outside the wrapper, no computed style changes when
+    Firehouse's stylesheets switch on, in either theme.*
+  - *Inside it, the static site's About, explorer, topic and project markup, dropped
+    into the real template, matches the static site at rest and with keyboard focus:
+    845 elements and 42 focus rings, in both themes.*
+  - *How each item below landed is marked on it.*
+
+  Found while scoping the CSS, and settled here against the real theme:
   - The atmosphere layer is fixed to the viewport and joins whatever stacking context
     holds the wrapper. Inside a theme wrapper that forms one, it paints over the
     footer, hiding links that stay focusable; elsewhere it shows through transparent
     parts of the header and footer, or hides behind an opaque wrapper. It has to be
     contained to the wrapper's box, and the contrast audits re-run against the result.
+    *Done: `frame.css` clips the wrapper, so the layer stays in the Firehouse area.
+    Inside it every computed colour matches the static site; the live audit re-runs
+    on the real pages in Phase 4.*
   - The project dialog's overlay sits below a theme header with a higher stacking
     order, close button included. A native `<dialog>` opened with `showModal()`
-    (rule 10) sits above everything and makes the rest of the page inert.
+    (rule 10) sits above everything and makes the rest of the page inert. *Moves to
+    Phase 5 with the explorer, whose quick look it is.*
   - The skip link hides by sitting above its wrapper, which works only at the top of a
-    page. It belongs before the theme's header, hidden by clipping.
+    page. It belongs before the theme's header, hidden by clipping. *The theme prints
+    no `wp_body_open` hook, so nothing can go before its header. The skip link sits at
+    the top of the wrapper instead, clipped with it until focused, and leads to the
+    content, past the Firehouse bar once there is one. Moving it before the header
+    needs that hook in GSL's theme.*
   - The wrapper sits outside the theme's content wrappers, whose rules beat the reset,
     and `firehouse.css` loads after the theme's stylesheet, so ties go to Firehouse.
-  - The wrapper's `min-height: 100vh` pushes the footer down on a short page.
+    *Done.*
+  - The wrapper's `min-height: 100vh` pushes the footer down on a short page. *Done:
+    `frame.css` lets it end with its content.*
   - The theme's header can print a full-height hero background, positioned over the
     top of whatever follows, unless the page switches it off. Firehouse pages switch
     it off, or the Firehouse bar and hero sit under it (seen in the 6 November
-    preview).
+    preview). *Done: the theme offers no switch for a plugin's archive or missing
+    pages, so `frame.css` hides it on Firehouse pages only (`body.fh-page`).*
   - The wrapper sets `color-scheme`, which nothing else on the theme's page does, and
     a `[hidden]` rule that wins over Firehouse's own `display` values before the
-    Interactivity API starts setting `hidden`.
+    Interactivity API starts setting `hidden`. *Done in `frame.css`.*
   - The computed-style check re-runs inside the real template, with WordPress's own
-    styles, on hover and focus as well as at rest.
+    styles, on hover and focus as well as at rest. *Done at rest and with keyboard
+    focus, above; hover isn't checked.*
 - Dark colors keyed to GSL's light/dark toggle (kept: open question 9). *The scoped CSS
-  already keeps the theme condition on `<html>`, where the toggle sets it. Left for the
-  templates: `color-scheme` on the wrapper, and the visual and contrast checks in both
-  themes inside the real theme.*
+  already keeps the theme condition on `<html>`, where the toggle sets it. The frame
+  sets `color-scheme` on the wrapper, and in the real theme GSL's switch turns the
+  header, the Firehouse area and the footer dark together. The contrast audits in both
+  themes run on the real pages in Phase 4.*
 - The Firehouse bar (`firehouse/subnav`), including whether it stays pinned under
   GSL's header (see [Look and feel](#look-and-feel)).
 - Stephanie and Emily see the frame on the test site (or in screenshots, if the VPN

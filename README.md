@@ -285,6 +285,20 @@ nothing from the database. Each class's docblock has the detail; this is the map
 
 `includes/`:
 
+- `Frame` puts every Firehouse request (`Query::is_firehouse()`: the project archive, a
+  project, a topic, the `firehouse` page tree, and missing addresses under them) in
+  `templates/frame.php`. That is the theme's own `get_header()` and `get_footer()`
+  around `main.fh-app`, outside the theme's content wrappers. It loads `fonts.css`,
+  `firehouse.css` and `frame.css` after the theme's stylesheet, at the plugin's
+  version, and adds `fh-page` to the body. `assets/css/frame.css`, written by hand
+  and held to its rules by `scripts/frame-css.test.mjs`, is what the wrapper needs
+  only inside a theme's page:
+  - it clips the fixed atmosphere to the Firehouse area;
+  - it lets a short page end before the footer;
+  - it sets `color-scheme` and makes `[hidden]` hide;
+  - on Firehouse pages only, it hides the theme's hero background.
+
+  The pages come in Phase 4; until then the frame holds a placeholder.
 - `Post_Types` registers `fh_project` and `fh_topic` at the React site's addresses:
   `/firehouse/projects/`, `/firehouse/projects/{slug}/` and `/firehouse/topics/{key}/`
   (no topic archive). Neither is in the REST API, and their edit screens have no form
@@ -379,8 +393,8 @@ and stops on any request, unscoped rule or loading value it finds there, since
 PostCSS and a browser tokenize some CSS differently.
 `src/styles/inward-reset.css` undoes GSL's element styles inside the wrapper, and
 `src/styles/page-shell.css`, which styles the static build's own `<html>` and
-`<body>`, is the one stylesheet left unscoped. Nothing loads the plugin's copy yet: the
-page templates come later in Phase 3.
+`<body>`, is the one stylesheet left unscoped. The plugin loads its copy on Firehouse
+pages, through the frame below.
 
 `assets/fonts/` holds Archivo and Public Sans, Google Fonts' own files with their SIL
 Open Font License, and `assets/css/fonts.css` their `@font-face` rules. The static
