@@ -178,10 +178,12 @@ final class Frame {
 	 * Prints the disclaimer that ends every Firehouse page, inside the main landmark,
 	 * after the content and above the theme's footer, as the site's `Disclaimer` does.
 	 *
-	 * Stephanie and Emily cleared the wording on 3 November for every page. The plugin
-	 * keeps it as the templates' own copy, not a setting, and tests/FrameTest.php holds
-	 * it to `disclaimer` in the site's settings.json. Whether an editor may reword it
-	 * is decided with the editing screens in Phase 6.
+	 * Stephanie and Emily approved the wording on 3 November, for the landing, About and
+	 * project pages, and asked for it, quietly, at the end of every page; NOAA's
+	 * clearance of it is still open (README, Before this goes public). The plugin keeps
+	 * it here, not as a setting, and tests/FrameTest.php holds it to `disclaimer` in the
+	 * site's settings.json. Whether an editor may reword it is decided with the editing
+	 * screens in Phase 6.
 	 */
 	public static function disclaimer(): void {
 		printf(

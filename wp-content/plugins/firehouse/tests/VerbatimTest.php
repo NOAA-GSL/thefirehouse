@@ -45,7 +45,13 @@ final class VerbatimTest extends WordPressTestCase {
 	 */
 	public function test_a_firehouse_page_keeps_text_verbatim(): void {
 		self::setup_request( true );
-		Functions\expect( 'wptexturize' )->once()->with( ' ', true );
+		// The re-read only helps if the switch is already in place when it happens.
+		Functions\expect( 'wptexturize' )->once()->with( ' ', true )->andReturnUsing(
+			function (): string {
+				$this->assertNotFalse( has_filter( 'run_wptexturize', '__return_false' ), 'The switch is added before wptexturize() reads it.' );
+				return ' ';
+			}
+		);
 
 		Verbatim::keep();
 

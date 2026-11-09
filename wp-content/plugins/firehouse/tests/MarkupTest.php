@@ -67,6 +67,18 @@ final class MarkupTest extends WordPressTestCase {
 	}
 
 	/**
+	 * Every topic key is a plain name, since it goes into an inline style, where HTML
+	 * escaping is no protection.
+	 */
+	public function test_every_topic_key_is_safe_in_a_style(): void {
+		$keys = array_column( \Firehouse\Domain\Vocabulary::topic_areas(), 'key' );
+		$this->assertCount( 4, $keys );
+		foreach ( $keys as $key ) {
+			$this->assertMatchesRegularExpression( '/^[a-z][a-z0-9-]*$/', $key );
+		}
+	}
+
+	/**
 	 * A key outside the vocabulary gives the first area's tag, as the component does,
 	 * and never reaches the style.
 	 */

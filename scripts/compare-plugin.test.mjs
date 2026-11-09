@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { diff, mainOf, normalize, siteAddress } from './compare-plugin.mjs';
+import { diff, isBuilt, mainOf, normalize, siteAddress } from './compare-plugin.mjs';
 
 const ORIGIN = 'http://localhost:8090';
 
@@ -10,10 +10,22 @@ describe('compare-plugin', () => {
     expect(siteAddress(`${ORIGIN}/firehouse/projects/`, ORIGIN)).toBe('/projects');
     expect(siteAddress(`${ORIGIN}/firehouse/topics/observe/`, ORIGIN)).toBe('/topics/observe');
     expect(siteAddress('/firehouse/no-such-page', ORIGIN)).toBe('/no-such-page');
-    // Only the plugin's own prefix comes off, and other sites are left alone.
-    expect(siteAddress(`${ORIGIN}/firehouses/x/`, ORIGIN)).toBe('/firehouses/x');
+    // Anything that isn't a Firehouse address is left exactly as it is, so a link to one
+    // of the theme's own pages can't pass for the site's.
+    expect(siteAddress(`${ORIGIN}/projects/`, ORIGIN)).toBe(`${ORIGIN}/projects/`);
+    expect(siteAddress('/projects/', ORIGIN)).toBe('/projects/');
+    expect(siteAddress(`${ORIGIN}/firehouses/x/`, ORIGIN)).toBe(`${ORIGIN}/firehouses/x/`);
     expect(siteAddress('https://docs.google.com/forms/x/', ORIGIN)).toBe('https://docs.google.com/forms/x/');
     expect(siteAddress('#main', ORIGIN)).toBe('#main');
+  });
+
+  it('knows which reference pages the plugin has built, by name or kind', () => {
+    const built = ['not-found', 'topic--'];
+    expect(isBuilt('not-found', built)).toBe(true);
+    expect(isBuilt('topic--observe', built)).toBe(true);
+    expect(isBuilt('topic', built)).toBe(false);
+    expect(isBuilt('project--x', built)).toBe(false);
+    expect(isBuilt('home', built)).toBe(false);
   });
 
   it('takes the main landmark, and nothing after it', () => {

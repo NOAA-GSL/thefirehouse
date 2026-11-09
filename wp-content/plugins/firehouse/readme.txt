@@ -22,11 +22,11 @@ Firehouse area between them in the plugin's own stylesheets and fonts. A Firehou
 bar under the theme's header carries the Firehouse wordmark and links, and the Submit
 a Finding button once the settings give it an address. The theme's hero background
 and the mission section above its footer are hidden on those pages. Every Firehouse
-page ends with the site's disclaimer, and a missing Firehouse address shows the
-Firehouse not-found page. On Firehouse pages, WordPress's curly quotes, dashes,
-smilies and its own name's capitalization are switched off, so researchers' text
-appears as they wrote it. The other pages come in a later phase; until then the
-frame shows a placeholder.
+page ends with a disclaimer that researchers' findings are their own, not NOAA's, and
+a missing Firehouse address shows the Firehouse not-found page. On Firehouse pages,
+WordPress no longer curls quotes, converts dashes, turns smileys into images or
+recapitalizes its own name, so researchers' text appears as they wrote it. The other
+pages come in a later phase; until then the frame shows a placeholder.
 
 The fonts in assets/fonts/, Archivo and Public Sans, are third-party, under the SIL
 Open Font License 1.1, whose text is beside them. assets/fonts/SOURCES.json records

@@ -24,6 +24,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * link can be reported by quoting it. It is attacker-chosen text, so it is escaped,
  * cut to 64 characters and set as a `code` chip, clearly a quoted address and not the
  * site's own words. WordPress answers with a real 404, so no `noindex` is needed.
+ *
+ * Any address under /firehouse/topics gets the topic-area wording, the bare one
+ * included, since WordPress treats it the same with or without its trailing slash.
  */
 final class Not_Found {
 
@@ -37,7 +40,9 @@ final class Not_Found {
 	 */
 	public static function render(): string {
 		global $wp;
-		$path      = '/' . ( $wp instanceof \WP ? $wp->request : '' );
+		// WordPress slashes the request it parses, so o'brien would read o\'brien; and a
+		// path that isn't valid UTF-8 would escape to nothing at all.
+		$path      = wp_check_invalid_utf8( '/' . ( $wp instanceof \WP ? wp_unslash( $wp->request ) : '' ), true );
 		$requested = mb_strlen( $path ) > self::MAX_PATH ? mb_substr( $path, 0, self::MAX_PATH ) . '…' : $path;
 		$topic     = str_starts_with( $path . '/', '/' . Query::ROOT_PATH . '/topics/' );
 		$root      = '/' . Query::ROOT_PATH . '/';

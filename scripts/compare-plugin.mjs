@@ -30,6 +30,18 @@ const PREFIX = '/firehouse';
 const WIDTHS = { desktop: { width: 1280, height: 900 }, phone: { width: 390, height: 844 } };
 const PLACEHOLDER = 'This page is being built.';
 
+/**
+ * The reference pages the plugin has built: a name, or a prefix ending in `--` for a
+ * kind of page (`topic--`). Each one must be there and match; the rest are listed as
+ * not built yet. Each Phase 4 page adds itself here.
+ */
+export const BUILT = ['not-found'];
+
+/** Whether a reference page is one the plugin has built. */
+export function isBuilt(name, built = BUILT) {
+  return built.some((entry) => (entry.endsWith('--') ? name.startsWith(entry) : name === entry));
+}
+
 /** The plugin's address for a reference page. */
 function pluginPath(name) {
   if (name === 'home') return `${PREFIX}/`;
@@ -50,13 +62,16 @@ export function mainOf(snapshot) {
   return lines.slice(start, end < 0 ? undefined : end).map((line) => line.slice(indent)).filter((line) => line.trim() !== '');
 }
 
-/** One address as the React site writes it: no origin, no /firehouse prefix, no trailing slash. */
+/**
+ * One of the plugin's addresses as the React site writes it: no origin, no /firehouse
+ * prefix, no trailing slash. Anything else, a link to one of the theme's own pages
+ * included, is left as it is, so it can't pass for a Firehouse link.
+ */
 export function siteAddress(value, origin = ORIGIN) {
-  let address = value;
-  if (address.startsWith(origin)) address = address.slice(origin.length);
-  if (address === PREFIX || address.startsWith(`${PREFIX}/`)) address = address.slice(PREFIX.length) || '/';
-  if (address.startsWith('/') && address.length > 1 && address.endsWith('/')) address = address.slice(0, -1);
-  return address;
+  const path = value.startsWith(origin) ? value.slice(origin.length) : value;
+  if (path !== PREFIX && !path.startsWith(`${PREFIX}/`)) return value;
+  const address = path.slice(PREFIX.length) || '/';
+  return address.length > 1 && address.endsWith('/') ? address.slice(0, -1) : address;
 }
 
 /** The plugin's snapshot lines with its addresses written as the site's. */
@@ -98,9 +113,13 @@ async function main() {
     .filter((file) => file.endsWith('.yml'))
     .map((file) => file.slice(0, -'.yml'.length));
   const browser = await chromium.launch({ channel: process.env.REFERENCE_BROWSER ?? 'msedge' });
-  const notBuilt = new Set();
+  const notBuilt = new Set(names.filter((name) => !isBuilt(name)));
   let compared = 0;
   let failed = 0;
+  const fail = (message) => {
+    failed++;
+    console.log(message);
+  };
 
   try {
     for (const [widthName, viewport] of Object.entries(WIDTHS)) {
@@ -108,25 +127,28 @@ async function main() {
       // GSL's light/dark switch keeps its choice here; the reference is the light theme.
       await context.addInitScript(() => localStorage.setItem('gsl-theme-preference', 'light'));
       const page = await context.newPage();
-      for (const name of names) {
+      for (const name of names.filter((n) => isBuilt(n))) {
         const path = pluginPath(name);
+        compared++;
         const response = await page.goto(`${ORIGIN}${path}`, { waitUntil: 'networkidle' });
-        // A page that doesn't exist in this WordPress yet (Home and About are pages it
-        // creates) answers 404; only the not-found reference should.
-        const missing = name !== 'not-found' && response?.status() === 404;
-        if (missing || (await page.locator('main').innerText()).includes(PLACEHOLDER)) {
-          notBuilt.add(name);
+        // The not-found page must answer 404, or search engines index every bad link;
+        // every other built page must answer 200 and be more than the placeholder.
+        const status = response?.status();
+        if (status !== (name === 'not-found' ? 404 : 200)) {
+          fail(`FAIL  ${widthName} ${name} (${path}): answered ${status}`);
+          continue;
+        }
+        if ((await page.locator('main').innerText()).includes(PLACEHOLDER)) {
+          fail(`FAIL  ${widthName} ${name} (${path}): still the placeholder`);
           continue;
         }
         const expected = mainOf(readFileSync(resolve(ROOT, 'reference/aria', widthName, `${name}.yml`), 'utf8'));
         const actual = normalize(mainOf(await page.locator('main').ariaSnapshot()));
-        compared++;
         const changes = diff(expected, actual);
         if (changes.length === 0) {
           console.log(`ok    ${widthName} ${name}`);
         } else {
-          failed++;
-          console.log(`DIFF  ${widthName} ${name} (${path}): - reference, + plugin\n    ${changes.join('\n    ')}`);
+          fail(`DIFF  ${widthName} ${name} (${path}): - reference, + plugin\n    ${changes.join('\n    ')}`);
         }
       }
       await context.close();
@@ -137,7 +159,7 @@ async function main() {
 
   if (notBuilt.size > 0) console.log(`\nNot built yet: ${[...notBuilt].join(', ')}`);
   console.log(`\n${compared - failed} of ${compared} comparisons match.`);
-  if (failed > 0) process.exitCode = 1;
+  if (failed > 0 || compared === 0) process.exitCode = 1;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

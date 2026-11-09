@@ -29,6 +29,9 @@ final class NotFoundTest extends WordPressTestCase {
 		);
 		Functions\when( 'home_url' )->alias( static fn( string $path = '' ): string => 'https://example.test' . $path );
 		Functions\when( 'wp_parse_url' )->alias( static fn( string $url, int $component = -1 ): mixed => parse_url( $url, $component ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url -- the stand-in for wp_parse_url.
+		Functions\when( 'wp_unslash' )->alias( 'stripslashes' );
+		// Not_Found always strips, so the stand-in does.
+		Functions\when( 'wp_check_invalid_utf8' )->alias( static fn( string $text ): string => (string) iconv( 'UTF-8', 'UTF-8//IGNORE', $text ) );
 	}
 
 	/**
@@ -90,6 +93,11 @@ final class NotFoundTest extends WordPressTestCase {
 		$html = self::render( 'firehouse/<script>alert(1)</script>' );
 		$this->assertStringNotContainsString( '<script>', $html );
 		$this->assertStringContainsString( '/firehouse/&lt;script&gt;alert(1)&lt;/script&gt;</code>', $html );
+
+		// WordPress hands over the request slashed; the visitor typed no backslash.
+		$this->assertStringContainsString( '<code class="fh-not-found__path">/firehouse/o&#039;brien</code>', self::render( "firehouse/o\\'brien" ) );
+		// A path that isn't valid UTF-8 still quotes what it can, not nothing.
+		$this->assertStringContainsString( '<code class="fh-not-found__path">/firehouse/ab</code>', self::render( "firehouse/a\xffb" ) );
 
 		$long = 'firehouse/' . str_repeat( 'é', 80 );
 		$html = self::render( $long );

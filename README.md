@@ -18,8 +18,9 @@ npm run plugin:assets
                    # write the plugin's icons and logos from the site's own
 npm run reference  # capture the reference the plugin matches (reference/README.md)
 npm run plugin:compare
-                   # check the plugin's built pages against that reference, on the
-                   # local WordPress (The WordPress plugin, below)
+                   # compare each built page's main landmark with the reference's
+                   # accessibility snapshots, on the local WordPress (needs
+                   # bin/wp-init, and Edge or Chrome)
 ```
 
 The test cases live in `wp-content/plugins/firehouse/shared/cases/` as plain JSON, so
@@ -65,8 +66,8 @@ wp-content/plugins/firehouse/
                     into WordPress (includes/); templates/frame.php, the frame
                     every Firehouse page sits in; blocks/, the server-rendered
                     blocks the templates place (so far the Firehouse bar and
-                    the not-found page); the
-                    shared vocabularies and test cases; and the PHP tests.
+                    the not-found page); the shared vocabularies and test
+                    cases; and the PHP tests.
                     assets/css/firehouse.css is generated from src/, and
                     assets/css/frame.css is written by hand;
                     assets/fonts/ and assets/css/fonts.css hold the fonts;
@@ -304,9 +305,10 @@ nothing from the database. Each class's docblock has the detail; this is the map
     `div.fh-app`, outside the theme's content wrappers. The wrapper holds a skip link,
     the Firehouse bar (the `firehouse/subnav` block) and the page's one `main`, which
     the skip link leads to. The main landmark holds the page's content, then the
-    disclaimer that ends every Firehouse page: the site's wording, cleared by
-    Stephanie and Emily, kept as the template's own copy and held to the site's
-    `settings.json` by a test. A missing address gets the `firehouse/not-found` block;
+    disclaimer that ends every Firehouse page: the site's wording, approved by
+    Stephanie and Emily on 3 November (NOAA's clearance is still open; see Before this
+    goes public), kept in `Frame::disclaimer()`, not as a setting, and held to the
+    site's `settings.json` by a test. A missing address gets the `firehouse/not-found` block;
     a page Phase 4 hasn't built yet, a placeholder.
   - **Stylesheets:** it loads `fonts.css`, `firehouse.css` and `frame.css` after the
     theme's stylesheet, at the plugin's version and each file's modified time, and adds
@@ -335,7 +337,6 @@ nothing from the database. Each class's docblock has the detail; this is the map
   Every rule stays inside the wrapper except the last, and
   `scripts/frame-css.test.mjs` holds it to that.
 
-  The pages come in Phase 4; until then the frame holds a placeholder.
 - `Blocks` registers each block named in `Blocks::NAMES`, one folder each in `blocks/`,
   from its `block.json`.
   - Each block renders on the server (`render.php`) and stays out of the inserter: the
@@ -363,14 +364,15 @@ nothing from the database. Each class's docblock has the detail; this is the map
     too; `aria-expanded` says which.
 - `Not_Found` is the Firehouse 404, the `firehouse/not-found` block: the site's
   `NotFoundPage`, with the way back, the explorer and the four topic areas. It quotes
-  the requested address, escaped and cut to 64 characters, and names a missing topic
-  area as one.
+  the requested address, escaped and cut to 64 characters with an ellipsis. Any
+  address under `/firehouse/topics/` gets the "Topic area not found" wording.
 - `Markup` writes the design system's small components as the site renders them: a
   link styled as a `Button` (opening another site in a new tab, and saying so) and a
   `TopicTag`.
-- `Verbatim` keeps researchers' words as they wrote them on Firehouse pages (rule 1):
-  it switches off WordPress's curly quotes and dashes, smilies and capitalization of
-  its own name, in titles and the page's `<title>` as well as content.
+- `Verbatim` keeps researchers' words as they wrote them on Firehouse pages (rule 1).
+  It turns off curly quotes, dashes and smilies for everything the page prints, the
+  theme's header and footer included, and stops WordPress recapitalizing its own name
+  in titles, the `<title>` and content.
 - `Icons` inlines an icon from `assets/icons/` by a name in the vocabulary, never by a
   path. It replaces the file's 24×24 size and marks the icon decorative. An unknown
   name gives an empty string, not an error.

@@ -1012,13 +1012,15 @@ signed off on the frame.
   and the landing page without the map.
 - The disclaimer at the end of every Firehouse page, and where the plugin keeps it.
   *Done: the templates' own copy (above).*
-- *Groundwork done 6 November:*
+- *Groundwork done 9 November:*
   - *Researchers' text stays verbatim (rule 1).*
   - *The 404 is the site's, as the `firehouse/not-found` block.*
   - *`npm run plugin:compare` checks each built page's main landmark against the
     reference's accessibility snapshot, at desktop and phone width, on the local
     WordPress. The 404 matches; the screenshots were compared by eye.*
-- Description and Open Graph tags.
+- Description and Open Graph tags, and whether a Firehouse page's `<title>` names The
+  Firehouse. Today it is WordPress's "Page not found - Global Systems Laboratory",
+  where the site's is "Page not found — The Firehouse".
 - Check that projects appear in the sitemap.
 - Test link previews in Slack and Teams.
 - Weight, measured on the frame (6 November): `firehouse.css` is about 28 KB
@@ -1028,7 +1030,8 @@ signed off on the frame.
   file, and drop the italic faces nothing uses. Once the blocks build with
   `@wordpress/scripts`, register them from its generated manifest
   (`wp_register_block_types_from_metadata_collection()`), not by reading each
-  `block.json` on every request.
+  `block.json` on every request. Inline icons from a generated PHP array, cached by
+  opcache, not by reading their SVG files on each request.
 - Rerun the frame's style and focus checks on the real pages.
 - Keep the Firehouse bar to one per page once a page's own content renders blocks. The
   bar's block prints on any Firehouse page, so its comment typed into a page in the tree
