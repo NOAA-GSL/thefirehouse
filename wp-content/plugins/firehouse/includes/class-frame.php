@@ -152,21 +152,43 @@ final class Frame {
 	}
 
 	/**
-	 * What the frame holds until Phase 4 builds the pages: a heading and a line, or
-	 * the Firehouse not-found message at a missing address.
+	 * Prints the page's content: the not-found page at a missing address, and a
+	 * placeholder on each page Phase 4 hasn't built yet.
+	 */
+	public static function content(): void {
+		if ( is_404() ) {
+			echo do_blocks( '<!-- wp:firehouse/not-found /-->' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- the plugin's own block, which escapes what it prints.
+			return;
+		}
+		self::placeholder();
+	}
+
+	/**
+	 * What the frame holds on a page Phase 4 hasn't built yet: a heading and a line.
 	 */
 	public static function placeholder(): void {
-		if ( is_404() ) {
-			$heading = __( 'Page not found', 'firehouse' );
-			$text    = __( 'There’s no Firehouse page at this address.', 'firehouse' );
-		} else {
-			$heading = __( 'The Firehouse', 'firehouse' );
-			$text    = __( 'This page is being built.', 'firehouse' );
-		}
 		printf(
 			'<section class="fh-section"><div class="fh-container"><h1>%1$s</h1><p>%2$s</p></div></section>',
-			esc_html( $heading ),
-			esc_html( $text )
+			esc_html__( 'The Firehouse', 'firehouse' ),
+			esc_html__( 'This page is being built.', 'firehouse' )
+		);
+	}
+
+	/**
+	 * Prints the disclaimer that ends every Firehouse page, inside the main landmark,
+	 * after the content and above the theme's footer, as the site's `Disclaimer` does.
+	 *
+	 * Stephanie and Emily approved the wording on 3 November, for the landing, About and
+	 * project pages, and asked for it, quietly, at the end of every page; NOAA's
+	 * clearance of it is still open (README, Before this goes public). The plugin keeps
+	 * it here, not as a setting, and tests/FrameTest.php holds it to `disclaimer` in the
+	 * site's settings.json. Whether an editor may reword it is decided with the editing
+	 * screens in Phase 6.
+	 */
+	public static function disclaimer(): void {
+		printf(
+			'<div class="fh-disclaimer fh-container"><p class="fh-disclaimer__text">%s</p></div>',
+			esc_html__( 'Researchers inside and outside NOAA submit the projects on this site. Their findings and opinions are their own and do not necessarily reflect the views of NOAA or the U.S. Department of Commerce.', 'firehouse' )
 		);
 	}
 }

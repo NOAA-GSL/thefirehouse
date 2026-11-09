@@ -43,6 +43,17 @@ final class InlineIconsTest extends WordPressTestCase {
 	}
 
 	/**
+	 * A stroke width replaces the file's 2, once, as a topic tag draws its icon; none
+	 * or a non-positive one leaves it.
+	 */
+	public function test_a_stroke_width_replaces_the_files(): void {
+		$this->assertStringContainsString( ' stroke-width="2.25" ', Icons::svg( 'radar', 12, array(), 2.25 ) );
+		$this->assertSame( 1, substr_count( Icons::svg( 'radar', 12, array(), 2.25 ), 'stroke-width=' ) );
+		$this->assertStringContainsString( ' stroke-width="2" ', Icons::svg( 'radar', 12 ) );
+		$this->assertStringContainsString( ' stroke-width="2" ', Icons::svg( 'radar', 12, array(), 0.0 ) );
+	}
+
+	/**
 	 * A name outside the vocabulary reads nothing, a path included.
 	 */
 	public function test_a_name_outside_the_vocabulary_gives_nothing(): void {

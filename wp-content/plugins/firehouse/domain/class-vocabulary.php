@@ -105,6 +105,15 @@ final class Vocabulary {
 	}
 
 	/**
+	 * The four topic areas, in order: each one's key, label, short label and icon.
+	 *
+	 * @return list<array{key: string, label: string, short: string, icon: string}>
+	 */
+	public static function topic_areas(): array {
+		return self::data()['topics'];
+	}
+
+	/**
 	 * The icon names content may use.
 	 *
 	 * @return list<string>

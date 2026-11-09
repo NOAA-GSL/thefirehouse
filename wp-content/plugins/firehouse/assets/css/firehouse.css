@@ -2242,6 +2242,14 @@
   flex-shrink: 0;
 }
 
+/* An SVG keeps its own colour in forced colours, so the arrow would stay grey; there it
+   takes the link's colour from the user's palette, like the rest of the link. */
+@media (forced-colors: active) {
+  .fh-app .fh-not-found__topic-link > svg {
+    color: inherit;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .fh-app .fh-not-found__topic-link:hover {
     transform: none;

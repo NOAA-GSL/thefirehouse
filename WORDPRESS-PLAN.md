@@ -258,7 +258,8 @@ bridge resolves unchanged under the plugin. The Submit page is new.
   Custom HTML block.
 - **The disclaimer.** It ends every Firehouse page, above GSL's footer (`disclaimer`
   in `settings.json`). The Phase 1 import doesn't read it. Phase 4 decides whether the
-  plugin keeps it as a setting or as the templates' own copy; whether an editor can
+  plugin keeps it as a setting or as the templates' own copy (*decided: the templates'
+  own copy, `Frame::disclaimer()`, which a test holds to `settings.json`*); whether an editor can
   reword the cleared text is decided with the editing screens in Phase 6. Wherever it is
   kept, the templates render it inside the theme's `main`, after the content, never
   from `wp_footer` or a footer widget, which land after GSL's footer.
@@ -329,7 +330,9 @@ in a rewrite.
    converted dashes) and `convert_smilies` over titles and over everything that passes
    through `the_content`, including block output. Left on, every project page would quietly rewrite what
    researchers submitted. Turn both off on Firehouse pages. Store survey text as
-   plain-string meta, and give editors no rich-text control over it.
+   plain-string meta, and give editors no rich-text control over it. *On Firehouse
+   pages since Phase 4 (`includes/class-verbatim.php`), with `capital_P_dangit` off too,
+   which would recapitalize a researcher's "Wordpress".*
 2. **Private survey answers stay private.** Q2 (email) and Q3 (job title) are never
    shown on the site. Nor is Q10 (how results were shared outside the research group),
    which was marked internal-only in Qualtrics and stays private until Stephanie and
@@ -1008,7 +1011,16 @@ signed off on the frame.
 - The project page (including need cards), topic pages, About, the 404
   and the landing page without the map.
 - The disclaimer at the end of every Firehouse page, and where the plugin keeps it.
-- Description and Open Graph tags.
+  *Done: the templates' own copy (above).*
+- *Groundwork done 9 November:*
+  - *Researchers' text stays verbatim (rule 1).*
+  - *The 404 is the site's, as the `firehouse/not-found` block.*
+  - *`npm run plugin:compare` checks each built page's main landmark against the
+    reference's accessibility snapshot, at desktop and phone width, on the local
+    WordPress. The 404 matches; the screenshots were compared by eye.*
+- Description and Open Graph tags, and whether a Firehouse page's `<title>` names The
+  Firehouse. Today it is WordPress's "Page not found - Global Systems Laboratory",
+  where the site's is "Page not found — The Firehouse".
 - Check that projects appear in the sitemap.
 - Test link previews in Slack and Teams.
 - Weight, measured on the frame (6 November): `firehouse.css` is about 28 KB
@@ -1018,7 +1030,8 @@ signed off on the frame.
   file, and drop the italic faces nothing uses. Once the blocks build with
   `@wordpress/scripts`, register them from its generated manifest
   (`wp_register_block_types_from_metadata_collection()`), not by reading each
-  `block.json` on every request.
+  `block.json` on every request. Inline icons from a generated PHP array, cached by
+  opcache, not by reading their SVG files on each request.
 - Rerun the frame's style and focus checks on the real pages.
 - Keep the Firehouse bar to one per page once a page's own content renders blocks. The
   bar's block prints on any Firehouse page, so its comment typed into a page in the tree
