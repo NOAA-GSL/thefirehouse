@@ -59,6 +59,10 @@ one is.
   is dropped, so a malformed one can't cause an error on any address.
 * A stored Submit a Finding address that isn't https counts as none, so no button
   points at it.
+* Projects and topics are left out of the site's search box (WordPress's search
+  across all types), and so out of WordPress's guess at a missing address outside
+  /firehouse/. The sitemap still lists them, and a project's or topic's address cut
+  short still finds it.
 
 = 0.2.0 =
 * Project and topic post types at the Firehouse addresses, with their fields as post

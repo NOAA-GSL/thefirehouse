@@ -73,7 +73,7 @@ final class Post_Types {
 	 */
 	public static function project_args(): array {
 		return array(
-			'labels'           => array(
+			'labels'              => array(
 				'name'               => __( 'Projects', 'firehouse' ),
 				'singular_name'      => __( 'Project', 'firehouse' ),
 				'menu_name'          => __( 'Firehouse', 'firehouse' ),
@@ -85,23 +85,24 @@ final class Post_Types {
 				'not_found'          => __( 'No projects found.', 'firehouse' ),
 				'not_found_in_trash' => __( 'No projects found in the trash.', 'firehouse' ),
 			),
-			'description'      => __( 'A research project submitted through the Firehouse survey.', 'firehouse' ),
-			'public'           => true,
-			'show_in_rest'     => false,
-			'has_archive'      => 'firehouse/projects',
-			'rewrite'          => array(
+			'description'         => __( 'A research project submitted through the Firehouse survey.', 'firehouse' ),
+			'public'              => true,
+			'exclude_from_search' => true,
+			'show_in_rest'        => false,
+			'has_archive'         => 'firehouse/projects',
+			'rewrite'             => array(
 				'slug'       => 'firehouse/projects',
 				'with_front' => false,
 				'feeds'      => false,
 				'pages'      => false,
 			),
-			'supports'         => array( 'revisions' ),
-			'capability_type'  => array( 'fh_project', 'fh_projects' ),
-			'capabilities'     => array( 'create_posts' => 'do_not_allow' ),
-			'map_meta_cap'     => true,
-			'menu_icon'        => 'dashicons-clipboard',
-			'menu_position'    => 26,
-			'delete_with_user' => false,
+			'supports'            => array( 'revisions' ),
+			'capability_type'     => array( 'fh_project', 'fh_projects' ),
+			'capabilities'        => array( 'create_posts' => 'do_not_allow' ),
+			'map_meta_cap'        => true,
+			'menu_icon'           => 'dashicons-clipboard',
+			'menu_position'       => 26,
+			'delete_with_user'    => false,
 		);
 	}
 
@@ -117,7 +118,7 @@ final class Post_Types {
 	 */
 	public static function topic_args(): array {
 		return array(
-			'labels'           => array(
+			'labels'              => array(
 				'name'          => __( 'Topics', 'firehouse' ),
 				'singular_name' => __( 'Topic', 'firehouse' ),
 				'all_items'     => __( 'Topics', 'firehouse' ),
@@ -127,22 +128,23 @@ final class Post_Types {
 				'search_items'  => __( 'Search topics', 'firehouse' ),
 				'not_found'     => __( 'No topics found.', 'firehouse' ),
 			),
-			'description'      => __( 'One of the four topic areas, with its synthesis of needs.', 'firehouse' ),
-			'public'           => true,
-			'show_in_rest'     => false,
-			'show_in_menu'     => self::MENU,
-			'has_archive'      => false,
-			'rewrite'          => array(
+			'description'         => __( 'One of the four topic areas, with its synthesis of needs.', 'firehouse' ),
+			'public'              => true,
+			'exclude_from_search' => true,
+			'show_in_rest'        => false,
+			'show_in_menu'        => self::MENU,
+			'has_archive'         => false,
+			'rewrite'             => array(
 				'slug'       => 'firehouse/topics',
 				'with_front' => false,
 				'feeds'      => false,
 				'pages'      => false,
 			),
-			'supports'         => array( 'title', 'revisions' ),
-			'capability_type'  => array( 'fh_topic', 'fh_topics' ),
-			'capabilities'     => array( 'create_posts' => 'do_not_allow' ),
-			'map_meta_cap'     => true,
-			'delete_with_user' => false,
+			'supports'            => array( 'title', 'revisions' ),
+			'capability_type'     => array( 'fh_topic', 'fh_topics' ),
+			'capabilities'        => array( 'create_posts' => 'do_not_allow' ),
+			'map_meta_cap'        => true,
+			'delete_with_user'    => false,
 		);
 	}
 }

@@ -80,6 +80,18 @@ final class PostTypesTest extends WordPressTestCase {
 	}
 
 	/**
+	 * Both are public, so the sitemap lists them, and kept out of the site's search,
+	 * which also keeps WordPress's guess at a missing address elsewhere from landing on
+	 * one (Frame::guess_404 makes the Firehouse's own).
+	 */
+	public function test_both_are_public_but_out_of_site_search(): void {
+		foreach ( array( Post_Types::project_args(), Post_Types::topic_args() ) as $args ) {
+			$this->assertTrue( $args['public'] );
+			$this->assertTrue( $args['exclude_from_search'] );
+		}
+	}
+
+	/**
 	 * Each has its own capabilities, so editing them doesn't take the site's post
 	 * capabilities, and no one adds either in the admin: projects come through the
 	 * Import screen and topics are fixed.
