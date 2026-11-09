@@ -195,16 +195,36 @@ final class FrameTest extends WordPressTestCase {
 	}
 
 	/**
-	 * Whatever an earlier filter left, the answer is a boolean and nothing throws.
+	 * Whatever an earlier filter left, nothing throws. Outside /firehouse/ it passes
+	 * through untouched. WordPress stops guessing only on false, so under /firehouse/
+	 * anything else counts as a yes, and the answer is the Firehouse's own.
 	 */
 	public function test_the_guess_filter_takes_any_value(): void {
+		$values = array( null, 0, '', array(), 1, '1', array( 'x' ) );
+
 		self::resolve( array( 'missing' => 'about' ) );
 		Functions\when( 'get_query_var' )->justReturn( '' );
-		foreach ( array( null, 0, '', array() ) as $value ) {
-			$this->assertFalse( Frame::guess_404_permalink( $value ) );
+		foreach ( $values as $value ) {
+			$this->assertSame( $value, Frame::guess_404_permalink( $value ) );
 		}
-		foreach ( array( 1, '1', array( 'x' ) ) as $value ) {
-			$this->assertTrue( Frame::guess_404_permalink( $value ) );
+
+		$under_root = array(
+			'fh_project' => true,
+			''           => false,
+		);
+		foreach ( $under_root as $type => $guess ) {
+			self::resolve( array( 'missing' => 'firehouse/projects/x' ) );
+			Functions\when( 'get_query_var' )->justReturn( $type );
+			foreach ( $values as $value ) {
+				$this->assertSame( $guess, Frame::guess_404_permalink( $value ) );
+			}
+			$this->assertFalse( Frame::guess_404_permalink( false ) );
+		}
+
+		// With no main request to read, nothing counts as under /firehouse/.
+		unset( $GLOBALS['wp'] );
+		foreach ( array_merge( $values, array( false, true ) ) as $value ) {
+			$this->assertSame( $value, Frame::guess_404_permalink( $value ) );
 		}
 	}
 

@@ -180,7 +180,7 @@ const css = `/*
 }
  *
  * Loaded on its own, never inside firehouse.css: the static build imports it in
- * src/main.tsx, and the plugin will load it with its templates. To use GSL's fonts
+ * src/main.tsx, and the plugin loads it on Firehouse pages (Frame). To use GSL's fonts
  * instead, stop loading it in both places and point the three font tokens in
  * src/styles/tokens/typography.css at Montserrat and Nunito Sans. The static build
  * would then need its own way to load those, or it falls back to system fonts.
