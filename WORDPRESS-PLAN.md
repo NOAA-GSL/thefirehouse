@@ -783,7 +783,9 @@ Until then, Stephanie and Emily review each phase with Eric on his local copy of
 GSL's WordPress (the `docker-compose.yml` stack, with GSL's theme), and a phase's
 "Done when" that names the test site is met there. The checks that depend on the
 test site's own setup wait for the first release: outbound network, Cloudflare and
-link-preview bots, caching, and `noindex`.
+link-preview bots, caching, and `noindex`. So does the check that Stephanie and Emily
+can do every editing task on their own, without a developer (Phase 6), since on the
+local copy Eric is always there.
 
 ### Phase 0 — Reference, decisions, groundwork (1–1.5 weeks)
 
@@ -1074,8 +1076,10 @@ behaves the same, and the accessibility snapshots match.
 - Submit buttons bound to the settings.
 - Validation notices.
 
-**Done when:** Stephanie and Emily can do every task in `README.md` and
-`notebooklm/README.md` on the test site without a developer.
+**Done when:** Stephanie and Emily have done every task in `README.md` and
+`notebooklm/README.md` in a walkthrough with Eric on his local copy. Doing them on their
+own, without a developer, is checked on the test site with the first release (Eric, 9
+November; see Where each phase is reviewed).
 
 ### Phase 7a — The survey form (2–3 weeks)
 
