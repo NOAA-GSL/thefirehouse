@@ -166,17 +166,6 @@ final class Subnav {
 	 * @param 'sm'|'md'                                         $size     The button's size.
 	 */
 	private static function print_submit( array $settings, string $size ): void {
-		$url      = $settings['submitFormUrl'];
-		$host     = wp_parse_url( $url, PHP_URL_HOST );
-		$external = is_string( $host ) && strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) ) !== strtolower( $host );
-		printf(
-			'<a href="%1$s" class="fh-btn fh-btn--accent fh-btn--%2$s"%3$s>%4$s%5$s%6$s</a>',
-			esc_url( $url ),
-			esc_attr( $size ),
-			$external ? ' target="_blank" rel="noopener noreferrer"' : '',
-			Icons::svg( 'plus', 'sm' === $size ? 14 : 16 ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- one of the plugin's checked icons.
-			esc_html( $settings['submitLabel'] ),
-			$external ? '<span class="fh-visually-hidden"> ' . esc_html__( '(opens in a new tab)', 'firehouse' ) . '</span>' : ''
-		);
+		echo Markup::button( $settings['submitLabel'], $settings['submitFormUrl'], 'accent', $size, array( 'plus' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup escapes what it builds.
 	}
 }

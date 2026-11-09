@@ -21,6 +21,7 @@ use Firehouse\Meta;
 use Firehouse\Post_Types;
 use Firehouse\Query;
 use Firehouse\Settings;
+use Firehouse\Verbatim;
 
 /**
  * Each callback is hooked with the priority and the number of arguments it needs. A
@@ -118,5 +119,14 @@ final class HooksTest extends WordPressTestCase {
 		Actions\expectAdded( 'init' )->once()->with( array( Blocks::class, 'register' ), 10, 1 );
 
 		Blocks::hook();
+	}
+
+	/**
+	 * The text rewrites are switched off once the query has run, before the page prints.
+	 */
+	public function test_verbatim_decides_on_template_redirect(): void {
+		Actions\expectAdded( 'template_redirect' )->once()->with( array( Verbatim::class, 'keep' ), 10, 1 );
+
+		Verbatim::hook();
 	}
 }

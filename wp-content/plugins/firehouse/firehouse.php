@@ -58,6 +58,9 @@ require_once __DIR__ . '/includes/class-importer.php';
 require_once __DIR__ . '/includes/class-import-screen.php';
 require_once __DIR__ . '/includes/class-frame.php';
 require_once __DIR__ . '/includes/class-icons.php';
+require_once __DIR__ . '/includes/class-markup.php';
+require_once __DIR__ . '/includes/class-not-found.php';
+require_once __DIR__ . '/includes/class-verbatim.php';
 require_once __DIR__ . '/includes/class-subnav.php';
 require_once __DIR__ . '/includes/class-blocks.php';
 
@@ -70,3 +73,4 @@ Settings::hook();
 Import_Screen::hook();
 Frame::hook();
 Blocks::hook();
+Verbatim::hook();

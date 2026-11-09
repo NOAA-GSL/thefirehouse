@@ -17,6 +17,9 @@ npm run plugin:css # write the plugin's stylesheet from src/, scoped under .fh-a
 npm run plugin:assets
                    # write the plugin's icons and logos from the site's own
 npm run reference  # capture the reference the plugin matches (reference/README.md)
+npm run plugin:compare
+                   # check the plugin's built pages against that reference, on the
+                   # local WordPress (The WordPress plugin, below)
 ```
 
 The test cases live in `wp-content/plugins/firehouse/shared/cases/` as plain JSON, so
@@ -61,7 +64,8 @@ wp-content/plugins/firehouse/
                     loads the content logic in PHP (domain/) and what hooks
                     into WordPress (includes/); templates/frame.php, the frame
                     every Firehouse page sits in; blocks/, the server-rendered
-                    blocks the templates place (so far the Firehouse bar); the
+                    blocks the templates place (so far the Firehouse bar and
+                    the not-found page); the
                     shared vocabularies and test cases; and the PHP tests.
                     assets/css/firehouse.css is generated from src/, and
                     assets/css/frame.css is written by hand;
@@ -299,7 +303,11 @@ nothing from the database. Each class's docblock has the detail; this is the map
   - **The template** is the theme's own `get_header()` and `get_footer()` around
     `div.fh-app`, outside the theme's content wrappers. The wrapper holds a skip link,
     the Firehouse bar (the `firehouse/subnav` block) and the page's one `main`, which
-    the skip link leads to.
+    the skip link leads to. The main landmark holds the page's content, then the
+    disclaimer that ends every Firehouse page: the site's wording, cleared by
+    Stephanie and Emily, kept as the template's own copy and held to the site's
+    `settings.json` by a test. A missing address gets the `firehouse/not-found` block;
+    a page Phase 4 hasn't built yet, a placeholder.
   - **Stylesheets:** it loads `fonts.css`, `firehouse.css` and `frame.css` after the
     theme's stylesheet, at the plugin's version and each file's modified time, and adds
     `fh-page` to the body. Nothing depends on the fonts, so dequeuing `firehouse-fonts`
@@ -353,6 +361,16 @@ nothing from the database. Each class's docblock has the detail; this is the map
     the menu button, and focus leaving the bar closes it. The button is named
     "Firehouse menu" whether open or shut, since the theme's header has a menu button
     too; `aria-expanded` says which.
+- `Not_Found` is the Firehouse 404, the `firehouse/not-found` block: the site's
+  `NotFoundPage`, with the way back, the explorer and the four topic areas. It quotes
+  the requested address, escaped and cut to 64 characters, and names a missing topic
+  area as one.
+- `Markup` writes the design system's small components as the site renders them: a
+  link styled as a `Button` (opening another site in a new tab, and saying so) and a
+  `TopicTag`.
+- `Verbatim` keeps researchers' words as they wrote them on Firehouse pages (rule 1):
+  it switches off WordPress's curly quotes and dashes, smilies and capitalization of
+  its own name, in titles and the page's `<title>` as well as content.
 - `Icons` inlines an icon from `assets/icons/` by a name in the vocabulary, never by a
   path. It replaces the file's 24×24 size and marks the icon decorative. An unknown
   name gives an empty string, not an error.

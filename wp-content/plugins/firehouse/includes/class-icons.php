@@ -55,8 +55,10 @@ final class Icons {
 	 *                                               that isn't a plain attribute name, is
 	 *                                               an event handler's, or is one this
 	 *                                               sets itself, is left out.
+	 * @param float|null                 $stroke     A stroke width in place of the file's 2,
+	 *                                               as a topic tag draws its icon (2.25).
 	 */
-	public static function svg( string $name, int $size, array $attributes = array() ): string {
+	public static function svg( string $name, int $size, array $attributes = array(), ?float $stroke = null ): string {
 		if ( ! in_array( $name, Vocabulary::icons(), true ) ) {
 			return '';
 		}
@@ -77,6 +79,10 @@ final class Icons {
 		}
 		$added .= ' style="display:inline-flex;flex-shrink:0"';
 
-		return '<svg xmlns="http://www.w3.org/2000/svg"' . $added . ' ' . substr( $svg, strlen( self::HEAD ) );
+		$rest = substr( $svg, strlen( self::HEAD ) );
+		if ( null !== $stroke && $stroke > 0 ) {
+			$rest = preg_replace( '/ stroke-width="2"/', sprintf( ' stroke-width="%s"', (string) round( $stroke, 2 ) ), $rest, 1 ) ?? $rest;
+		}
+		return '<svg xmlns="http://www.w3.org/2000/svg"' . $added . ' ' . $rest;
 	}
 }

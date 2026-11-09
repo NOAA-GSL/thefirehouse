@@ -245,34 +245,47 @@ final class FrameTest extends WordPressTestCase {
 	}
 
 	/**
-	 * The placeholder says what it is, and a missing address says so.
+	 * A missing address gets the not-found block; any other page, until its own is
+	 * built, the placeholder.
 	 */
-	public function test_the_placeholder(): void {
-		Functions\when( 'esc_html' )->alias( static fn( string $text ): string => htmlspecialchars( $text, ENT_QUOTES ) );
+	public function test_the_content_is_the_not_found_page_or_the_placeholder(): void {
 		Functions\when( 'is_404' )->justReturn( true );
+		Functions\expect( 'do_blocks' )->once()->with( '<!-- wp:firehouse/not-found /-->' )->andReturn( '[not found]' );
 		ob_start();
-		Frame::placeholder();
-		$this->assertStringContainsString( '<h1>Page not found</h1>', (string) ob_get_clean() );
+		Frame::content();
+		$this->assertSame( '[not found]', ob_get_clean() );
 
 		Functions\when( 'is_404' )->justReturn( false );
 		ob_start();
-		Frame::placeholder();
-		$this->assertStringContainsString( 'This page is being built.', (string) ob_get_clean() );
+		Frame::content();
+		$this->assertSame( '<section class="fh-section"><div class="fh-container"><h1>The Firehouse</h1><p>This page is being built.</p></div></section>', ob_get_clean() );
 	}
 
 	/**
-	 * A translation is printed as text, never as markup.
+	 * The disclaimer is the site's own, word for word: the `disclaimer` in the site's
+	 * settings.json, which Stephanie and Emily cleared, in the site's markup.
 	 */
-	public function test_the_placeholder_escapes_its_translations(): void {
-		Functions\when( 'esc_html' )->alias( static fn( string $text ): string => htmlspecialchars( $text, ENT_QUOTES ) );
-		Functions\when( 'is_404' )->justReturn( false );
-		Functions\when( '__' )->justReturn( '<script>x</script>' );
+	public function test_the_disclaimer_is_the_sites_word_for_word(): void {
+		$settings = json_decode( (string) file_get_contents( dirname( __DIR__, 4 ) . '/src/content/data/settings.json' ), true );
 		ob_start();
-		Frame::placeholder();
-		$output = (string) ob_get_clean();
+		Frame::disclaimer();
 
-		$this->assertStringNotContainsString( '<script>', $output );
-		$this->assertStringContainsString( '<h1>&lt;script&gt;x&lt;/script&gt;</h1>', $output );
+		$this->assertSame( '<div class="fh-disclaimer fh-container"><p class="fh-disclaimer__text">' . htmlspecialchars( $settings['disclaimer'], ENT_QUOTES ) . '</p></div>', ob_get_clean() );
+	}
+
+	/**
+	 * The not-found block, typed into a post, renders nothing but on a missing
+	 * Firehouse address.
+	 *
+	 * @param array<string, mixed> $query What the query found.
+	 */
+	#[DataProvider( 'other_requests' )]
+	public function test_the_not_found_block_renders_only_on_a_missing_firehouse_address( array $query ): void {
+		self::resolve( $query );
+
+		ob_start();
+		require dirname( __DIR__ ) . '/blocks/not-found/render.php';
+		$this->assertSame( '', ob_get_clean() );
 	}
 
 	/**
@@ -306,7 +319,7 @@ final class FrameTest extends WordPressTestCase {
 		$html = (string) ob_get_clean();
 
 		$at = 0;
-		foreach ( array( '[theme header]', '<div class="fh-app">', '<a class="fh-skip-link" href="#fh-content">', '[bar]', '<main id="fh-content" tabindex="-1">', '<h1>The Firehouse</h1>', '</main>', '</div>', '[theme footer]' ) as $part ) {
+		foreach ( array( '[theme header]', '<div class="fh-app">', '<a class="fh-skip-link" href="#fh-content">', '[bar]', '<main id="fh-content" tabindex="-1">', '<h1>The Firehouse</h1>', '<p class="fh-disclaimer__text">', '</main>', '</div>', '[theme footer]' ) as $part ) {
 			$found = strpos( $html, $part, $at );
 			$this->assertNotFalse( $found, $part . ' should come next in ' . $html );
 			$at = $found + strlen( $part );
