@@ -37,7 +37,7 @@ final class BlocksTest extends WordPressTestCase {
 
 		Blocks::register();
 
-		$this->assertSame( array( dirname( __DIR__ ) . '/blocks/not-found', dirname( __DIR__ ) . '/blocks/subnav' ), $registered );
+		$this->assertSame( array_map( static fn( string $name ): string => dirname( __DIR__ ) . '/blocks/' . $name, array( 'not-found', 'subnav', 'topic' ) ), $registered );
 	}
 
 	/**

@@ -31,6 +31,36 @@ final class MarkupTest extends WordPressTestCase {
 	}
 
 	/**
+	 * The synthesis note says what wrote the synthesis, how many projects it read out
+	 * of those published, and whether it's been reviewed, as the site's does.
+	 */
+	public function test_a_synthesis_note(): void {
+		$dot  = '<span class="fh-synthesis-note__dot" aria-hidden="true"></span>';
+		$date = '<time datetime="2026-10-27">October 27, 2026</time>';
+
+		$this->assertSame(
+			'<p class="fh-synthesis-note">' . $dot . '<span><strong>AI-synthesized</strong> across all 8 projects. Reviewed by Pat Reviewer on ' . $date . '.</span></p>',
+			Markup::synthesis_note( 'NotebookLM', 'Pat Reviewer', '2026-10-27', 8, 8 )
+		);
+		$this->assertSame(
+			'<p class="fh-synthesis-note fh-synthesis-note--draft">' . $dot . '<span><strong>AI-synthesized</strong> across 4 of 8 projects. <strong>Draft, pending team review</strong> · updated ' . $date . '.</span></p>',
+			Markup::synthesis_note( 'NotebookLM', null, '2026-10-27', 4, 8 )
+		);
+		$this->assertSame(
+			'<p class="fh-synthesis-note fh-synthesis-note--draft">' . $dot . '<span><strong>Synthesized</strong> across all 1 project. <strong>Draft, pending team review</strong>.</span></p>',
+			Markup::synthesis_note( '', '', '', 1, 1 )
+		);
+		$this->assertSame(
+			'<p class="fh-synthesis-note">' . $dot . '<span><strong>Synthesized</strong> across all 9 projects. Reviewed by Sam &lt;Editor&gt;.</span></p>',
+			Markup::synthesis_note( null, 'Sam <Editor>', null, 9, 8 )
+		);
+		$this->assertSame(
+			'<p class="fh-synthesis-note">' . $dot . '<span><strong>AI-synthesized</strong> across all 8 projects.</span></p>',
+			Markup::synthesis_note( 'NotebookLM', null, '2026-10-27', 8, 8, false )
+		);
+	}
+
+	/**
 	 * A button on this site: its variant and size, its icons at the size's icon size,
 	 * before and after the words, and no new tab.
 	 */

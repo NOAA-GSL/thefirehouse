@@ -35,7 +35,7 @@ const PLACEHOLDER = 'This page is being built.';
  * kind of page (`topic--`). Each one must be there and match; the rest are listed as
  * not built yet. Each Phase 4 page adds itself here.
  */
-export const BUILT = ['not-found'];
+export const BUILT = ['not-found', 'topic--'];
 
 /** Whether a reference page is one the plugin has built. */
 export function isBuilt(name, built = BUILT) {

@@ -44,6 +44,11 @@
   }
 }
 
+/* A topic page's aside stays below the bar as it sticks, and below the toolbar too. */
+.fh-app .fh-topic__aside {
+  top: calc(65px + var(--space-md) + var(--wp-admin--admin-bar--height, 0px));
+}
+
 /* The drawer scrolls within the window below the bar, the toolbar included. */
 .fh-app .fh-header__drawer {
   max-height: calc(100dvh - 65px - var(--wp-admin--admin-bar--height, 0px));

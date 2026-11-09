@@ -213,7 +213,8 @@ wp-content/plugins/firehouse/
                    checks at save and import (which call domain/), the seed import
                    screen, the query and verbatim filters, the frame, block
                    registration, the markup the blocks render (the bar, the 404,
-                   icons, buttons, topic tags), the AI service client
+                   the topic pages, icons, buttons, topic tags, the synthesis
+                   note), the AI service client
   survey/          the survey form, self-contained (see The survey form)
   domain/          PHP versions of the vocabularies, validation (normalize), derive,
                    format and search
@@ -1039,6 +1040,10 @@ signed off on the frame.
   - *`npm run plugin:compare` checks each built page's main landmark against the
     reference's accessibility snapshot, at desktop and phone width, on the local
     WordPress. The 404 matches; the screenshots were compared by eye.*
+- *Topic pages done 9 November, as the `firehouse/topic` block: the four match the
+  reference's accessibility snapshots at both widths, and its screenshots by eye in
+  both themes. A need names only published projects without a password; one that
+  named a project since unpublished is recounted, as the site's normalize step does.*
 - Description and Open Graph tags, and whether a Firehouse page's `<title>` names The
   Firehouse. Today it is WordPress's "Page not found - Global Systems Laboratory",
   where the site's is "Page not found — The Firehouse".
