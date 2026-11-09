@@ -51,12 +51,14 @@ one is.
 * The frame: every Firehouse page in the theme's header and footer, with the plugin's
   stylesheets and self-hosted fonts, and the theme's hero and footer mission section
   hidden.
-* The Firehouse bar, the plugin's first block, with its menu on phones.
+* The Firehouse bar, the plugin's first block, with its menu on narrow screens.
 * The site's icons and logos.
 * Researchers' text kept as they wrote it on Firehouse pages.
 * The disclaimer at the end of every Firehouse page, and the Firehouse not-found page.
-* A project or topic query variable that names no post is dropped, so a malformed one
-  can't cause an error on any address.
+* A project or topic query variable that isn't a usable slug (an array, empty, or 0)
+  is dropped, so a malformed one can't cause an error on any address.
+* A stored Submit a Finding address that isn't https counts as none, so no button
+  points at it.
 
 = 0.2.0 =
 * Project and topic post types at the Firehouse addresses, with their fields as post

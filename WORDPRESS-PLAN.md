@@ -1,8 +1,8 @@
 # WordPress plan — The Firehouse as a GSL WordPress plugin
 
 > **Status: the plan being built, last updated 9 November 2026.** Phases 0–3 are built
-> and reviewed on the local copy of GSL's WordPress; Phase 4 is under way. This document is the current plan: the
-> decisions made so far, the architecture they lead to, and a phased plan from the
+> on the local copy of GSL's WordPress, and the frame is signed off; Phase 4 is under
+> way. This document is the current plan: the decisions made so far, the architecture they lead to, and a phased plan from the
 > current `main` branch to a plugin running on gsl.noaa.gov. It changes through pull
 > requests, so earlier versions are in its git history.
 
@@ -210,8 +210,9 @@ wp-content/plugins/firehouse/
   firehouse.php
   includes/        post types, meta schemas, settings, roles and permissions, the
                    checks at save and import (which call domain/), the seed import
-                   screen, the frame, block registration, the markup the blocks
-                   share (the bar, icons, buttons, topic tags), the AI service client
+                   screen, the query and verbatim filters, the frame, block
+                   registration, the markup the blocks render (the bar, the 404,
+                   icons, buttons, topic tags), the AI service client
   survey/          the survey form, self-contained (see The survey form)
   domain/          PHP versions of the vocabularies, validation (normalize), derive,
                    format and search
@@ -221,8 +222,8 @@ wp-content/plugins/firehouse/
   templates/       frame.php, the one template every Firehouse page uses
   patterns/        landing and About layouts, locked to text-only edits
   assets/          tokens and component CSS, icons, logos, fonts, GACC boundaries
-  shared/          vocabulary.json, the project and topic schemas, and test cases, read
-                   by PHP and JS
+  shared/          vocabulary.json, the project and topic schemas, the email pattern,
+                   the icon allowlist and test cases, read by PHP and JS
   tests/           PHPUnit tests, run without WordPress through Brain Monkey
   uninstall.php    removes the role and the capabilities; the content stays
 ```
@@ -862,13 +863,13 @@ ones.
   leaves out and `scripts/fonts.test.mjs` checks. The static build loads the same file,
   and its screenshots match the build that loaded Google's stylesheet, pixel for pixel.
   Google serves no Archivo Expanded, so the stats and the wordmark fall back to
-  Archivo, as before. The templates load `fonts.css` before `firehouse.css` and keep it
+  Archivo, as before. The frame loads `fonts.css` before `firehouse.css` and keeps it
   in `assets/css/`, where its `../fonts/` paths resolve.*
   *The frame versions each stylesheet, `fonts.css` included, by the plugin's version
   and the file's modified time. The font files `fonts.css` points at carry no version,
   and `fetch-fonts.mjs` names them `<family>-<style>-<subset>.woff2`, so a refreshed
   file could be served stale from a cache: before the next refresh, the script should
-  put each file's hash in its name. Preloading the latin files moves to Phase 4.*
+  put each file's hash in its name. Preloading the latin Public Sans file moves to Phase 4.*
   *Icons and logos done 6 November: `npm run plugin:assets` draws every icon in the
   site's registry through its own `Icon` component into `assets/icons/<name>.svg`, and
   copies the images `BrandMark` imports into `assets/logos/`; CI checks both are
@@ -1007,9 +1008,8 @@ ones.
   GSL's header and footer, in light and dark at desktop width and light at phone
   width, with the theme's hero removed, as the frame now does. They predate the
   plugin's template: the preview put the static site's pages into GSL's page by
-  script. The template matches them in the computed-style check above. Phase 3 closes
-  on Emily's approval, as Eric decided. The Firehouse bar, built after it, is shown to
-  them on the local copy.*
+  script. The template matches them in the computed-style check above. The Firehouse
+  bar, built after the preview, has yet to be shown to Stephanie and Emily.*
 
 **Done when:** an empty Firehouse page on the local copy of GSL's WordPress sits inside
 GSL's header and footer, with no styles leaking in either direction, and Stephanie and Emily have

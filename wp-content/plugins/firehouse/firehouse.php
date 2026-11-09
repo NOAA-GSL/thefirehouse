@@ -20,11 +20,14 @@
  * logic, plain PHP that adds no hooks; includes/ holds what does. WORDPRESS-PLAN.md
  * in the repository describes what this plugin becomes, phase by phase.
  *
- * Most hooks act on Firehouse pages only. Three run on the whole site: Query::request
- * on every request (it drops a project or topic query variable that names no post,
- * anywhere); the not-found redirect filter on every missing address (it changes only
- * those under /firehouse/); and the check, on every front-end request, of whether it
- * is a Firehouse page.
+ * On the public site, most hooks act on Firehouse pages only. Three run on every
+ * request: Query::request (it drops a project or topic query variable that isn't a
+ * usable slug, anywhere); the not-found redirect filter, on every missing address (it
+ * changes only those under /firehouse/); and the check of whether a request is a
+ * Firehouse page, on template_redirect, template_include, wp_enqueue_scripts and
+ * body_class. The permission and field filters (Capabilities, Meta) run on every
+ * capability check and every write, site-wide, and change only Firehouse content and
+ * what Firehouse editors may do.
  *
  * @package Firehouse
  */

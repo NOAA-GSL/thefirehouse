@@ -446,8 +446,8 @@ The traps, for whoever changes this code next:
 - `Derive` expects that normalized content; `Format` works on one field at a time: a
   date, a byline's authors, a need, a link.
 - `Email_Shape` finds text shaped like an email address where none belongs, the
-  server's backstop for rule 2, by the pattern the survey import and the seed bundle
-  script use too (`shared/cases/email-shape.json`).
+  server's backstop for rule 2, by the pattern in `shared/email-shape.json`, which the
+  survey import and the seed bundle script use too.
 - `Vocabulary` reads the keys and icon names from `shared/vocabulary.json`, and `Js`
   holds the few JavaScript rules PHP doesn't share, such as what counts as true or as
   whitespace.
@@ -457,7 +457,8 @@ The traps, for whoever changes this code next:
   only see arrays. The tests read the shared cases through it, and the Import screen
   reads the seed bundle through it.
 
-They pass the cases in `shared/cases/derive.json`, `format.json` and `normalize.json`,
+They pass the cases in `shared/cases/derive.json`, `format.json`, `normalize.json` and
+`email-shape.json`,
 the same ones `npm test` runs. Search isn't ported yet: whether the explorer needs a
 PHP version depends on whether the site must work without JavaScript (plan open
 question 11).
