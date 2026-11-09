@@ -2,9 +2,10 @@
 
 > **Status: the plan being built, last updated 9 November 2026.** Phases 0–3 are built
 > on the local copy of GSL's WordPress, and the frame is signed off; Phase 4 is under
-> way. This document is the current plan: the decisions made so far, the architecture they lead to, and a phased plan from the
-> current `main` branch to a plugin running on gsl.noaa.gov. It changes through pull
-> requests, so earlier versions are in its git history.
+> way. This document is the current plan: the decisions made so far, the architecture
+> they lead to, and a phased plan from the current `main` branch to a plugin running on
+> gsl.noaa.gov. It changes through pull requests, so earlier versions are in its git
+> history.
 
 Read alongside `README.md` (what exists today) and `PLAN.md` (the walkthrough changes
 that produced it).
