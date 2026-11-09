@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { diff, isBuilt, mainOf, normalize, siteAddress } from './compare-plugin.mjs';
+import { diff, isBuilt, mainOf, normalize, siteAddress, siteLink } from './compare-plugin.mjs';
 
 const ORIGIN = 'http://localhost:8090';
 
@@ -39,6 +39,23 @@ describe('compare-plugin', () => {
     expect(
       normalize(['- link "Home":', `  - /url: ${ORIGIN}/firehouse/`, '- code: /firehouse/nope', '- text: /firehouse/ stays', `  - /url: "${ORIGIN}/firehouse/about/"`], ORIGIN),
     ).toEqual(['- link "Home":', '  - /url: /', '- code: /nope', '- text: /firehouse/ stays', '  - /url: "/about"']);
+  });
+
+  it('never lets a link outside the Firehouse pass for one of the site’s', () => {
+    // On the site these are home and the explorer; on WordPress, the theme's own pages.
+    expect(siteLink('/', ORIGIN)).toBe(`${ORIGIN}/`);
+    expect(siteLink('/projects', ORIGIN)).toBe(`${ORIGIN}/projects`);
+    expect(siteLink('/projects/', ORIGIN)).toBe(`${ORIGIN}/projects/`);
+    expect(siteLink(`${ORIGIN}/projects`, ORIGIN)).toBe(`${ORIGIN}/projects`);
+    expect(normalize(['  - /url: /', '  - /url: /projects'], ORIGIN)).toEqual([`  - /url: ${ORIGIN}/`, `  - /url: ${ORIGIN}/projects`]);
+    // Firehouse links, in-page anchors and other sites are as before.
+    expect(siteLink(`${ORIGIN}/firehouse/projects/`, ORIGIN)).toBe('/projects');
+    expect(siteLink('/firehouse/', ORIGIN)).toBe('/');
+    expect(siteLink('#main', ORIGIN)).toBe('#main');
+    expect(siteLink('//cdn.example.org/x', ORIGIN)).toBe('//cdn.example.org/x');
+    expect(siteLink('https://docs.google.com/forms/x', ORIGIN)).toBe('https://docs.google.com/forms/x');
+    // The 404's quoted address is text, so it only loses the prefix.
+    expect(normalize(['- code: /projects'], ORIGIN)).toEqual(['- code: /projects']);
   });
 
   it('reports what differs, and nothing when nothing does', () => {

@@ -74,11 +74,28 @@ export function siteAddress(value, origin = ORIGIN) {
   return address.length > 1 && address.endsWith('/') ? address.slice(0, -1) : address;
 }
 
-/** The plugin's snapshot lines with its addresses written as the site's. */
+/**
+ * A link's destination, for comparing: a Firehouse address as the site writes it, and a
+ * root-relative link anywhere else on the WordPress site made absolute. On the site,
+ * `/projects` is the explorer; on WordPress it would be one of the theme's own pages,
+ * so it mustn't match the reference.
+ */
+export function siteLink(value, origin = ORIGIN) {
+  const address = siteAddress(value, origin);
+  if (address !== value) return address;
+  return value.startsWith('/') && !value.startsWith('//') ? `${origin}${value}` : value;
+}
+
+/**
+ * The plugin's snapshot lines with its addresses written as the site's: links through
+ * `siteLink`, and the 404's quoted address, which is text, through `siteAddress`.
+ */
 export function normalize(lines, origin = ORIGIN) {
   return lines.map((line) => {
-    const match = line.match(/^(\s*- (?:\/url|code): )("?)(.*?)\2$/);
-    return match ? `${match[1]}${match[2]}${siteAddress(match[3], origin)}${match[2]}` : line;
+    const match = line.match(/^(\s*- (\/url|code): )("?)(.*?)\3$/);
+    if (!match) return line;
+    const address = match[2] === '/url' ? siteLink(match[4], origin) : siteAddress(match[4], origin);
+    return `${match[1]}${match[3]}${address}${match[3]}`;
   });
 }
 
