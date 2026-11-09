@@ -10,6 +10,10 @@ describe('compare-plugin', () => {
     expect(siteAddress(`${ORIGIN}/firehouse/projects/`, ORIGIN)).toBe('/projects');
     expect(siteAddress(`${ORIGIN}/firehouse/topics/observe/`, ORIGIN)).toBe('/topics/observe');
     expect(siteAddress('/firehouse/no-such-page', ORIGIN)).toBe('/no-such-page');
+    // The slash comes off before a query or fragment, as the site writes those links.
+    expect(siteAddress(`${ORIGIN}/firehouse/projects/?topic=observe`, ORIGIN)).toBe('/projects?topic=observe');
+    expect(siteAddress('/firehouse/#top-needs', ORIGIN)).toBe('/#top-needs');
+    expect(siteAddress('/firehouse/?q=a/', ORIGIN)).toBe('/?q=a/');
     // Anything that isn't a Firehouse address is left exactly as it is, so a link to one
     // of the theme's own pages can't pass for the site's.
     expect(siteAddress(`${ORIGIN}/projects/`, ORIGIN)).toBe(`${ORIGIN}/projects/`);

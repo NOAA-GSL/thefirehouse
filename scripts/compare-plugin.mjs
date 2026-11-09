@@ -71,7 +71,10 @@ export function siteAddress(value, origin = ORIGIN) {
   const path = value.startsWith(origin) ? value.slice(origin.length) : value;
   if (path !== PREFIX && !path.startsWith(`${PREFIX}/`)) return value;
   const address = path.slice(PREFIX.length) || '/';
-  return address.length > 1 && address.endsWith('/') ? address.slice(0, -1) : address;
+  // The trailing slash comes off the path itself, before any query or fragment.
+  const cut = address.search(/[?#]/);
+  const base = cut < 0 ? address : address.slice(0, cut);
+  return (base.length > 1 && base.endsWith('/') ? base.slice(0, -1) : base) + (cut < 0 ? '' : address.slice(cut));
 }
 
 /**
