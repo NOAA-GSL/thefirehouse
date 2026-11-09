@@ -13,7 +13,7 @@
  *
  * Left out (`LEFT_OUT`): the static build's page shell, gov banner and footer,
  * because GSL's theme does their job under the plugin, and the fonts' stylesheet,
- * which the plugin will load on its own, so switching to GSL's fonts never touches
+ * which the plugin loads on its own, so switching to GSL's fonts never touches
  * this file. They're found among the JS imports, so each has to stay imported from a
  * module, not by a CSS `@import`. All but the fonts must be found, so a stylesheet
  * that moved isn't let in unnoticed; the fonts may go, when the site stops loading

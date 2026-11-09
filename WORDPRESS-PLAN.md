@@ -1,7 +1,7 @@
 # WordPress plan — The Firehouse as a GSL WordPress plugin
 
-> **Status: proposal for review, last updated 1 November 2026.** Only the empty plugin
-> and a local WordPress are built (Phase 0). This document is the current plan: the
+> **Status: the plan being built, last updated 9 November 2026.** Phases 0–3 are built
+> and reviewed on the local copy of GSL's WordPress; Phase 4 is under way. This document is the current plan: the
 > decisions made so far, the architecture they lead to, and a phased plan from the
 > current `main` branch to a plugin running on gsl.noaa.gov. It changes through pull
 > requests, so earlier versions are in its git history.
@@ -147,7 +147,7 @@ The alternatives, and why not:
 | `scripts/notebooklm-source.mjs` | Rewritten in PHP as **Download NotebookLM source**, for the paste-in fallback |
 | The Google Form (outside this repository) | The plugin's survey form (see [The survey form](#the-survey-form)) |
 | The NotebookLM notebook | Analyze results and an approved AI service (see [The AI service](#the-ai-service)); paste-in stays as the fallback |
-| Vite, `public/.htaccess`, `public/_redirects` | Retired. The block and view scripts build with `@wordpress/scripts`. |
+| Vite, `public/.htaccess`, `public/_redirects` | Retired. View scripts are plain ES modules for now, with no build step; `@wordpress/scripts` comes in when a block needs an editor script. |
 
 The rewrite is smaller than the line counts suggest. The design system is already in
 plain CSS files with `fh-` class names, not inline React styles. The PHP templates emit
@@ -176,7 +176,8 @@ A Firehouse page is stacked like this:
 2. **The Firehouse bar** (`firehouse/subnav`), on every Firehouse page: the FireHouse
    wordmark, Home, Explore Projects, About and the Submit a Finding button. It is
    today's header without the NOAA and GSL logos and the theme toggle, which GSL's
-   header already has. Below 1024px the links fold into a drawer, as they do today.
+   header already has. Below 1024px the links fold into a drawer, as they do today;
+   without JavaScript they stay in the bar, on a row of their own.
    Today's header stays pinned while the page scrolls; whether the bar does depends on
    how GSL's header behaves, and is settled in Phase 3. *Settled: GSL's header scrolls
    away, so the bar stays pinned, as today's header does.*
@@ -209,12 +210,15 @@ wp-content/plugins/firehouse/
   firehouse.php
   includes/        post types, meta schemas, settings, roles and permissions, the
                    checks at save and import (which call domain/), the seed import
-                   screen, the AI service client
+                   screen, the frame, block registration, the markup the blocks
+                   share (the bar, icons, buttons, topic tags), the AI service client
   survey/          the survey form, self-contained (see The survey form)
   domain/          PHP versions of the vocabularies, validation (normalize), derive,
                    format and search
-  blocks/<name>/   block.json · render.php · editor preview · view script (Interactivity API)
-  templates/       project, explorer, topic and Firehouse page templates
+  blocks/<name>/   block.json · render.php · view.js and view.asset.php when it is
+                   interactive (Interactivity API) · an editor preview once editors
+                   place it
+  templates/       frame.php, the one template every Firehouse page uses
   patterns/        landing and About layouts, locked to text-only edits
   assets/          tokens and component CSS, icons, logos, fonts, GACC boundaries
   shared/          vocabulary.json, the project and topic schemas, and test cases, read
@@ -233,7 +237,7 @@ wp-content/plugins/firehouse/
 | Project | `/firehouse/projects/{slug}/` | Single `fh_project` |
 | Topic | `/firehouse/topics/{key}/` | One of four `fh_topic` posts |
 | Submit | `/firehouse/submit/` | Child page of `firehouse` holding the survey form |
-| 404 | anything else under `/firehouse/` | Firehouse "not found" page; GSL's own 404 elsewhere |
+| 404 | anything else under `/firehouse/` | Firehouse "not found" page; GSL's own 404 elsewhere. A shortened project or topic address still redirects to the post whose slug starts with it. |
 
 These are the React app's routes under a `/firehouse/` base, so a URL shared from the
 bridge resolves unchanged under the plugin. The Submit page is new.
@@ -383,7 +387,10 @@ in a rewrite.
    - Outward: every rule moves under an `.fh-app` wrapper (`scripts/scope-css.ts`): the
      tokens on `:root`, the `body` styles and the fixed atmosphere layer, the `*` and
      `img, svg` rules and the `:focus-visible` ring. A theme condition stays on
-     `<html>`. The build stops on any rule that could match outside the wrapper.
+     `<html>`. The build stops on any rule that could match outside the wrapper. One
+     rule is the exception, by design: `frame.css` hides the theme's hero and its
+     footer's mission section on Firehouse pages (`body.fh-page`), and
+     `scripts/frame-css.test.mjs` allows only that `display: none`.
    - Inward: the theme's global styles would reach Firehouse markup, so inside the
      wrapper a small reset puts back the browser's margins and padding and the fonts of
      headings, paragraphs and lists (`src/styles/inward-reset.css`). The theme's other
@@ -651,9 +658,9 @@ adds a rule that bypasses the cache for that path.
   these values instead of printing duplicate tags.
 - **Cloudflare may block the preview bots.** Scripted requests to both sites currently
   receive a Cloudflare challenge page. If Slack's, Teams' or LinkedIn's preview bots
-  receive the same, no tag the plugin writes will reach them. This is checked in
-  Phase 4 on the test site, and again on prod before launch, because the two may be
-  configured differently.
+  receive the same, no tag the plugin writes will reach them. This is checked with the
+  first release on the test site, and again on prod before launch, because the two may
+  be configured differently.
 
 ---
 
@@ -855,13 +862,13 @@ ones.
   leaves out and `scripts/fonts.test.mjs` checks. The static build loads the same file,
   and its screenshots match the build that loaded Google's stylesheet, pixel for pixel.
   Google serves no Archivo Expanded, so the stats and the wordmark fall back to
-  Archivo, as before. The plugin's font URLs carry no version, so the templates'
-  enqueue gives them one, or a refresh can be served stale from a cache. The templates
-  load `fonts.css` before `firehouse.css` and keep it in `assets/css/`, where its
-  `../fonts/` paths resolve; preloading the two latin files would shorten the swap.*
-  *The frame versions each stylesheet by the plugin's version and the file's modified
-  time. The font files inside `fonts.css` still carry none, so the next refresh puts
-  each file's hash in its name. Preloading moves to Phase 4.*
+  Archivo, as before. The templates load `fonts.css` before `firehouse.css` and keep it
+  in `assets/css/`, where its `../fonts/` paths resolve.*
+  *The frame versions each stylesheet, `fonts.css` included, by the plugin's version
+  and the file's modified time. The font files `fonts.css` points at carry no version,
+  and `fetch-fonts.mjs` names them `<family>-<style>-<subset>.woff2`, so a refreshed
+  file could be served stale from a cache: before the next refresh, the script should
+  put each file's hash in its name. Preloading the latin files moves to Phase 4.*
   *Icons and logos done 6 November: `npm run plugin:assets` draws every icon in the
   site's registry through its own `Icon` component into `assets/icons/<name>.svg`, and
   copies the images `BrandMark` imports into `assets/logos/`; CI checks both are
@@ -1000,7 +1007,9 @@ ones.
   GSL's header and footer, in light and dark at desktop width and light at phone
   width, with the theme's hero removed, as the frame now does. They predate the
   plugin's template: the preview put the static site's pages into GSL's page by
-  script. The template matches them in the computed-style check above.*
+  script. The template matches them in the computed-style check above. Phase 3 closes
+  on Emily's approval, as Eric decided. The Firehouse bar, built after it, is shown to
+  them on the local copy.*
 
 **Done when:** an empty Firehouse page on the local copy of GSL's WordPress sits inside
 GSL's header and footer, with no styles leaking in either direction, and Stephanie and Emily have
@@ -1022,7 +1031,8 @@ signed off on the frame.
   Firehouse. Today it is WordPress's "Page not found - Global Systems Laboratory",
   where the site's is "Page not found — The Firehouse".
 - Check that projects appear in the sitemap.
-- Test link previews in Slack and Teams.
+- Test link previews in Slack and Teams, with the first release on the test site (see
+  Where each phase is reviewed).
 - Weight, measured on the frame (6 November): `firehouse.css` is about 28 KB
   compressed, all of it render-blocking, and about a third of it comments. Minify what
   the plugin loads (the checks run on the minified file), split the project, topic
@@ -1043,7 +1053,8 @@ snapshots, and Stephanie and Emily can review them on the test site.
 ### Phase 5 — Interactive pieces (3–3.5 weeks)
 
 The explorer (search, filters with counts, sort, removable filter chips, quick-look
-`<dialog>`), the coverage map, scrollable need cards and the mobile menu.
+`<dialog>`), the coverage map and scrollable need cards. (The mobile menu came with the
+Firehouse bar in Phase 3.)
 
 **Done when:** it reaches feature parity with the React site, every URL parameter
 behaves the same, and the accessibility snapshots match.

@@ -20,6 +20,12 @@
  * logic, plain PHP that adds no hooks; includes/ holds what does. WORDPRESS-PLAN.md
  * in the repository describes what this plugin becomes, phase by phase.
  *
+ * Most hooks act on Firehouse pages only. Three run on the whole site: Query::request
+ * on every request (it drops a project or topic query variable that names no post,
+ * anywhere); the not-found redirect filter on every missing address (it changes only
+ * those under /firehouse/); and the check, on every front-end request, of whether it
+ * is a Firehouse page.
+ *
  * @package Firehouse
  */
 

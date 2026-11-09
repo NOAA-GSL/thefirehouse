@@ -45,6 +45,19 @@ the role are left with no role on the site. The content stays.
 
 == Changelog ==
 
+= Unreleased =
+Built since 0.2.0, and not yet through a release review; the version stays 0.2.0 until
+one is.
+* The frame: every Firehouse page in the theme's header and footer, with the plugin's
+  stylesheets and self-hosted fonts, and the theme's hero and footer mission section
+  hidden.
+* The Firehouse bar, the plugin's first block, with its menu on phones.
+* The site's icons and logos.
+* Researchers' text kept as they wrote it on Firehouse pages.
+* The disclaimer at the end of every Firehouse page, and the Firehouse not-found page.
+* A project or topic query variable that names no post is dropped, so a malformed one
+  can't cause an error on any address.
+
 = 0.2.0 =
 * Project and topic post types at the Firehouse addresses, with their fields as post
   meta, checked on every write and kept in revisions.
