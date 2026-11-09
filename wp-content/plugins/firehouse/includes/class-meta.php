@@ -67,7 +67,10 @@ final class Meta {
 	private static array $fields = array();
 
 	/**
-	 * Hooks the check on every write of a field, whatever code makes it.
+	 * Hooks the check on every add and update of a field through add_post_meta or
+	 * update_post_meta, whatever code calls them. WordPress's by-ID route for custom
+	 * fields isn't hooked; register()'s auth_callback refuses it to everyone but a
+	 * multisite super admin.
 	 */
 	public static function hook(): void {
 		add_filter( 'add_post_metadata', array( self::class, 'refuse_add' ), 10, 4 );

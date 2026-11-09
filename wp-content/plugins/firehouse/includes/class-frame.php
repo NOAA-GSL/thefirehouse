@@ -63,15 +63,17 @@ final class Frame {
 	 * looks only among its own type: a shared link cut short still finds its project
 	 * (rule 5). Anywhere else, WordPress guesses as usual.
 	 *
-	 * Runs on every missing address on the site, after any other plugin's filter, so
-	 * it takes whatever value that left.
+	 * Runs on every missing address on the site, at the default priority, so it takes
+	 * whatever value an earlier filter left, and a later one can still change it.
+	 * WordPress stops guessing only on false, so only false counts as no; outside
+	 * /firehouse/ the value passes through as it came.
 	 *
 	 * @param mixed $guess Whether WordPress would guess.
 	 */
-	public static function guess_404_permalink( mixed $guess ): bool {
+	public static function guess_404_permalink( mixed $guess ): mixed {
 		global $wp;
-		if ( ! $guess || ! ( $wp instanceof \WP && Query::under_root( $wp->request ) ) ) {
-			return (bool) $guess;
+		if ( false === $guess || ! ( $wp instanceof \WP && Query::under_root( $wp->request ) ) ) {
+			return $guess;
 		}
 		return in_array( get_query_var( 'post_type' ), array( Post_Types::PROJECT, Post_Types::TOPIC ), true );
 	}
