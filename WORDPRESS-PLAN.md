@@ -652,7 +652,16 @@ adds a rule that bypasses the cache for that path.
 ### Page titles, descriptions and link previews
 
 - **Core already provides** `<title>`, the canonical link, and the XML sitemap, which
-  includes projects automatically.
+  includes projects and topics automatically.
+- **Projects and topics stay out of GSL's site search box** (Eric, as GSL's web team,
+  9 November). WordPress's search reads a post's title and body, and a project keeps all
+  but its title in fields, so it would be found by title words only, with no summary.
+  The Firehouse's landing and About pages are ordinary pages and stay in site search,
+  and the explorer searches every field. Staying out of search also takes them out of
+  WordPress's guess at a missing address elsewhere on the site, so a missing GSL
+  address can't redirect to a researcher's project. *Done: `exclude_from_search` on
+  both types, which also leaves them out of any query for posts of `any` type. The
+  sitemap still lists them, and a search that names the type still finds them.*
 - **The plugin adds** the description and the Open Graph and Twitter tags, on Firehouse
   pages only. A shared project link then previews with the project's own title and
   abstract. This closes the gap noted in `PLAN.md` §2.2.
@@ -952,10 +961,10 @@ ones.
     by the same rule as the hero, which reaches the project archive too.*
   - WordPress answers a missing address by redirecting to its best guess at a post
     anywhere on the site, so a missing `/firehouse/about/` landed on the site's own
-    About page. *Done: under `/firehouse/`, only a project's or topic's address keeps
-    the guess, which looks among its own type, so a shared link cut short still finds
-    its project (rule 5). Any other missing address there gets the frame's not-found
-    page.*
+    About page. *Done: under `/firehouse/`, only a project's or topic's address gets a
+    guess, the plugin's own, which looks among its own type, so a shared link cut short
+    still finds its project (rule 5). Any other missing address there gets the frame's
+    not-found page.*
   - The wrapper sets `color-scheme`, which nothing else on the theme's page does, and
     a `[hidden]` rule that wins over Firehouse's own `display` values before the
     Interactivity API starts setting `hidden`. *Done in `frame.css`.*

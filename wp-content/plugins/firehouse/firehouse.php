@@ -74,12 +74,14 @@ require_once __DIR__ . '/includes/class-blocks.php';
  *
  * - Post_Types::register registers the project and topic post types, their fields, and
  *   their addresses in WordPress's table of addresses (the rewrite rules). Both types
- *   are public, so across the whole site they're in WordPress's sitemap and search
- *   results, and among the posts WordPress may redirect a missing address to: a
- *   missing /smoke/ can land on a project whose slug starts with "smoke". Their query
- *   variables (fh_project, fh_topic) are read on any address. The fields are read from
- *   shared/*.schema.json; if one is missing or malformed, this throws, and every
- *   request on the site fails until the plugin's files are fixed or its folder renamed.
+ *   are public, so they're in WordPress's sitemap. They're excluded from search, so
+ *   the site's search box, any query on the site for posts of 'any' type, and
+ *   WordPress's guess at a missing address all leave them out. A search that names
+ *   one of the types still finds them.
+ *   Their query variables (fh_project, fh_topic) are read on any address. The fields
+ *   are read from shared/*.schema.json; if one is missing or malformed, this throws,
+ *   and every request on the site fails until the plugin's files are fixed or its
+ *   folder renamed.
  * - Blocks::register registers the Firehouse blocks. They're kept out of the block
  *   inserter and declare no stylesheet. Typed into content outside the Firehouse, they
  *   print nothing, though the Firehouse bar's script module still loads there.
@@ -99,8 +101,9 @@ require_once __DIR__ . '/includes/class-blocks.php';
  *
  * On every public page:
  *
- * - Frame::guess_404_permalink (the `do_redirect_guess_404_permalink` filter) runs on
- *   every missing address and changes WordPress's answer only under /firehouse/.
+ * - Frame::guess_404 (the `pre_redirect_guess_404_permalink` filter) runs on every
+ *   missing address and changes WordPress's answer only under /firehouse/, where it
+ *   makes the Firehouse's own guess.
  * - Frame::is_firehouse_request decides, on template_redirect, template_include,
  *   wp_enqueue_scripts and body_class, whether the request is for a Firehouse page.
  *   Only for one does the plugin replace the template, add its stylesheets and body

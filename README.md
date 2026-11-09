@@ -315,9 +315,12 @@ nothing from the database. Each class's docblock has the detail; this is the map
     theme's stylesheet, at the plugin's version and each file's modified time, and adds
     `fh-page` to the body. Nothing depends on the fonts, so dequeuing `firehouse-fonts`
     drops only them.
-  - **Missing addresses:** under `/firehouse/`, WordPress's guess at what was meant
-    stays among projects or topics, so a link cut short still finds its project.
-    Anything else gets the frame's not-found page, never a page elsewhere on the site.
+  - **Missing addresses:** at a project's or topic's address under `/firehouse/`, the
+    plugin makes its own guess at what was meant, among that type only, so a link cut
+    short still finds its project. Any other missing address under `/firehouse/` gets
+    the frame's not-found page, not a page elsewhere on the site. Projects and topics
+    are left out of the site's own search, and so out of WordPress's guess at a missing
+    address anywhere else.
 
   `assets/css/frame.css`, written by hand, holds what Firehouse needs only inside the
   theme's page:

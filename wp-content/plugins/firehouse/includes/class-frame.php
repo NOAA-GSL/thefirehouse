@@ -51,31 +51,69 @@ final class Frame {
 		add_filter( 'template_include', array( self::class, 'template' ), 99 );
 		add_action( 'wp_enqueue_scripts', array( self::class, 'enqueue' ), 20 );
 		add_filter( 'body_class', array( self::class, 'body_class' ) );
-		add_filter( 'do_redirect_guess_404_permalink', array( self::class, 'guess_404_permalink' ) );
+		add_filter( 'pre_redirect_guess_404_permalink', array( self::class, 'guess_404' ) );
 	}
 
 	/**
-	 * Keeps WordPress's guess at a missing address under /firehouse/ inside the
-	 * Firehouse. WordPress redirects to a published post whose slug starts with the
-	 * address's last part, of any type unless the address names one. So
-	 * /firehouse/about/ would land on the site's own About page, and gets the frame's
-	 * not-found page instead. A project's or topic's address keeps the guess, which
-	 * looks only among its own type: a shared link cut short still finds its project
-	 * (rule 5). Anywhere else, WordPress guesses as usual.
+	 * Makes the Firehouse's own guess at a missing address under /firehouse/, in place
+	 * of WordPress's. WordPress redirects a missing address to a published post whose
+	 * slug starts with the address's last part, of any type in site search unless the
+	 * address names one. Under /firehouse/ that could leave the Firehouse:
+	 * /firehouse/about/ would land on the site's own About page. And since projects
+	 * and topics are kept out of site search, WordPress no longer guesses among them
+	 * at all, even at their own addresses.
 	 *
-	 * Runs on every missing address on the site, at the default priority, so it takes
-	 * whatever value an earlier filter left, and a later one can still change it.
-	 * WordPress stops guessing only on false, so only false counts as no; outside
-	 * /firehouse/ the value passes through as it came.
+	 * So under /firehouse/, a project's or topic's address is guessed among its own
+	 * type, published and without a password, the way WordPress would: a shared link
+	 * cut short still finds its project (rule 5). Any other missing address there gets no guess, and
+	 * the frame's not-found page. Outside /firehouse/, WordPress guesses as usual.
 	 *
-	 * @param mixed $guess Whether WordPress would guess.
+	 * Runs on every missing address on the site, unless a `do_redirect_guess_404_permalink`
+	 * filter has turned guessing off. At the default priority, it keeps an answer an
+	 * earlier filter gave, and a later one can still change it.
+	 *
+	 * @param mixed $pre Another filter's answer, or null to let WordPress guess.
+	 * @return mixed The address to redirect to, false for none, or $pre.
 	 */
-	public static function guess_404_permalink( mixed $guess ): mixed {
+	public static function guess_404( mixed $pre ): mixed {
 		global $wp;
-		if ( false === $guess || ! ( $wp instanceof \WP && Query::under_root( $wp->request ) ) ) {
-			return $guess;
+		if ( null !== $pre || ! ( $wp instanceof \WP && Query::under_root( $wp->request ) ) ) {
+			return $pre;
 		}
-		return in_array( get_query_var( 'post_type' ), array( Post_Types::PROJECT, Post_Types::TOPIC ), true );
+		$type = get_query_var( 'post_type' );
+		$name = get_query_var( 'name' );
+		if ( ! in_array( $type, array( Post_Types::PROJECT, Post_Types::TOPIC ), true ) || ! is_string( $name ) || '' === $name ) {
+			return false;
+		}
+
+		// WordPress's setting for a strict guess takes only a whole slug, and the query
+		// has already looked for this one, published, and found none.
+		if ( apply_filters( 'strict_redirect_guess_404_permalink', false ) ) { // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WordPress's hook.
+			return false;
+		}
+
+		// Every published post of the type, in slug order: the match is a prefix, which
+		// get_posts() can't ask for. No meta or terms are loaded, so this stays small. A
+		// password-protected post is left out, as WordPress's sitemap leaves it out.
+		$name  = strtolower( $name );
+		$posts = get_posts(
+			array(
+				'post_type'              => $type,
+				'post_status'            => 'publish',
+				'has_password'           => false,
+				'numberposts'            => -1,
+				'orderby'                => 'name',
+				'order'                  => 'ASC',
+				'update_post_meta_cache' => false,
+				'update_post_term_cache' => false,
+			)
+		);
+		foreach ( $posts as $post ) {
+			if ( str_starts_with( $post->post_name, $name ) ) {
+				return get_permalink( $post );
+			}
+		}
+		return false;
 	}
 
 	/**

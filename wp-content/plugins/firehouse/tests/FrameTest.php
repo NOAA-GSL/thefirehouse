@@ -9,6 +9,7 @@ declare( strict_types = 1 );
 
 namespace Firehouse\Tests;
 
+use Brain\Monkey\Filters;
 use Brain\Monkey\Functions;
 use Firehouse\Frame;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -170,62 +171,115 @@ final class FrameTest extends WordPressTestCase {
 	}
 
 	/**
-	 * A missing address under /firehouse/ isn't redirected to a guess of any type, which
-	 * could land outside the Firehouse; a project's or topic's address keeps the guess,
-	 * which stays among its own type. Anywhere else WordPress decides, as before.
+	 * Stands in for a missing address: the query WordPress ran, and the published
+	 * projects and topics the guess may find, in slug order.
+	 *
+	 * @param string $path The address, without its slashes.
+	 * @param mixed  $type The post_type query variable.
+	 * @param mixed  $name The name query variable.
+	 */
+	private static function missing( string $path, mixed $type, mixed $name ): void {
+		self::resolve( array( 'missing' => $path ) );
+		Functions\when( 'get_query_var' )->alias(
+			static fn( string $query_var ): mixed => match ( $query_var ) {
+				'post_type' => $type,
+				'name'      => $name,
+				default     => '',
+			}
+		);
+		$slugs = array(
+			'fh_project' => array( 'air-quality', 'california-tribal', 'california-wildfire' ),
+			'fh_topic'   => array( 'forecast', 'governance', 'observe', 'warning' ),
+		);
+		Functions\when( 'get_posts' )->alias(
+			static function ( array $args ) use ( $slugs ): array {
+				// Every published post without a password, of the address's own type, in
+				// slug order, with no meta or terms loaded.
+				$expected = array(
+					'post_status'            => 'publish',
+					'has_password'           => false,
+					'numberposts'            => -1,
+					'orderby'                => 'name',
+					'order'                  => 'ASC',
+					'update_post_meta_cache' => false,
+					'update_post_term_cache' => false,
+				);
+				if ( array_intersect_key( $args, $expected ) !== $expected ) {
+					return array();
+				}
+				return array_map(
+					static fn( string $slug ): \WP_Post => new \WP_Post(
+						array(
+							'post_type' => $args['post_type'],
+							'post_name' => $slug,
+						)
+					),
+					$slugs[ $args['post_type'] ] ?? array()
+				);
+			}
+		);
+		Functions\when( 'get_permalink' )->alias(
+			static fn( \WP_Post $post ): string => 'https://example.test/firehouse/' . ( 'fh_topic' === $post->post_type ? 'topics' : 'projects' ) . '/' . $post->post_name . '/'
+		);
+	}
+
+	/**
+	 * Under /firehouse/, a project's or topic's address is guessed among its own type,
+	 * so a link cut short still finds its project, and the first match by slug wins.
+	 * Any other missing address there gets no guess, which could land outside the
+	 * Firehouse. Anywhere else WordPress guesses as before.
 	 */
 	public function test_a_guess_at_a_missing_firehouse_address_stays_in_the_firehouse(): void {
-		$cases = array(
-			array( 'firehouse', '', false ),
-			array( 'firehouse/about', '', false ),
-			array( 'firehouse/a/b', 'page', false ),
-			array( 'firehouse/projects/california-tribal', 'fh_project', true ),
-			array( 'firehouse/topics/gov', 'fh_topic', true ),
-			array( 'firehouse/projects/x', array( 'fh_project' ), false ),
-			array( 'about', '', true ),
-			array( 'firehouses', '', true ),
-			array( 'about/firehouse', 'post', true ),
+		$projects = 'https://example.test/firehouse/projects/';
+		$cases    = array(
+			array( 'firehouse', '', '', false ),
+			array( 'firehouse/about', '', 'about', false ),
+			array( 'firehouse/a/b', 'page', 'b', false ),
+			array( 'firehouse/projects/california', 'fh_project', 'california', $projects . 'california-tribal/' ),
+			array( 'firehouse/projects/california-w', 'fh_project', 'california-w', $projects . 'california-wildfire/' ),
+			array( 'firehouse/projects/Air', 'fh_project', 'Air', $projects . 'air-quality/' ),
+			array( 'firehouse/topics/gov', 'fh_topic', 'gov', 'https://example.test/firehouse/topics/governance/' ),
+			array( 'firehouse/projects/smoke', 'fh_project', 'smoke', false ),
+			array( 'firehouse/topics/fire', 'fh_topic', 'fire', false ),
+			array( 'firehouse/projects/x', array( 'fh_project' ), 'x', false ),
+			array( 'firehouse/projects/cal', 'fh_project', array( 'cal' ), false ),
+			array( 'firehouse/projects/cal', 'fh_project', '', false ),
+			array( 'about', '', 'about', null ),
+			array( 'firehouses', '', 'firehouses', null ),
+			array( 'about/firehouse', 'post', 'firehouse', null ),
 		);
-		foreach ( $cases as list( $path, $type, $guess ) ) {
-			self::resolve( array( 'missing' => $path ) );
-			Functions\when( 'get_query_var' )->alias( static fn( string $name ): mixed => 'post_type' === $name ? $type : '' );
-			$this->assertSame( $guess, Frame::guess_404_permalink( true ), $path );
-			$this->assertFalse( Frame::guess_404_permalink( false ), $path );
+		foreach ( $cases as list( $path, $type, $name, $guess ) ) {
+			self::missing( $path, $type, $name );
+			$this->assertSame( $guess, Frame::guess_404( null ), $path );
 		}
 	}
 
 	/**
-	 * Whatever an earlier filter left, nothing throws. Outside /firehouse/ it passes
-	 * through untouched. WordPress stops guessing only on false, so under /firehouse/
-	 * anything else counts as a yes, and the answer is the Firehouse's own.
+	 * WordPress's strict setting guesses only a whole slug, which the query has already
+	 * looked for, so under it the Firehouse makes no guess.
 	 */
-	public function test_the_guess_filter_takes_any_value(): void {
-		$values = array( null, 0, '', array(), 1, '1', array( 'x' ) );
+	public function test_a_strict_guess_finds_nothing_more(): void {
+		Filters\expectApplied( 'strict_redirect_guess_404_permalink' )->andReturn( true );
+		self::resolve( array( 'missing' => 'firehouse/projects/california' ) );
+		Functions\expect( 'get_posts' )->never();
+		Functions\when( 'get_query_var' )->alias( static fn( string $query_var ): string => 'post_type' === $query_var ? 'fh_project' : 'california' );
+		$this->assertFalse( Frame::guess_404( null ) );
+	}
 
-		self::resolve( array( 'missing' => 'about' ) );
-		Functions\when( 'get_query_var' )->justReturn( '' );
-		foreach ( $values as $value ) {
-			$this->assertSame( $value, Frame::guess_404_permalink( $value ) );
-		}
-
-		$under_root = array(
-			'fh_project' => true,
-			''           => false,
-		);
-		foreach ( $under_root as $type => $guess ) {
-			self::resolve( array( 'missing' => 'firehouse/projects/x' ) );
-			Functions\when( 'get_query_var' )->justReturn( $type );
-			foreach ( $values as $value ) {
-				$this->assertSame( $guess, Frame::guess_404_permalink( $value ) );
+	/**
+	 * An answer an earlier filter gave stands, under /firehouse/ and anywhere else, and
+	 * with no main request to read, nothing counts as under /firehouse/.
+	 */
+	public function test_another_filters_answer_stands(): void {
+		foreach ( array( 'firehouse/projects/california', 'about' ) as $path ) {
+			self::missing( $path, 'fh_project', 'california' );
+			foreach ( array( false, '', 'https://example.test/elsewhere/', 0 ) as $value ) {
+				$this->assertSame( $value, Frame::guess_404( $value ), $path );
 			}
-			$this->assertFalse( Frame::guess_404_permalink( false ) );
 		}
 
-		// With no main request to read, nothing counts as under /firehouse/.
 		unset( $GLOBALS['wp'] );
-		foreach ( array_merge( $values, array( false, true ) ) as $value ) {
-			$this->assertSame( $value, Frame::guess_404_permalink( $value ) );
-		}
+		$this->assertNull( Frame::guess_404( null ) );
 	}
 
 	/**
