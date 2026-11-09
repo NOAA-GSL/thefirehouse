@@ -22,8 +22,9 @@ change.
   is read by the TypeScript site now and by the plugin's PHP later. Change values
   there rather than in code, and keep the test cases language-neutral.
 - **Before reporting a change done,** run the checks it touches: `npm run typecheck`,
-  `npm test`, `npm run schema:check` and `npm run build` for the site; `composer lint`
-  and `composer test` for the plugin; `npm run reference` when a page changes (it also
+  `npm test`, `npm run schema:check`, `npm run build`, `npm run plugin:css:check` and
+  `npm run plugin:assets:check` for the site (CI runs all six); `composer lint` and
+  `composer test` for the plugin; `npm run reference` when a page changes (it also
   fails on a page wider than the window).
 
 ## Review agents
@@ -65,12 +66,12 @@ Plugin paths below are under `wp-content/plugins/firehouse/`, laid out as in the
 
 | If the change touches… | Run |
 |---|---|
-| The site's pages and components (`src/pages/**`, `src/components/**`, `src/design-system/**`, `src/styles/**`, `index.html`); the plugin's `blocks/**`, `templates/**`, `patterns/**`, `assets/**` and admin screens | `Section 508 Accessibility Specialist`. Section 508 covers the staff screens too |
+| The site's pages and components (`src/pages/**`, `src/components/**`, `src/design-system/**`, `src/styles/**`, `index.html`); the plugin's `blocks/**`, `templates/**`, `patterns/**`, `assets/**`, admin screens, and the `includes/**` classes that write page markup (`class-subnav.php`, `class-icons.php` and their like) | `Section 508 Accessibility Specialist`. Section 508 covers the staff screens too |
 | `scripts/import-survey.mjs`, `scripts/survey-editorial.json`, `scripts/notebooklm-source.mjs`; the plugin's `survey/**`, private meta, submission emails, and anything that exports project data | `Privacy Engineer`. Submitters' emails, job titles and Q10 answers never reach a page, the JSON, a revision or the REST API |
 | The plugin's `survey/**` submission handler and `includes/**` (post types, meta, settings, roles and permissions, the Import screen), outbound HTTP such as DOI lookups, `vite.config.ts`, `public/**`, `.github/workflows/**` | `Application Security Engineer` |
 | The plugin's AI service client and Analyze results, the synthesis screen's paste-in validation, any new `import.meta.env.VITE_*` | `AI-Generated Code Security Auditor`. Published researchers' text goes into the model's prompt, which makes it the prompt-injection path |
 | The synthesis prompt (`notebooklm/README.md`, and the plugin's prompt setting) | `Prompt Engineer`. Run the old and new prompts on the same projects before switching |
-| The plugin's render path: `templates/**`, each block's `render.php`, asset registration, anything cached | `WordPress Performance Engineer`. Ignore its hosting advice: GSL runs the servers |
+| The plugin's render path: `templates/**`, each block's `render.php`, asset and block registration (`includes/class-frame.php`, `includes/class-blocks.php`), anything cached | `WordPress Performance Engineer`. Ignore its hosting advice: GSL runs the servers |
 | `src/content/**`, `wp-content/plugins/firehouse/shared/**`, the plugin's `domain/**`, `scripts/**` not routed above, and any other code or config | `Code Reviewer` |
 | `README.md`, and the editor and administrator runbooks (Phase 8) | `Technical Writer` |
 
