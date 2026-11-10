@@ -43,11 +43,14 @@ final class Markup {
 	 * @param array{0?: string, 1?: string} $icons The icons before and after the words, by name.
 	 */
 	public static function button( string $label, string $url, string $variant = 'primary', string $size = 'md', array $icons = array() ): string {
-		$icon     = self::BUTTON_ICON[ $size ] ?? 16;
-		$external = self::is_external( self::as_browser_reads( $url ) );
+		$icon = self::BUTTON_ICON[ $size ] ?? 16;
+		$href = self::url( $url );
+		// Decided from the address the link leads to, after esc_url() has added any
+		// scheme it lacked: `www.example.org` is another site's.
+		$external = self::is_external( html_entity_decode( $href, ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
 		return sprintf(
 			'<a href="%1$s" class="fh-btn fh-btn--%2$s fh-btn--%3$s"%4$s>%5$s%6$s%7$s%8$s</a>',
-			self::url( $url ),
+			$href,
 			esc_attr( $variant ),
 			esc_attr( $size ),
 			$external ? ' target="_blank" rel="noopener noreferrer"' : '',
