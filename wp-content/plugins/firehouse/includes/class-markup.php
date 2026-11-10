@@ -44,7 +44,7 @@ final class Markup {
 	 */
 	public static function button( string $label, string $url, string $variant = 'primary', string $size = 'md', array $icons = array() ): string {
 		$icon     = self::BUTTON_ICON[ $size ] ?? 16;
-		$external = self::is_external( $url );
+		$external = self::is_external( self::as_browser_reads( $url ) );
 		return sprintf(
 			'<a href="%1$s" class="fh-btn fh-btn--%2$s fh-btn--%3$s"%4$s>%5$s%6$s%7$s%8$s</a>',
 			self::url( $url ),
@@ -72,26 +72,37 @@ final class Markup {
 
 	/**
 	 * An address for an `href`, escaped, that leads where a browser would take it as
-	 * written. In an http or https address a browser reads a `\` before the query as
-	 * `/`, so it's read that way here: esc_url() drops it, which can move the host
-	 * (`https://doi.org\@elsewhere/` is doi.org to a browser, and elsewhere once the `\`
-	 * is gone). Every other character esc_url() would drop is percent-encoded instead,
-	 * as a browser sends it; then esc_url() checks what's left, the protocol included.
+	 * written (as_browser_reads()); esc_url() then checks it, the protocol included.
 	 *
 	 * @param string $url The address as written.
 	 */
 	public static function url( string $url ): string {
+		return esc_url( self::as_browser_reads( $url ) );
+	}
+
+	/**
+	 * An address as a browser reads it, with nothing esc_url() would drop.
+	 *
+	 * A browser reads a `\` before the query as `/` in an http or https address,
+	 * and in one with no scheme, which it resolves against the page's; esc_url() drops
+	 * it, which can move the host (`https://doi.org\@elsewhere/` is doi.org to a
+	 * browser, and elsewhere once the `\` is gone). So it's read as `/` here too. Any
+	 * other `\`, and every other character esc_url() would drop, is percent-encoded,
+	 * as a browser sends it. A `%` stays as it is, so an address already encoded isn't
+	 * encoded again. Space around the address goes, as a browser drops it.
+	 *
+	 * @param string $url The address as written.
+	 */
+	private static function as_browser_reads( string $url ): string {
 		$url = trim( $url );
-		if ( 1 === preg_match( '#^https?:#i', $url ) ) {
+		if ( 1 !== preg_match( '/^[a-z][a-z0-9+.-]*:/i', $url ) || 1 === preg_match( '/^https?:/i', $url ) ) {
 			$end = strcspn( $url, '?#' );
 			$url = str_replace( '\\', '/', substr( $url, 0, $end ) ) . substr( $url, $end );
 		}
-		return esc_url(
-			(string) preg_replace_callback(
-				'/[^a-z0-9\-~+_.?#=!&;,\/:%@$|*\'()\[\]\x80-\xff]/i',
-				static fn( array $character ): string => rawurlencode( $character[0] ),
-				$url
-			)
+		return (string) preg_replace_callback(
+			'/[^a-z0-9\-~+_.?#=!&;,\/:%@$|*\'()\[\]\x80-\xff]/i',
+			static fn( array $character ): string => rawurlencode( $character[0] ),
+			$url
 		);
 	}
 

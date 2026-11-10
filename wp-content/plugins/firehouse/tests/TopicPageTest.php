@@ -111,6 +111,30 @@ final class TopicPageTest extends WordPressTestCase {
 	}
 
 	/**
+	 * A need's text and a project's title show exactly as stored, a character reference
+	 * included, where WordPress's esc_html() would leave it for the browser to decode.
+	 */
+	public function test_stored_text_keeps_its_character_references(): void {
+		$projects              = self::projects();
+		$projects[11]['title'] = 'R&amp;D &lt;fire&gt;';
+		$html                  = self::render(
+			array(),
+			Topic_Page::needs(
+				array(
+					array(
+						'text'     => 'Fire weather &ndash; local',
+						'projects' => array( 11 ),
+					),
+				),
+				$projects
+			)
+		);
+
+		$this->assertStringContainsString( '<p class="fh-need__text">Fire weather &amp;ndash; local</p>', $html );
+		$this->assertStringContainsString( '<span class="fh-need__source-title">R&amp;amp;D &amp;lt;fire&amp;gt;</span>', $html );
+	}
+
+	/**
 	 * The page is the site's: the area's colours, the breadcrumb, its tag and heading,
 	 * the needs with their counts and projects, what it covers, the Submit button and
 	 * the other areas, in order.

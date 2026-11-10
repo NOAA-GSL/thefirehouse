@@ -297,20 +297,22 @@ final class Project_Page {
 	 * one with neither that a browser could follow.
 	 *
 	 * The survey collects links, not titles, so one with no published title of its own
-	 * is named by its DOI, or its host and path, never by an invented name.
+	 * is named by its host and path, never by an invented name.
 	 *
-	 * A DOI may hold a `#` (a SICI DOI's check character can be one) or a `?`, which in
-	 * an address would start a fragment or a query, or a `\`, which a browser would
-	 * read as `/`; each is percent-encoded. A `%` is left as it is, since a DOI copied
-	 * from a doi.org link is stored percent-encoded already.
+	 * A DOI follows `https://doi.org/` as stored, as on the site. One the import took
+	 * from a pasted link can carry the link's query or fragment, which doi.org ignores,
+	 * so a `?` or `#` in it is left to work as it does in any address. A DOI whose own
+	 * check character is `#` (an old SICI DOI) doesn't link, here or on the site, until
+	 * the import cuts a pasted link's query and fragment off the DOI it takes
+	 * (WORDPRESS-PLAN.md, Phase 4).
 	 *
 	 * @param mixed $paper The stored paper.
 	 */
 	public static function paper( mixed $paper ): string {
 		$paper = is_array( $paper ) ? $paper : array();
 		$doi   = is_string( $paper['doi'] ?? null ) ? $paper['doi'] : '';
-		$link  = is_string( $paper['url'] ?? null ) ? $paper['url'] : '';
-		$url   = Markup::url( '' !== $doi ? 'https://doi.org/' . str_replace( array( '#', '?', '\\' ), array( '%23', '%3F', '%5C' ), $doi ) : $link );
+		$href  = '' !== $doi ? 'https://doi.org/' . $doi : ( is_string( $paper['url'] ?? null ) ? $paper['url'] : '' );
+		$url   = Markup::url( $href );
 		if ( '' === $url ) {
 			return '';
 		}
@@ -323,11 +325,11 @@ final class Project_Page {
 			'<a class="fh-project__paper" href="%1$s" target="_blank" rel="noopener noreferrer">%2$s<span><span class="fh-project__paper-title">%3$s</span>%4$s%5$s</span>%6$s<span class="fh-visually-hidden">%7$s</span></a>',
 			$url,
 			Icons::svg( 'file-text', 16 ),
-			Markup::text( $title ?? ( '' !== $doi ? 'doi.org/' . $doi : Format::link_label( $link ) ) ),
+			Markup::text( $title ?? Format::link_label( $href ) ),
 			'' !== $source ? '<span class="fh-project__paper-source">' . Markup::text( $source ) . '</span>' : '',
 			'' !== $doi
 				? '<span class="fh-project__doi">doi:' . Markup::text( $doi ) . '</span>'
-				: ( null !== $title && '' !== $title ? '<span class="fh-project__doi">' . Markup::text( Format::link_label( $link ) ) . '</span>' : '' ),
+				: ( null !== $title && '' !== $title ? '<span class="fh-project__doi">' . Markup::text( Format::link_label( $href ) ) . '</span>' : '' ),
 			Icons::svg( 'external-link', 14 ),
 			esc_html__( '(opens in a new tab)', 'firehouse' )
 		);

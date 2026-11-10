@@ -106,10 +106,27 @@ final class MarkupTest extends WordPressTestCase {
 	}
 
 	/**
-	 * A button's address reads as a browser reads it too.
+	 * An address with no scheme resolves against the page's, so a browser reads its `\`
+	 * as `/` too, before the query.
+	 */
+	public function test_an_address_without_a_scheme_reads_as_a_browser_reads_it(): void {
+		Functions\when( 'esc_url' )->returnArg();
+
+		$this->assertSame( '//evil.example/@doi.org/', Markup::url( '//evil.example\\@doi.org/' ) );
+		$this->assertSame( '/a/b?c%5Cd', Markup::url( '\\a\\b?c\\d' ) );
+	}
+
+	/**
+	 * A button's address reads as a browser reads it too, and whether it opens in a new
+	 * tab is decided from where it leads: here, another site, though the address as
+	 * written starts with this one's.
 	 */
 	public function test_a_buttons_address_reads_as_a_browser_reads_it(): void {
 		$this->assertStringStartsWith( '<a href="https://records.example.org/a/b%20c" ', Markup::button( 'Record', 'https://records.example.org\\a/b c' ) );
+
+		$html = Markup::button( 'Record', 'https://evil.example\\@example.test/x' );
+		$this->assertStringStartsWith( '<a href="https://evil.example/@example.test/x" ', $html );
+		$this->assertStringContainsString( 'target="_blank"', $html );
 	}
 
 	/**

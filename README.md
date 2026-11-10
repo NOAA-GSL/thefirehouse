@@ -378,8 +378,8 @@ nothing from the database. Each class's docblock has the detail; this is the map
   explorer's order, among those a visitor may see. A need card whose text runs past
   its height scrolls, and only then becomes a tab stop named for its need
   (`blocks/project/view.js`). Until the script has measured a card its cap is off, so
-  without JavaScript, or if the script doesn't run, the whole entry shows. A DOI's
-  `#`, `?` and `\` are percent-encoded, so a SICI DOI still links to its paper.
+  without JavaScript, or if the script doesn't run, the whole entry shows. A paper's
+  address goes through `Markup::url()`.
 - `Topic_Page` is a topic area's page, the `firehouse/topic` block: the site's
   `TopicPage`, with the area's top five needs, the published projects behind each,
   what the area covers, the Submit button once a survey address is set, and the other
@@ -391,8 +391,10 @@ nothing from the database. Each class's docblock has the detail; this is the map
   the synthesis has been reviewed. `Markup::text()` escapes stored text so it shows
   exactly as stored, where `esc_html()` would let a character reference such as
   `&amp;` show as "&" (rule 1). `Markup::url()` makes an address lead where a browser
-  would take it: a `\` before the query is a `/`, and what `esc_url()` would drop is
-  percent-encoded, so dropping a `\` can't move the host.
+  would take it: in an http or https address, or one with no scheme, a `\` before the
+  query is a `/`, and what `esc_url()` would drop is percent-encoded, so dropping a `\`
+  can't move the host. A button decides whether it opens in a new tab from the same
+  reading.
 - `Verbatim` keeps researchers' words as they wrote them on Firehouse pages (rule 1).
   It turns off curly quotes, dashes and smilies for everything the page prints, the
   theme's header and footer included, and stops WordPress recapitalizing its own name

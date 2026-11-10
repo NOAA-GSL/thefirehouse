@@ -234,24 +234,27 @@ final class ProjectPageTest extends WordPressTestCase {
 	}
 
 	/**
-	 * A DOI's `#` and `?` would start a fragment or a query, and a browser would read
-	 * its `\` as `/`, so each is percent-encoded. A SICI DOI's check character can be
-	 * `#`. With no title, the paper is named by its DOI, whole.
+	 * A DOI follows doi.org's address as stored, as on the site: one the import took from
+	 * a pasted link keeps the link's query or fragment, which doi.org ignores, so it
+	 * still resolves. With no title, the paper is named by the address's host and path.
 	 */
-	public function test_a_doi_keeps_its_hash_and_question_mark(): void {
-		$sici = Project_Page::paper( array( 'doi' => '10.1002/(SICI)1099-1050(199705)6:3<221::AID-HEC264>3.0.CO;2-#' ) );
-		$this->assertStringContainsString( 'href="https://doi.org/10.1002/(SICI)1099-1050(199705)6:3%3C221::AID-HEC264%3E3.0.CO;2-%23"', $sici );
-		$this->assertStringContainsString( '<span class="fh-project__paper-title">doi.org/10.1002/(SICI)1099-1050(199705)6:3&lt;221::AID-HEC264&gt;3.0.CO;2-#</span>', $sici );
+	public function test_a_doi_from_a_pasted_link_still_resolves(): void {
+		$query = Project_Page::paper( array( 'doi' => '10.1002/joc.1234?af=R' ) );
+		$this->assertStringContainsString( 'href="https://doi.org/10.1002/joc.1234?af=R"', $query );
+		$this->assertStringContainsString( '<span class="fh-project__paper-title">doi.org/10.1002/joc.1234</span>', $query );
+		$this->assertStringContainsString( '<span class="fh-project__doi">doi:10.1002/joc.1234?af=R</span>', $query );
 
-		$this->assertStringContainsString( 'href="https://doi.org/10.1000/a%3Fb%5Cc"', Project_Page::paper( array( 'doi' => '10.1000/a?b\c' ) ) );
+		$this->assertStringContainsString( 'href="https://doi.org/10.1029/2020GL091234#accessDenialLayout"', Project_Page::paper( array( 'doi' => '10.1029/2020GL091234#accessDenialLayout' ) ) );
 	}
 
 	/**
 	 * A browser reads a `\` in an address's host or path as `/`, so the link does too:
-	 * dropping it would move the host to whatever follows an `@`.
+	 * dropping it would move the host to whatever follows an `@`. In a DOI it stays in
+	 * the path, under doi.org.
 	 */
 	public function test_a_backslash_cant_move_the_host(): void {
 		$this->assertStringContainsString( 'href="https://doi.org/@evil.example/10.1175/x"', Project_Page::paper( array( 'url' => 'https://doi.org\@evil.example/10.1175/x' ) ) );
+		$this->assertStringContainsString( 'href="https://doi.org//@evil.example/10.1175/x"', Project_Page::paper( array( 'doi' => '\@evil.example/10.1175/x' ) ) );
 	}
 
 	/**
@@ -279,6 +282,57 @@ final class ProjectPageTest extends WordPressTestCase {
 		$this->assertStringContainsString( '<strong class="fh-entry__lead">Need for R&amp;amp;D among us:</strong> more &amp;amp; better.', $html );
 		$this->assertStringContainsString( '"label":"Need for R\u0026amp;D among us \u2014 scrollable"', $html );
 		$this->assertStringContainsString( '<span class="fh-project__paper-title">A &amp;amp; B</span>', $html );
+	}
+
+	/**
+	 * Every stored text the page prints keeps a character reference as stored: each
+	 * field holds one, and none comes out as a reference a browser would decode.
+	 */
+	public function test_no_stored_text_is_printed_with_esc_html(): void {
+		$mark  = static fn( string $text ): string => $text . ' &amp;Q';
+		$html  = self::render(
+			array(
+				'title'       => $mark( 'Title' ),
+				'projectType' => $mark( 'Type' ),
+				'authors'     => array( array( 'name' => $mark( 'Author' ) ) ),
+				'org'         => $mark( 'Org' ),
+				'abstract'    => $mark( 'Abstract' ),
+				'takeaways'   => array( $mark( 'Takeaway' ) ),
+				'needs'       => array(
+					array(
+						'need'           => $mark( 'Need for marks among tests:' ),
+						'recommendation' => $mark( 'Recommendation' ),
+					),
+				),
+				'methods'     => array( $mark( 'Method' ) ),
+				'geo'         => array(
+					'regions' => array( 'ONCC' ),
+					'note'    => $mark( 'Note' ),
+				),
+				'papers'      => array(
+					array(
+						'title'     => $mark( 'Paper' ),
+						'container' => $mark( 'Journal' ),
+						'doi'       => $mark( '10.1000/doi' ),
+					),
+					array(
+						'title' => 'Linked',
+						'url'   => 'https://example.org/' . $mark( 'path' ),
+					),
+				),
+			)
+		);
+		$html .= Project_Page::render(
+			self::project(),
+			array(
+				'title' => $mark( 'Previous' ),
+				'url'   => 'https://example.test/firehouse/projects/a/',
+			),
+			null
+		);
+
+		$this->assertStringNotContainsString( '&amp;Q', $html );
+		$this->assertSame( 17, substr_count( $html, '&amp;amp;Q' ) );
 	}
 
 	/**
