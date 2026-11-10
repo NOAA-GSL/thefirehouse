@@ -22,6 +22,7 @@ use Firehouse\Post_Types;
 use Firehouse\Query;
 use Firehouse\Settings;
 use Firehouse\Verbatim;
+use Firehouse\Visibility;
 
 /**
  * Each callback is hooked with the priority and the number of arguments it needs. A
@@ -110,6 +111,36 @@ final class HooksTest extends WordPressTestCase {
 		Filters\expectAdded( 'pre_redirect_guess_404_permalink' )->once()->with( array( Frame::class, 'guess_404' ), 10, 1 );
 
 		Frame::hook();
+	}
+
+	/**
+	 * A hidden project is dropped from what a query found, with the query to tell a
+	 * preview, and refused to the redirects, oEmbed and menus; the head's links come
+	 * off once the query has run.
+	 */
+	public function test_visibility_hooks(): void {
+		Filters\expectAdded( 'posts_results' )->once()->with( array( Visibility::class, 'posts' ), 10, 2 );
+		Filters\expectAdded( 'redirect_canonical' )->once()->with( array( Visibility::class, 'redirect' ), 10, 1 );
+		Filters\expectAdded( 'oembed_request_post_id' )->once()->with( array( Visibility::class, 'post_id' ), 10, 1 );
+		Filters\expectAdded( 'old_slug_redirect_post_id' )->once()->with( array( Visibility::class, 'post_id' ), 10, 1 );
+		Filters\expectAdded( 'wp_setup_nav_menu_item' )->once()->with( array( Visibility::class, 'menu_item' ), 10, 1 );
+		Actions\expectAdded( 'wp' )->once()->with( array( Visibility::class, 'head_links' ), 10, 1 );
+
+		Visibility::hook();
+	}
+
+	/**
+	 * The plugin's main file hooks every class that has hooks. Without its line, a
+	 * class's tests still pass while the class does nothing on the site.
+	 */
+	public function test_the_plugin_hooks_every_class_that_has_hooks(): void {
+		$main = (string) file_get_contents( dirname( __DIR__ ) . '/firehouse.php' );
+		foreach ( (array) glob( dirname( __DIR__ ) . '/includes/class-*.php' ) as $file ) {
+			$code = (string) file_get_contents( (string) $file );
+			if ( preg_match( '/^final class (\w+)/m', $code, $class ) && str_contains( $code, 'public static function hook(' ) ) {
+				$this->assertMatchesRegularExpression( '/^' . $class[1] . '::hook\(/m', $main, $class[1] . ' is never hooked.' );
+			}
+		}
 	}
 
 	/**

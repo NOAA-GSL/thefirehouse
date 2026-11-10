@@ -56,6 +56,13 @@ if ( ! class_exists( 'WP_Post' ) ) {
 		public string $post_status = 'publish';
 
 		/**
+		 * The password, or "" for none.
+		 *
+		 * @var string
+		 */
+		public string $post_password = '';
+
+		/**
 		 * The title.
 		 *
 		 * @var string
@@ -141,6 +148,52 @@ if ( ! class_exists( 'WP_Error' ) ) {
 		 */
 		public function get_error_message(): string {
 			return $this->message;
+		}
+	}
+}
+
+if ( ! class_exists( 'WP_Query' ) ) {
+	/**
+	 * A query: only what it is for.
+	 */
+	final class WP_Query {
+
+		/**
+		 * A query that is, or isn't, each of these.
+		 *
+		 * @param bool $main     Whether it's the page's main query.
+		 * @param bool $singular Whether it's for one post.
+		 * @param bool $embed    Whether it's an embed.
+		 * @param bool $feed     Whether it's a feed.
+		 */
+		public function __construct( private bool $main = false, private bool $singular = false, private bool $embed = false, private bool $feed = false ) {}
+
+		/**
+		 * Whether it's the page's main query.
+		 */
+		public function is_main_query(): bool {
+			return $this->main;
+		}
+
+		/**
+		 * Whether it's for one post.
+		 */
+		public function is_singular(): bool {
+			return $this->singular;
+		}
+
+		/**
+		 * Whether it's an embed.
+		 */
+		public function is_embed(): bool {
+			return $this->embed;
+		}
+
+		/**
+		 * Whether it's a feed.
+		 */
+		public function is_feed(): bool {
+			return $this->feed;
 		}
 	}
 }

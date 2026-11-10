@@ -106,11 +106,10 @@ final class Topic_Page {
 			)
 		);
 		foreach ( $posts as $post ) {
-			$fields = Store::project( $post )['fields'];
 			// The site's own test, as well as the query's: a value written around Meta,
 			// or a second row, mustn't pass one and fail the other.
-			if ( true === ( $fields['irbApproved'] ?? null ) ) {
-				$projects[ $post->ID ] = array( 'url' => (string) get_permalink( $post ) ) + $fields;
+			if ( Store::is_public( $post ) ) {
+				$projects[ $post->ID ] = array( 'url' => (string) get_permalink( $post ) ) + Store::project( $post )['fields'];
 			}
 		}
 		return $projects;

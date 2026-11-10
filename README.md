@@ -400,9 +400,18 @@ nothing from the database. Each class's docblock has the detail; this is the map
 - `Store` reads posts back as the fields of `types.ts`, numbers and booleans typed and
   a need's `projects` still post IDs, and saves them. `Store::public_projects_query()`
   defines a project a visitor may see: published, without a password, and with IRB
-  approval or exemption, as the site's normalize step keeps them. The topic pages'
-  links and project total use it. The not-found guess and WordPress's sitemap still go
-  by published alone, until the project pages move them to it.
+  approval or exemption, as the site's normalize step keeps them.
+  `Store::is_public()` is the test for a post already loaded. The plugin's own lookups
+  use both: the topic pages' links and project total, and the not-found guess.
+- `Visibility` keeps every other project off the public side of the site. It drops
+  one from what a query finds, outside the admin's own screens, so its address,
+  `?p=`, the archive, the feed, embeds and the sitemap leave it out. It refuses one
+  to the redirects WordPress builds from a post ID, to oEmbed and to a changed slug's
+  redirect, and marks a menu item that links to one invalid. Someone who may edit the
+  project still sees it on its own page, as WordPress shows them a draft in preview,
+  and nowhere else. A get_posts() call and a query for IDs only skip these filters, and
+  WordPress limits a list before them, so the plugin's own lookups and lists ask for
+  public projects themselves.
 - `Query` drops WordPress's `year` query variable from Firehouse requests (rule 7), and
   a project or topic variable that names no post (`?fh_project[]=x`, `?fh_topic=`) from
   any request (rule 13).

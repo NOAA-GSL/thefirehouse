@@ -109,6 +109,20 @@ final class Store {
 	}
 
 	/**
+	 * Whether a visitor may see a project: published, without a password, and with IRB
+	 * approval or exemption stored as true. public_projects_query() in PHP, for a post
+	 * already loaded.
+	 *
+	 * @param \WP_Post $post The post.
+	 */
+	public static function is_public( \WP_Post $post ): bool {
+		return Post_Types::PROJECT === $post->post_type
+			&& 'publish' === $post->post_status
+			&& '' === $post->post_password
+			&& true === Meta::typed( get_post_meta( $post->ID, Meta::key( 'irbApproved' ), true ), 'boolean' );
+	}
+
+	/**
 	 * How many projects a visitor may see: the "8" in "4 of 8 projects".
 	 */
 	public static function public_project_count(): int {

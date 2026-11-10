@@ -66,8 +66,13 @@ one is.
   points at it.
 * Projects and topics are left out of the site's search box (WordPress's search
   across all types), and so out of WordPress's guess at a missing address outside
-  /firehouse/. The sitemap still lists them, and a project's or topic's address cut
-  short still finds it.
+  /firehouse/. The sitemap still lists the ones a visitor may see, and a project's or
+  topic's address cut short still finds it.
+* A project a visitor may not see (unpublished, password-protected, or without IRB
+  approval or exemption) is off the public side of the site: its address, ?p=, the
+  feed, the sitemap, embeds, oEmbed, menus, the redirects built from its ID and the
+  not-found guess all leave it out. Someone who may edit it still sees it on its own
+  page.
 
 = 0.2.0 =
 * Project and topic post types at the Firehouse addresses, with their fields as post

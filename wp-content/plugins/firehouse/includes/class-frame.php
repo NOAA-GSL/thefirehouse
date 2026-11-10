@@ -64,9 +64,11 @@ final class Frame {
 	 * at all, even at their own addresses.
 	 *
 	 * So under /firehouse/, a project's or topic's address is guessed among its own
-	 * type, published and without a password, the way WordPress would: a shared link
-	 * cut short still finds its project (rule 5). Any other missing address there gets no guess, and
-	 * the frame's not-found page. Outside /firehouse/, WordPress guesses as usual.
+	 * type, the way WordPress would: a shared link cut short still finds its project
+	 * (rule 5). The guess is among the projects a visitor may see
+	 * (Store::public_projects_query()), and among published topics without a
+	 * password. Any other missing address there gets no guess, and the frame's
+	 * not-found page. Outside /firehouse/, WordPress guesses as usual.
 	 *
 	 * Runs on every missing address on the site, unless a `do_redirect_guess_404_permalink`
 	 * filter has turned guessing off. At the default priority, it keeps an answer an
@@ -92,24 +94,28 @@ final class Frame {
 			return false;
 		}
 
-		// Every published post of the type, in slug order: the match is a prefix, which
-		// get_posts() can't ask for. No meta or terms are loaded, so this stays small. A
-		// password-protected post is left out, as WordPress's sitemap leaves it out.
+		// Every post of the type a visitor may see, in slug order: the match is a
+		// prefix, which get_posts() can't ask for. No meta or terms are loaded, so this
+		// stays small.
 		$name  = strtolower( $name );
+		$args  = array(
+			'numberposts'            => -1,
+			'orderby'                => 'name',
+			'order'                  => 'ASC',
+			'update_post_meta_cache' => false,
+			'update_post_term_cache' => false,
+		);
 		$posts = get_posts(
-			array(
-				'post_type'              => $type,
-				'post_status'            => 'publish',
-				'has_password'           => false,
-				'numberposts'            => -1,
-				'orderby'                => 'name',
-				'order'                  => 'ASC',
-				'update_post_meta_cache' => false,
-				'update_post_term_cache' => false,
-			)
+			Post_Types::PROJECT === $type ? Store::public_projects_query( $args ) : array(
+				'post_type'    => $type,
+				'post_status'  => 'publish',
+				'has_password' => false,
+			) + $args
 		);
 		foreach ( $posts as $post ) {
-			if ( str_starts_with( $post->post_name, $name ) ) {
+			// A project is checked as the site checks it, as well as by the query: a
+			// value written around Meta mustn't pass one and fail the other.
+			if ( str_starts_with( $post->post_name, $name ) && ( Post_Types::PROJECT !== $type || Store::is_public( $post ) ) ) {
 				return get_permalink( $post );
 			}
 		}
