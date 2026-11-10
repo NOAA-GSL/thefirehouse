@@ -223,7 +223,7 @@ final class Topic_Page {
 				<li class="fh-need">
 					<span class="fh-need__rank" aria-hidden="true"><?php echo (int) $index + 1; ?></span>
 					<div class="fh-need__main">
-						<p class="fh-need__text"><?php echo esc_html( $need['text'] ); ?></p>
+						<p class="fh-need__text"><?php echo Markup::text( $need['text'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup::text() escapes stored text. ?></p>
 						<?php if ( $need['mentions'] > 0 ) : ?>
 							<?php /* translators: %d: how many projects raise the need. */ ?>
 						<p class="fh-need__meta"><?php echo esc_html( sprintf( __( 'Project count: %d', 'firehouse' ), $need['mentions'] ) ); ?></p>
@@ -232,7 +232,7 @@ final class Topic_Page {
 							<?php /* translators: %d: the need's rank on the page. */ ?>
 						<ul class="fh-need__sources" aria-label="<?php echo esc_attr( sprintf( __( 'Projects behind need %d', 'firehouse' ), $index + 1 ) ); ?>">
 							<?php foreach ( $need['sources'] as $project ) : ?>
-							<li><a class="fh-need__source" href="<?php echo esc_url( is_string( $project['url'] ?? null ) ? $project['url'] : '' ); ?>"><?php echo Icons::svg( 'file-text', 14 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- one of the plugin's checked icons. ?><span class="fh-need__source-title"><?php echo esc_html( is_string( $project['title'] ?? null ) ? $project['title'] : '' ); ?></span><span class="fh-need__source-year"><?php echo esc_html( is_numeric( $project['completionYear'] ?? null ) ? (string) (int) $project['completionYear'] : '' ); ?></span></a></li>
+							<li><a class="fh-need__source" href="<?php echo esc_url( is_string( $project['url'] ?? null ) ? $project['url'] : '' ); ?>"><?php echo Icons::svg( 'file-text', 14 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- one of the plugin's checked icons. ?><span class="fh-need__source-title"><?php echo Markup::text( is_string( $project['title'] ?? null ) ? $project['title'] : '' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup::text() escapes stored text. ?></span><span class="fh-need__source-year"><?php echo esc_html( is_numeric( $project['completionYear'] ?? null ) ? (string) (int) $project['completionYear'] : '' ); ?></span></a></li>
 							<?php endforeach; ?>
 						</ul>
 						<?php endif; ?>

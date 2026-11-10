@@ -82,6 +82,67 @@ final class MarkupTest extends WordPressTestCase {
 	}
 
 	/**
+	 * Stored text shows as stored: every `&` is escaped, a character reference's
+	 * included, as are angle brackets and quotes; a broken UTF-8 sequence shows as
+	 * U+FFFD rather than emptying the text.
+	 */
+	public function test_text_shows_as_stored(): void {
+		$this->assertSame( 'R&amp;amp;D &lt;b&gt; &quot;q&quot; &#039;a&#039;', Markup::text( 'R&amp;D <b> "q" ' . "'a'" ) );
+		$this->assertSame( "a\u{FFFD}b", Markup::text( "a\xC3b" ) );
+	}
+
+	/**
+	 * An address leads where a browser would take it. In an http or https address a
+	 * `\` before the query is a `/`, as a browser reads it, and one after it is
+	 * percent-encoded, as is one in any other kind of address; so is every character
+	 * esc_url() would drop. A `%` stays as it is, so an address already encoded isn't
+	 * encoded again. Space around it goes, as a browser drops it.
+	 */
+	public function test_an_address_reads_as_a_browser_reads_it(): void {
+		$this->assertSame( 'https://doi.org/@evil.example/x', Markup::url( 'https://doi.org\\@evil.example/x' ) );
+		$this->assertSame( 'HTTPS://a.example/b/c?d%5Ce#f%5Cg', Markup::url( ' HTTPS:\\\\a.example\\b/c?d\\e#f\\g ' ) );
+		$this->assertSame( 'https://example.org/a%20b%22%3Cc%3E%d', Markup::url( 'https://example.org/a b"<c>%d' ) );
+		$this->assertSame( 'mailto:a%5Cb@example.org', Markup::url( 'mailto:a\\b@example.org' ) );
+	}
+
+	/**
+	 * An address leads where the stored one does: a character reference in it is
+	 * escaped like any `&`, so the browser follows `R&amp;D` as stored, not `R&D`.
+	 */
+	public function test_an_address_keeps_its_character_references(): void {
+		$this->assertSame( 'https://example.org/R&amp;amp;D?a=1&amp;b=2&amp;c=&#039;d&#039;', Markup::url( "https://example.org/R&amp;D?a=1&b=2&c='d'" ) );
+		$this->assertStringStartsWith( '<a href="https://example.org/R&amp;amp;D" ', Markup::button( 'Record', 'https://example.org/R&amp;D' ) );
+	}
+
+	/**
+	 * An address with no scheme resolves against the page's, so a browser reads its `\`
+	 * as `/` too, before the query.
+	 */
+	public function test_an_address_without_a_scheme_reads_as_a_browser_reads_it(): void {
+		Functions\when( 'esc_url_raw' )->returnArg();
+
+		$this->assertSame( '//evil.example/@doi.org/', Markup::url( '//evil.example\\@doi.org/' ) );
+		$this->assertSame( '/a/b?c%5Cd', Markup::url( '\\a\\b?c\\d' ) );
+	}
+
+	/**
+	 * A button's address reads as a browser reads it too, and whether it opens in a new
+	 * tab is decided from where it leads: another site, though the address as written
+	 * starts with this one's, or has no scheme for esc_url() to keep.
+	 */
+	public function test_a_buttons_address_reads_as_a_browser_reads_it(): void {
+		$this->assertStringStartsWith( '<a href="https://records.example.org/a/b%20c" ', Markup::button( 'Record', 'https://records.example.org\\a/b c' ) );
+
+		$html = Markup::button( 'Record', 'https://evil.example\\@example.test/x' );
+		$this->assertStringStartsWith( '<a href="https://evil.example/@example.test/x" ', $html );
+		$this->assertStringContainsString( 'target="_blank"', $html );
+
+		$html = Markup::button( 'Record', 'www.example.org/x' );
+		$this->assertStringStartsWith( '<a href="http://www.example.org/x" ', $html );
+		$this->assertStringContainsString( 'target="_blank"', $html );
+	}
+
+	/**
 	 * A topic tag: the area's colours by its key, its icon at the tag's size with the
 	 * thicker stroke, and its short label unless one is given.
 	 */

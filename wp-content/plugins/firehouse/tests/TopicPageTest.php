@@ -24,6 +24,9 @@ final class TopicPageTest extends WordPressTestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		Functions\stubEscapeFunctions();
+		// WordPress's esc_html() leaves a character reference alone; Brain Monkey's would
+		// escape it again, and hide text that doesn't show as stored.
+		Functions\when( 'esc_html' )->alias( static fn( string $text ): string => htmlspecialchars( $text, ENT_QUOTES, 'UTF-8', false ) );
 		Functions\when( 'wp_json_file_decode' )->alias(
 			static fn( string $filename, array $options = array() ): mixed => json_decode( (string) file_get_contents( $filename ), ! empty( $options['associative'] ) )
 		);
@@ -105,6 +108,30 @@ final class TopicPageTest extends WordPressTestCase {
 				'submitFormUrl' => 'https://forms.example.org/firehouse',
 			)
 		);
+	}
+
+	/**
+	 * A need's text and a project's title show exactly as stored, a character reference
+	 * included, where WordPress's esc_html() would leave it for the browser to decode.
+	 */
+	public function test_stored_text_keeps_its_character_references(): void {
+		$projects              = self::projects();
+		$projects[11]['title'] = 'R&amp;D &lt;fire&gt;';
+		$html                  = self::render(
+			array(),
+			Topic_Page::needs(
+				array(
+					array(
+						'text'     => 'Fire weather &ndash; local',
+						'projects' => array( 11 ),
+					),
+				),
+				$projects
+			)
+		);
+
+		$this->assertStringContainsString( '<p class="fh-need__text">Fire weather &amp;ndash; local</p>', $html );
+		$this->assertStringContainsString( '<span class="fh-need__source-title">R&amp;amp;D &amp;lt;fire&amp;gt;</span>', $html );
 	}
 
 	/**

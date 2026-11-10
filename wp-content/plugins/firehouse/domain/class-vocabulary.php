@@ -58,6 +58,17 @@ final class Vocabulary {
 	}
 
 	/**
+	 * Every item in one list, by key, in the file's order: what the site's
+	 * `FIRE_PHASES`, `PUBLICATION_STATUSES` and `REGIONS` records hold, labels included.
+	 *
+	 * @param string $name The list: firePhases, publicationStatuses or regions.
+	 * @return array<string, array<string, mixed>>
+	 */
+	public static function items( string $name ): array {
+		return array_column( self::data()[ $name ], null, 'key' );
+	}
+
+	/**
 	 * Fire cycle phases, in fire-cycle order.
 	 *
 	 * @return list<string>

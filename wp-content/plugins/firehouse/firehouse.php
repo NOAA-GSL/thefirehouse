@@ -63,6 +63,7 @@ require_once __DIR__ . '/includes/class-frame.php';
 require_once __DIR__ . '/includes/class-icons.php';
 require_once __DIR__ . '/includes/class-markup.php';
 require_once __DIR__ . '/includes/class-not-found.php';
+require_once __DIR__ . '/includes/class-project-page.php';
 require_once __DIR__ . '/includes/class-topic-page.php';
 require_once __DIR__ . '/includes/class-verbatim.php';
 require_once __DIR__ . '/includes/class-subnav.php';
@@ -86,7 +87,8 @@ require_once __DIR__ . '/includes/class-blocks.php';
  *   folder renamed.
  * - Blocks::register registers the Firehouse blocks. They're kept out of the block
  *   inserter and declare no stylesheet. Typed into content outside the Firehouse, they
- *   print nothing, though the Firehouse bar's script module still loads there.
+ *   print nothing, though the Firehouse bar's and the project page's script modules
+ *   still load there.
  * - Installer::maybe_upgrade compares the stored revision with Installer::REVISION.
  *   When they differ, on whichever request comes first, it replaces the Firehouse
  *   Editor role, adds and removes Firehouse capabilities on the administrator role (no

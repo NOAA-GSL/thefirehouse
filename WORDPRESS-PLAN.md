@@ -643,7 +643,8 @@ already does.
 If that changes (Phase 7b's Site Health check keeps reading the header), a new
 project, a count, a synthesis update or a hidden project would stay stale until the
 cache expired. A hidden project matters most: one whose IRB approval is cleared would
-stay on its page, the archive, the sitemap and every topic page that cites it. Publishing would then have to purge, through
+stay on its page, the archive, the sitemap, every topic page that cites it, and the
+previous and next links on the two project pages either side of it. Publishing would then have to purge, through
 Cloudflare's own WordPress integration or the plugin calling Cloudflare's purge API
 with a token limited to purging, and the token would be a security-review item.
 
@@ -1079,6 +1080,55 @@ signed off on the frame.
     projects have no edit screen. Whether publishing a project without approval
     should be refused outright, as the plugin refuses a topic's status change, is open
     (rule 6 would put the check where the editor is).*
+- *Project pages done 10 November, as the `firehouse/project` block: the eight match
+  the reference's accessibility snapshots at both widths. The previous and next links
+  follow the explorer's order among the projects a visitor may see, as the site's
+  pager does among its published ones, so a hidden project drops out of its
+  neighbours' links.*
+  - *A need card is measured by the block's view script (Interactivity API), as the
+    site's is: one whose text runs past its cap scrolls, and only then gets a tab stop,
+    the `group` role and a name from its need's lead. Checked against the site in short
+    windows, where the reference's cards don't overflow, by tightening the cap in the
+    page on both: the same cards scroll, with the same names and edge shadows, as they
+    scroll and as the window grows. Until the script has measured a card,
+    `frame.css` keeps its cap off, so without JavaScript, or if the script fails to
+    load, the whole entry shows rather than scrolling out of a keyboard's reach. The
+    cost: a card longer than its cap shows whole until it's measured, then shrinks, a
+    layout shift. No card today is long enough to cause one.*
+  - *Stored text is escaped by `Markup::text()`, which escapes every `&`: WordPress's
+    `esc_html()` leaves a character reference alone, so "R&amp;D" would show as "R&D"
+    where the site shows what's stored. The topic pages' needs and project titles use
+    it too.*
+  - *A paper's address goes through `Markup::url()`, which reads a `\` before the
+    query as `/` in an http or https address or one with no scheme, as a browser
+    does (dropping it, as `esc_url()` would, can move the host), and percent-encodes
+    what `esc_url()` would drop. It's checked with `esc_url_raw()` and escaped with
+    `Markup::text()`: `esc_url()` escapes for display itself but leaves a character
+    reference alone, so a stored `R&amp;D` would be followed as `R&D` (found by
+    Copilot on #24). Buttons use it too, and decide whether to open a new tab from the
+    same reading.*
+  - *A DOI follows `https://doi.org/` as stored, as on the site. The import keeps a
+    pasted link's query or fragment in the DOI it takes from the link
+    (`scripts/import-survey.mjs`), which doi.org ignores, so a `?` or `#` in a DOI is
+    left to work as it does in any address. So an old SICI DOI whose check character
+    is `#` doesn't link on either site. The fix is for the import, and later the
+    survey form, to cut a pasted link's query and fragment off the DOI; then the page
+    can encode a DOI's own `#` and `?`.*
+  - *Where the plugin differs from the site on purpose: a need entry with neither a
+    need nor a recommendation, and a paper with no address WordPress will print (none,
+    or `javascript:`), aren't shown or counted, where the site shows an empty item and
+    counts it. The schema allows both, though the import produces neither.*
+  - *Found in review and left for a change to both sites, since the site has them
+    too: a focused need card's focus ring is painted under its recommendation band; a
+    focused card that stops scrolling drops focus to the page; the scrollbar thumb is
+    below 3:1; a card re-measures only when its own box changes size, not when its text
+    reflows at the cap; and the space after a need's lead comes back as a plain space,
+    so a non-breaking one is lost. The cards' names ("Need and recommendation —
+    scrollable" for a recommendation alone, the same name for every card without a
+    lead) are site wording, for Stephanie and Emily. The topic pages' area labels and
+    "covers" lines, and the Submit button's label, still go through `esc_html()`;
+    they're the team's wording, not researchers'.*
+  - *The page's `<title>` and description are still WordPress's (next item).*
 - Description and Open Graph tags, and whether a Firehouse page's `<title>` names The
   Firehouse. Today it is WordPress's "Page not found - Global Systems Laboratory",
   where the site's is "Page not found — The Firehouse".

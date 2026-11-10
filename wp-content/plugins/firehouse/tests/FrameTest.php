@@ -337,8 +337,8 @@ final class FrameTest extends WordPressTestCase {
 	}
 
 	/**
-	 * A missing address gets the not-found block, a topic's address the topic block,
-	 * and any other page, until its own is built, the placeholder.
+	 * A missing address gets the not-found block, a project's or topic's address its
+	 * block, and any other page, until its own is built, the placeholder.
 	 */
 	public function test_the_content_is_the_pages_block_or_the_placeholder(): void {
 		Functions\when( 'is_404' )->justReturn( true );
@@ -349,6 +349,12 @@ final class FrameTest extends WordPressTestCase {
 		$this->assertSame( '[not found]', ob_get_clean() );
 
 		Functions\when( 'is_404' )->justReturn( false );
+		Functions\when( 'is_singular' )->alias( static fn( string $type ): bool => 'fh_project' === $type );
+		Functions\expect( 'do_blocks' )->once()->with( '<!-- wp:firehouse/project /-->' )->andReturn( '[project]' );
+		ob_start();
+		Frame::content();
+		$this->assertSame( '[project]', ob_get_clean() );
+
 		Functions\when( 'is_singular' )->alias( static fn( string $type ): bool => 'fh_topic' === $type );
 		Functions\expect( 'do_blocks' )->once()->with( '<!-- wp:firehouse/topic /-->' )->andReturn( '[topic]' );
 		ob_start();
@@ -401,6 +407,32 @@ final class FrameTest extends WordPressTestCase {
 		ob_start();
 		require dirname( __DIR__ ) . '/blocks/topic/render.php';
 		$this->assertSame( '', ob_get_clean() );
+	}
+
+	/**
+	 * The project block, typed into a post anywhere else, renders nothing, nor on a
+	 * Firehouse page that isn't a project's.
+	 *
+	 * @param array<string, mixed> $query What the query found.
+	 */
+	#[DataProvider( 'requests_but_a_projects' )]
+	public function test_the_project_block_renders_only_on_a_project( array $query ): void {
+		self::resolve( $query );
+
+		ob_start();
+		require dirname( __DIR__ ) . '/blocks/project/render.php';
+		$this->assertSame( '', ob_get_clean() );
+	}
+
+	/**
+	 * Every request but a project's own page, whose block plugin:compare checks.
+	 *
+	 * @return array<string, array{0: array<string, mixed>}>
+	 */
+	public static function requests_but_a_projects(): array {
+		$requests = self::other_requests() + self::firehouse_requests();
+		unset( $requests['a project'] );
+		return $requests;
 	}
 
 	/**

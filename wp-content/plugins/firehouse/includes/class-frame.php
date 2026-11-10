@@ -198,13 +198,17 @@ final class Frame {
 	}
 
 	/**
-	 * Prints the page's content: the not-found page at a missing address, a topic
-	 * area's page at its address, and a placeholder on each page Phase 4 hasn't built
-	 * yet.
+	 * Prints the page's content: the not-found page at a missing address, a project's or
+	 * a topic area's page at its address, and a placeholder on each page Phase 4 hasn't
+	 * built yet.
 	 */
 	public static function content(): void {
 		if ( is_404() ) {
 			echo do_blocks( '<!-- wp:firehouse/not-found /-->' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- the plugin's own block, which escapes what it prints.
+			return;
+		}
+		if ( is_singular( Post_Types::PROJECT ) ) {
+			echo do_blocks( '<!-- wp:firehouse/project /-->' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- as above.
 			return;
 		}
 		if ( is_singular( Post_Types::TOPIC ) ) {

@@ -43,11 +43,14 @@ final class Markup {
 	 * @param array{0?: string, 1?: string} $icons The icons before and after the words, by name.
 	 */
 	public static function button( string $label, string $url, string $variant = 'primary', string $size = 'md', array $icons = array() ): string {
-		$icon     = self::BUTTON_ICON[ $size ] ?? 16;
-		$external = self::is_external( $url );
+		$icon = self::BUTTON_ICON[ $size ] ?? 16;
+		$raw  = self::raw_url( $url );
+		// Decided from the address the link leads to, after esc_url_raw() has added any
+		// scheme it lacked: `www.example.org` is another site's.
+		$external = self::is_external( $raw );
 		return sprintf(
 			'<a href="%1$s" class="fh-btn fh-btn--%2$s fh-btn--%3$s"%4$s>%5$s%6$s%7$s%8$s</a>',
-			esc_url( $url ),
+			self::text( $raw ),
 			esc_attr( $variant ),
 			esc_attr( $size ),
 			$external ? ' target="_blank" rel="noopener noreferrer"' : '',
@@ -55,6 +58,66 @@ final class Markup {
 			esc_html( $label ),
 			isset( $icons[1] ) ? Icons::svg( $icons[1], $icon ) : '',
 			$external ? '<span class="fh-visually-hidden"> ' . esc_html__( '(opens in a new tab)', 'firehouse' ) . '</span>' : ''
+		);
+	}
+
+	/**
+	 * Stored text, escaped for HTML so it shows exactly as stored, as the site does
+	 * (rule 1). esc_html() leaves alone a character reference that's already in the
+	 * text, so a title stored as "R&amp;D" would show as "R&D"; this escapes every `&`.
+	 * A broken UTF-8 sequence shows as U+FFFD rather than emptying the text.
+	 *
+	 * @param string $text The text as stored.
+	 */
+	public static function text( string $text ): string {
+		return htmlspecialchars( $text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
+	}
+
+	/**
+	 * An address for an `href`, escaped, that leads where the address as stored does:
+	 * raw_url(), escaped by Markup::text(). esc_url() would escape it for the page
+	 * itself, but it leaves a character reference alone, so a stored `R&amp;D` would be
+	 * followed as `R&D`; escaping every `&` keeps the address the site's link follows.
+	 *
+	 * @param string $url The address as written.
+	 */
+	public static function url( string $url ): string {
+		return self::text( self::raw_url( $url ) );
+	}
+
+	/**
+	 * An address as a link follows it: as a browser reads it (as_browser_reads()), then
+	 * checked by esc_url_raw(), the protocol included. '' for one it refuses.
+	 *
+	 * @param string $url The address as written.
+	 */
+	private static function raw_url( string $url ): string {
+		return esc_url_raw( self::as_browser_reads( $url ) );
+	}
+
+	/**
+	 * An address as a browser reads it, with nothing WordPress's URL checks would drop.
+	 *
+	 * A browser reads a `\` before the query as `/` in an http or https address,
+	 * and in one with no scheme, which it resolves against the page's; esc_url_raw()
+	 * drops it, which can move the host (`https://doi.org\@elsewhere/` is doi.org to
+	 * a browser, and elsewhere once the `\` is gone). So it's read as `/` here too.
+	 * Any other `\`, and every other character esc_url_raw() would drop, is
+	 * percent-encoded, as a browser sends it. A `%` stays as it is, so an address already encoded isn't
+	 * encoded again. Space around the address goes, as a browser drops it.
+	 *
+	 * @param string $url The address as written.
+	 */
+	private static function as_browser_reads( string $url ): string {
+		$url = trim( $url );
+		if ( 1 !== preg_match( '/^[a-z][a-z0-9+.-]*:/i', $url ) || 1 === preg_match( '/^https?:/i', $url ) ) {
+			$end = strcspn( $url, '?#' );
+			$url = str_replace( '\\', '/', substr( $url, 0, $end ) ) . substr( $url, $end );
+		}
+		return (string) preg_replace_callback(
+			'/[^a-z0-9\-~+_.?#=!&;,\/:%@$|*\'()\[\]\x80-\xff]/i',
+			static fn( array $character ): string => rawurlencode( $character[0] ),
+			$url
 		);
 	}
 
