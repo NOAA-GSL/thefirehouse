@@ -96,12 +96,17 @@ function TakeawayList({ items }: { items: string[] }) {
  *    unlabelled stop in the tab order;
  *  - and it needs to say that it is scrollable, which is what the edge shadows do.
  * A card whose content fits gets none of that: no tab stop, no role, no shadow.
+ *
+ * A card that has focus keeps its tab stop, role and name until focus leaves, even
+ * if it stops scrolling (a reader zooming in can lift the cap): taking them away
+ * would drop focus to the page, and a screen reader would announce nothing useful.
  */
 function NeedCard({ entry }: { entry: NeedEntry }) {
   const { lead, rest } = entry.need ? splitNeedLead(entry.need) : { rest: '' };
   const bodyRef = useRef<HTMLDivElement>(null);
   // 'none' until measured, so a card that fits never becomes a tab stop.
   const [overflow, setOverflow] = useState<'none' | 'top' | 'bottom' | 'both'>('none');
+  const [focused, setFocused] = useState(false);
 
   useEffect(() => {
     const body = bodyRef.current;
@@ -122,16 +127,19 @@ function NeedCard({ entry }: { entry: NeedEntry }) {
     measure();
     body.addEventListener('scroll', measure, { passive: true });
     // Re-measure on resize: the cap is viewport-relative and the text reflows, so
-    // a card that fits at one width can overflow at another.
+    // a card that fits at one width can overflow at another. The halves are watched
+    // too: a card held at its cap keeps its size while its text grows (a web font
+    // arriving, or the reader's text spacing), and only they change.
     const observer = new ResizeObserver(measure);
     observer.observe(body);
+    for (const half of body.children) observer.observe(half);
     return () => {
       body.removeEventListener('scroll', measure);
       observer.disconnect();
     };
   }, [entry]);
 
-  const scrollable = overflow !== 'none';
+  const tabStop = overflow !== 'none' || focused;
   const label = entry.need ? splitNeedLead(entry.need).lead : undefined;
 
   return (
@@ -140,7 +148,9 @@ function NeedCard({ entry }: { entry: NeedEntry }) {
         className="fh-entry__body"
         ref={bodyRef}
         data-overflow={overflow}
-        {...(scrollable
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        {...(tabStop
           ? {
               tabIndex: 0,
               role: 'group',

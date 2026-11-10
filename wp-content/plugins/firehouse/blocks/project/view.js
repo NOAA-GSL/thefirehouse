@@ -7,11 +7,15 @@
  * whose text fits gets none of that.
  *
  * Each card's markup carries its state (`data-wp-context`: which edges have more to
- * scroll to, null until it's measured, and the name it takes if it scrolls) and binds
- * `data-overflow`, `tabindex`, `role` and `aria-label` to it
+ * scroll to, null until it's measured; whether it has focus; and the name it takes if
+ * it scrolls) and binds `data-overflow`, `tabindex`, `role` and `aria-label` to it
  * (includes/class-project-page.php). It's measured once it loads, as it scrolls, and
- * as it changes size: the cap follows the window's height and the text reflows, so a
- * card that fits at one width can overflow at another.
+ * as it or its text changes size: the cap follows the window's height and the text
+ * reflows, so a card that fits at one width can overflow at another.
+ *
+ * A card that has focus keeps its tab stop, role and name until focus leaves, even if
+ * it stops scrolling (a reader zooming in can lift the cap): taking them away would
+ * drop focus to the page.
  *
  * The cap holds only once a card has its `data-overflow` (assets/css/frame.css), so a
  * card this script never measures shows its whole text rather than scrolling it out of
@@ -21,19 +25,30 @@
  */
 import { getContext, getElement, store, withScope } from '@wordpress/interactivity';
 
-/** Whether a card scrolls: measured, and not `none`. */
-const scrolls = () => [ 'top', 'bottom', 'both' ].includes( getContext().overflow );
+/** Whether a card is a tab stop: it scrolls (measured, and not `none`), or has focus. */
+const isStop = () => {
+	const context = getContext();
+	return context.focused || [ 'top', 'bottom', 'both' ].includes( context.overflow );
+};
 
 store( 'firehouse/project', {
 	state: {
 		get tabIndex() {
-			return scrolls() ? 0 : null;
+			return isStop() ? 0 : null;
 		},
 		get role() {
-			return scrolls() ? 'group' : null;
+			return isStop() ? 'group' : null;
 		},
 		get label() {
-			return scrolls() ? getContext().label : null;
+			return isStop() ? getContext().label : null;
+		},
+	},
+	actions: {
+		focus() {
+			getContext().focused = true;
+		},
+		blur() {
+			getContext().focused = false;
 		},
 	},
 	callbacks: {
@@ -54,8 +69,14 @@ store( 'firehouse/project', {
 
 			update();
 			ref.addEventListener( 'scroll', update, { passive: true } );
+			// The halves are watched too: a card held at its cap keeps its size while its
+			// text grows (a web font arriving, or the reader's text spacing), and only
+			// they change.
 			const observer = new ResizeObserver( update );
 			observer.observe( ref );
+			for ( const half of ref.children ) {
+				observer.observe( half );
+			}
 			return () => {
 				ref.removeEventListener( 'scroll', update );
 				observer.disconnect();
