@@ -22,12 +22,16 @@ final class ProjectPageTest extends WordPressTestCase {
 
 	/**
 	 * Stands in for WordPress's addresses, escaping, shared JSON and Interactivity
-	 * context. esc_url() drops what WordPress's drops: characters outside its set, an
-	 * address that isn't http or https, and an empty one.
+	 * context. esc_url() drops the characters outside WordPress's set, as WordPress's
+	 * does, and keeps only an http or https address, which is all these tests give it
+	 * besides `javascript:` and an empty one, both of which WordPress's refuses too.
+	 * esc_html() leaves a character reference alone, as WordPress's does, where Brain
+	 * Monkey's would escape it again.
 	 */
 	protected function setUp(): void {
 		parent::setUp();
 		Functions\stubEscapeFunctions();
+		Functions\when( 'esc_html' )->alias( static fn( string $text ): string => htmlspecialchars( $text, ENT_QUOTES, 'UTF-8', false ) );
 		Functions\when( 'esc_url' )->alias(
 			static function ( string $url ): string {
 				$url = (string) preg_replace( '|[^a-z0-9-~+_.?#=!&;,/:%@$\|*\'()\[\]\x80-\xff]|i', '', $url );
@@ -154,14 +158,15 @@ final class ProjectPageTest extends WordPressTestCase {
 	}
 
 	/**
-	 * A need card starts as one that fits, with its state for the view script, and
-	 * prints the need, its lead in bold, and its recommendation, as written. Its name,
-	 * if it scrolls, is the lead without its colon.
+	 * A need card starts unmeasured, so its cap is off, with its state for the view
+	 * script, and prints the need, its lead in bold, and its recommendation, as written.
+	 * Its name, if it scrolls, is the lead without its colon.
 	 */
 	public function test_a_need_card(): void {
 		$card = Project_Page::need_card( self::project()['needs'][0] );
 
-		$this->assertStringStartsWith( '<li class="fh-entry"><div class="fh-entry__body" data-overflow="none" data-wp-context=\'{"overflow":"none","label":"Need for \u201csafety net\u201d tools among meteorologists \u2014 scrollable"}\' data-wp-init="callbacks.measure" data-wp-bind--data-overflow="context.overflow" data-wp-bind--tabindex="state.tabIndex" data-wp-bind--role="state.role" data-wp-bind--aria-label="state.label">', $card );
+		$this->assertStringStartsWith( '<li class="fh-entry"><div class="fh-entry__body" data-wp-context=\'{"overflow":null,"label":"Need for \u201csafety net\u201d tools among meteorologists \u2014 scrollable"}\' data-wp-init="callbacks.measure" data-wp-bind--data-overflow="context.overflow" data-wp-bind--tabindex="state.tabIndex" data-wp-bind--role="state.role" data-wp-bind--aria-label="state.label">', $card );
+		$this->assertDoesNotMatchRegularExpression( '/\sdata-overflow=/', $card );
 		$this->assertDoesNotMatchRegularExpression( '/\stabindex=/', $card );
 		$this->assertDoesNotMatchRegularExpression( '/\srole=/', $card );
 		$this->assertDoesNotMatchRegularExpression( '/\saria-label=/', $card );
@@ -204,9 +209,10 @@ final class ProjectPageTest extends WordPressTestCase {
 	}
 
 	/**
-	 * A DOI's characters that WordPress would drop from an address are percent-encoded
-	 * instead, so a SICI DOI still finds its paper, and its label keeps them as
-	 * written. A paper with no address a browser could follow isn't linked or listed.
+	 * A paper's address leads where a browser would take it as written. The characters
+	 * WordPress would drop are percent-encoded instead, so a SICI DOI still finds its
+	 * paper, and its label keeps them as written. An address already percent-encoded
+	 * stays as it is. A paper with no address WordPress will print isn't listed.
 	 */
 	public function test_a_paper_link_keeps_its_address(): void {
 		$sici = Project_Page::paper(
@@ -219,10 +225,60 @@ final class ProjectPageTest extends WordPressTestCase {
 		$this->assertStringContainsString( '<span class="fh-project__doi">doi:10.1002/(SICI)1097-4636(199706)35:4&lt;513::AID-JBM12&gt;3.0.CO;2-8</span>', $sici );
 
 		$this->assertStringContainsString( 'href="https://example.org/a%20report%22.pdf"', Project_Page::paper( array( 'url' => 'https://example.org/a report".pdf' ) ) );
+		$this->assertStringContainsString( 'href="https://example.org/a%20b%3Cc"', Project_Page::paper( array( 'url' => 'https://example.org/a%20b<c' ) ) );
+		$this->assertStringContainsString( 'href="https://doi.org/10.1002/%28SICI%29"', Project_Page::paper( array( 'doi' => '10.1002/%28SICI%29' ) ) );
 
 		foreach ( array( array( 'title' => 'No link' ), array( 'url' => 'javascript:alert(1)' ), array( 'url' => '' ), array( 'doi' => 12 ), 'https://example.org/', null ) as $paper ) {
 			$this->assertSame( '', Project_Page::paper( $paper ) );
 		}
+	}
+
+	/**
+	 * A DOI's `#` and `?` would start a fragment or a query, and a browser would read
+	 * its `\` as `/`, so each is percent-encoded. A SICI DOI's check character can be
+	 * `#`. With no title, the paper is named by its DOI, whole.
+	 */
+	public function test_a_doi_keeps_its_hash_and_question_mark(): void {
+		$sici = Project_Page::paper( array( 'doi' => '10.1002/(SICI)1099-1050(199705)6:3<221::AID-HEC264>3.0.CO;2-#' ) );
+		$this->assertStringContainsString( 'href="https://doi.org/10.1002/(SICI)1099-1050(199705)6:3%3C221::AID-HEC264%3E3.0.CO;2-%23"', $sici );
+		$this->assertStringContainsString( '<span class="fh-project__paper-title">doi.org/10.1002/(SICI)1099-1050(199705)6:3&lt;221::AID-HEC264&gt;3.0.CO;2-#</span>', $sici );
+
+		$this->assertStringContainsString( 'href="https://doi.org/10.1000/a%3Fb%5Cc"', Project_Page::paper( array( 'doi' => '10.1000/a?b\c' ) ) );
+	}
+
+	/**
+	 * A browser reads a `\` in an address's host or path as `/`, so the link does too:
+	 * dropping it would move the host to whatever follows an `@`.
+	 */
+	public function test_a_backslash_cant_move_the_host(): void {
+		$this->assertStringContainsString( 'href="https://doi.org/@evil.example/10.1175/x"', Project_Page::paper( array( 'url' => 'https://doi.org\@evil.example/10.1175/x' ) ) );
+	}
+
+	/**
+	 * Stored text shows exactly as stored, a character reference included: WordPress's
+	 * esc_html() would leave "&amp;" for the browser to show as "&". The scrollable
+	 * card's name keeps it too.
+	 */
+	public function test_stored_text_keeps_its_character_references(): void {
+		$html = self::render(
+			array(
+				'title'     => 'R&amp;D &lt;fire&gt;',
+				'takeaways' => array( 'Fire weather &ndash; a review' ),
+				'needs'     => array( array( 'need' => 'Need for R&amp;D among us: more &amp; better.' ) ),
+				'papers'    => array(
+					array(
+						'title' => 'A &amp; B',
+						'url'   => 'https://example.org/',
+					),
+				),
+			)
+		);
+
+		$this->assertStringContainsString( '<h1 class="fh-project__title">R&amp;amp;D &amp;lt;fire&amp;gt;</h1>', $html );
+		$this->assertStringContainsString( '<p>Fire weather &amp;ndash; a review</p>', $html );
+		$this->assertStringContainsString( '<strong class="fh-entry__lead">Need for R&amp;amp;D among us:</strong> more &amp;amp; better.', $html );
+		$this->assertStringContainsString( '"label":"Need for R\u0026amp;D among us \u2014 scrollable"', $html );
+		$this->assertStringContainsString( '<span class="fh-project__paper-title">A &amp;amp; B</span>', $html );
 	}
 
 	/**
@@ -378,7 +434,16 @@ final class ProjectPageTest extends WordPressTestCase {
 		);
 		Functions\expect( 'get_posts' )->once()->andReturnUsing(
 			function ( array $args ) use ( $stored ): array {
-				$this->assertSame( Store::public_projects_query( array( 'numberposts' => -1 ) ), $args );
+				$this->assertSame(
+					Store::public_projects_query(
+						array(
+							'numberposts' => -1,
+							'orderby'     => 'ID',
+							'order'       => 'ASC',
+						)
+					),
+					$args
+				);
 				return array_map( static fn( int $id ): \WP_Post => self::post( $id ), array_keys( $stored ) );
 			}
 		);

@@ -643,7 +643,8 @@ already does.
 If that changes (Phase 7b's Site Health check keeps reading the header), a new
 project, a count, a synthesis update or a hidden project would stay stale until the
 cache expired. A hidden project matters most: one whose IRB approval is cleared would
-stay on its page, the archive, the sitemap and every topic page that cites it. Publishing would then have to purge, through
+stay on its page, the archive, the sitemap, every topic page that cites it, and the
+previous and next links on the two project pages either side of it. Publishing would then have to purge, through
 Cloudflare's own WordPress integration or the plugin calling Cloudflare's purge API
 with a token limited to purging, and the token would be a security-review item.
 
@@ -1089,11 +1090,31 @@ signed off on the frame.
     the `group` role and a name from its need's lead. Checked against the site in short
     windows, where the reference's cards don't overflow, by tightening the cap in the
     page on both: the same cards scroll, with the same names and edge shadows, as they
-    scroll and as the window grows. Without JavaScript nothing can measure a card, so
-    `frame.css` lifts the cap and the whole entry shows.*
-  - *A paper's DOI goes into its address with the characters WordPress would drop
-    percent-encoded, so a SICI DOI with angle brackets still links to its paper, and
-    a link WordPress won't print (`javascript:`) isn't listed.*
+    scroll and as the window grows. Until the script has measured a card,
+    `frame.css` keeps its cap off, so without JavaScript, or if the script fails to
+    load, the whole entry shows rather than scrolling out of a keyboard's reach.*
+  - *Stored text is escaped by `Markup::text()`, which escapes every `&`: WordPress's
+    `esc_html()` leaves a character reference alone, so "R&amp;D" would show as "R&D"
+    where the site shows what's stored. The topic pages' needs and project titles use
+    it too.*
+  - *A paper's address goes through `Markup::url()`, which reads a `\` before the
+    query as `/`, as a browser does (dropping it, as `esc_url()` would, can move the
+    host), and percent-encodes what `esc_url()` would drop. A DOI's `#`, `?` and `\`
+    are encoded too, so a SICI DOI, whose check character can be `#`, still links. A
+    `%` is left alone, since a DOI copied from a doi.org link is stored encoded. A
+    paper with no title is named `doi.org/` and its DOI, whole.*
+  - *Where the plugin differs from the site on purpose: a need entry with neither a
+    need nor a recommendation, and a paper with no address WordPress will print (none,
+    or `javascript:`), aren't shown or counted, where the site shows an empty item and
+    counts it. The schema allows both, though the import produces neither.*
+  - *Found in review and left for a change to both sites, since the site has them
+    too: a focused need card's focus ring is painted under its recommendation band; a
+    focused card that stops scrolling drops focus to the page; the scrollbar thumb is
+    below 3:1; a card re-measures only when its own box changes size, not when its text
+    reflows at the cap; and the space after a need's lead comes back as a plain space,
+    so a non-breaking one is lost. The cards' names ("Need and recommendation —
+    scrollable" for a recommendation alone, the same name for every card without a
+    lead) are site wording, for Stephanie and Emily.*
   - *The page's `<title>` and description are still WordPress's (next item).*
 - Description and Open Graph tags, and whether a Firehouse page's `<title>` names The
   Firehouse. Today it is WordPress's "Page not found - Global Systems Laboratory",

@@ -82,6 +82,37 @@ final class MarkupTest extends WordPressTestCase {
 	}
 
 	/**
+	 * Stored text shows as stored: every `&` is escaped, a character reference's
+	 * included, as are angle brackets and quotes; a broken UTF-8 sequence shows as
+	 * U+FFFD rather than emptying the text.
+	 */
+	public function test_text_shows_as_stored(): void {
+		$this->assertSame( 'R&amp;amp;D &lt;b&gt; &quot;q&quot; &#039;a&#039;', Markup::text( 'R&amp;D <b> "q" ' . "'a'" ) );
+		$this->assertSame( "a\u{FFFD}b", Markup::text( "a\xC3b" ) );
+	}
+
+	/**
+	 * An address leads where a browser would take it. In an http or https address a
+	 * `\` before the query is a `/`, as a browser reads it, and one after it is
+	 * percent-encoded, as is one in any other kind of address; so is every character
+	 * esc_url() would drop. A `%` stays as it is, so an address already encoded isn't
+	 * encoded again. Space around it goes, as a browser drops it.
+	 */
+	public function test_an_address_reads_as_a_browser_reads_it(): void {
+		$this->assertSame( 'https://doi.org/@evil.example/x', Markup::url( 'https://doi.org\\@evil.example/x' ) );
+		$this->assertSame( 'HTTPS://a.example/b/c?d%5Ce#f%5Cg', Markup::url( ' HTTPS:\\\\a.example\\b/c?d\\e#f\\g ' ) );
+		$this->assertSame( 'https://example.org/a%20b%22%3Cc%3E%d', Markup::url( 'https://example.org/a b"<c>%d' ) );
+		$this->assertSame( 'mailto:a%5Cb@example.org', Markup::url( 'mailto:a\\b@example.org' ) );
+	}
+
+	/**
+	 * A button's address reads as a browser reads it too.
+	 */
+	public function test_a_buttons_address_reads_as_a_browser_reads_it(): void {
+		$this->assertStringStartsWith( '<a href="https://records.example.org/a/b%20c" ', Markup::button( 'Record', 'https://records.example.org\\a/b c' ) );
+	}
+
+	/**
 	 * A topic tag: the area's colours by its key, its icon at the tag's size with the
 	 * thicker stroke, and its short label unless one is given.
 	 */

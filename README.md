@@ -377,9 +377,9 @@ nothing from the database. Each class's docblock has the detail; this is the map
   submitted them, the "At a glance" panel, and the projects either side of it in the
   explorer's order, among those a visitor may see. A need card whose text runs past
   its height scrolls, and only then becomes a tab stop named for its need
-  (`blocks/project/view.js`); without JavaScript the cap comes off and the whole entry
-  shows. A DOI's characters that WordPress would drop from an address are
-  percent-encoded instead, so the link still finds its paper.
+  (`blocks/project/view.js`). Until the script has measured a card its cap is off, so
+  without JavaScript, or if the script doesn't run, the whole entry shows. A DOI's
+  `#`, `?` and `\` are percent-encoded, so a SICI DOI still links to its paper.
 - `Topic_Page` is a topic area's page, the `firehouse/topic` block: the site's
   `TopicPage`, with the area's top five needs, the published projects behind each,
   what the area covers, the Submit button once a survey address is set, and the other
@@ -388,7 +388,11 @@ nothing from the database. Each class's docblock has the detail; this is the map
 - `Markup` writes the design system's small components as the site renders them: a
   link styled as a `Button` (opening another site in a new tab, and saying so), a
   `TopicTag`, and the `SynthesisNote` that says the needs are synthesized and whether
-  the synthesis has been reviewed.
+  the synthesis has been reviewed. `Markup::text()` escapes stored text so it shows
+  exactly as stored, where `esc_html()` would let a character reference such as
+  `&amp;` show as "&" (rule 1). `Markup::url()` makes an address lead where a browser
+  would take it: a `\` before the query is a `/`, and what `esc_url()` would drop is
+  percent-encoded, so dropping a `\` can't move the host.
 - `Verbatim` keeps researchers' words as they wrote them on Firehouse pages (rule 1).
   It turns off curly quotes, dashes and smilies for everything the page prints, the
   theme's header and footer included, and stops WordPress recapitalizing its own name

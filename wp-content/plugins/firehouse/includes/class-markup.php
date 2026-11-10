@@ -47,7 +47,7 @@ final class Markup {
 		$external = self::is_external( $url );
 		return sprintf(
 			'<a href="%1$s" class="fh-btn fh-btn--%2$s fh-btn--%3$s"%4$s>%5$s%6$s%7$s%8$s</a>',
-			esc_url( $url ),
+			self::url( $url ),
 			esc_attr( $variant ),
 			esc_attr( $size ),
 			$external ? ' target="_blank" rel="noopener noreferrer"' : '',
@@ -55,6 +55,43 @@ final class Markup {
 			esc_html( $label ),
 			isset( $icons[1] ) ? Icons::svg( $icons[1], $icon ) : '',
 			$external ? '<span class="fh-visually-hidden"> ' . esc_html__( '(opens in a new tab)', 'firehouse' ) . '</span>' : ''
+		);
+	}
+
+	/**
+	 * Stored text, escaped for HTML so it shows exactly as stored, as the site does
+	 * (rule 1). esc_html() leaves alone a character reference that's already in the
+	 * text, so a title stored as "R&amp;D" would show as "R&D"; this escapes every `&`.
+	 * A broken UTF-8 sequence shows as U+FFFD rather than emptying the text.
+	 *
+	 * @param string $text The text as stored.
+	 */
+	public static function text( string $text ): string {
+		return htmlspecialchars( $text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
+	}
+
+	/**
+	 * An address for an `href`, escaped, that leads where a browser would take it as
+	 * written. In an http or https address a browser reads a `\` before the query as
+	 * `/`, so it's read that way here: esc_url() drops it, which can move the host
+	 * (`https://doi.org\@elsewhere/` is doi.org to a browser, and elsewhere once the `\`
+	 * is gone). Every other character esc_url() would drop is percent-encoded instead,
+	 * as a browser sends it; then esc_url() checks what's left, the protocol included.
+	 *
+	 * @param string $url The address as written.
+	 */
+	public static function url( string $url ): string {
+		$url = trim( $url );
+		if ( 1 === preg_match( '#^https?:#i', $url ) ) {
+			$end = strcspn( $url, '?#' );
+			$url = str_replace( '\\', '/', substr( $url, 0, $end ) ) . substr( $url, $end );
+		}
+		return esc_url(
+			(string) preg_replace_callback(
+				'/[^a-z0-9\-~+_.?#=!&;,\/:%@$|*\'()\[\]\x80-\xff]/i',
+				static fn( array $character ): string => rawurlencode( $character[0] ),
+				$url
+			)
 		);
 	}
 

@@ -101,14 +101,13 @@
   }
 }
 
-/* Without JavaScript nothing measures a need card, so one that scrolls couldn't be
-   made a tab stop, and in a browser that doesn't make a scrolling region one itself,
-   a keyboard couldn't reach the end of its text. Its cap comes off instead, and the
-   whole entry shows. */
-@media (scripting: none) {
-  .fh-app .fh-entry__body {
-    max-height: none;
-  }
+/* A need card's cap holds only once the project page's script has measured it and
+   given it `data-overflow`, since only then can a card that scrolls become a tab stop.
+   Until then, and without JavaScript or when the script doesn't run, the cap is off
+   and the whole entry shows: in a browser that doesn't make a scrolling region a tab
+   stop itself, a keyboard couldn't reach the end of the researcher's text. */
+.fh-app .fh-entry__body:not([data-overflow]) {
+  max-height: none;
 }
 
 /* `hidden` hides, whatever display a Firehouse rule gives the element. */

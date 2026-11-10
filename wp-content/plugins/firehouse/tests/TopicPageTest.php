@@ -24,6 +24,9 @@ final class TopicPageTest extends WordPressTestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		Functions\stubEscapeFunctions();
+		// WordPress's esc_html() leaves a character reference alone; Brain Monkey's would
+		// escape it again, and hide text that doesn't show as stored.
+		Functions\when( 'esc_html' )->alias( static fn( string $text ): string => htmlspecialchars( $text, ENT_QUOTES, 'UTF-8', false ) );
 		Functions\when( 'wp_json_file_decode' )->alias(
 			static fn( string $filename, array $options = array() ): mixed => json_decode( (string) file_get_contents( $filename ), ! empty( $options['associative'] ) )
 		);

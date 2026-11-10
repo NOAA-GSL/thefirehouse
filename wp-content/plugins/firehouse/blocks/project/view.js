@@ -7,18 +7,22 @@
  * whose text fits gets none of that.
  *
  * Each card's markup carries its state (`data-wp-context`: which edges have more to
- * scroll to, and the name it takes if it scrolls) and binds `data-overflow`,
- * `tabindex`, `role` and `aria-label` to it (includes/class-project-page.php). It's
- * measured once it loads, as it scrolls, and as it changes size: the cap follows the
- * window's height and the text reflows, so a card that fits at one width can overflow
- * at another.
+ * scroll to, null until it's measured, and the name it takes if it scrolls) and binds
+ * `data-overflow`, `tabindex`, `role` and `aria-label` to it
+ * (includes/class-project-page.php). It's measured once it loads, as it scrolls, and
+ * as it changes size: the cap follows the window's height and the text reflows, so a
+ * card that fits at one width can overflow at another.
+ *
+ * The cap holds only once a card has its `data-overflow` (assets/css/frame.css), so a
+ * card this script never measures shows its whole text rather than scrolling it out of
+ * a keyboard's reach.
  *
  * A plain ES module, with no build step: WordPress maps the import (view.asset.php).
  */
 import { getContext, getElement, store, withScope } from '@wordpress/interactivity';
 
-/** Whether a card scrolls: anything but `none`. */
-const scrolls = () => getContext().overflow !== 'none';
+/** Whether a card scrolls: measured, and not `none`. */
+const scrolls = () => [ 'top', 'bottom', 'both' ].includes( getContext().overflow );
 
 store( 'firehouse/project', {
 	state: {

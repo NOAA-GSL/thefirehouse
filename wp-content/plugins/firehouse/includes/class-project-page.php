@@ -23,15 +23,16 @@ if ( ! defined( 'ABSPATH' ) ) {
  * cards and papers; an "At a glance" panel beside them; and links to the projects
  * either side of it in the explorer's order.
  *
- * Everything the researcher wrote is printed as submitted, escaped and otherwise
- * untouched (rule 1): nothing is summarised, tidied or merged. A need's lead is bolded
- * by splitting the text where the survey's pattern ends (Format::need_lead()), not by
- * rewriting it.
+ * Everything the researcher wrote is printed as submitted, escaped by
+ * Markup::text() and otherwise untouched (rule 1): nothing is summarised, tidied or
+ * merged. A need's lead is bolded by splitting the text where the survey's pattern
+ * ends (Format::need_lead()), not by rewriting it.
  *
  * A need card whose text runs past its height scrolls, and only then becomes a tab
  * stop with a name, as the site's does: the block's view script measures each card.
- * Without JavaScript nothing can measure it, so the cap comes off and the whole entry
- * shows (assets/css/frame.css).
+ * Until it has, the cap is off and the whole entry shows (assets/css/frame.css), so
+ * without JavaScript, or if the script doesn't run, no text is out of a keyboard's
+ * reach.
  *
  * Meta checks every write, but a value stored around it is passed over rather than
  * stopping the page: a field that isn't the type its schema gives is treated as
@@ -59,14 +60,23 @@ final class Project_Page {
 	 * whatever their number: the posts, then all their fields.
 	 *
 	 * A project is checked as the site checks it as well as by the query
-	 * (Store::is_public()), and one whose title or year isn't stored as its schema
-	 * says has no place in the order and is left out.
+	 * (Store::is_public()), and one whose title isn't text or whose year isn't a number
+	 * has no place in the order and is left out.
+	 *
+	 * The posts come in import order, which is the site's JSON order, and usort() keeps
+	 * ties where they are, so two projects the order can't tell apart keep the site's
+	 * order too.
 	 *
 	 * @return list<array{id: int, title: string, completionYear: int|float}>
 	 */
 	public static function order(): array {
 		$projects = array();
-		foreach ( get_posts( Store::public_projects_query( array( 'numberposts' => -1 ) ) ) as $post ) {
+		$args     = array(
+			'numberposts' => -1,
+			'orderby'     => 'ID',
+			'order'       => 'ASC',
+		);
+		foreach ( get_posts( Store::public_projects_query( $args ) ) as $post ) {
 			$title = get_post_meta( $post->ID, Meta::key( 'title' ), true );
 			$year  = Meta::typed( get_post_meta( $post->ID, Meta::key( 'completionYear' ), true ), 'number' );
 			if ( Store::is_public( $post ) && is_string( $title ) && ( is_int( $year ) || is_float( $year ) ) ) {
@@ -137,10 +147,10 @@ final class Project_Page {
 		<div class="fh-project__head-inner fh-container">
 			<nav class="fh-project__crumbs" aria-label="<?php esc_attr_e( 'Breadcrumb', 'firehouse' ); ?>"><a href="<?php echo esc_url( home_url( $root . 'projects/' ) ); ?>"><?php echo Icons::svg( 'arrow-left', 14 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- one of the plugin's checked icons. ?><?php esc_html_e( 'All projects', 'firehouse' ); ?></a></nav>
 		<?php if ( '' !== $type ) : ?>
-			<span class="fh-eyebrow fh-project__type"><?php echo esc_html( $type ); ?></span>
+			<span class="fh-eyebrow fh-project__type"><?php echo Markup::text( $type ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup::text() escapes stored text. ?></span>
 		<?php endif; ?>
-			<h1 class="fh-project__title"><?php echo esc_html( $text( 'title' ) ); ?></h1>
-			<p class="fh-project__byline"><?php echo esc_html( Format::byline( $authors, 0 ) ); ?><?php echo '' !== $org ? '<span class="fh-project__org">' . esc_html( $org ) . '</span>' : ''; ?></p>
+			<h1 class="fh-project__title"><?php echo Markup::text( $text( 'title' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup::text() escapes stored text. ?></h1>
+			<p class="fh-project__byline"><?php echo Markup::text( Format::byline( $authors, 0 ) ) . ( '' !== $org ? '<span class="fh-project__org">' . Markup::text( $org ) . '</span>' : '' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup::text() escapes stored text. ?></p>
 			<div class="fh-project__meta">
 				<span class="fh-meta-pill"><?php echo Icons::svg( 'calendar', 12 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- one of the plugin's checked icons. ?><?php echo esc_html( $completed ); ?></span>
 			<?php if ( array() !== $phases ) : ?>
@@ -158,12 +168,12 @@ final class Project_Page {
 		<div class="fh-project__main">
 		<?php
 		if ( '' !== $abstract ) {
-			echo self::section( __( 'Abstract', 'firehouse' ), 0, '<p class="fh-project__prose">' . esc_html( $abstract ) . '</p>' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts.
+			echo self::section( __( 'Abstract', 'firehouse' ), 0, '<p class="fh-project__prose">' . Markup::text( $abstract ) . '</p>' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts.
 		}
 		if ( array() !== $takeaways ) {
 			$items = '';
 			foreach ( $takeaways as $index => $takeaway ) {
-				$items .= sprintf( '<li><span class="fh-project__takeaway-num" aria-hidden="true">%1$02d</span><p>%2$s</p></li>', $index + 1, esc_html( $takeaway ) );
+				$items .= sprintf( '<li><span class="fh-project__takeaway-num" aria-hidden="true">%1$02d</span><p>%2$s</p></li>', $index + 1, Markup::text( $takeaway ) );
 			}
 			echo self::section( __( 'Major takeaways', 'firehouse' ), count( $takeaways ), '<ol class="fh-project__takeaways">' . $items . '</ol>' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- as above.
 		}
@@ -194,17 +204,17 @@ final class Project_Page {
 					);
 				}
 				// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- fact() escapes its label; each value is built from escaped parts.
-				echo '' !== $type ? self::fact( 'flask', __( 'Project type', 'firehouse' ), esc_html( $type ) ) : '';
+				echo '' !== $type ? self::fact( 'flask', __( 'Project type', 'firehouse' ), Markup::text( $type ) ) : '';
 				echo self::fact( 'calendar', __( 'Completion year', 'firehouse' ), esc_html( $year ) );
 				echo self::fact( 'flame', __( 'Fire cycle phase', 'firehouse' ), '' !== $phase_list ? '<ul class="fh-project__phases">' . $phase_list . '</ul>' : esc_html__( 'Not specified', 'firehouse' ) );
-				echo array() !== $methods ? self::fact( 'clipboard', __( 'Data collection', 'firehouse' ), esc_html( implode( ', ', $methods ) ) ) : '';
-				echo '' !== $region_list ? self::fact( 'map-pin', __( 'Geographic areas', 'firehouse' ), '<span class="fh-project__regions">' . $region_list . '</span>' . ( '' !== $note ? '<span class="fh-project__region-note">' . esc_html( $note ) . '</span>' : '' ) ) : '';
-				echo '' !== $org ? self::fact( 'building', __( 'Organization', 'firehouse' ), esc_html( $org ) ) : '';
+				echo array() !== $methods ? self::fact( 'clipboard', __( 'Data collection', 'firehouse' ), Markup::text( implode( ', ', $methods ) ) ) : '';
+				echo '' !== $region_list ? self::fact( 'map-pin', __( 'Geographic areas', 'firehouse' ), '<span class="fh-project__regions">' . $region_list . '</span>' . ( '' !== $note ? '<span class="fh-project__region-note">' . Markup::text( $note ) . '</span>' : '' ) ) : '';
+				echo '' !== $org ? self::fact( 'building', __( 'Organization', 'firehouse' ), Markup::text( $org ) ) : '';
 				echo null !== $status ? self::fact( 'file-text', __( 'Publication status', 'firehouse' ), esc_html( (string) $status['label'] ) ) : '';
 				// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 				?>
 				</dl>
-			<?php if ( '' !== $record && '' !== esc_url( $record ) ) : ?>
+			<?php if ( '' !== Markup::url( $record ) ) : ?>
 				<?php echo Markup::button( __( 'View full record', 'firehouse' ), $record, 'secondary', 'sm', array( 'external-link' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup escapes what it builds. ?>
 			<?php endif; ?>
 			</div>
@@ -237,9 +247,10 @@ final class Project_Page {
 	 * One need card: a need and the recommendation the researcher paired with it, as the
 	 * survey collected them, or '' for an entry with neither. Either may stand alone.
 	 *
-	 * The card starts as one that fits: no tab stop, no role, no name. The view script
-	 * measures it and, if its text runs past its height, binds `tabindex`, the `group`
-	 * role and a name from the need's lead, and which edges have more to scroll to.
+	 * The card starts unmeasured, with no `data-overflow`, so its cap is off: no tab
+	 * stop, no role, no name. The view script measures it and binds which edges have
+	 * more to scroll to (`none` when it fits), and, if its text runs past its height,
+	 * `tabindex`, the `group` role and a name from the need's lead.
 	 *
 	 * @param mixed $entry The stored entry.
 	 */
@@ -258,10 +269,10 @@ final class Project_Page {
 			: __( 'Need and recommendation — scrollable', 'firehouse' );
 
 		return sprintf(
-			'<li class="fh-entry"><div class="fh-entry__body" data-overflow="none" %1$s data-wp-init="callbacks.measure" data-wp-bind--data-overflow="context.overflow" data-wp-bind--tabindex="state.tabIndex" data-wp-bind--role="state.role" data-wp-bind--aria-label="state.label">%2$s%3$s</div></li>',
+			'<li class="fh-entry"><div class="fh-entry__body" %1$s data-wp-init="callbacks.measure" data-wp-bind--data-overflow="context.overflow" data-wp-bind--tabindex="state.tabIndex" data-wp-bind--role="state.role" data-wp-bind--aria-label="state.label">%2$s%3$s</div></li>',
 			wp_interactivity_data_wp_context(
 				array(
-					'overflow' => 'none',
+					'overflow' => null,
 					'label'    => $label,
 				)
 			),
@@ -269,14 +280,14 @@ final class Project_Page {
 				'<div class="fh-entry__need"><span class="fh-entry__label">%1$s%2$s</span><p class="fh-entry__text">%3$s %4$s</p></div>',
 				Icons::svg( 'target', 13 ),
 				esc_html__( 'Need', 'firehouse' ),
-				'' !== $lead ? '<strong class="fh-entry__lead">' . esc_html( $lead ) . '</strong>' : '',
-				esc_html( $split['rest'] )
+				'' !== $lead ? '<strong class="fh-entry__lead">' . Markup::text( $lead ) . '</strong>' : '',
+				Markup::text( $split['rest'] )
 			),
 			'' === $rec ? '' : sprintf(
 				'<div class="fh-entry__rec"><span class="fh-entry__label">%1$s%2$s</span><p class="fh-entry__text">%3$s</p></div>',
 				Icons::svg( 'arrow-right', 13 ),
 				esc_html__( 'Recommendation', 'firehouse' ),
-				esc_html( $rec )
+				Markup::text( $rec )
 			)
 		);
 	}
@@ -286,15 +297,20 @@ final class Project_Page {
 	 * one with neither that a browser could follow.
 	 *
 	 * The survey collects links, not titles, so one with no published title of its own
-	 * is named by its host and path, never by an invented name.
+	 * is named by its DOI, or its host and path, never by an invented name.
+	 *
+	 * A DOI may hold a `#` (a SICI DOI's check character can be one) or a `?`, which in
+	 * an address would start a fragment or a query, or a `\`, which a browser would
+	 * read as `/`; each is percent-encoded. A `%` is left as it is, since a DOI copied
+	 * from a doi.org link is stored percent-encoded already.
 	 *
 	 * @param mixed $paper The stored paper.
 	 */
 	public static function paper( mixed $paper ): string {
 		$paper = is_array( $paper ) ? $paper : array();
 		$doi   = is_string( $paper['doi'] ?? null ) ? $paper['doi'] : '';
-		$href  = '' !== $doi ? 'https://doi.org/' . $doi : ( is_string( $paper['url'] ?? null ) ? $paper['url'] : '' );
-		$url   = esc_url( self::encoded( $href ) );
+		$link  = is_string( $paper['url'] ?? null ) ? $paper['url'] : '';
+		$url   = Markup::url( '' !== $doi ? 'https://doi.org/' . str_replace( array( '#', '?', '\\' ), array( '%23', '%3F', '%5C' ), $doi ) : $link );
 		if ( '' === $url ) {
 			return '';
 		}
@@ -307,27 +323,13 @@ final class Project_Page {
 			'<a class="fh-project__paper" href="%1$s" target="_blank" rel="noopener noreferrer">%2$s<span><span class="fh-project__paper-title">%3$s</span>%4$s%5$s</span>%6$s<span class="fh-visually-hidden">%7$s</span></a>',
 			$url,
 			Icons::svg( 'file-text', 16 ),
-			esc_html( $title ?? Format::link_label( $href ) ),
-			'' !== $source ? '<span class="fh-project__paper-source">' . esc_html( $source ) . '</span>' : '',
+			Markup::text( $title ?? ( '' !== $doi ? 'doi.org/' . $doi : Format::link_label( $link ) ) ),
+			'' !== $source ? '<span class="fh-project__paper-source">' . Markup::text( $source ) . '</span>' : '',
 			'' !== $doi
-				? '<span class="fh-project__doi">doi:' . esc_html( $doi ) . '</span>'
-				: ( null !== $title && '' !== $title ? '<span class="fh-project__doi">' . esc_html( Format::link_label( $href ) ) . '</span>' : '' ),
+				? '<span class="fh-project__doi">doi:' . Markup::text( $doi ) . '</span>'
+				: ( null !== $title && '' !== $title ? '<span class="fh-project__doi">' . Markup::text( Format::link_label( $link ) ) . '</span>' : '' ),
 			Icons::svg( 'external-link', 14 ),
 			esc_html__( '(opens in a new tab)', 'firehouse' )
-		);
-	}
-
-	/**
-	 * An address with every character esc_url() would drop percent-encoded instead, as
-	 * a browser sends it, so a DOI with angle brackets still finds its paper.
-	 *
-	 * @param string $url The address as written.
-	 */
-	private static function encoded( string $url ): string {
-		return (string) preg_replace_callback(
-			'/[^a-z0-9\-~+_.?#=!&;,\/:%@$|*\'()\[\]\x80-\xff]/i',
-			static fn( array $character ): string => rawurlencode( $character[0] ),
-			$url
 		);
 	}
 
@@ -378,7 +380,7 @@ final class Project_Page {
 			$next
 				? esc_html__( 'Next', 'firehouse' ) . Icons::svg( 'chevron-right', 14 )
 				: Icons::svg( 'chevron-left', 14 ) . esc_html__( 'Previous', 'firehouse' ),
-			esc_html( $project['title'] )
+			Markup::text( $project['title'] )
 		);
 	}
 
@@ -393,7 +395,7 @@ final class Project_Page {
 	}
 
 	/**
-	 * A stored number as JavaScript prints it in a page, or '' for anything else.
+	 * A stored number as the site prints a year or a count, or '' for anything else.
 	 *
 	 * @param mixed $value The stored value.
 	 */
