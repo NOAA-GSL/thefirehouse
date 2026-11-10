@@ -124,6 +124,7 @@ final class Import_Screen {
 		$prefix = match ( true ) {
 			null === $state                                     => '',
 			'refused' === $state['step'] || ! empty( $state['changed'] ) => __( 'Not imported:', 'firehouse' ),
+			'claimed' === $state['step']                        => __( 'Already confirmed:', 'firehouse' ),
 			'preview' === $state['step'] && $state['plan']['ok'] => __( 'Ready to import:', 'firehouse' ),
 			'preview' === $state['step']                        => __( 'Not ready to import:', 'firehouse' ),
 			! $state['plan']['imported']                        => __( 'Not imported:', 'firehouse' ),
@@ -147,6 +148,10 @@ final class Import_Screen {
 		switch ( $state['step'] ) {
 			case 'refused':
 				self::summary( 'error', __( 'Not imported: the bundle was refused', 'firehouse' ), array( $state['message'] ) );
+				self::upload_form();
+				break;
+			case 'claimed':
+				self::summary( 'info', __( 'This dry run was already confirmed', 'firehouse' ), array( __( 'Another confirmation of it, such as the first of a double click, is importing it or has imported it. Open this screen again to see what WordPress now holds, or upload the bundle to see what another import would change.', 'firehouse' ) ) );
 				self::upload_form();
 				break;
 			case 'preview':
@@ -231,9 +236,10 @@ final class Import_Screen {
 		}
 
 		// Only the request whose delete removes the dry run imports it: a second
-		// confirmation sent at the same time, as a double click sends, finds it gone.
+		// confirmation sent at the same time, as a double click sends, finds it gone,
+		// and says so without claiming the import failed, since the first one ran.
 		if ( ! delete_transient( self::transient() ) ) {
-			return self::refused( __( 'That dry run has expired, or was already imported. Upload the bundle again.', 'firehouse' ) );
+			return array( 'step' => 'claimed' );
 		}
 		return array(
 			'step' => 'done',
@@ -518,10 +524,11 @@ final class Import_Screen {
 
 		echo '<h2 id="firehouse-import-landing" tabindex="-1">' . esc_html__( 'Landing page', 'firehouse' ) . '</h2>';
 		$landing = $plan['landing'];
-		if ( 'create' === $landing['action'] ) {
-			$done = ! empty( $plan['imported'] ) && array() === $landing['problems'];
+		if ( 'create' === $landing['action'] && array() !== $landing['problems'] ) {
+			echo '<p>' . esc_html__( 'Not created: see the problems below.', 'firehouse' ) . '</p>';
+		} elseif ( 'create' === $landing['action'] ) {
 			/* translators: %s: the page's address. */
-			echo '<p>' . esc_html( sprintf( $done ? __( 'Created at %s, with the bundle’s words.', 'firehouse' ) : __( 'Will be created at %s, with the bundle’s words.', 'firehouse' ), '/' . Query::ROOT_PATH . '/' ) ) . '</p>';
+			echo '<p>' . esc_html( sprintf( ! empty( $plan['imported'] ) ? __( 'Created at %s, with the bundle’s words.', 'firehouse' ) : __( 'Will be created at %s, with the bundle’s words.', 'firehouse' ), '/' . Query::ROOT_PATH . '/' ) ) . '</p>';
 		}
 		self::messages( $landing['problems'], $landing['notes'] );
 

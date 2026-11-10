@@ -1159,6 +1159,14 @@ signed off on the frame.
     which gives Media Library images their `srcset`, `sizes`, dimensions and lazy
     loading. The About page's portraits will be core image blocks, so the frame should
     run that filter (or `the_content`) on tree pages by then.*
+  - *Found in the accessibility review, for a change to both sites: in a light
+    forced-colors palette the hero's wordmark, drawn for the dark hero, mostly
+    vanishes against the white Canvas (a logotype, so not a WCAG failure, but hard to
+    read); and the landing page's own scroll margins on `#top-needs` and
+    `#needs-source` leave out WordPress's toolbar, so a signed-in editor's jump lands
+    the section a little under the bar. To check with the frame: whether the skip
+    link, focused, shows above GSL's header, since `.fh-app`'s `clip-path` makes the
+    wrapper its own stacking context.*
   - *For Phase 6: a Firehouse Editor has no `unfiltered_html`, so saving the page in
     the block editor runs every attribute string through kses, which turns a `&` into
     `&amp;` (then shown as written) and can alter a `<`. Today's landing words have

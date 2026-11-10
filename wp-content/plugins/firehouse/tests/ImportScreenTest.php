@@ -98,7 +98,8 @@ final class ImportScreenTest extends WordPressTestCase {
 
 	/**
 	 * A confirmation that finds the dry run already claimed, as the second of a double
-	 * click does, imports nothing: only the request whose delete removes it imports.
+	 * click does, imports nothing: only the request whose delete removes it imports. It
+	 * says the dry run was already confirmed, not that the import failed.
 	 */
 	public function test_a_second_confirmation_imports_nothing(): void {
 		$waiting                = get_transient( 'firehouse_import_6' );
@@ -112,7 +113,7 @@ final class ImportScreenTest extends WordPressTestCase {
 
 		Import_Screen::handle();
 
-		$this->assertSame( 'Not imported: Import', Import_Screen::title( 'Import' ) );
+		$this->assertSame( 'Already confirmed: Import', Import_Screen::title( 'Import' ) );
 	}
 
 	/**
