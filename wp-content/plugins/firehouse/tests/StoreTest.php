@@ -84,15 +84,15 @@ final class StoreTest extends WordPressTestCase {
 
 	/**
 	 * A visitor sees only projects that are published, without a password, and with
-	 * IRB approval stored as true, whatever else the caller asks for.
+	 * IRB approval stored as true, whatever else the caller asks for, and other plugins'
+	 * SQL filters stay out.
 	 */
 	public function test_the_public_projects_are_published_open_and_approved(): void {
 		$expected = array(
-			'post_type'        => 'fh_project',
-			'post_status'      => 'publish',
-			'has_password'     => false,
-			'suppress_filters' => true,
-			'meta_query'       => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- the arguments under test.
+			'post_type'    => 'fh_project',
+			'post_status'  => 'publish',
+			'has_password' => false,
+			'meta_query'   => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- the arguments under test.
 				array(
 					'key'   => 'fh_irbApproved',
 					'value' => '1',
