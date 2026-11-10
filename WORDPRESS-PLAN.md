@@ -1118,7 +1118,7 @@ signed off on the frame.
     need nor a recommendation, and a paper with no address WordPress will print (none,
     or `javascript:`), aren't shown or counted, where the site shows an empty item and
     counts it. The schema allows both, though the import produces neither.*
-  - *Found in review, and fixed on both sites in the next change (11 November): a
+  - *Found in review, and fixed on both sites in the next change (10 November): a
     focused need card's focus ring was painted under its recommendation band, and is
     now drawn around the card where `:has()` is supported; a focused card that stopped
     scrolling dropped focus to the page, and now keeps its tab stop until focus

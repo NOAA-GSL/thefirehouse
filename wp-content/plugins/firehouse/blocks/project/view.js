@@ -48,6 +48,13 @@ store( 'firehouse/project', {
 			getContext().focused = true;
 		},
 		blur() {
+			// The window losing focus blurs the card too (switching apps, a screen
+			// reader's own list), but the card is still the page's focus, and taking its
+			// tab stop then would leave the page's focus on <body> when the window returns.
+			const { ref } = getElement();
+			if ( ref.ownerDocument.activeElement === ref ) {
+				return;
+			}
 			getContext().focused = false;
 		},
 	},

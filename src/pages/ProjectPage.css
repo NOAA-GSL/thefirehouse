@@ -247,9 +247,10 @@
      belongs on an overlay the page shouldn't move behind — a modal or a drawer —
      not on an inline card the reader is scrolling *past*. With the default, the
      card takes the wheel until it runs out and the page carries on. */
-  /* Firefox; the WebKit equivalent is below. The thumb is one of the two cues that a
-     card scrolls, and the only one left in forced-colors mode, which drops the edge
-     shadows, so it keeps 3:1 against the card (WCAG 1.4.11). */
+  /* Firefox, and Chrome and Edge from 121, which then ignore the ::-webkit-scrollbar
+     rules below; those are for Safari. The thumb is one of the two cues that a card
+     scrolls, so it keeps 3:1 against the card (WCAG 1.4.11). Forced-colors mode drops
+     the edge shadows and draws the system scrollbar instead. */
   scrollbar-width: thin;
   scrollbar-color: var(--color-text-tertiary) transparent;
 }

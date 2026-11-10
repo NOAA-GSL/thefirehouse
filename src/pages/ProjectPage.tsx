@@ -149,7 +149,12 @@ function NeedCard({ entry }: { entry: NeedEntry }) {
         ref={bodyRef}
         data-overflow={overflow}
         onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
+        // The window losing focus blurs the card too (switching apps, a screen
+        // reader's own list), but the card is still the page's focus, and taking its
+        // tab stop then would leave the page's focus on <body> when the window returns.
+        onBlur={(event) => {
+          if (document.activeElement !== event.currentTarget) setFocused(false);
+        }}
         {...(tabStop
           ? {
               tabIndex: 0,
