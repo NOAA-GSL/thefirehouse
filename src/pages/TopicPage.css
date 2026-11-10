@@ -215,6 +215,14 @@
   color: var(--color-text-tertiary);
 }
 
+/* An SVG keeps its own colour in forced colours, so the icon would stay grey; there it
+   takes the link's colour from the user's palette, like the rest of the link. */
+@media (forced-colors: active) {
+  .fh-need__source svg {
+    color: inherit;
+  }
+}
+
 /* The whole title, wrapped. Cut short, projects whose titles share a long opening
    ("Fire Weather Testbed Evaluations 002…" and "…003…") read the same. */
 .fh-need__source-title {

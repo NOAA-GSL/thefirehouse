@@ -23,10 +23,12 @@ bar under the theme's header carries the Firehouse wordmark and links, and the S
 a Finding button once the settings give it an address. The theme's hero background
 and the mission section above its footer are hidden on those pages. Every Firehouse
 page ends with a disclaimer that researchers' findings are their own, not NOAA's, and
-a missing Firehouse address shows the Firehouse not-found page. On Firehouse pages,
-WordPress no longer curls quotes, converts dashes, turns smileys into images or
-recapitalizes its own name, so researchers' text appears as they wrote it. The other
-pages come in a later phase; until then the frame shows a placeholder.
+a missing Firehouse address shows the Firehouse not-found page. Each topic area's
+page shows its top needs, the published projects behind each, and what the area
+covers. On Firehouse pages, WordPress no longer curls quotes, converts dashes, turns
+smileys into images or recapitalizes its own name, so researchers' text appears as
+they wrote it. The other pages come in a later phase; until then the frame shows a
+placeholder.
 
 The fonts in assets/fonts/, Archivo and Public Sans, are third-party, under the SIL
 Open Font License 1.1, whose text is beside them. assets/fonts/SOURCES.json records
@@ -55,6 +57,9 @@ one is.
 * The site's icons and logos.
 * Researchers' text kept as they wrote it on Firehouse pages.
 * The disclaimer at the end of every Firehouse page, and the Firehouse not-found page.
+* The topic area pages: each area's top needs with the projects behind them, what it
+  covers, and the other areas. A need lists only projects a visitor may see:
+  published, without a password, and with IRB approval or exemption.
 * A project or topic query variable that isn't a usable slug (an array, empty, or 0)
   is dropped, so a malformed one can't cause an error on any address.
 * A stored Submit a Finding address that isn't https counts as none, so no button

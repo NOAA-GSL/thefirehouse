@@ -9,6 +9,7 @@ declare( strict_types = 1 );
 
 namespace Firehouse;
 
+use Firehouse\Domain\Format;
 use Firehouse\Domain\Vocabulary;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -17,8 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * The markup of the design system's small components, for the plugin's pages: what the
- * site's `Button` and `TopicTag` render, with their classes, so firehouse.css styles
- * them the same. Everything returned is escaped.
+ * site's `Button`, `SynthesisNote` and `TopicTag` render, with their classes, so
+ * firehouse.css styles them the same. Everything returned is escaped.
  */
 final class Markup {
 
@@ -65,6 +66,58 @@ final class Markup {
 	public static function is_external( string $url ): bool {
 		$host = wp_parse_url( $url, PHP_URL_HOST );
 		return is_string( $host ) && strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) ) !== strtolower( $host );
+	}
+
+	/**
+	 * The site's `SynthesisNote`: the one-line disclosure under synthesized needs. The
+	 * synthesis is the one place the site paraphrases researchers, so it says so, and
+	 * says when a pass hasn't been reviewed. It says "all" only while the pass covers
+	 * every published project; projects published since make it "4 of 8".
+	 *
+	 * @param string|null $model        The tool that wrote the synthesis, if one did.
+	 * @param string|null $reviewed_by  Who reviewed it, if anyone has.
+	 * @param string|null $updated_at   When the pass ran, as an ISO date.
+	 * @param int         $source_count How many projects the pass read.
+	 * @param int         $published    How many projects a visitor may see now.
+	 * @param bool        $show_status  Whether to say whether it's reviewed.
+	 */
+	public static function synthesis_note( ?string $model, ?string $reviewed_by, ?string $updated_at, int $source_count, int $published, bool $show_status = true ): string {
+		$projects = $source_count < $published
+			/* translators: 1: how many projects the synthesis read, 2: how many the site shows. */
+			? sprintf( __( '%1$d of %2$d projects', 'firehouse' ), $source_count, $published )
+			/* translators: %d: how many projects the synthesis read, every one the site shows. */
+			: sprintf( _n( 'all %d project', 'all %d projects', $source_count, 'firehouse' ), $source_count );
+		$date     = null !== $updated_at && '' !== $updated_at
+			? sprintf( '<time datetime="%1$s">%2$s</time>', esc_attr( $updated_at ), esc_html( Format::review_date( $updated_at ) ) )
+			: '';
+		$reviewed = null !== $reviewed_by && '' !== $reviewed_by;
+
+		$status = '';
+		if ( $show_status && $reviewed ) {
+			$status = ' ' . ( '' !== $date
+				/* translators: 1: who reviewed the synthesis, 2: the date. */
+				? sprintf( esc_html__( 'Reviewed by %1$s on %2$s.', 'firehouse' ), esc_html( $reviewed_by ), $date )
+				/* translators: %s: who reviewed the synthesis. */
+				: sprintf( esc_html__( 'Reviewed by %s.', 'firehouse' ), esc_html( $reviewed_by ) ) );
+		} elseif ( $show_status ) {
+			$draft  = '<strong>' . esc_html__( 'Draft, pending team review', 'firehouse' ) . '</strong>';
+			$status = ' ' . ( '' !== $date
+				/* translators: 1: "Draft, pending team review", 2: the date the synthesis was updated. */
+				? sprintf( esc_html__( '%1$s · updated %2$s.', 'firehouse' ), $draft, $date )
+				: $draft . '.' );
+		}
+
+		return sprintf(
+			'<p class="fh-synthesis-note%1$s"><span class="fh-synthesis-note__dot" aria-hidden="true"></span><span>%2$s%3$s</span></p>',
+			$show_status && ! $reviewed ? ' fh-synthesis-note--draft' : '',
+			sprintf(
+				/* translators: 1: "AI-synthesized" or "Synthesized", 2: which projects, e.g. "all 8 projects". */
+				esc_html__( '%1$s across %2$s.', 'firehouse' ),
+				'<strong>' . ( null !== $model && '' !== $model ? esc_html__( 'AI-synthesized', 'firehouse' ) : esc_html__( 'Synthesized', 'firehouse' ) ) . '</strong>',
+				esc_html( $projects )
+			),
+			$status
+		);
 	}
 
 	/**

@@ -83,6 +83,56 @@ final class StoreTest extends WordPressTestCase {
 	}
 
 	/**
+	 * A visitor sees only projects that are published, without a password, and with
+	 * IRB approval stored as true, whatever else the caller asks for, and other plugins'
+	 * SQL filters stay out.
+	 */
+	public function test_the_public_projects_are_published_open_and_approved(): void {
+		$expected = array(
+			'post_type'    => 'fh_project',
+			'post_status'  => 'publish',
+			'has_password' => false,
+			'meta_query'   => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- the arguments under test.
+				array(
+					'key'   => 'fh_irbApproved',
+					'value' => '1',
+					'type'  => 'BINARY',
+				),
+			),
+		);
+
+		$this->assertSame( $expected, Store::public_projects_query() );
+		$this->assertSame(
+			$expected + array( 'post__in' => array( 11 ) ),
+			Store::public_projects_query(
+				array(
+					'post_status'      => 'any',
+					'has_password'     => null,
+					'suppress_filters' => false,
+					'meta_query'       => array(), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- the arguments under test.
+					'post__in'         => array( 11 ),
+				)
+			)
+		);
+	}
+
+	/**
+	 * The count is of the projects a visitor may see.
+	 */
+	public function test_the_public_count_counts_the_public_projects(): void {
+		Functions\expect( 'get_posts' )->once()->andReturnUsing(
+			function ( array $args ): array {
+				$this->assertSame( Store::public_projects_query(), array_diff_key( $args, array_flip( array( 'fields', 'numberposts', 'orderby' ) ) ) );
+				$this->assertSame( 'ids', $args['fields'] );
+				$this->assertSame( -1, $args['numberposts'] );
+				return array( 11, 12, 14 );
+			}
+		);
+
+		$this->assertSame( 3, Store::public_project_count() );
+	}
+
+	/**
 	 * A topic's label is its title, stored escaped and read back as written.
 	 */
 	public function test_a_topic_label_reads_back_unescaped(): void {

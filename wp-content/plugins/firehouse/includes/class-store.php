@@ -79,6 +79,53 @@ final class Store {
 	}
 
 	/**
+	 * The get_posts() arguments for the projects a visitor may see, with $args:
+	 * published, without a password, and with IRB approval or exemption. The site's
+	 * normalize step drops a project without approval before any page sees it, so no
+	 * page, link or count includes one. These arguments win over anything $args asks,
+	 * a `meta_query` of its own included. A `suppress_filters` in $args is dropped, so
+	 * get_posts() keeps its default and leaves other plugins' SQL filters out; a
+	 * `pre_get_posts` hook elsewhere still runs, as it does for any get_posts().
+	 *
+	 * @param array<string, mixed> $args More arguments, such as `post__in`.
+	 * @return array<string, mixed>
+	 */
+	public static function public_projects_query( array $args = array() ): array {
+		unset( $args['suppress_filters'] );
+		return array(
+			'post_type'    => Post_Types::PROJECT,
+			'post_status'  => 'publish',
+			'has_password' => false,
+			// Meta stores true as "1" and false as "", so a missing or false approval
+			// fails. BINARY compares exactly, where the collation would let "1 " match.
+			'meta_query'   => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- one key, compared exactly; the indexes on post type and meta key keep it to Firehouse's own rows.
+				array(
+					'key'   => Meta::key( 'irbApproved' ),
+					'value' => '1',
+					'type'  => 'BINARY',
+				),
+			),
+		) + $args;
+	}
+
+	/**
+	 * How many projects a visitor may see: the "8" in "4 of 8 projects".
+	 */
+	public static function public_project_count(): int {
+		return count(
+			get_posts(
+				self::public_projects_query(
+					array(
+						'fields'      => 'ids',
+						'numberposts' => -1,
+						'orderby'     => 'none',
+					)
+				)
+			)
+		);
+	}
+
+	/**
 	 * A project post, as types.ts has a project.
 	 *
 	 * @param \WP_Post $post The post.
@@ -202,7 +249,7 @@ final class Store {
 
 	/**
 	 * Every post of a type, in any status, oldest first. get_posts() leaves other
-	 * plugins' query filters out.
+	 * plugins' SQL filters out, though a `pre_get_posts` hook elsewhere still runs.
 	 *
 	 * @param string $post_type The post type.
 	 * @return \WP_Post[]

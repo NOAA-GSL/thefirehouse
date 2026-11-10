@@ -53,10 +53,10 @@ final class FrameTest extends WordPressTestCase {
 		) : null;
 
 		Functions\when( 'is_embed' )->justReturn( $query['embed'] ?? false );
-		Functions\when( 'is_singular' )->alias( static fn( array $types ): bool => in_array( $singular, $types, true ) );
+		Functions\when( 'is_singular' )->alias( static fn( string|array $types ): bool => in_array( $singular, (array) $types, true ) );
 		Functions\when( 'is_post_type_archive' )->alias( static fn( string $type ): bool => $archive === $type );
 		Functions\when( 'is_page' )->justReturn( null !== $page );
-		Functions\when( 'get_queried_object' )->justReturn( $page );
+		Functions\when( 'get_queried_object' )->justReturn( $page ?? ( null !== $singular ? new \WP_Post( array( 'post_type' => $singular ) ) : null ) );
 		Functions\when( 'get_posts' )->justReturn( array( self::ROOT ) );
 		Functions\when( 'get_post_ancestors' )->justReturn( $query['ancestors'] ?? array() );
 		Functions\when( 'is_404' )->justReturn( isset( $query['missing'] ) );
@@ -319,17 +319,25 @@ final class FrameTest extends WordPressTestCase {
 	}
 
 	/**
-	 * A missing address gets the not-found block; any other page, until its own is
-	 * built, the placeholder.
+	 * A missing address gets the not-found block, a topic's address the topic block,
+	 * and any other page, until its own is built, the placeholder.
 	 */
-	public function test_the_content_is_the_not_found_page_or_the_placeholder(): void {
+	public function test_the_content_is_the_pages_block_or_the_placeholder(): void {
 		Functions\when( 'is_404' )->justReturn( true );
+		Functions\when( 'is_singular' )->justReturn( false );
 		Functions\expect( 'do_blocks' )->once()->with( '<!-- wp:firehouse/not-found /-->' )->andReturn( '[not found]' );
 		ob_start();
 		Frame::content();
 		$this->assertSame( '[not found]', ob_get_clean() );
 
 		Functions\when( 'is_404' )->justReturn( false );
+		Functions\when( 'is_singular' )->alias( static fn( string $type ): bool => 'fh_topic' === $type );
+		Functions\expect( 'do_blocks' )->once()->with( '<!-- wp:firehouse/topic /-->' )->andReturn( '[topic]' );
+		ob_start();
+		Frame::content();
+		$this->assertSame( '[topic]', ob_get_clean() );
+
+		Functions\when( 'is_singular' )->justReturn( false );
 		ob_start();
 		Frame::content();
 		$this->assertSame( '<section class="fh-section"><div class="fh-container"><h1>The Firehouse</h1><p>This page is being built.</p></div></section>', ob_get_clean() );
@@ -363,6 +371,32 @@ final class FrameTest extends WordPressTestCase {
 	}
 
 	/**
+	 * The topic block, typed into a post anywhere else, renders nothing, nor on a
+	 * Firehouse page that isn't a topic's.
+	 *
+	 * @param array<string, mixed> $query What the query found.
+	 */
+	#[DataProvider( 'requests_but_a_topics' )]
+	public function test_the_topic_block_renders_only_on_a_topic( array $query ): void {
+		self::resolve( $query );
+
+		ob_start();
+		require dirname( __DIR__ ) . '/blocks/topic/render.php';
+		$this->assertSame( '', ob_get_clean() );
+	}
+
+	/**
+	 * Every request but a topic's own page, whose block plugin:compare checks.
+	 *
+	 * @return array<string, array{0: array<string, mixed>}>
+	 */
+	public static function requests_but_a_topics(): array {
+		$requests = self::other_requests() + self::firehouse_requests();
+		unset( $requests['a topic'] );
+		return $requests;
+	}
+
+	/**
 	 * The bar's block, typed into a post anywhere else, renders nothing.
 	 *
 	 * @param array<string, mixed> $query What the query found.
@@ -387,6 +421,7 @@ final class FrameTest extends WordPressTestCase {
 		Functions\expect( 'do_blocks' )->once()->with( '<!-- wp:firehouse/subnav /-->' )->andReturn( '[bar]' );
 		Functions\when( 'esc_html' )->alias( static fn( string $text ): string => htmlspecialchars( $text, ENT_QUOTES ) );
 		Functions\when( 'is_404' )->justReturn( false );
+		Functions\when( 'is_singular' )->justReturn( false );
 
 		ob_start();
 		require dirname( __DIR__ ) . '/templates/frame.php';

@@ -23,7 +23,7 @@ final class Blocks {
 	/**
 	 * The blocks, by folder in blocks/.
 	 */
-	public const NAMES = array( 'not-found', 'subnav' );
+	public const NAMES = array( 'not-found', 'subnav', 'topic' );
 
 	/**
 	 * Hooks the registration.
