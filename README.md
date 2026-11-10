@@ -393,8 +393,9 @@ nothing from the database. Each class's docblock has the detail; this is the map
   `&amp;` show as "&" (rule 1). `Markup::url()` makes an address lead where a browser
   would take it: in an http or https address, or one with no scheme, a `\` before the
   query is a `/`, and what `esc_url()` would drop is percent-encoded, so dropping a `\`
-  can't move the host. A button decides whether it opens in a new tab from the same
-  reading.
+  can't move the host. It's checked with `esc_url_raw()` and escaped with
+  `Markup::text()`, since `esc_url()` would let a stored `R&amp;D` be followed as
+  `R&D`. A button decides whether it opens in a new tab from the same reading.
 - `Verbatim` keeps researchers' words as they wrote them on Firehouse pages (rule 1).
   It turns off curly quotes, dashes and smilies for everything the page prints, the
   theme's header and footer included, and stops WordPress recapitalizing its own name

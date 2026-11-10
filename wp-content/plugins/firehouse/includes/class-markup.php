@@ -44,13 +44,13 @@ final class Markup {
 	 */
 	public static function button( string $label, string $url, string $variant = 'primary', string $size = 'md', array $icons = array() ): string {
 		$icon = self::BUTTON_ICON[ $size ] ?? 16;
-		$href = self::url( $url );
-		// Decided from the address the link leads to, after esc_url() has added any
+		$raw  = self::raw_url( $url );
+		// Decided from the address the link leads to, after esc_url_raw() has added any
 		// scheme it lacked: `www.example.org` is another site's.
-		$external = self::is_external( html_entity_decode( $href, ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
+		$external = self::is_external( $raw );
 		return sprintf(
 			'<a href="%1$s" class="fh-btn fh-btn--%2$s fh-btn--%3$s"%4$s>%5$s%6$s%7$s%8$s</a>',
-			$href,
+			self::text( $raw ),
 			esc_attr( $variant ),
 			esc_attr( $size ),
 			$external ? ' target="_blank" rel="noopener noreferrer"' : '',
@@ -74,24 +74,36 @@ final class Markup {
 	}
 
 	/**
-	 * An address for an `href`, escaped, that leads where a browser would take it as
-	 * written (as_browser_reads()); esc_url() then checks it, the protocol included.
+	 * An address for an `href`, escaped, that leads where the address as stored does:
+	 * raw_url(), escaped by Markup::text(). esc_url() would escape it for the page
+	 * itself, but it leaves a character reference alone, so a stored `R&amp;D` would be
+	 * followed as `R&D`; escaping every `&` keeps the address the site's link follows.
 	 *
 	 * @param string $url The address as written.
 	 */
 	public static function url( string $url ): string {
-		return esc_url( self::as_browser_reads( $url ) );
+		return self::text( self::raw_url( $url ) );
 	}
 
 	/**
-	 * An address as a browser reads it, with nothing esc_url() would drop.
+	 * An address as a link follows it: as a browser reads it (as_browser_reads()), then
+	 * checked by esc_url_raw(), the protocol included. '' for one it refuses.
+	 *
+	 * @param string $url The address as written.
+	 */
+	private static function raw_url( string $url ): string {
+		return esc_url_raw( self::as_browser_reads( $url ) );
+	}
+
+	/**
+	 * An address as a browser reads it, with nothing WordPress's URL checks would drop.
 	 *
 	 * A browser reads a `\` before the query as `/` in an http or https address,
-	 * and in one with no scheme, which it resolves against the page's; esc_url() drops
-	 * it, which can move the host (`https://doi.org\@elsewhere/` is doi.org to a
-	 * browser, and elsewhere once the `\` is gone). So it's read as `/` here too. Any
-	 * other `\`, and every other character esc_url() would drop, is percent-encoded,
-	 * as a browser sends it. A `%` stays as it is, so an address already encoded isn't
+	 * and in one with no scheme, which it resolves against the page's; esc_url_raw()
+	 * drops it, which can move the host (`https://doi.org\@elsewhere/` is doi.org to
+	 * a browser, and elsewhere once the `\` is gone). So it's read as `/` here too.
+	 * Any other `\`, and every other character esc_url_raw() would drop, is
+	 * percent-encoded, as a browser sends it. A `%` stays as it is, so an address already encoded isn't
 	 * encoded again. Space around the address goes, as a browser drops it.
 	 *
 	 * @param string $url The address as written.

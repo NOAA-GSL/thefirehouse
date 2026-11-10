@@ -22,9 +22,10 @@ final class ProjectPageTest extends WordPressTestCase {
 
 	/**
 	 * Stands in for WordPress's addresses, escaping, shared JSON and Interactivity
-	 * context. esc_url() drops the characters outside WordPress's set, as WordPress's
-	 * does, and keeps only an http or https address, which is all these tests give it
-	 * besides `javascript:` and an empty one, both of which WordPress's refuses too.
+	 * context. esc_url_raw() drops the characters outside WordPress's set, as
+	 * WordPress's does, leaves `&` and quotes for the page's escaping, and keeps only an
+	 * http or https address, which is all these tests give it besides `javascript:` and
+	 * an empty one, both of which WordPress's refuses too.
 	 * esc_html() leaves a character reference alone, as WordPress's does, where Brain
 	 * Monkey's would escape it again.
 	 */
@@ -32,10 +33,10 @@ final class ProjectPageTest extends WordPressTestCase {
 		parent::setUp();
 		Functions\stubEscapeFunctions();
 		Functions\when( 'esc_html' )->alias( static fn( string $text ): string => htmlspecialchars( $text, ENT_QUOTES, 'UTF-8', false ) );
-		Functions\when( 'esc_url' )->alias(
+		Functions\when( 'esc_url_raw' )->alias(
 			static function ( string $url ): string {
 				$url = (string) preg_replace( '|[^a-z0-9-~+_.?#=!&;,/:%@$\|*\'()\[\]\x80-\xff]|i', '', $url );
-				return 1 === preg_match( '#^https?://#i', $url ) ? str_replace( array( '&', "'" ), array( '&#038;', '&#039;' ), $url ) : '';
+				return 1 === preg_match( '#^https?://#i', $url ) ? $url : '';
 			}
 		);
 		Functions\when( 'wp_json_file_decode' )->alias(
@@ -227,6 +228,7 @@ final class ProjectPageTest extends WordPressTestCase {
 		$this->assertStringContainsString( 'href="https://example.org/a%20report%22.pdf"', Project_Page::paper( array( 'url' => 'https://example.org/a report".pdf' ) ) );
 		$this->assertStringContainsString( 'href="https://example.org/a%20b%3Cc"', Project_Page::paper( array( 'url' => 'https://example.org/a%20b<c' ) ) );
 		$this->assertStringContainsString( 'href="https://doi.org/10.1002/%28SICI%29"', Project_Page::paper( array( 'doi' => '10.1002/%28SICI%29' ) ) );
+		$this->assertStringContainsString( 'href="https://example.org/R&amp;amp;D?a=1&amp;b=2"', Project_Page::paper( array( 'url' => 'https://example.org/R&amp;D?a=1&b=2' ) ) );
 
 		foreach ( array( array( 'title' => 'No link' ), array( 'url' => 'javascript:alert(1)' ), array( 'url' => '' ), array( 'doi' => 12 ), 'https://example.org/', null ) as $paper ) {
 			$this->assertSame( '', Project_Page::paper( $paper ) );
@@ -331,8 +333,9 @@ final class ProjectPageTest extends WordPressTestCase {
 			null
 		);
 
+		// 17 places in the text, and the two papers' addresses.
 		$this->assertStringNotContainsString( '&amp;Q', $html );
-		$this->assertSame( 17, substr_count( $html, '&amp;amp;Q' ) );
+		$this->assertSame( 19, substr_count( $html, '&amp;amp;Q' ) );
 	}
 
 	/**

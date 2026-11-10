@@ -1102,8 +1102,11 @@ signed off on the frame.
   - *A paper's address goes through `Markup::url()`, which reads a `\` before the
     query as `/` in an http or https address or one with no scheme, as a browser
     does (dropping it, as `esc_url()` would, can move the host), and percent-encodes
-    what `esc_url()` would drop. Buttons use it too, and decide whether to open a new
-    tab from the same reading.*
+    what `esc_url()` would drop. It's checked with `esc_url_raw()` and escaped with
+    `Markup::text()`: `esc_url()` escapes for display itself but leaves a character
+    reference alone, so a stored `R&amp;D` would be followed as `R&D` (found by
+    Copilot on #24). Buttons use it too, and decide whether to open a new tab from the
+    same reading.*
   - *A DOI follows `https://doi.org/` as stored, as on the site. The import keeps a
     pasted link's query or fragment in the DOI it takes from the link
     (`scripts/import-survey.mjs`), which doi.org ignores, so a `?` or `#` in a DOI is

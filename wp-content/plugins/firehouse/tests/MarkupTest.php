@@ -106,11 +106,20 @@ final class MarkupTest extends WordPressTestCase {
 	}
 
 	/**
+	 * An address leads where the stored one does: a character reference in it is
+	 * escaped like any `&`, so the browser follows `R&amp;D` as stored, not `R&D`.
+	 */
+	public function test_an_address_keeps_its_character_references(): void {
+		$this->assertSame( 'https://example.org/R&amp;amp;D?a=1&amp;b=2&amp;c=&#039;d&#039;', Markup::url( "https://example.org/R&amp;D?a=1&b=2&c='d'" ) );
+		$this->assertStringStartsWith( '<a href="https://example.org/R&amp;amp;D" ', Markup::button( 'Record', 'https://example.org/R&amp;D' ) );
+	}
+
+	/**
 	 * An address with no scheme resolves against the page's, so a browser reads its `\`
 	 * as `/` too, before the query.
 	 */
 	public function test_an_address_without_a_scheme_reads_as_a_browser_reads_it(): void {
-		Functions\when( 'esc_url' )->returnArg();
+		Functions\when( 'esc_url_raw' )->returnArg();
 
 		$this->assertSame( '//evil.example/@doi.org/', Markup::url( '//evil.example\\@doi.org/' ) );
 		$this->assertSame( '/a/b?c%5Cd', Markup::url( '\\a\\b?c\\d' ) );
