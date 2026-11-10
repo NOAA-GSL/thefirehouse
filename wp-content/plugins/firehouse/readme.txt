@@ -57,6 +57,9 @@ one is.
 * The site's icons and logos.
 * Researchers' text kept as they wrote it on Firehouse pages.
 * The disclaimer at the end of every Firehouse page, and the Firehouse not-found page.
+* The project pages: the abstract, takeaways, needs and recommendations and papers as
+  the researcher submitted them, the facts at a glance, and the projects either side.
+  A need card that scrolls can be reached and scrolled by keyboard.
 * The topic area pages: each area's top needs with the projects behind them, what it
   covers, and the other areas. A need lists only projects a visitor may see:
   published, without a password, and with IRB approval or exemption.

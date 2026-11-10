@@ -1079,6 +1079,22 @@ signed off on the frame.
     projects have no edit screen. Whether publishing a project without approval
     should be refused outright, as the plugin refuses a topic's status change, is open
     (rule 6 would put the check where the editor is).*
+- *Project pages done 10 November, as the `firehouse/project` block: the eight match
+  the reference's accessibility snapshots at both widths. The previous and next links
+  follow the explorer's order among the projects a visitor may see, as the site's
+  pager does among its published ones, so a hidden project drops out of its
+  neighbours' links.*
+  - *A need card is measured by the block's view script (Interactivity API), as the
+    site's is: one whose text runs past its cap scrolls, and only then gets a tab stop,
+    the `group` role and a name from its need's lead. Checked against the site in short
+    windows, where the reference's cards don't overflow, by tightening the cap in the
+    page on both: the same cards scroll, with the same names and edge shadows, as they
+    scroll and as the window grows. Without JavaScript nothing can measure a card, so
+    `frame.css` lifts the cap and the whole entry shows.*
+  - *A paper's DOI goes into its address with the characters WordPress would drop
+    percent-encoded, so a SICI DOI with angle brackets still links to its paper, and
+    a link WordPress won't print (`javascript:`) isn't listed.*
+  - *The page's `<title>` and description are still WordPress's (next item).*
 - Description and Open Graph tags, and whether a Firehouse page's `<title>` names The
   Firehouse. Today it is WordPress's "Page not found - Global Systems Laboratory",
   where the site's is "Page not found — The Firehouse".

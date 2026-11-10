@@ -1,0 +1,18 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "firehouse/project",
+	"title": "Firehouse project",
+	"category": "widgets",
+	"description": "A project's page: its abstract, takeaways, needs and recommendations, publications, the facts at a glance, and the projects either side of it.",
+	"textdomain": "firehouse",
+	"supports": {
+		"html": false,
+		"inserter": false,
+		"multiple": false,
+		"reusable": false,
+		"interactivity": true
+	},
+	"render": "file:./render.php",
+	"viewScriptModule": "file:./view.js"
+}

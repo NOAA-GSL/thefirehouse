@@ -44,9 +44,14 @@
   }
 }
 
-/* A topic page's aside stays below the bar as it sticks, and below the toolbar too. */
+/* A topic page's aside stays below the bar as it sticks, and below the toolbar too;
+   so does a project page's, which sticks from 960px up. */
 .fh-app .fh-topic__aside {
   top: calc(65px + var(--space-md) + var(--wp-admin--admin-bar--height, 0px));
+}
+
+.fh-app .fh-project__aside {
+  top: calc(var(--space-lg) + 64px + var(--wp-admin--admin-bar--height, 0px));
 }
 
 /* The drawer scrolls within the window below the bar, the toolbar included. */
@@ -93,6 +98,16 @@
 
   .fh-app .fh-header__menu-btn {
     display: none;
+  }
+}
+
+/* Without JavaScript nothing measures a need card, so one that scrolls couldn't be
+   made a tab stop, and in a browser that doesn't make a scrolling region one itself,
+   a keyboard couldn't reach the end of its text. Its cap comes off instead, and the
+   whole entry shows. */
+@media (scripting: none) {
+  .fh-app .fh-entry__body {
+    max-height: none;
   }
 }
 

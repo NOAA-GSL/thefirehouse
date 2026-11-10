@@ -67,7 +67,8 @@ wp-content/plugins/firehouse/
                     into WordPress (includes/); templates/frame.php, the frame
                     every Firehouse page sits in; blocks/, the server-rendered
                     blocks the templates place (so far the Firehouse bar, the
-                    not-found page and the topic pages); the shared
+                    not-found page, the project pages and the topic pages);
+                    the shared
                     vocabularies and test cases; and the PHP tests.
                     assets/css/firehouse.css is generated from src/, and
                     assets/css/frame.css is written by hand;
@@ -310,8 +311,8 @@ nothing from the database. Each class's docblock has the detail; this is the map
     Stephanie and Emily on 3 November (NOAA's clearance is still open; see Before this
     goes public), kept in `Frame::disclaimer()`, not as a setting, and held to the
     site's `settings.json` by a test. A missing address gets the `firehouse/not-found`
-    block, a topic's address the `firehouse/topic` block, and a page Phase 4 hasn't
-    built yet a placeholder.
+    block, a project's address the `firehouse/project` block, a topic's address the
+    `firehouse/topic` block, and a page Phase 4 hasn't built yet a placeholder.
   - **Stylesheets:** it loads `fonts.css`, `firehouse.css` and `frame.css` after the
     theme's stylesheet, at the plugin's version and each file's modified time, and adds
     `fh-page` to the body. Nothing depends on the fonts, so dequeuing `firehouse-fonts`
@@ -371,6 +372,14 @@ nothing from the database. Each class's docblock has the detail; this is the map
   `NotFoundPage`, with the way back, the explorer and the four topic areas. It quotes
   the requested address, escaped and cut to 64 characters with an ellipsis. Any
   address under `/firehouse/topics/` gets the "Topic area not found" wording.
+- `Project_Page` is a project's page, the `firehouse/project` block: the site's
+  `ProjectPage`, with the abstract, takeaways, need cards and papers as the researcher
+  submitted them, the "At a glance" panel, and the projects either side of it in the
+  explorer's order, among those a visitor may see. A need card whose text runs past
+  its height scrolls, and only then becomes a tab stop named for its need
+  (`blocks/project/view.js`); without JavaScript the cap comes off and the whole entry
+  shows. A DOI's characters that WordPress would drop from an address are
+  percent-encoded instead, so the link still finds its paper.
 - `Topic_Page` is a topic area's page, the `firehouse/topic` block: the site's
   `TopicPage`, with the area's top five needs, the published projects behind each,
   what the area covers, the Submit button once a survey address is set, and the other
@@ -402,7 +411,8 @@ nothing from the database. Each class's docblock has the detail; this is the map
   defines a project a visitor may see: published, without a password, and with IRB
   approval or exemption, as the site's normalize step keeps them.
   `Store::is_public()` is the test for a post already loaded. The plugin's own lookups
-  use both: the topic pages' links and project total, and the not-found guess.
+  use both: the project pages' previous and next links, the topic pages' links and
+  project total, and the not-found guess.
 - `Visibility` keeps every other project off the public side of the site. It drops
   one from what a query finds, outside the admin's own screens, so its address,
   `?p=`, the archive, the feed, embeds and the sitemap leave it out. It refuses one
