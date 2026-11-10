@@ -1176,8 +1176,14 @@ signed off on the frame.
   file, and drop the italic faces nothing uses. Once the blocks build with
   `@wordpress/scripts`, register them from its generated manifest
   (`wp_register_block_types_from_metadata_collection()`), not by reading each
-  `block.json` on every request. Inline icons from a generated PHP array, cached by
-  opcache, not by reading their SVG files on each request.
+  `block.json` on every request. *That function needs WordPress 6.8, and the plugin
+  says 6.7: raise the minimum, or use 6.7's `wp_register_block_metadata_collection()`
+  with the current loop. The manifest is a plain PHP file, so it needn't wait for
+  `@wordpress/scripts`: a small generator and a CI check would do.* Inline icons from a
+  generated PHP array, cached by opcache, not by reading their SVG files on each
+  request. *The hero's wordmark file is about 2.8 times the size a 2× screen needs (752
+  by 240 for 226 by 72 CSS pixels); a smaller one belongs in the design system's
+  `src/assets`, for both sites.*
 - Rerun the frame's style and focus checks on the real pages.
 - Keep the Firehouse bar to one per page once a page's own content renders blocks. The
   bar's block prints on any Firehouse page, so its comment typed into a page in the tree

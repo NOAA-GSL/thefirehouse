@@ -416,7 +416,8 @@ final class LandingPageTest extends WordPressTestCase {
 
 	/**
 	 * What the page is computed from is read once a request: the projects a visitor may
-	 * see with their needs, and the published topics in order.
+	 * see with their needs, and the published topics in order. The cards count from it,
+	 * with no lookup of their own.
 	 */
 	public function test_the_content_is_read_once(): void {
 		$content = Landing_Page::content();
@@ -427,5 +428,6 @@ final class LandingPageTest extends WordPressTestCase {
 
 		Functions\expect( 'get_posts' )->never();
 		$this->assertSame( $content, Landing_Page::content() );
+		Landing_Page::top_needs( array( 'needsPerCard' => 2 ) );
 	}
 }
