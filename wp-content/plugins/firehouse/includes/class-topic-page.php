@@ -18,9 +18,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * A topic area's page: the site's `TopicPage`, rendered by the `firehouse/topic`
- * block. The area's top needs come first, each traced to the published projects it
- * was drawn from, with what the area covers beside them and the other three areas
- * below.
+ * block. The area's top needs come first, each traced to the projects it was drawn
+ * from that a visitor may see, with what the area covers beside them and the other
+ * three areas below.
  *
  * The needs are the synthesis, the one place the site paraphrases researchers, so the
  * synthesis note says so and says whether the pass has been reviewed. The project
@@ -41,9 +41,7 @@ final class Topic_Page {
 	 */
 	public static function for_post( \WP_Post $post ): string {
 		$topic = Store::topic( $post );
-		$needs = is_array( $topic['fields']['topNeeds'] ?? null ) ? $topic['fields']['topNeeds'] : array();
-		// Meta checks every write, but a value stored around it mustn't stop the page.
-		$needs = array_slice( array_values( array_filter( $needs, 'is_array' ) ), 0, self::NEEDS );
+		$needs = self::top( $topic['fields']['topNeeds'] ?? null );
 
 		$others = array();
 		foreach ( Store::topics() as $other ) {
@@ -57,17 +55,30 @@ final class Topic_Page {
 			array( 'key' => $topic['key'] ) + $topic['fields'],
 			self::needs( $needs, self::projects( $needs ) ),
 			$others,
-			(int) ( wp_count_posts( Post_Types::PROJECT )->publish ?? 0 ),
+			Store::public_project_count(),
 			Settings::get()
 		);
 	}
 
 	/**
-	 * The published projects the needs name, by post ID: each one's fields and its
-	 * address. Two queries whatever their number: the posts, then all their fields.
+	 * The needs the page shows: the first five that are needs, with text to show.
+	 * Meta checks every write, but a value stored around it is passed over rather than
+	 * stopping the page or taking a place from a need after it.
 	 *
-	 * A password-protected project is left out, as WordPress's sitemap and the
-	 * not-found guess leave it out.
+	 * @param mixed $needs The topic's stored needs.
+	 * @return list<array<string, mixed>>
+	 */
+	public static function top( mixed $needs ): array {
+		return array_slice( array_values( array_filter( is_array( $needs ) ? $needs : array(), array( self::class, 'is_need' ) ) ), 0, self::NEEDS );
+	}
+
+	/**
+	 * The projects a visitor may see that the needs name, by post ID: each one's fields
+	 * and its address. Two queries whatever their number: the posts, then all their
+	 * fields.
+	 *
+	 * A project that is unpublished, password-protected or without IRB approval is
+	 * left out (Store::public_projects_query()).
 	 *
 	 * @param list<array<string, mixed>> $needs The needs, a need's projects as post IDs.
 	 * @return array<int, array<string, mixed>>
@@ -87,35 +98,39 @@ final class Topic_Page {
 
 		$projects = array();
 		$posts    = get_posts(
-			array(
-				'post_type'    => Post_Types::PROJECT,
-				'post_status'  => 'publish',
-				'has_password' => false,
-				'post__in'     => array_values( $ids ),
-				'numberposts'  => -1,
+			Store::public_projects_query(
+				array(
+					'post__in'    => array_values( $ids ),
+					'numberposts' => -1,
+				)
 			)
 		);
 		foreach ( $posts as $post ) {
-			$projects[ $post->ID ] = array( 'url' => (string) get_permalink( $post ) ) + Store::project( $post )['fields'];
+			$fields = Store::project( $post )['fields'];
+			// The site's own test, as well as the query's: a value written around Meta,
+			// or a second row, mustn't pass one and fail the other.
+			if ( true === ( $fields['irbApproved'] ?? null ) ) {
+				$projects[ $post->ID ] = array( 'url' => (string) get_permalink( $post ) ) + $fields;
+			}
 		}
 		return $projects;
 	}
 
 	/**
-	 * Each need as the page shows it: its text, its project count, and the published
-	 * projects behind it, in the synthesis's order.
+	 * Each need as the page shows it: its text, its project count, and the projects
+	 * behind it a visitor may see, in the synthesis's order.
 	 *
-	 * A project that isn't published is left out, as the site's normalize step leaves
+	 * A project a visitor may not see is left out, as the site's normalize step leaves
 	 * it out, and then the stored count no longer holds: the count is the projects that
 	 * remain. A need that names no projects keeps its stored count.
 	 *
 	 * @param list<array<string, mixed>>       $needs    The needs, a need's projects as post IDs.
-	 * @param array<int, array<string, mixed>> $projects The published projects, by post ID.
+	 * @param array<int, array<string, mixed>> $projects The projects a visitor may see, by post ID.
 	 * @return list<array{text: string, mentions: int, sources: list<array<string, mixed>>}>
 	 */
 	public static function needs( array $needs, array $projects ): array {
 		$shown = array();
-		foreach ( array_filter( $needs, 'is_array' ) as $need ) {
+		foreach ( array_filter( $needs, array( self::class, 'is_need' ) ) as $need ) {
 			$listed  = is_array( $need['projects'] ?? null ) ? $need['projects'] : array();
 			$sources = array();
 			foreach ( $listed as $id ) {
@@ -128,7 +143,7 @@ final class Topic_Page {
 				$counted['mentions'] = $need['mentions'];
 			}
 			$shown[] = array(
-				'text'     => is_string( $need['text'] ?? null ) ? $need['text'] : '',
+				'text'     => $need['text'],
 				'mentions' => Derive::need_mentions( $counted ),
 				'sources'  => $sources,
 			);
@@ -137,12 +152,22 @@ final class Topic_Page {
 	}
 
 	/**
+	 * Whether a stored need is one the page can show: an array with text that isn't
+	 * blank.
+	 *
+	 * @param mixed $need The stored need.
+	 */
+	private static function is_need( mixed $need ): bool {
+		return is_array( $need ) && is_string( $need['text'] ?? null ) && '' !== trim( $need['text'] );
+	}
+
+	/**
 	 * The page's markup, inside the frame's main landmark.
 	 *
 	 * @param array<string, mixed>       $topic     The topic: its key, label, short label, covers and synthesis fields.
 	 * @param list<array<string, mixed>> $needs     The needs, from needs().
 	 * @param list<array<string, mixed>> $others    The other topics, in order: each one's key, label and short label.
-	 * @param int                        $published How many projects are published.
+	 * @param int                        $published How many projects a visitor may see.
 	 * @param array<string, mixed>       $settings  The Firehouse settings.
 	 */
 	public static function render( array $topic, array $needs, array $others, int $published, array $settings ): string {

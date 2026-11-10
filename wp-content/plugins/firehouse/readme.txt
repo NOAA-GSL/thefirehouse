@@ -58,7 +58,8 @@ one is.
 * Researchers' text kept as they wrote it on Firehouse pages.
 * The disclaimer at the end of every Firehouse page, and the Firehouse not-found page.
 * The topic area pages: each area's top needs with the projects behind them, what it
-  covers, and the other areas.
+  covers, and the other areas. A need lists only projects a visitor may see:
+  published, without a password, and with IRB approval or exemption.
 * A project or topic query variable that isn't a usable slug (an array, empty, or 0)
   is dropped, so a malformed one can't cause an error on any address.
 * A stored Submit a Finding address that isn't https counts as none, so no button

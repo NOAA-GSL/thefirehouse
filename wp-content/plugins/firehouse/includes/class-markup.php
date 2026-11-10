@@ -78,14 +78,14 @@ final class Markup {
 	 * @param string|null $reviewed_by  Who reviewed it, if anyone has.
 	 * @param string|null $updated_at   When the pass ran, as an ISO date.
 	 * @param int         $source_count How many projects the pass read.
-	 * @param int         $published    How many projects are published now.
+	 * @param int         $published    How many projects a visitor may see now.
 	 * @param bool        $show_status  Whether to say whether it's reviewed.
 	 */
 	public static function synthesis_note( ?string $model, ?string $reviewed_by, ?string $updated_at, int $source_count, int $published, bool $show_status = true ): string {
 		$projects = $source_count < $published
-			/* translators: 1: how many projects the synthesis read, 2: how many are published. */
+			/* translators: 1: how many projects the synthesis read, 2: how many the site shows. */
 			? sprintf( __( '%1$d of %2$d projects', 'firehouse' ), $source_count, $published )
-			/* translators: %d: how many projects the synthesis read, all of those published. */
+			/* translators: %d: how many projects the synthesis read, every one the site shows. */
 			: sprintf( _n( 'all %d project', 'all %d projects', $source_count, 'firehouse' ), $source_count );
 		$date     = null !== $updated_at && '' !== $updated_at
 			? sprintf( '<time datetime="%1$s">%2$s</time>', esc_attr( $updated_at ), esc_html( Format::review_date( $updated_at ) ) )

@@ -261,51 +261,110 @@ final class TopicPageTest extends WordPressTestCase {
 	}
 
 	/**
-	 * A stored need that isn't a need is passed over, not a fatal error on a public page.
+	 * A stored need that isn't a need, or has no text to show, is passed over: not a
+	 * fatal error on a public page, nor a blank item.
 	 */
 	public function test_a_malformed_need_is_passed_over(): void {
-		$needs = Topic_Page::needs( array( 'text', 3, null, new \stdClass(), array( 'text' => 'A need' ) ), array() );
+		$malformed = array( 'text', 3, null, new \stdClass(), array(), array( 'text' => array( 'A need' ) ), array( 'text' => 3 ), array( 'text' => '' ), array( 'text' => " \n" ) );
+
+		$needs = Topic_Page::needs( array_merge( $malformed, array( array( 'text' => 'A need' ) ) ), array() );
 
 		$this->assertSame( array( 'A need' ), array_column( $needs, 'text' ) );
 		$this->assertSame( array(), Topic_Page::projects( array( 'text', null, new \stdClass(), array( 'projects' => 'x' ) ) ) );
 	}
 
 	/**
-	 * The projects behind the needs come in one lookup of their post IDs: published,
-	 * without a password, each with its own address.
+	 * The page shows the first five needs, and one passed over doesn't take a place.
+	 */
+	public function test_the_top_five_are_needs(): void {
+		$needs = array( array( 'text' => 'One' ), array(), array( 'text' => '' ) );
+		foreach ( array( 'Two', 'Three', 'Four', 'Five', 'Six' ) as $text ) {
+			$needs[] = array( 'text' => $text );
+		}
+
+		$this->assertSame( array( 'One', 'Two', 'Three', 'Four', 'Five' ), array_column( Topic_Page::top( $needs ), 'text' ) );
+		$this->assertSame( array(), Topic_Page::top( 'not needs' ) );
+		$this->assertSame( array(), Topic_Page::top( null ) );
+	}
+
+	/**
+	 * The projects behind the needs come in one lookup of their post IDs, of projects a
+	 * visitor may see (Store::public_projects_query()). Each has its own address.
 	 */
 	public function test_the_projects_are_published_ones_by_id(): void {
 		Functions\expect( 'get_posts' )->once()->andReturnUsing(
 			function ( array $args ): array {
-				$this->assertSame( 'fh_project', $args['post_type'] );
-				$this->assertSame( 'publish', $args['post_status'] );
-				$this->assertFalse( $args['has_password'] );
-				$this->assertSame( array( 11, 12 ), $args['post__in'] );
+				$this->assertSame( \Firehouse\Store::public_projects_query(), array_diff_key( $args, array_flip( array( 'post__in', 'numberposts' ) ) ) );
+				$this->assertSame( array( 11, 12, 13 ), $args['post__in'] );
 				$this->assertSame( -1, $args['numberposts'] );
 				return array(
-					new \WP_Post(
-						array(
-							'ID'          => 12,
-							'post_type'   => 'fh_project',
-							'post_name'   => 'fwt-002',
-							'post_status' => 'publish',
-						)
-					),
+					self::post( 12, 'fwt-002' ),
 				);
 			}
 		);
-		Functions\when( 'metadata_exists' )->justReturn( false );
+		Functions\when( 'metadata_exists' )->alias( static fn( string $type, int $id, string $key ): bool => 'fh_irbApproved' === $key );
+		Functions\when( 'get_post_meta' )->justReturn( '1' );
 		Functions\when( 'get_permalink' )->alias( static fn( \WP_Post $post ): string => 'https://example.test/firehouse/projects/' . $post->post_name . '/' );
 
 		$projects = Topic_Page::projects(
 			array(
 				array( 'projects' => array( 11, 12, 'x', 0 ) ),
-				array( 'projects' => array( 12 ) ),
+				array( 'projects' => array( 12, 13 ) ),
 			)
 		);
 
 		$this->assertSame( array( 12 ), array_keys( $projects ) );
 		$this->assertSame( 'https://example.test/firehouse/projects/fwt-002/', $projects[12]['url'] );
 		$this->assertSame( 'fwt-002', $projects[12]['slug'] );
+	}
+
+	/**
+	 * A project the query returns is still left out unless its approval reads back as
+	 * exactly true, the site's own test: a value written around Meta, such as "1 " or a
+	 * missing key, mustn't pass the database's comparison and fail the site's.
+	 *
+	 * @dataProvider unapproved
+	 *
+	 * @param bool  $exists Whether the approval is stored.
+	 * @param mixed $stored What is stored.
+	 */
+	public function test_an_unapproved_project_is_left_out( bool $exists, mixed $stored ): void {
+		Functions\when( 'get_posts' )->justReturn( array( self::post( 11, 'igniting-impact' ) ) );
+		Functions\when( 'metadata_exists' )->alias( static fn( string $type, int $id, string $key ): bool => $exists && 'fh_irbApproved' === $key );
+		Functions\when( 'get_post_meta' )->justReturn( $stored );
+		Functions\when( 'get_permalink' )->justReturn( 'https://example.test/firehouse/projects/igniting-impact/' );
+
+		$this->assertSame( array(), Topic_Page::projects( array( array( 'projects' => array( 11 ) ) ) ) );
+	}
+
+	/**
+	 * Approvals that aren't true.
+	 *
+	 * @return array<string, array{0: bool, 1: mixed}>
+	 */
+	public static function unapproved(): array {
+		return array(
+			'false'           => array( true, '' ),
+			'missing'         => array( false, '' ),
+			'a trailing gap'  => array( true, '1 ' ),
+			'text that reads' => array( true, 'true' ),
+		);
+	}
+
+	/**
+	 * A published project post.
+	 *
+	 * @param int    $id   Its ID.
+	 * @param string $slug Its slug.
+	 */
+	private static function post( int $id, string $slug ): \WP_Post {
+		return new \WP_Post(
+			array(
+				'ID'          => $id,
+				'post_type'   => 'fh_project',
+				'post_name'   => $slug,
+				'post_status' => 'publish',
+			)
+		);
 	}
 }

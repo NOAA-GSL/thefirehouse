@@ -1042,8 +1042,23 @@ signed off on the frame.
     WordPress. The 404 matches; the screenshots were compared by eye.*
 - *Topic pages done 9 November, as the `firehouse/topic` block: the four match the
   reference's accessibility snapshots at both widths, and its screenshots by eye in
-  both themes. A need names only published projects without a password; one that
-  named a project since unpublished is recounted, as the site's normalize step does.*
+  both themes. A need names only the projects a visitor may see: published, without
+  a password, and with IRB approval or exemption, the projects the site's normalize
+  step keeps. One that named a project since unpublished is recounted, as that step
+  does, and the "of 8 projects" total counts the same projects.*
+- The project pages use the same definition (`Store::public_projects_query()`). A
+  published project without IRB approval or exemption gets the 404 at its address and
+  at `?p=`, and stays out of the sitemap, the not-found guess, the project feed
+  (`?post_type=fh_project&feed=rss2` still answers, though the type's pretty feed
+  addresses are off), embeds and oEmbed, and the previous and next links in a page's
+  head. Today all of these go by published alone.
+  - The rule goes in the query, on every public `fh_project` query, so each of those
+    inherits it; the head links need their own filter or removal.
+  - The 404 and the guess ship together: a 404 with the old guess would still answer
+    a shortened address with a redirect to the full slug.
+  - It lands before the survey form or any screen that can publish a project. Today
+    nothing in the plugin can: the import drops a project without approval, and
+    projects have no edit screen.
 - Description and Open Graph tags, and whether a Firehouse page's `<title>` names The
   Firehouse. Today it is WordPress's "Page not found - Global Systems Laboratory",
   where the site's is "Page not found — The Firehouse".

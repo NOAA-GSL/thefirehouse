@@ -374,7 +374,7 @@ nothing from the database. Each class's docblock has the detail; this is the map
 - `Topic_Page` is a topic area's page, the `firehouse/topic` block: the site's
   `TopicPage`, with the area's top five needs, the published projects behind each,
   what the area covers, the Submit button once a survey address is set, and the other
-  three areas. A need that names a project no longer published leaves it out and
+  three areas. A need that names a project a visitor may not see leaves it out and
   counts only the projects that remain, as the site's normalize step does.
 - `Markup` writes the design system's small components as the site renders them: a
   link styled as a `Button` (opening another site in a new tab, and saying so), a
@@ -398,7 +398,11 @@ nothing from the database. Each class's docblock has the detail; this is the map
   and title). The project's title is meta, verbatim (rule 1). A need's `projects`
   holds post IDs, not slugs (rule 5).
 - `Store` reads posts back as the fields of `types.ts`, numbers and booleans typed and
-  a need's `projects` still post IDs, and saves them.
+  a need's `projects` still post IDs, and saves them. `Store::public_projects_query()`
+  defines a project a visitor may see: published, without a password, and with IRB
+  approval or exemption, as the site's normalize step keeps them. The topic pages'
+  links and project total use it. The not-found guess and WordPress's sitemap still go
+  by published alone, until the project pages move them to it.
 - `Query` drops WordPress's `year` query variable from Firehouse requests (rule 7), and
   a project or topic variable that names no post (`?fh_project[]=x`, `?fh_topic=`) from
   any request (rule 13).
