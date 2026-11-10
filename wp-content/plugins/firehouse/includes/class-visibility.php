@@ -26,8 +26,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   `?fh_project=`, the archive, feeds, the embed template, the sitemap, and oEmbed's
  *   lookup of a pretty address.
  * - The redirects WordPress builds from a post ID without a query: any redirect on a
- *   request whose `?p=`, `?page_id=` or `?attachment_id=` names a hidden project,
- *   which covers a missing address and a feed; and a changed slug's.
+ *   request whose `?p=`, `?page_id=` or `?attachment_id=` names a hidden project or
+ *   one of its revisions, which covers a missing address and a feed; and a changed
+ *   slug's.
  * - oEmbed's lookup of a `?p=` address, which finds the post without a query.
  * - A menu item that links to the project.
  * - The previous and next links in a project's head.
@@ -135,6 +136,11 @@ final class Visibility {
 	 * and on a feed, which is never a missing address, to its comments feed. Either
 	 * would give the project's slug away.
 	 *
+	 * A revision of the project counts as the project. Projects keep revisions, and
+	 * when `?p=` finds nothing, WordPress looks the ID up again and sends a revision's
+	 * ID to the address of the post it's a revision of. The query copies `?page_id=`
+	 * and `?attachment_id=` into `p`, so the same happens to them.
+	 *
 	 * @param mixed $redirect Where WordPress would redirect, or false for nowhere.
 	 * @return mixed
 	 */
@@ -145,6 +151,10 @@ final class Visibility {
 		foreach ( array( 'p', 'page_id', 'attachment_id' ) as $name ) {
 			$id   = (int) get_query_var( $name );
 			$post = $id > 0 ? get_post( $id ) : null;
+			// A parent of 0 isn't looked up: get_post( 0 ) returns the current post.
+			if ( $post instanceof \WP_Post && 'revision' === $post->post_type && $post->post_parent > 0 ) {
+				$post = get_post( $post->post_parent );
+			}
 			if ( $post instanceof \WP_Post && self::hidden( $post ) ) {
 				return false;
 			}

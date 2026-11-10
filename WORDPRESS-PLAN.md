@@ -1061,8 +1061,9 @@ signed off on the frame.
   - *The rule is applied to what each query finds (`posts_results`), so the main
     query, feeds, embeds, the sitemap and oEmbed's lookup of a pretty address all
     inherit it. WordPress builds some redirects from `?p=`, `?page_id=` and
-    `?attachment_id=` without a query, on a missing address and on a feed; oEmbed
-    reads a `?p=` address's ID directly; menus and the old-slug redirect read the post
+    `?attachment_id=` without a query, on a missing address and on a feed, and sends
+    a revision's ID in any of the three to the post it's a revision of; oEmbed reads
+    a `?p=` address's ID directly; menus and the old-slug redirect read the post
     directly. Each has its own filter.*
   - *Someone who may edit the project still sees it on its own page, as WordPress
     shows them a draft in preview, and nowhere else: not in a list, a feed, an embed

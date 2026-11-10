@@ -130,10 +130,34 @@ final class VisibilityTest extends WordPressTestCase {
 	}
 
 	/**
-	 * No redirect is built from an ID that names a hidden project, on a missing
-	 * address or on a feed; every other redirect stands.
+	 * No redirect is built from an ID that names a hidden project or one of its
+	 * revisions, on a missing address or on a feed; every other redirect stands.
+	 * Revision 31 is of hidden project 12, 32 of public project 11, 33 has no
+	 * parent, and 34's parent is gone. For 0, get_post() returns the current post;
+	 * here that's project 12.
 	 */
 	public function test_no_redirect_built_from_a_hidden_projects_id(): void {
+		$revisions = array(
+			31 => 12,
+			32 => 11,
+			33 => 0,
+			34 => 77,
+		);
+		Functions\when( 'get_post' )->alias(
+			static function ( int $id ) use ( $revisions ): ?\WP_Post {
+				if ( isset( $revisions[ $id ] ) ) {
+					return new \WP_Post(
+						array(
+							'ID'          => $id,
+							'post_type'   => 'revision',
+							'post_status' => 'inherit',
+							'post_parent' => $revisions[ $id ],
+						)
+					);
+				}
+				return in_array( $id, array( 0, 11, 12, 13, 14, 20 ), true ) ? self::post( 0 === $id ? 12 : $id ) : null;
+			}
+		);
 		$var = array();
 		Functions\when( 'get_query_var' )->alias(
 			static function ( string $name ) use ( &$var ): mixed {
@@ -150,12 +174,15 @@ final class VisibilityTest extends WordPressTestCase {
 				'p'             => 11,
 				'attachment_id' => 12,
 			),
+			array( 'p' => 31 ),
+			array( 'page_id' => 31 ),
+			array( 'attachment_id' => '31' ),
 		);
 		foreach ( $hidden as $case ) {
 			$var = $case;
 			$this->assertFalse( Visibility::redirect( $to ), (string) json_encode( $case ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- a test's failure message.
 		}
-		foreach ( array( array( 'p' => 11 ), array( 'attachment_id' => 20 ), array( 'p' => 99 ), array() ) as $case ) {
+		foreach ( array( array( 'p' => 11 ), array( 'attachment_id' => 20 ), array( 'p' => 99 ), array( 'p' => 32 ), array( 'p' => 33 ), array( 'p' => 34 ), array() ) as $case ) {
 			$var = $case;
 			$this->assertSame( $to, Visibility::redirect( $to ), (string) json_encode( $case ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- a test's failure message.
 		}

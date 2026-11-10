@@ -119,8 +119,8 @@ require_once __DIR__ . '/includes/class-blocks.php';
  *
  * - Visibility::redirect (the `redirect_canonical` filter) refuses any redirect on a
  *   request whose `?p=`, `?page_id=` or `?attachment_id=` is a project a visitor may
- *   not see, which covers the redirects WordPress builds from that ID on a missing
- *   address or a feed. Visibility::post_id does the
+ *   not see, or one of its revisions, which covers the redirects WordPress builds
+ *   from that ID on a missing address or a feed. Visibility::post_id does the
  *   same for oEmbed (`oembed_request_post_id`) and a changed slug's redirect
  *   (`old_slug_redirect_post_id`), whoever asks, and Visibility::menu_item marks a
  *   menu item invalid when it links to one (`wp_setup_nav_menu_item`).
