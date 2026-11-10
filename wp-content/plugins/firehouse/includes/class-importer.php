@@ -32,8 +32,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - **Settings** are written only if they have never been saved.
  * - **The landing page**, the `firehouse` page at the top of the Firehouse tree, is
  *   created from the bundle's landing content, as the landing page's blocks
- *   (Landing_Page::blocks()), only if there's no such page yet, in any status: after
- *   that its words are the editors'.
+ *   (Landing_Page::blocks()), only if there's no such page yet in any status but the
+ *   trash: after that its words are the editors'. One in the trash, or an attachment
+ *   or page holding the address, stops the import, since the new page would land at
+ *   another address; one created at another address anyway is deleted, not left
+ *   published.
  *
  * Every difference kept from WordPress is noted. Nothing is written while anything is
  * wrong, and the dry run lists every problem. Projects in WordPress that the bundle
@@ -138,7 +141,14 @@ final class Importer {
 			}
 		}
 
-		return array_merge( self::verify( $plan ), array( 'imported' => true ) );
+		$plan = self::verify( $plan );
+		if ( 'create' === $plan['landing']['action'] && 0 !== $plan['landing']['post_id'] && array() !== $plan['landing']['problems'] ) {
+			// A page that isn't the landing page as planned isn't left published.
+			wp_delete_post( $plan['landing']['post_id'], true );
+			$plan['landing']['problems'][] = 'It was deleted, so the Firehouse has no landing page yet. Fix the problem above, then import again.';
+			$plan['landing']['post_id']    = 0;
+		}
+		return array_merge( $plan, array( 'imported' => true ) );
 	}
 
 	/**
@@ -539,7 +549,8 @@ final class Importer {
 
 	/**
 	 * Plans the landing page: created from the bundle's landing content if there's no
-	 * `firehouse` page, in any status; otherwise left as it is, its words the editors'.
+	 * `firehouse` page in any status but the trash; otherwise left as it is, its words
+	 * the editors'. A trashed one, or anything else holding the address, is a problem.
 	 * Its title is the bundle's site name, which WordPress's lists and the page's
 	 * `<title>` show.
 	 *
@@ -548,14 +559,31 @@ final class Importer {
 	 * @return array{action: string, post_id: int, post: array<string, mixed>, problems: list<string>, notes: list<string>}
 	 */
 	private static function plan_landing( array $content, int $root ): array {
+		$landing = is_array( $content['landing'] ?? null ) ? $content['landing'] : array();
 		if ( 0 !== $root ) {
+			$page = get_post( $root );
 			return array(
 				'action'   => 'unchanged',
 				'post_id'  => $root,
 				'post'     => array(),
 				'problems' => array(),
-				'notes'    => array( 'The landing page already exists, so its words are left as editors have them.' ),
+				'notes'    => array(
+					$page instanceof \WP_Post && '' === trim( $page->post_content )
+						? 'The landing page exists but is empty, so it shows a placeholder: the import doesn’t write into an existing page. Delete it permanently, then import again to create it.'
+						: 'The landing page already exists, so its words are left as editors have them.',
+				),
 			);
+		}
+
+		$problems = array();
+		if ( self::trashed_root() ) {
+			$problems[] = 'A landing page is in the trash. Restore it, or delete it permanently, then import again: a new one beside it would leave two pages claiming /' . Query::ROOT_PATH . '/.';
+		} elseif ( wp_unique_post_slug( Query::ROOT_PATH, 0, 'publish', 'page', 0 ) !== Query::ROOT_PATH ) {
+			$problems[] = 'Something else holds the address /' . Query::ROOT_PATH . '/, such as a Media Library file named “' . Query::ROOT_PATH . '”, so the page would land elsewhere. Rename or remove it, then import again.';
+		}
+		$notes = array();
+		if ( is_string( $landing['hero']['imageUrl'] ?? null ) && '' !== $landing['hero']['imageUrl'] ) {
+			$notes[] = 'The hero’s photograph isn’t carried over: the landing page shows its drawn background instead.';
 		}
 		$settings = is_array( $content['settings'] ?? null ) ? $content['settings'] : array();
 		$name     = is_string( $settings['siteName'] ?? null ) && '' !== $settings['siteName'] ? $settings['siteName'] : 'The Firehouse';
@@ -569,11 +597,33 @@ final class Importer {
 				'post_status'  => 'publish',
 				'post_author'  => 0,
 				'post_title'   => Store::label( $name ),
-				'post_content' => Landing_Page::blocks( is_array( $content['landing'] ?? null ) ? $content['landing'] : array(), is_string( $settings['submitFormUrl'] ?? null ) ? $settings['submitFormUrl'] : '' ),
+				'post_content' => Landing_Page::blocks( $landing, is_string( $settings['submitFormUrl'] ?? null ) ? $settings['submitFormUrl'] : '' ),
 			),
-			'problems' => array(),
-			'notes'    => array(),
+			'problems' => $problems,
+			'notes'    => $notes,
 		);
+	}
+
+	/**
+	 * Whether a top-level page that had the landing page's address is in the trash.
+	 * WordPress gives its address back when it's restored, beside any new one.
+	 */
+	private static function trashed_root(): bool {
+		$trashed = get_posts(
+			array(
+				'post_type'   => 'page',
+				'post_status' => 'trash',
+				'post_parent' => 0,
+				'numberposts' => -1,
+				'fields'      => 'ids',
+			)
+		);
+		foreach ( $trashed as $id ) {
+			if ( Query::ROOT_PATH === get_post_meta( (int) $id, '_wp_desired_post_slug', true ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**

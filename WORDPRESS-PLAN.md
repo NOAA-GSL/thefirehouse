@@ -520,8 +520,11 @@ duplicating them: projects take the bundle's survey fields and keep their editor
 fields (rule 4), and topics and settings are written only when they don't exist yet,
 so a reviewed synthesis is never overwritten. The same goes for the Firehouse pages:
 the import creates the landing page from the bundle's landing content, as its blocks,
-only when there's no `firehouse` page, and the About page under it the same way
-(decided by Eric, 10 November; the About page comes with its own change). The About
+only when there's no `firehouse` page in any status but the trash, and the About
+page under it the same way (decided by Eric, 10 November; the About page comes with
+its own change). A `firehouse` page in the trash, or anything else holding the address
+(an unattached Media Library file named `firehouse` takes it from a new page), stops
+the import, and a page WordPress saves at another address anyway is deleted. The About
 page's team portraits are uploaded to the Media Library by an administrator, a step in
 the runbook, rather than shipped in the plugin. The plugin checks the bundle itself: a
 field it doesn't store, or anything shaped like an email address but a team work
@@ -1150,8 +1153,16 @@ signed off on the frame.
   the reference's accessibility snapshots at both widths, without the map's region
   (`LATER` in `scripts/compare-plugin.mjs`), and its sections match by eye in both
   themes. A link to the survey address is stored empty and follows the settings; with
-  none set, its button is left out. The frame prints a tree page's blocks directly,
-  not through `the_content`.*
+  none set, or one WordPress refuses, its button is left out. The frame prints a tree
+  page's blocks directly, not through `the_content`.*
+  - *Decide with the About page: `the_content` also runs `wp_filter_content_tags`,
+    which gives Media Library images their `srcset`, `sizes`, dimensions and lazy
+    loading. The About page's portraits will be core image blocks, so the frame should
+    run that filter (or `the_content`) on tree pages by then.*
+  - *For Phase 6: a Firehouse Editor has no `unfiltered_html`, so saving the page in
+    the block editor runs every attribute string through kses, which turns a `&` into
+    `&amp;` (then shown as written) and can alter a `<`. Today's landing words have
+    neither; the editing screens need to keep editors' text as typed.*
 - Description and Open Graph tags, and whether a Firehouse page's `<title>` names The
   Firehouse. Today it is WordPress's "Page not found - Global Systems Laboratory",
   where the site's is "Page not found — The Firehouse".

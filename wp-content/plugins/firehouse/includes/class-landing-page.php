@@ -10,6 +10,7 @@ declare( strict_types = 1 );
 namespace Firehouse;
 
 use Firehouse\Domain\Derive;
+use Firehouse\Domain\Js;
 use Firehouse\Domain\Vocabulary;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -46,20 +47,25 @@ final class Landing_Page {
 	/**
 	 * The page's blocks, from the bundle's landing content, as the Import screen saves
 	 * them. A link to the bundle's survey address is stored empty, so it follows the
-	 * settings.
+	 * settings. A link keeps only its label and where it goes, and a stat only what the
+	 * site's `Stat` has: nothing else in the bundle reaches the page.
 	 *
 	 * @param array<string, mixed> $landing    The bundle's landing content, normalized.
 	 * @param string               $submit_url The bundle's survey address.
 	 */
 	public static function blocks( array $landing, string $submit_url ): string {
-		$hero = is_array( $landing['hero'] ?? null ) ? $landing['hero'] : array();
-		$cta  = static function ( mixed $link ) use ( $submit_url ): array {
-			$link = is_array( $link ) ? $link : array();
+		$hero  = is_array( $landing['hero'] ?? null ) ? $landing['hero'] : array();
+		$cta   = static function ( mixed $link ) use ( $submit_url ): array {
+			$link = array_intersect_key( is_array( $link ) ? $link : array(), array_flip( array( 'label', 'to', 'href' ) ) );
 			if ( isset( $link['href'] ) && $link['href'] === $submit_url ) {
 				$link['href'] = '';
 			}
 			return $link;
 		};
+		$stats = array();
+		foreach ( is_array( $landing['stats'] ?? null ) ? $landing['stats'] : array() as $stat ) {
+			$stats[] = array_intersect_key( is_array( $stat ) ? $stat : array(), array_flip( array( 'id', 'source', 'value', 'label', 'caption', 'accent' ) ) );
+		}
 		return serialize_blocks(
 			array(
 				self::block(
@@ -71,7 +77,7 @@ final class Landing_Page {
 						'primaryCta'   => $cta( $hero['primaryCta'] ?? null ),
 						'secondaryCta' => $cta( $hero['secondaryCta'] ?? null ),
 					),
-					array( self::block( 'firehouse/stats', array( 'items' => array_values( is_array( $landing['stats'] ?? null ) ? $landing['stats'] : array() ) ) ) )
+					array( self::block( 'firehouse/stats', array( 'items' => $stats ) ) )
 				),
 				self::block(
 					'firehouse/top-needs',
@@ -109,8 +115,9 @@ final class Landing_Page {
 	}
 
 	/**
-	 * Where a link goes: a Firehouse route under /firehouse/, an address as given, or
-	 * the settings' survey address for one stored empty. '' when there's nowhere.
+	 * Where a link goes: a Firehouse route under /firehouse/, its query and fragment
+	 * kept; an address as given; or, for one with no route and an empty or missing
+	 * address, the settings' survey address. '' when there's nowhere.
 	 *
 	 * @param mixed $link The stored link: its `label`, and a `to` or an `href`.
 	 */
@@ -119,8 +126,9 @@ final class Landing_Page {
 			return '';
 		}
 		if ( is_string( $link['to'] ?? null ) && '' !== $link['to'] ) {
-			$parts = explode( '#', $link['to'], 2 );
-			return home_url( '/' . Query::ROOT_PATH . rtrim( $parts[0], '/' ) . '/' ) . ( isset( $parts[1] ) ? '#' . $parts[1] : '' );
+			$end  = strcspn( $link['to'], '?#' );
+			$path = '/' . trim( substr( $link['to'], 0, $end ), '/' );
+			return home_url( '/' . Query::ROOT_PATH . rtrim( $path, '/' ) . '/' ) . substr( $link['to'], $end );
 		}
 		$href = is_string( $link['href'] ?? null ) ? $link['href'] : '';
 		return '' !== $href ? $href : (string) Settings::get()['submitFormUrl'];
@@ -139,7 +147,7 @@ final class Landing_Page {
 		foreach ( array( array( 'primaryCta', 'accent', array( 'plus' ), array( 'block-mobile' ) ), array( 'secondaryCta', 'secondary', array( 1 => 'arrow-right' ), array( 'on-dark', 'block-mobile' ) ) ) as list( $name, $variant, $icons, $modifiers ) ) {
 			$url   = self::link( $attributes[ $name ] ?? null );
 			$label = is_string( $attributes[ $name ]['label'] ?? null ) ? $attributes[ $name ]['label'] : '';
-			if ( '' !== $url && '' !== $label ) {
+			if ( '' !== Markup::url( $url ) && '' !== $label ) {
 				$buttons .= Markup::button( $label, $url, $variant, 'lg', $icons, $modifiers );
 			}
 		}
@@ -171,7 +179,7 @@ final class Landing_Page {
 			$caption = is_string( $stat['caption'] ?? null ) ? $stat['caption'] : '';
 			$items  .= sprintf(
 				'<li class="fh-stat-pane"><div class="fh-stat"><span class="fh-stat__value%1$s">%2$s</span><span class="fh-stat__label">%3$s</span>%4$s</div></li>',
-				true === ( $stat['accent'] ?? null ) ? ' fh-stat__value--accent' : '',
+				Js::truthy( $stat['accent'] ?? null ) ? ' fh-stat__value--accent' : '',
 				Markup::text( Derive::stat_value( $stat, self::content() ) ),
 				Markup::text( $label ),
 				'' !== $caption ? '<span class="fh-stat__caption">' . Markup::text( $caption ) . '</span>' : ''
@@ -188,14 +196,14 @@ final class Landing_Page {
 	 */
 	public static function top_needs( array $attributes ): string {
 		$text     = static fn( string $name ): string => is_string( $attributes[ $name ] ?? null ) ? $attributes[ $name ] : '';
-		$per_card = is_int( $attributes['needsPerCard'] ?? null ) && $attributes['needsPerCard'] > 0 ? $attributes['needsPerCard'] : Topic_Page::NEEDS;
+		$per_card = is_int( $attributes['needsPerCard'] ?? null ) && $attributes['needsPerCard'] >= 0 ? $attributes['needsPerCard'] : Topic_Page::NEEDS;
 		$content  = self::content();
 		$info     = Derive::synthesis_info( $content );
 		$model    = is_string( $info['model'] ?? null ) ? $info['model'] : null;
 		$root     = '/' . Query::ROOT_PATH . '/';
 
 		$cards = '';
-		foreach ( self::cards( $content['topics'], $per_card ) as $card ) {
+		foreach ( self::cards( $content['topics'], $per_card, array_fill_keys( array_column( $content['projects'], 'post_id' ), array() ) ) as $card ) {
 			$needs = '';
 			foreach ( $card['needs'] as $index => $need ) {
 				$needs .= sprintf(
@@ -245,7 +253,7 @@ final class Landing_Page {
 		$text   = static fn( string $name ): string => is_string( $attributes[ $name ] ?? null ) ? $attributes[ $name ] : '';
 		$url    = self::link( $attributes['cta'] ?? null );
 		$label  = is_string( $attributes['cta']['label'] ?? null ) ? $attributes['cta']['label'] : '';
-		$button = '' !== $url && '' !== $label ? Markup::button( $label, $url, 'accent', 'lg', array( 'plus' ), array( 'block-mobile' ) ) : '';
+		$button = '' !== Markup::url( $url ) && '' !== $label ? Markup::button( $label, $url, 'accent', 'lg', array( 'plus' ), array( 'block-mobile' ) ) : '';
 		return sprintf(
 			'<section class="fh-cta-band" aria-labelledby="submit-heading"><div class="fh-cta-band__inner fh-container fh-glass"><span class="fh-cta-band__glow" aria-hidden="true"></span><div class="fh-cta-band__copy"><h2 id="submit-heading" class="fh-cta-band__heading">%1$s</h2><p class="fh-cta-band__body">%2$s</p></div>%3$s</div></section>',
 			Markup::text( $text( 'heading' ) ),
@@ -256,27 +264,22 @@ final class Landing_Page {
 
 	/**
 	 * Each published topic area's card, in the areas' order: its key, label and short
-	 * label, and its first needs as the topic page counts them, among the projects a
-	 * visitor may see. One lookup of the projects for all four.
+	 * label (null for none, so the tag shows the vocabulary's), and its first needs as
+	 * the topic page counts them, among the projects a visitor may see.
 	 *
 	 * @param list<array<string, mixed>> $topics   The published topics: each one's key and fields.
 	 * @param int                        $per_card How many needs each card shows.
-	 * @return list<array{key: string, label: string, short: string, needs: list<array<string, mixed>>}>
+	 * @param array<int, mixed>          $visible  The projects a visitor may see, keyed by post ID.
+	 * @return list<array{key: string, label: string, short: string|null, needs: list<array<string, mixed>>}>
 	 */
-	public static function cards( array $topics, int $per_card ): array {
-		$needs = array();
-		foreach ( $topics as $topic ) {
-			$needs[ $topic['key'] ] = array_slice( Topic_Page::top( $topic['topNeeds'] ?? null ), 0, $per_card );
-		}
-		$projects = Topic_Page::projects( array_merge( array(), ...array_values( $needs ) ) );
-
+	public static function cards( array $topics, int $per_card, array $visible ): array {
 		$cards = array();
 		foreach ( $topics as $topic ) {
 			$cards[] = array(
 				'key'   => $topic['key'],
 				'label' => is_string( $topic['label'] ?? null ) ? $topic['label'] : '',
-				'short' => is_string( $topic['short'] ?? null ) ? $topic['short'] : '',
-				'needs' => Topic_Page::needs( $needs[ $topic['key'] ], $projects ),
+				'short' => is_string( $topic['short'] ?? null ) ? $topic['short'] : null,
+				'needs' => Topic_Page::needs( array_slice( Topic_Page::valid( $topic['topNeeds'] ?? null ), 0, $per_card ), $visible ),
 			);
 		}
 		return $cards;
@@ -284,10 +287,10 @@ final class Landing_Page {
 
 	/**
 	 * What the counts, cards and note are computed from, in the shape of the site's
-	 * content: `projects`, the projects a visitor may see, each with its needs;
+	 * content: `projects`, the projects a visitor may see, each with its post ID and needs;
 	 * `topics`, the published topic areas in order, each with its fields; and
 	 * `topicSummaries`, their syntheses. Read once per request: two queries for the
-	 * projects and their fields, and the topics.
+	 * projects and their fields, and the topics; the cards count from the same projects.
 	 *
 	 * @return array{projects: list<array<string, mixed>>, topics: list<array<string, mixed>>, topicSummaries: list<array<string, mixed>>}
 	 */
@@ -300,6 +303,7 @@ final class Landing_Page {
 			if ( Store::is_public( $post ) ) {
 				$needs      = get_post_meta( $post->ID, Meta::key( 'needs' ), true );
 				$projects[] = array(
+					'post_id'   => $post->ID,
 					'published' => true,
 					'needs'     => is_array( $needs ) ? array_values( array_filter( $needs, 'is_array' ) ) : array(),
 				);

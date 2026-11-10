@@ -50,6 +50,9 @@ final class ImporterTest extends WordPressTestCase {
 		$this->options = array();
 		$this->refuse  = '';
 		self::stand_in_serialize_blocks();
+		Functions\when( 'wp_unique_post_slug' )->returnArg();
+		Functions\when( 'get_posts' )->justReturn( array() );
+		Functions\when( 'get_post' )->justReturn( null );
 		Functions\when( 'rest_validate_value_from_schema' )->justReturn( true );
 		Functions\when( 'sanitize_title' )->alias( static fn( string $title ): string => trim( (string) preg_replace( '/[^a-z0-9]+/', '-', strtolower( $title ) ), '-' ) );
 		Functions\when( 'sanitize_text_field' )->alias( static fn( string $text ): string => trim( $text ) );
@@ -404,8 +407,9 @@ final class ImporterTest extends WordPressTestCase {
 	}
 
 	/**
-	 * A landing page WordPress saves at another address, as it would beside a page of
-	 * the same name in the trash, is a problem.
+	 * A landing page WordPress saves at another address anyway, as something taking the
+	 * address between the dry run and the import would make it, is a problem, and is
+	 * deleted rather than left published.
 	 */
 	public function test_a_landing_page_at_another_address_is_a_problem(): void {
 		$this->stand_in_wordpress();
@@ -421,6 +425,131 @@ final class ImporterTest extends WordPressTestCase {
 		$landing = Importer::run( self::content() )['landing'];
 
 		$this->assertStringContainsString( 'isn’t at /firehouse/', $landing['problems'][0] );
+		$this->assertStringContainsString( 'It was deleted', $landing['problems'][1] );
+		$this->assertSame( 0, $landing['post_id'] );
+		$this->assertSame( array(), array_filter( $posts, static fn( array $post ): bool => 'page' === $post['post_type'] ) );
+	}
+
+	/**
+	 * A landing page that reads back with other blocks than planned is a problem, and is
+	 * deleted.
+	 */
+	public function test_a_landing_page_reading_back_differently_is_deleted(): void {
+		$this->stand_in_wordpress();
+		$posts = &$this->posts;
+		Functions\when( 'wp_insert_post' )->alias(
+			static function ( array $postarr ) use ( &$posts ): int {
+				$id           = 200 + count( $posts );
+				$posts[ $id ] = 'page' === $postarr['post_type'] ? array( 'post_content' => 'Something else' ) + $postarr : $postarr;
+				return $id;
+			}
+		);
+
+		$landing = Importer::run( self::content() )['landing'];
+
+		$this->assertStringContainsString( 'reads back differently', $landing['problems'][0] );
+		$this->assertSame( 0, $landing['post_id'] );
+	}
+
+	/**
+	 * The landing page is written with the kses filters off, so its blocks' attributes
+	 * are saved exactly, whoever imports.
+	 */
+	public function test_the_landing_page_is_written_as_planned(): void {
+		$this->stand_in_wordpress();
+		$posts = &$this->posts;
+		$kses  = true;
+		$seen  = null;
+		Functions\when( 'has_filter' )->justReturn( true );
+		Functions\when( 'kses_remove_filters' )->alias(
+			static function () use ( &$kses ): void {
+				$kses = false;
+			}
+		);
+		Functions\when( 'kses_init_filters' )->alias(
+			static function () use ( &$kses ): void {
+				$kses = true;
+			}
+		);
+		Functions\when( 'wp_insert_post' )->alias(
+			static function ( array $postarr ) use ( &$posts, &$kses, &$seen ): int {
+				if ( 'page' === $postarr['post_type'] ) {
+					$seen = $kses;
+				}
+				$id           = 200 + count( $posts );
+				$posts[ $id ] = $postarr;
+				return $id;
+			}
+		);
+
+		Importer::run( self::content() );
+
+		$this->assertFalse( $seen, 'The kses filters were on while the page was written.' );
+		$this->assertTrue( $kses, 'The kses filters weren’t put back.' );
+	}
+
+	/**
+	 * A landing page in the trash stops the import: restored, it would claim the address
+	 * beside the new one.
+	 */
+	public function test_a_landing_page_in_the_trash_stops_the_import(): void {
+		Functions\when( 'get_posts' )->alias( static fn( array $args ): array => 'trash' === ( $args['post_status'] ?? '' ) ? array( 55 ) : array() );
+		Functions\when( 'get_post_meta' )->alias( static fn( int $id, string $key ): string => 55 === $id && '_wp_desired_post_slug' === $key ? 'firehouse' : '' );
+
+		$plan = Importer::plan( self::content(), array(), array(), null );
+
+		$this->assertFalse( $plan['ok'] );
+		$this->assertStringContainsString( 'in the trash', $plan['landing']['problems'][0] );
+	}
+
+	/**
+	 * An address something else holds, such as a Media Library file named "firehouse",
+	 * stops the import: the page would land at another address.
+	 */
+	public function test_an_address_held_elsewhere_stops_the_import(): void {
+		Functions\when( 'wp_unique_post_slug' )->justReturn( 'firehouse-2' );
+
+		$plan = Importer::plan( self::content(), array(), array(), null );
+
+		$this->assertFalse( $plan['ok'] );
+		$this->assertStringContainsString( 'holds the address /firehouse/', $plan['landing']['problems'][0] );
+	}
+
+	/**
+	 * An existing landing page with nothing in it is left alone too, but the note says
+	 * so, and how to have the import create it.
+	 */
+	public function test_an_empty_landing_page_is_noted(): void {
+		Functions\when( 'get_post' )->justReturn( new \WP_Post( array( 'post_type' => 'page' ) ) );
+
+		$landing = Importer::plan( self::content(), array(), array(), null, array(), array(), 77 )['landing'];
+
+		$this->assertSame( 'unchanged', $landing['action'] );
+		$this->assertStringContainsString( 'exists but is empty', $landing['notes'][0] );
+	}
+
+	/**
+	 * A hero photograph in the bundle isn't carried over, and the dry run says so.
+	 */
+	public function test_a_hero_photograph_is_noted(): void {
+		$content                                = self::content();
+		$content['landing']['hero']['imageUrl'] = 'https://example.org/hero.jpg';
+
+		$landing = Importer::plan( $content, array(), array(), null )['landing'];
+
+		$this->assertStringContainsString( 'photograph isn’t carried over', $landing['notes'][0] );
+		$this->assertStringNotContainsString( 'hero.jpg', $landing['post']['post_content'] );
+	}
+
+	/**
+	 * The fingerprint changes when a landing page appears between the dry run and the
+	 * confirmation.
+	 */
+	public function test_the_fingerprint_follows_the_landing_page(): void {
+		$this->assertNotSame(
+			Importer::fingerprint( Importer::plan( self::content(), array(), array(), null ) ),
+			Importer::fingerprint( Importer::plan( self::content(), array(), array(), null, array(), array(), 77 ) )
+		);
 	}
 
 	/**
@@ -496,7 +625,8 @@ final class ImporterTest extends WordPressTestCase {
 			static function ( array $args ) use ( &$posts ): array {
 				$found = array();
 				foreach ( $posts as $id => $post ) {
-					if ( $args['post_type'] === $post['post_type'] && ( ! isset( $args['name'] ) || ( $args['name'] === $post['post_name'] && ( $post['post_parent'] ?? 0 ) === $args['post_parent'] ) ) ) {
+					$status = $args['post_status'] ?? null;
+					if ( $args['post_type'] === $post['post_type'] && ( ! is_string( $status ) || $status === $post['post_status'] ) && ( ! isset( $args['name'] ) || ( $args['name'] === $post['post_name'] && ( $post['post_parent'] ?? 0 ) === $args['post_parent'] ) ) ) {
 						$found[] = 'ids' === ( $args['fields'] ?? '' ) ? $id : self::as_post( $id, $post );
 					}
 				}
@@ -504,6 +634,14 @@ final class ImporterTest extends WordPressTestCase {
 			}
 		);
 		Functions\when( 'wp_slash' )->returnArg();
+		Functions\when( 'wp_delete_post' )->alias(
+			static function ( int $id ) use ( &$posts, &$writes ): \WP_Post {
+				$writes[] = 'delete post';
+				$post     = self::as_post( $id, $posts[ $id ] );
+				unset( $posts[ $id ] );
+				return $post;
+			}
+		);
 		Functions\when( 'has_filter' )->justReturn( false );
 		Functions\when( 'kses_remove_filters' )->justReturn();
 		Functions\when( 'update_option' )->alias(

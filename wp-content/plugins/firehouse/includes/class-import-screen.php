@@ -230,7 +230,11 @@ final class Import_Screen {
 			return self::keep( $state, $bundle );
 		}
 
-		delete_transient( self::transient() );
+		// Only the request whose delete removes the dry run imports it: a second
+		// confirmation sent at the same time, as a double click sends, finds it gone.
+		if ( ! delete_transient( self::transient() ) ) {
+			return self::refused( __( 'That dry run has expired, or was already imported. Upload the bundle again.', 'firehouse' ) );
+		}
 		return array(
 			'step' => 'done',
 			'plan' => Importer::run( $bundle['content'], $bundle['notes'], $bundle['problems'] ),

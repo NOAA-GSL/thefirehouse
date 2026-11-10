@@ -456,8 +456,12 @@ nothing from the database. Each class's docblock has the detail; this is the map
     WordPress's are kept, so importing again never overwrites a reviewed synthesis.
   - The landing page, the `firehouse` page at `/firehouse/`, is created from the
     bundle's landing content as the landing page's blocks, only when there's no such
-    page in any status; after that its words are the editors'. A link to the bundle's
-    survey address is stored empty, so it follows the settings.
+    page in any status but the trash; after that its words are the editors'. One in
+    the trash, or anything else holding the address (a Media Library file named
+    `firehouse`), stops the import, and a page WordPress saves at another address
+    anyway is deleted, not left published. A link to the bundle's survey address is
+    stored empty, so it follows the settings. Two confirmations of one dry run, as a
+    double click sends, import once.
   - Each post is read back after it is written. The About page is checked but not
     written yet.
 - `Landing_Page` is the landing page's blocks: `firehouse/hero` with `firehouse/stats`

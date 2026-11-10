@@ -28,8 +28,9 @@ abstract class WordPressTestCase extends DomainTestCase {
 
 	/**
 	 * Stands in for serialize_blocks() with a copy of WordPress's: each block as its
-	 * comment delimiters, its attributes as JSON with `--`, `<`, `>`, `&` and an escaped
-	 * quote written as Unicode escapes, and its inner blocks between.
+	 * comment delimiters, its attributes as JSON with an escaped backslash, `--`, `<`,
+	 * `>`, `&` and an escaped quote written as Unicode escapes (serialize_block_attributes()'s
+	 * strtr() table), and its inner blocks between.
 	 */
 	protected static function stand_in_serialize_blocks(): void {
 		$serialize = static function ( array $block ) use ( &$serialize ): string {
@@ -42,7 +43,17 @@ abstract class WordPressTestCase extends DomainTestCase {
 			$attributes = '';
 			if ( ! empty( $block['attrs'] ) ) {
 				$json       = (string) json_encode( $block['attrs'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ); // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- standing in for wp_json_encode() inside serialize_block_attributes().
-				$json       = (string) preg_replace( array( '/--/', '/</', '/>/', '/&/', '/\\\\"/' ), array( '\\u002d\\u002d', '\\u003c', '\\u003e', '\\u0026', '\\u0022' ), $json );
+				$json       = strtr(
+					$json,
+					array(
+						'\\\\' => '\\u005c',
+						'--'   => '\\u002d\\u002d',
+						'<'    => '\\u003c',
+						'>'    => '\\u003e',
+						'&'    => '\\u0026',
+						'\\"'  => '\\u0022',
+					)
+				);
 				$attributes = $json . ' ';
 			}
 			return '' === $content ? sprintf( '<!-- wp:%s %s/-->', $name, $attributes ) : sprintf( '<!-- wp:%1$s %2$s-->%3$s<!-- /wp:%1$s -->', $name, $attributes, $content );

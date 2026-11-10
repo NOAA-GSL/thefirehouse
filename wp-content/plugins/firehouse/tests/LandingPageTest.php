@@ -339,6 +339,82 @@ final class LandingPageTest extends WordPressTestCase {
 	}
 
 	/**
+	 * A route keeps its query and fragment, and gets the leading slash it lacks.
+	 */
+	public function test_a_route_keeps_its_query(): void {
+		$this->assertSame( 'https://example.test/firehouse/projects/?topics=warning', Landing_Page::link( array( 'to' => '/projects?topics=warning' ) ) );
+		$this->assertSame( 'https://example.test/firehouse/projects/', Landing_Page::link( array( 'to' => 'projects' ) ) );
+		$this->assertSame( 'https://example.test/firehouse/projects/#grid', Landing_Page::link( array( 'to' => '/projects/#grid' ) ) );
+	}
+
+	/**
+	 * A card shows as many needs as the block asks for, past the topic pages' five, or
+	 * none; a topic with no short label gets the vocabulary's on its tag.
+	 */
+	public function test_a_card_shows_what_the_block_asks_for(): void {
+		$needs = array_map(
+			static fn( int $n ): array => array(
+				'text'     => 'Need ' . $n,
+				'mentions' => 1,
+			),
+			range( 1, 7 )
+		);
+		$topic = array(
+			'key'      => 'observe',
+			'label'    => 'Observations and Monitoring',
+			'topNeeds' => $needs,
+		);
+
+		$this->assertCount( 6, Landing_Page::cards( array( $topic ), 6, array() )[0]['needs'] );
+		$this->assertCount( 0, Landing_Page::cards( array( $topic ), 0, array() )[0]['needs'] );
+		$this->assertNull( Landing_Page::cards( array( $topic ), 2, array() )[0]['short'] );
+	}
+
+	/**
+	 * A stat's accent reads as JavaScript reads it: any value that isn't falsy.
+	 */
+	public function test_a_stats_accent_is_javascripts(): void {
+		$stat = array(
+			'source' => 'static',
+			'value'  => 'Open',
+			'label'  => 'For submissions',
+		);
+
+		$this->assertStringContainsString( 'fh-stat__value--accent', Landing_Page::stats( array( 'items' => array( $stat + array( 'accent' => 'yes' ) ) ) ) );
+		$this->assertStringNotContainsString( 'fh-stat__value--accent', Landing_Page::stats( array( 'items' => array( $stat + array( 'accent' => '' ) ) ) ) );
+	}
+
+	/**
+	 * A button whose address WordPress refuses is left out, not printed going nowhere.
+	 */
+	public function test_a_refused_address_has_no_button(): void {
+		Functions\when( 'esc_url_raw' )->alias( static fn( string $url ): string => str_starts_with( $url, 'https://' ) ? $url : '' );
+		$attributes = array(
+			'heading' => 'Have a finding to share?',
+			'body'    => 'Describe what you learned.',
+			'cta'     => array(
+				'label' => 'Submit a Finding',
+				'href'  => 'javascript:alert(1)',
+			),
+		);
+
+		$this->assertStringNotContainsString( 'fh-btn', Landing_Page::submit_band( $attributes ) );
+		$this->assertStringNotContainsString( 'fh-btn--accent', Landing_Page::hero( array( 'primaryCta' => $attributes['cta'] ), '' ) );
+	}
+
+	/**
+	 * Only a link's label and where it goes, and only what a stat has, reach the page:
+	 * nothing else in the bundle is stored.
+	 */
+	public function test_unknown_keys_dont_reach_the_page(): void {
+		$landing                               = self::landing();
+		$landing['hero']['primaryCta']['note'] = 'not for the page';
+		$landing['stats'][0]['secret']         = 'not for the page either';
+
+		$this->assertStringNotContainsString( 'not for the page', Landing_Page::blocks( $landing, self::SURVEY ) );
+	}
+
+	/**
 	 * What the page is computed from is read once a request: the projects a visitor may
 	 * see with their needs, and the published topics in order.
 	 */
