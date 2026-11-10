@@ -207,17 +207,24 @@ final class FrameTest extends WordPressTestCase {
 				if ( array_intersect_key( $args, $expected ) !== $expected ) {
 					return array();
 				}
+				// Projects, only those a visitor may see.
+				if ( 'fh_project' === $args['post_type'] && ( $args['meta_query'] ?? null ) !== \Firehouse\Store::public_projects_query()['meta_query'] ) {
+					return array();
+				}
 				return array_map(
-					static fn( string $slug ): \WP_Post => new \WP_Post(
+					static fn( string $slug, int $index ): \WP_Post => new \WP_Post(
 						array(
+							'ID'        => 100 + $index,
 							'post_type' => $args['post_type'],
 							'post_name' => $slug,
 						)
 					),
-					$slugs[ $args['post_type'] ] ?? array()
+					$slugs[ $args['post_type'] ] ?? array(),
+					array_keys( $slugs[ $args['post_type'] ] ?? array() )
 				);
 			}
 		);
+		Functions\when( 'get_post_meta' )->justReturn( '1' );
 		Functions\when( 'get_permalink' )->alias(
 			static fn( \WP_Post $post ): string => 'https://example.test/firehouse/' . ( 'fh_topic' === $post->post_type ? 'topics' : 'projects' ) . '/' . $post->post_name . '/'
 		);
@@ -252,6 +259,17 @@ final class FrameTest extends WordPressTestCase {
 			self::missing( $path, $type, $name );
 			$this->assertSame( $guess, Frame::guess_404( null ), $path );
 		}
+	}
+
+	/**
+	 * A project the query let through is still passed over if the site's own test
+	 * fails it, as a second approval row written around Meta could make it.
+	 */
+	public function test_the_guess_checks_a_project_as_the_site_does(): void {
+		self::missing( 'firehouse/projects/california', 'fh_project', 'california' );
+		Functions\when( 'get_post_meta' )->alias( static fn( int $id ): string => 101 === $id ? '' : '1' );
+
+		$this->assertSame( 'https://example.test/firehouse/projects/california-wildfire/', Frame::guess_404( null ) );
 	}
 
 	/**

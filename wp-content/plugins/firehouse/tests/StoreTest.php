@@ -133,6 +133,38 @@ final class StoreTest extends WordPressTestCase {
 	}
 
 	/**
+	 * A loaded project is public by the same test as the query: published, without a
+	 * password, and with its approval read back as exactly true.
+	 *
+	 * @dataProvider public_or_not
+	 *
+	 * @param array<string, mixed> $post     The post's fields.
+	 * @param mixed                $approval What its approval reads back as.
+	 * @param bool                 $expected Whether a visitor may see it.
+	 */
+	public function test_a_project_is_public_by_the_same_test( array $post, mixed $approval, bool $expected ): void {
+		Functions\when( 'get_post_meta' )->alias( static fn( int $id, string $key ): mixed => 'fh_irbApproved' === $key ? $approval : '' );
+
+		$this->assertSame( $expected, Store::is_public( new \WP_Post( $post + array( 'post_type' => 'fh_project' ) ) ) );
+	}
+
+	/**
+	 * Projects, and whether a visitor may see each.
+	 *
+	 * @return array<string, array{0: array<string, mixed>, 1: mixed, 2: bool}>
+	 */
+	public static function public_or_not(): array {
+		return array(
+			'published and approved' => array( array(), '1', true ),
+			'not approved, or none'  => array( array(), '', false ),
+			'"1 " stored'            => array( array(), '1 ', false ),
+			'a draft'                => array( array( 'post_status' => 'draft' ), '1', false ),
+			'a password'             => array( array( 'post_password' => 'secret' ), '1', false ),
+			'not a project'          => array( array( 'post_type' => 'page' ), '1', false ),
+		);
+	}
+
+	/**
 	 * A topic's label is its title, stored escaped and read back as written.
 	 */
 	public function test_a_topic_label_reads_back_unescaped(): void {

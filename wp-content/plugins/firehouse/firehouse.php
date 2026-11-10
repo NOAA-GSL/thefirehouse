@@ -55,6 +55,7 @@ require_once __DIR__ . '/includes/class-capabilities.php';
 require_once __DIR__ . '/includes/class-installer.php';
 require_once __DIR__ . '/includes/class-settings.php';
 require_once __DIR__ . '/includes/class-store.php';
+require_once __DIR__ . '/includes/class-visibility.php';
 require_once __DIR__ . '/includes/class-seed-bundle.php';
 require_once __DIR__ . '/includes/class-importer.php';
 require_once __DIR__ . '/includes/class-import-screen.php';
@@ -100,8 +101,34 @@ require_once __DIR__ . '/includes/class-blocks.php';
  * - Query::request (the `request` filter) drops a project or topic query variable that
  *   isn't a string (an array, say) or is "" or "0".
  *
+ * On every query that returns posts (not IDs only) and doesn't suppress filters,
+ * outside the admin's own screens: public pages, feeds, the sitemap, REST, admin-ajax
+ * and cron, but not WP-CLI unless it's running cron:
+ *
+ * - Visibility::posts (the `posts_results` filter) looks at what the query found and
+ *   drops a project a visitor may not see: one that isn't published, has a password,
+ *   or lacks IRB approval. Someone who may edit it still sees it on its own page, and
+ *   nowhere else. A query that found no project is passed through untouched. One that
+ *   found projects loads the published ones' fields in one query if they aren't
+ *   loaded yet, which for WordPress's sitemap, which never loads them, is one query
+ *   more. A list can come back short, and its `found_posts` still counts what was
+ *   dropped.
+ *
+ * Wherever WordPress builds a redirect, looks up an embed or builds a menu (public
+ * pages, feeds, REST's oEmbed endpoint, admin-ajax, and the admin's Menus screen):
+ *
+ * - Visibility::redirect (the `redirect_canonical` filter) refuses any redirect on a
+ *   request whose `?p=`, `?page_id=` or `?attachment_id=` is a project a visitor may
+ *   not see, which covers the redirects WordPress builds from that ID on a missing
+ *   address or a feed. Visibility::post_id does the
+ *   same for oEmbed (`oembed_request_post_id`) and a changed slug's redirect
+ *   (`old_slug_redirect_post_id`), whoever asks, and Visibility::menu_item marks a
+ *   menu item invalid when it links to one (`wp_setup_nav_menu_item`).
+ *
  * On every public page:
  *
+ * - Visibility::head_links removes WordPress's previous and next links from a
+ *   project's head, and from no other page.
  * - Frame::guess_404 (the `pre_redirect_guess_404_permalink` filter) runs on every
  *   missing address and changes WordPress's answer only under /firehouse/, where it
  *   makes the Firehouse's own guess.
@@ -140,5 +167,6 @@ Installer::hook( __FILE__ );
 Settings::hook();
 Import_Screen::hook();
 Frame::hook();
+Visibility::hook();
 Blocks::hook();
 Verbatim::hook();

@@ -211,7 +211,7 @@ wp-content/plugins/firehouse/
   firehouse.php
   includes/        post types, meta schemas, settings, roles and permissions, the
                    checks at save and import (which call domain/), the seed import
-                   screen, the query and verbatim filters, the frame, block
+                   screen, the query, visibility and verbatim filters, the frame, block
                    registration, the markup the blocks render (the bar, the 404,
                    the topic pages, icons, buttons, topic tags, the synthesis
                    note), the AI service client
@@ -641,7 +641,9 @@ immediately, and the only job is versioned CSS and JS filenames, which WordPress
 already does.
 
 If that changes (Phase 7b's Site Health check keeps reading the header), a new
-project, a count or a synthesis update would stay stale until the cache expired. Publishing would then have to purge, through
+project, a count, a synthesis update or a hidden project would stay stale until the
+cache expired. A hidden project matters most: one whose IRB approval is cleared would
+stay on its page, the archive, the sitemap and every topic page that cites it. Publishing would then have to purge, through
 Cloudflare's own WordPress integration or the plugin calling Cloudflare's purge API
 with a token limited to purging, and the token would be a security-review item.
 
@@ -662,7 +664,8 @@ adds a rule that bypasses the cache for that path.
   WordPress's guess at a missing address elsewhere on the site, so a missing GSL
   address can't redirect to a researcher's project. *Done: `exclude_from_search` on
   both types, which also leaves them out of any query for posts of `any` type. The
-  sitemap still lists them, and a search that names the type still finds them.*
+  sitemap still lists the ones a visitor may see, and a search that names the type
+  still finds them.*
 - **The plugin adds** the description and the Open Graph and Twitter tags, on Firehouse
   pages only. A shared project link then previews with the project's own title and
   abstract. This closes the gap noted in `PLAN.md` §2.2.
@@ -1046,19 +1049,35 @@ signed off on the frame.
   a password, and with IRB approval or exemption, the projects the site's normalize
   step keeps. One that named a project since unpublished is recounted, as that step
   does, and the "of 8 projects" total counts the same projects.*
-- The project pages use the same definition (`Store::public_projects_query()`). A
-  published project without IRB approval or exemption gets the 404 at its address and
-  at `?p=`, and stays out of the sitemap, the not-found guess, the project feed
-  (`?post_type=fh_project&feed=rss2` still answers, though the type's pretty feed
-  addresses are off), embeds and oEmbed, and the previous and next links in a page's
-  head. Today all of these go by published alone.
-  - The rule goes in the query, on every public `fh_project` query, so each of those
-    inherits it; the head links need their own filter or removal.
-  - The 404 and the guess ship together: a 404 with the old guess would still answer
-    a shortened address with a redirect to the full slug.
-  - It lands before the survey form or any screen that can publish a project. Today
+- *Done 10 November (`includes/class-visibility.php`): a project a visitor may not
+  see is off the public side of the site, not only the topic pages. A published
+  project without IRB approval or exemption, or with a password, gets the 404 at its
+  address and at `?p=` and `?fh_project=`, and stays out of the not-found guess, the
+  project feed (`?post_type=fh_project&feed=rss2` still answers, though the type's
+  pretty feed addresses are off), the sitemap, embeds and oEmbed, menus, the
+  redirects WordPress builds from a post ID, a changed slug's redirect, and the
+  previous and next links in a page's head. Checked on the local copy by request, with
+  one project's approval cleared and then restored.*
+  - *The rule is applied to what each query finds (`posts_results`), so the main
+    query, feeds, embeds, the sitemap and oEmbed's lookup of a pretty address all
+    inherit it. WordPress builds some redirects from `?p=`, `?page_id=` and
+    `?attachment_id=` without a query, on a missing address and on a feed; oEmbed
+    reads a `?p=` address's ID directly; menus and the old-slug redirect read the post
+    directly. Each has its own filter.*
+  - *Someone who may edit the project still sees it on its own page, as WordPress
+    shows them a draft in preview, and nowhere else: not in a list, a feed, an embed
+    or oEmbed, any of which a cache could hand on to a visitor.*
+  - *Not covered: a query for IDs only, which WordPress answers before the filter
+    (today only the sitemap index's page count); and an embed another post cached
+    while the project was public, until that post is saved again.*
+  - *WordPress limits a list before the filter, so a page of the archive or the feed
+    can come back short, and `?paged=2` still pages both. The Phase 4 archive should
+    ask for public projects itself, as the topic pages do.*
+  - *It lands before the survey form or any screen that can publish a project. Today
     nothing in the plugin can: the import drops a project without approval, and
-    projects have no edit screen.
+    projects have no edit screen. Whether publishing a project without approval
+    should be refused outright, as the plugin refuses a topic's status change, is open
+    (rule 6 would put the check where the editor is).*
 - Description and Open Graph tags, and whether a Firehouse page's `<title>` names The
   Firehouse. Today it is WordPress's "Page not found - Global Systems Laboratory",
   where the site's is "Page not found — The Firehouse".
@@ -1266,7 +1285,8 @@ Phases 6–7.
    enough spam protection, and whether the AI service needs a security review as well
    as approval under NOAA's AI policy.
 3. Does any other cache sit in front of either site, such as a page cache on the
-   server? (Cloudflare caches neither site's HTML: see [Caching](#caching).)
+   server? (Cloudflare caches neither site's HTML: see [Caching](#caching).) If one
+   does, hiding a project has to purge the topic pages that cite it, not only its own.
 4. Can the bridge go on the test site, restricted to GSL staff, by mid-November?
 
 **For ITS**
