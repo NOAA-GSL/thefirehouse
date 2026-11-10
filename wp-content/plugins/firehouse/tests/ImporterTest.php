@@ -493,13 +493,50 @@ final class ImporterTest extends WordPressTestCase {
 	 * beside the new one.
 	 */
 	public function test_a_landing_page_in_the_trash_stops_the_import(): void {
-		Functions\when( 'get_posts' )->alias( static fn( array $args ): array => 'trash' === ( $args['post_status'] ?? '' ) ? array( 55 ) : array() );
+		$trashed = array(
+			new \WP_Post(
+				array(
+					'ID'        => 55,
+					'post_type' => 'page',
+					'post_name' => 'firehouse__trashed',
+				)
+			),
+		);
+		Functions\when( 'get_posts' )->alias( static fn( array $args ): array => 'trash' === ( $args['post_status'] ?? '' ) ? $trashed : array() );
 		Functions\when( 'get_post_meta' )->alias( static fn( int $id, string $key ): string => 55 === $id && '_wp_desired_post_slug' === $key ? 'firehouse' : '' );
 
 		$plan = Importer::plan( self::content(), array(), array(), null );
 
 		$this->assertFalse( $plan['ok'] );
 		$this->assertStringContainsString( 'in the trash', $plan['landing']['problems'][0] );
+
+		// Older trash may still hold the address itself.
+		$trashed[0]->post_name = 'firehouse';
+		Functions\when( 'get_post_meta' )->justReturn( '' );
+		$this->assertStringContainsString( 'in the trash', Importer::plan( self::content(), array(), array(), null )['landing']['problems'][0] );
+	}
+
+	/**
+	 * A page WordPress won't delete is reported as still published, with its ID, so
+	 * someone can find it.
+	 */
+	public function test_a_page_wordpress_wont_delete_is_reported(): void {
+		$this->stand_in_wordpress();
+		Functions\when( 'wp_unique_post_slug' )->returnArg();
+		$posts = &$this->posts;
+		Functions\when( 'wp_insert_post' )->alias(
+			static function ( array $postarr ) use ( &$posts ): int {
+				$id           = 200 + count( $posts );
+				$posts[ $id ] = array( 'post_name' => 'page' === $postarr['post_type'] ? 'firehouse-2' : $postarr['post_name'] ) + $postarr;
+				return $id;
+			}
+		);
+		Functions\when( 'wp_delete_post' )->justReturn( false );
+
+		$landing = Importer::run( self::content() )['landing'];
+
+		$this->assertStringContainsString( 'didn’t delete it, so it is still published', $landing['problems'][1] );
+		$this->assertNotSame( 0, $landing['post_id'] );
 	}
 
 	/**

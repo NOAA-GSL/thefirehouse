@@ -47,8 +47,9 @@ final class Landing_Page {
 	/**
 	 * The page's blocks, from the bundle's landing content, as the Import screen saves
 	 * them. A link to the bundle's survey address is stored empty, so it follows the
-	 * settings. A link keeps only its label and where it goes, and a stat only what the
-	 * site's `Stat` has: nothing else in the bundle reaches the page.
+	 * settings. Only text reaches the page: a link's label and where it goes, what the
+	 * site's `Stat` has (its accent as true or false), and each section's words. A key
+	 * the site doesn't have, or a value that isn't text, is left out.
 	 *
 	 * @param array<string, mixed> $landing    The bundle's landing content, normalized.
 	 * @param string               $submit_url The bundle's survey address.
@@ -56,7 +57,7 @@ final class Landing_Page {
 	public static function blocks( array $landing, string $submit_url ): string {
 		$hero  = is_array( $landing['hero'] ?? null ) ? $landing['hero'] : array();
 		$cta   = static function ( mixed $link ) use ( $submit_url ): array {
-			$link = array_intersect_key( is_array( $link ) ? $link : array(), array_flip( array( 'label', 'to', 'href' ) ) );
+			$link = self::text_fields( $link, array( 'label', 'to', 'href' ) );
 			if ( isset( $link['href'] ) && $link['href'] === $submit_url ) {
 				$link['href'] = '';
 			}
@@ -64,16 +65,19 @@ final class Landing_Page {
 		};
 		$stats = array();
 		foreach ( is_array( $landing['stats'] ?? null ) ? $landing['stats'] : array() as $stat ) {
-			$stats[] = array_intersect_key( is_array( $stat ) ? $stat : array(), array_flip( array( 'id', 'source', 'value', 'label', 'caption', 'accent' ) ) );
+			$stats[] = self::text_fields( $stat, array( 'id', 'source', 'value', 'label', 'caption' ) )
+				+ ( is_array( $stat ) && isset( $stat['accent'] ) ? array( 'accent' => Js::truthy( $stat['accent'] ) ) : array() );
 		}
+		$words = static fn( mixed $section ): array => self::text_fields( $section, array( 'eyebrow', 'heading', 'body' ) ) + array(
+			'eyebrow' => '',
+			'heading' => '',
+			'body'    => '',
+		);
 		return serialize_blocks(
 			array(
 				self::block(
 					'firehouse/hero',
-					array(
-						'eyebrow'      => $hero['eyebrow'] ?? '',
-						'heading'      => $hero['heading'] ?? '',
-						'body'         => $hero['body'] ?? '',
+					$words( $hero ) + array(
 						'primaryCta'   => $cta( $hero['primaryCta'] ?? null ),
 						'secondaryCta' => $cta( $hero['secondaryCta'] ?? null ),
 					),
@@ -81,19 +85,34 @@ final class Landing_Page {
 				),
 				self::block(
 					'firehouse/top-needs',
-					array_intersect_key( is_array( $landing['topicSection'] ?? null ) ? $landing['topicSection'] : array(), array_flip( array( 'eyebrow', 'heading', 'body' ) ) )
+					self::text_fields( $landing['topicSection'] ?? null, array( 'eyebrow', 'heading', 'body' ) )
 						+ array( 'needsPerCard' => is_int( $landing['needsPerCard'] ?? null ) ? $landing['needsPerCard'] : Topic_Page::NEEDS )
 				),
 				self::block(
 					'firehouse/submit-band',
-					array(
-						'heading' => $landing['submitBand']['heading'] ?? '',
-						'body'    => $landing['submitBand']['body'] ?? '',
-						'cta'     => $cta( $landing['submitBand']['cta'] ?? null ),
-					)
+					array_intersect_key( $words( $landing['submitBand'] ?? null ), array_flip( array( 'heading', 'body' ) ) )
+						+ array( 'cta' => $cta( $landing['submitBand']['cta'] ?? null ) )
 				),
 			)
 		);
+	}
+
+	/**
+	 * The named fields of a part of the bundle that are text, in that order; anything
+	 * else in it, and any of them that isn't text, left out.
+	 *
+	 * @param mixed    $part  The part: a link, a stat, or a section's words.
+	 * @param string[] $names The fields to keep.
+	 * @return array<string, string>
+	 */
+	private static function text_fields( mixed $part, array $names ): array {
+		$kept = array();
+		foreach ( $names as $name ) {
+			if ( is_array( $part ) && is_string( $part[ $name ] ?? null ) ) {
+				$kept[ $name ] = $part[ $name ];
+			}
+		}
+		return $kept;
 	}
 
 	/**

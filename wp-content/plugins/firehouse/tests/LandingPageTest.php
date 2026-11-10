@@ -410,8 +410,16 @@ final class LandingPageTest extends WordPressTestCase {
 		$landing                               = self::landing();
 		$landing['hero']['primaryCta']['note'] = 'not for the page';
 		$landing['stats'][0]['secret']         = 'not for the page either';
+		$landing['hero']['heading']            = array( 'not text, so not for the page' );
+		$landing['submitBand']['cta']['label'] = array( 'nor this' );
+		$landing['topicSection']['body']       = 7;
 
-		$this->assertStringNotContainsString( 'not for the page', Landing_Page::blocks( $landing, self::SURVEY ) );
+		$blocks = Landing_Page::blocks( $landing, self::SURVEY );
+
+		$this->assertStringNotContainsString( 'not for the page', $blocks );
+		$this->assertStringNotContainsString( 'nor this', $blocks );
+		$this->assertStringContainsString( '"heading":""', $blocks );
+		$this->assertStringContainsString( '"accent":true', $blocks );
 	}
 
 	/**

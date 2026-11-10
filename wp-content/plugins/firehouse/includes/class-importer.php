@@ -144,9 +144,12 @@ final class Importer {
 		$plan = self::verify( $plan );
 		if ( 'create' === $plan['landing']['action'] && 0 !== $plan['landing']['post_id'] && array() !== $plan['landing']['problems'] ) {
 			// A page that isn't the landing page as planned isn't left published.
-			wp_delete_post( $plan['landing']['post_id'], true );
-			$plan['landing']['problems'][] = 'It was deleted, so the Firehouse has no landing page yet. Fix the problem above, then import again.';
-			$plan['landing']['post_id']    = 0;
+			if ( wp_delete_post( $plan['landing']['post_id'], true ) ) {
+				$plan['landing']['problems'][] = 'It was deleted, so the Firehouse has no landing page yet. Fix the problem above, then import again.';
+				$plan['landing']['post_id']    = 0;
+			} else {
+				$plan['landing']['problems'][] = sprintf( 'WordPress didn’t delete it, so it is still published: delete the page with ID %d from the Pages list, then import again.', $plan['landing']['post_id'] );
+			}
 		}
 		return array_merge( $plan, array( 'imported' => true ) );
 	}
@@ -569,7 +572,7 @@ final class Importer {
 				'problems' => array(),
 				'notes'    => array(
 					$page instanceof \WP_Post && '' === trim( $page->post_content )
-						? 'The landing page exists but is empty, so it shows a placeholder: the import doesn’t write into an existing page. Delete it permanently, then import again to create it.'
+						? 'The landing page exists but is empty, so it shows a placeholder: the import doesn’t write into an existing page. To have the import create it, first move any pages under it elsewhere (deleting it would move them out of the Firehouse), then delete it permanently and import again.'
 						: 'The landing page already exists, so its words are left as editors have them.',
 				),
 			);
@@ -605,8 +608,10 @@ final class Importer {
 	}
 
 	/**
-	 * Whether a top-level page that had the landing page's address is in the trash.
-	 * WordPress gives its address back when it's restored, beside any new one.
+	 * Whether a top-level page that had the landing page's address is in the trash:
+	 * trashed with it (WordPress keeps the address it wants back), or older trash still
+	 * holding it. WordPress gives its address back when it's restored, beside any new
+	 * one. One query for the pages and their fields.
 	 */
 	private static function trashed_root(): bool {
 		$trashed = get_posts(
@@ -615,11 +620,10 @@ final class Importer {
 				'post_status' => 'trash',
 				'post_parent' => 0,
 				'numberposts' => -1,
-				'fields'      => 'ids',
 			)
 		);
-		foreach ( $trashed as $id ) {
-			if ( Query::ROOT_PATH === get_post_meta( (int) $id, '_wp_desired_post_slug', true ) ) {
+		foreach ( $trashed as $page ) {
+			if ( Query::ROOT_PATH === $page->post_name || Query::ROOT_PATH === get_post_meta( $page->ID, '_wp_desired_post_slug', true ) ) {
 				return true;
 			}
 		}

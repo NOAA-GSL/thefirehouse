@@ -363,7 +363,7 @@ final class FrameTest extends WordPressTestCase {
 
 		Functions\when( 'is_singular' )->justReturn( false );
 		Functions\when( 'is_page' )->justReturn( true );
-		Functions\when( 'get_queried_object' )->justReturn( new \WP_Post( array( 'post_type' => 'page' ) ) );
+		Functions\when( 'get_post' )->justReturn( new \WP_Post( array( 'post_type' => 'page' ) ) );
 		ob_start();
 		Frame::content();
 		$this->assertSame( '<section class="fh-section"><div class="fh-container"><h1>The Firehouse</h1><p>This page is being built.</p></div></section>', ob_get_clean() );
@@ -372,7 +372,8 @@ final class FrameTest extends WordPressTestCase {
 	/**
 	 * A page in the Firehouse tree with blocks gets its blocks, rendered as they are,
 	 * not through `the_content`; one with a password the visitor hasn't given gets
-	 * WordPress's form.
+	 * WordPress's form. The blocks are the query's post's, which a preview has swapped
+	 * its unsaved changes into, not the queried object's, which stays as published.
 	 */
 	public function test_a_page_in_the_tree_gets_its_blocks(): void {
 		$page = new \WP_Post(
@@ -384,7 +385,8 @@ final class FrameTest extends WordPressTestCase {
 		Functions\when( 'is_404' )->justReturn( false );
 		Functions\when( 'is_singular' )->justReturn( false );
 		Functions\when( 'is_page' )->justReturn( true );
-		Functions\when( 'get_queried_object' )->justReturn( $page );
+		Functions\when( 'get_post' )->justReturn( $page );
+		Functions\when( 'get_queried_object' )->justReturn( new \WP_Post( array( 'post_type' => 'page' ) ) );
 		Functions\when( 'post_password_required' )->justReturn( false );
 		Functions\expect( 'do_blocks' )->once()->with( '<!-- wp:firehouse/hero /-->' )->andReturn( '[hero]' );
 		Functions\expect( 'apply_filters' )->never();
@@ -506,6 +508,7 @@ final class FrameTest extends WordPressTestCase {
 		Functions\when( 'is_singular' )->justReturn( false );
 		Functions\when( 'is_page' )->justReturn( false );
 		Functions\when( 'get_queried_object' )->justReturn( null );
+		Functions\when( 'get_post' )->justReturn( null );
 
 		ob_start();
 		require dirname( __DIR__ ) . '/templates/frame.php';

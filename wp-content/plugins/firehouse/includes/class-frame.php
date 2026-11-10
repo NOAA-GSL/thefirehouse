@@ -215,7 +215,9 @@ final class Frame {
 			echo do_blocks( '<!-- wp:firehouse/topic /-->' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- as above.
 			return;
 		}
-		$page = get_queried_object();
+		// The query's post, not the queried object: a preview of a published page swaps
+		// its unsaved changes into the one, and leaves the other as published.
+		$page = get_post();
 		if ( is_page() && $page instanceof \WP_Post && '' !== trim( $page->post_content ) ) {
 			self::page( $page );
 			return;
