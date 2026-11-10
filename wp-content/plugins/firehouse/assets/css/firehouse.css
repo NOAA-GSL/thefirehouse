@@ -2530,9 +2530,12 @@
      belongs on an overlay the page shouldn't move behind — a modal or a drawer —
      not on an inline card the reader is scrolling *past*. With the default, the
      card takes the wheel until it runs out and the page carries on. */
-  /* Firefox; the WebKit equivalent is below. */
+  /* Firefox, and Chrome and Edge from 121, which then ignore the ::-webkit-scrollbar
+     rules below; those are for Safari. The thumb is one of the two cues that a card
+     scrolls, so it keeps 3:1 against the card (WCAG 1.4.11). Forced-colors mode drops
+     the edge shadows and draws the system scrollbar instead. */
   scrollbar-width: thin;
-  scrollbar-color: var(--color-border-strong) transparent;
+  scrollbar-color: var(--color-text-tertiary) transparent;
 }
 
 @media (min-width: 768px) {
@@ -2568,10 +2571,26 @@
 }
 
 /* Only ever focused because it scrolls, so the ring is the cue that the card is
-   now taking arrow keys — it has to be visible against both halves. */
+   now taking arrow keys — it has to be visible against both halves.
+
+   It's drawn around the card, not inside the scrolling body: the recommendation
+   band is positioned (for its heat rule), so it paints over an outline drawn inside
+   the body, and once the band fills the view the ring is gone. A browser without
+   `:has()` keeps the ring inside. */
 .fh-app .fh-entry__body:focus-visible {
   outline: var(--focus-ring-width) solid var(--color-focus-ring);
   outline-offset: -3px;
+}
+
+@supports selector(:has(*)) {
+  .fh-app .fh-entry__body:focus-visible {
+    outline: none;
+  }
+
+  .fh-app .fh-entry:has(> .fh-entry__body:focus-visible) {
+    outline: var(--focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
 }
 
 .fh-app .fh-entry__body::-webkit-scrollbar {
@@ -2584,7 +2603,7 @@
 
 .fh-app .fh-entry__body::-webkit-scrollbar-thumb {
   border-radius: var(--radius-full);
-  background: var(--color-border-strong);
+  background: var(--color-text-tertiary);
   /* Inset from the track so the thumb reads as a floating pill rather than a bar
      welded to the card edge. */
   border: 3px solid transparent;
@@ -2592,7 +2611,7 @@
 }
 
 .fh-app .fh-entry__body::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-tertiary);
+  background: var(--color-text-secondary);
   background-clip: content-box;
 }
 

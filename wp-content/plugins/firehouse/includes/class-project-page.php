@@ -250,7 +250,8 @@ final class Project_Page {
 	 * The card starts unmeasured, with no `data-overflow`, so its cap is off: no tab
 	 * stop, no role, no name. The view script measures it and binds which edges have
 	 * more to scroll to (`none` when it fits), and, if its text runs past its height,
-	 * `tabindex`, the `group` role and a name from the need's lead.
+	 * `tabindex`, the `group` role and a name from the need's lead, which it keeps while
+	 * the card has focus.
 	 *
 	 * @param mixed $entry The stored entry.
 	 */
@@ -269,10 +270,11 @@ final class Project_Page {
 			: __( 'Need and recommendation — scrollable', 'firehouse' );
 
 		return sprintf(
-			'<li class="fh-entry"><div class="fh-entry__body" %1$s data-wp-init="callbacks.measure" data-wp-bind--data-overflow="context.overflow" data-wp-bind--tabindex="state.tabIndex" data-wp-bind--role="state.role" data-wp-bind--aria-label="state.label">%2$s%3$s</div></li>',
+			'<li class="fh-entry"><div class="fh-entry__body" %1$s data-wp-init="callbacks.measure" data-wp-on--focus="actions.focus" data-wp-on--blur="actions.blur" data-wp-bind--data-overflow="context.overflow" data-wp-bind--tabindex="state.tabIndex" data-wp-bind--role="state.role" data-wp-bind--aria-label="state.label">%2$s%3$s</div></li>',
 			wp_interactivity_data_wp_context(
 				array(
 					'overflow' => null,
+					'focused'  => false,
 					'label'    => $label,
 				)
 			),

@@ -166,7 +166,7 @@ final class ProjectPageTest extends WordPressTestCase {
 	public function test_a_need_card(): void {
 		$card = Project_Page::need_card( self::project()['needs'][0] );
 
-		$this->assertStringStartsWith( '<li class="fh-entry"><div class="fh-entry__body" data-wp-context=\'{"overflow":null,"label":"Need for \u201csafety net\u201d tools among meteorologists \u2014 scrollable"}\' data-wp-init="callbacks.measure" data-wp-bind--data-overflow="context.overflow" data-wp-bind--tabindex="state.tabIndex" data-wp-bind--role="state.role" data-wp-bind--aria-label="state.label">', $card );
+		$this->assertStringStartsWith( '<li class="fh-entry"><div class="fh-entry__body" data-wp-context=\'{"overflow":null,"focused":false,"label":"Need for \u201csafety net\u201d tools among meteorologists \u2014 scrollable"}\' data-wp-init="callbacks.measure" data-wp-on--focus="actions.focus" data-wp-on--blur="actions.blur" data-wp-bind--data-overflow="context.overflow" data-wp-bind--tabindex="state.tabIndex" data-wp-bind--role="state.role" data-wp-bind--aria-label="state.label">', $card );
 		$this->assertDoesNotMatchRegularExpression( '/\sdata-overflow=/', $card );
 		$this->assertDoesNotMatchRegularExpression( '/\stabindex=/', $card );
 		$this->assertDoesNotMatchRegularExpression( '/\srole=/', $card );

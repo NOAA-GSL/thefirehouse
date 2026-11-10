@@ -1118,12 +1118,15 @@ signed off on the frame.
     need nor a recommendation, and a paper with no address WordPress will print (none,
     or `javascript:`), aren't shown or counted, where the site shows an empty item and
     counts it. The schema allows both, though the import produces neither.*
-  - *Found in review and left for a change to both sites, since the site has them
-    too: a focused need card's focus ring is painted under its recommendation band; a
-    focused card that stops scrolling drops focus to the page; the scrollbar thumb is
-    below 3:1; a card re-measures only when its own box changes size, not when its text
-    reflows at the cap; and the space after a need's lead comes back as a plain space,
-    so a non-breaking one is lost. The cards' names ("Need and recommendation —
+  - *Found in review, and fixed on both sites in the next change (10 November): a
+    focused need card's focus ring was painted under its recommendation band, and is
+    now drawn around the card where `:has()` is supported; a focused card that stopped
+    scrolling dropped focus to the page, and now keeps its tab stop until focus
+    leaves; the scrollbar thumb was below 3:1, and is now `--color-text-tertiary`; and
+    a card held at its cap now re-measures when its text reflows, not only when its
+    own box changes size.*
+  - *Still open, for a change to both sites: the space after a need's lead comes back
+    as a plain space, so a non-breaking one is lost. The cards' names ("Need and recommendation —
     scrollable" for a recommendation alone, the same name for every card without a
     lead) are site wording, for Stephanie and Emily. The topic pages' area labels and
     "covers" lines, and the Submit button's label, still go through `esc_html()`;
