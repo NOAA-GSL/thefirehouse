@@ -362,9 +362,41 @@ final class FrameTest extends WordPressTestCase {
 		$this->assertSame( '[topic]', ob_get_clean() );
 
 		Functions\when( 'is_singular' )->justReturn( false );
+		Functions\when( 'is_page' )->justReturn( true );
+		Functions\when( 'get_queried_object' )->justReturn( new \WP_Post( array( 'post_type' => 'page' ) ) );
 		ob_start();
 		Frame::content();
 		$this->assertSame( '<section class="fh-section"><div class="fh-container"><h1>The Firehouse</h1><p>This page is being built.</p></div></section>', ob_get_clean() );
+	}
+
+	/**
+	 * A page in the Firehouse tree with blocks gets its blocks, rendered as they are,
+	 * not through `the_content`; one with a password the visitor hasn't given gets
+	 * WordPress's form.
+	 */
+	public function test_a_page_in_the_tree_gets_its_blocks(): void {
+		$page = new \WP_Post(
+			array(
+				'post_type'    => 'page',
+				'post_content' => '<!-- wp:firehouse/hero /-->',
+			)
+		);
+		Functions\when( 'is_404' )->justReturn( false );
+		Functions\when( 'is_singular' )->justReturn( false );
+		Functions\when( 'is_page' )->justReturn( true );
+		Functions\when( 'get_queried_object' )->justReturn( $page );
+		Functions\when( 'post_password_required' )->justReturn( false );
+		Functions\expect( 'do_blocks' )->once()->with( '<!-- wp:firehouse/hero /-->' )->andReturn( '[hero]' );
+		Functions\expect( 'apply_filters' )->never();
+		ob_start();
+		Frame::content();
+		$this->assertSame( '[hero]', ob_get_clean() );
+
+		Functions\when( 'post_password_required' )->justReturn( true );
+		Functions\expect( 'get_the_password_form' )->once()->with( $page )->andReturn( '[password form]' );
+		ob_start();
+		Frame::content();
+		$this->assertSame( '[password form]', ob_get_clean() );
 	}
 
 	/**
@@ -472,6 +504,8 @@ final class FrameTest extends WordPressTestCase {
 		Functions\when( 'esc_html' )->alias( static fn( string $text ): string => htmlspecialchars( $text, ENT_QUOTES ) );
 		Functions\when( 'is_404' )->justReturn( false );
 		Functions\when( 'is_singular' )->justReturn( false );
+		Functions\when( 'is_page' )->justReturn( false );
+		Functions\when( 'get_queried_object' )->justReturn( null );
 
 		ob_start();
 		require dirname( __DIR__ ) . '/templates/frame.php';

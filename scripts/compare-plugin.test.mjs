@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { diff, isBuilt, mainOf, normalize, siteAddress, siteLink } from './compare-plugin.mjs';
+import { BUILT, LATER, diff, isBuilt, mainOf, normalize, siteAddress, siteLink, withoutRegions } from './compare-plugin.mjs';
 
 const ORIGIN = 'http://localhost:8090';
 
@@ -30,6 +30,32 @@ describe('compare-plugin', () => {
     expect(isBuilt('topic', built)).toBe(false);
     expect(isBuilt('project--x', built)).toBe(false);
     expect(isBuilt('home', built)).toBe(false);
+  });
+
+  it('leaves out a region that comes later, and everything inside it, by its name', () => {
+    const lines = [
+      '- main:',
+      '  - region "Top needs":',
+      '    - heading "Top needs" [level=2]',
+      '  - region "Where the research comes from":',
+      '    - heading "Where the research comes from" [level=2]',
+      '    - button "GACC labels" [pressed]',
+      '  - region "Have a finding?":',
+      '    - heading "Have a finding?" [level=2]',
+    ];
+    expect(withoutRegions(lines, ['Where the research comes from'])).toEqual([
+      '- main:',
+      '  - region "Top needs":',
+      '    - heading "Top needs" [level=2]',
+      '  - region "Have a finding?":',
+      '    - heading "Have a finding?" [level=2]',
+    ]);
+    expect(withoutRegions(lines)).toEqual(lines);
+  });
+
+  it('leaves out only parts of pages it has built', () => {
+    expect(isBuilt('home')).toBe(true);
+    for (const name of Object.keys(LATER)) expect(isBuilt(name, BUILT)).toBe(true);
   });
 
   it('takes the main landmark, and nothing after it', () => {

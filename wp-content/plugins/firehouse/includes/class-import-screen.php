@@ -43,7 +43,7 @@ final class Import_Screen {
 	/**
 	 * The content blocks the import writes, and so the only ones kept between steps.
 	 */
-	private const KEPT = array( 'projects', 'topics', 'topicSummaries', 'settings' );
+	private const KEPT = array( 'projects', 'topics', 'topicSummaries', 'settings', 'landing' );
 
 	/**
 	 * The settings the import reads, and so the only ones kept between steps.
@@ -325,6 +325,9 @@ final class Import_Screen {
 		foreach ( $plan['settings']['problems'] as $problem ) {
 			$found[] = array( 'firehouse-import-settings', __( 'Settings', 'firehouse' ) . ': ' . $problem );
 		}
+		foreach ( $plan['landing']['problems'] as $problem ) {
+			$found[] = array( 'firehouse-import-landing', __( 'Landing page', 'firehouse' ) . ': ' . $problem );
+		}
 		return $found;
 	}
 
@@ -508,6 +511,15 @@ final class Import_Screen {
 			echo '<p>' . esc_html__( 'No change.', 'firehouse' ) . '</p>';
 		}
 		self::messages( $settings['problems'], $settings['notes'] );
+
+		echo '<h2 id="firehouse-import-landing" tabindex="-1">' . esc_html__( 'Landing page', 'firehouse' ) . '</h2>';
+		$landing = $plan['landing'];
+		if ( 'create' === $landing['action'] ) {
+			$done = ! empty( $plan['imported'] ) && array() === $landing['problems'];
+			/* translators: %s: the page's address. */
+			echo '<p>' . esc_html( sprintf( $done ? __( 'Created at %s, with the bundle’s words.', 'firehouse' ) : __( 'Will be created at %s, with the bundle’s words.', 'firehouse' ), '/' . Query::ROOT_PATH . '/' ) ) . '</p>';
+		}
+		self::messages( $landing['problems'], $landing['notes'] );
 
 		echo '<h2>' . esc_html__( 'Notes', 'firehouse' ) . '</h2>';
 		self::messages( array(), $plan['notes'] );

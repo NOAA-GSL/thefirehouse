@@ -289,6 +289,7 @@ handled:
 | `firehouse/hero` | Landing hero (eyebrow, heading and body are editable) | — |
 | `firehouse/stats` | Live counts. The editor picks the source and writes the label; the number is always computed. | — |
 | `firehouse/top-needs` | Four topic cards, the synthesis note, "Where these needs come from" | — |
+| `firehouse/submit-band` | The landing page's closing band: heading, body and the Submit button | — |
 | `firehouse/coverage-map` | GACC map, region list, the selected region's projects | Yes |
 | `firehouse/explorer` | Search, filters, sort, project grid, quick look | Yes |
 | `firehouse/project` | Project page: header, abstract, takeaways, needs, papers, at-a-glance panel, prev/next | Scrollable need cards |
@@ -300,7 +301,10 @@ handled:
 **Submit buttons** are core buttons whose link is bound to the Firehouse settings
 through the Block Bindings API. The submit address lives in one field, which is the
 job the empty-`href` convention does today. It points at the plugin's Submit page, or
-at the Google Form until the plugin's form opens on prod.
+at the Google Form until the plugin's form opens on prod. *Until the editing screens
+(Phase 6), the landing page's Submit buttons are inside its own blocks, which read the
+setting for a link stored empty; the closing band is the `firehouse/submit-band`
+block, since its markup (a labelled section, the glow) isn't core blocks'.*
 
 **Editor previews** are rendered on the server, so each block's markup is written once,
 in PHP.
@@ -514,7 +518,12 @@ A dry run first lists what would change, every problem and any notes, and nothin
 written until the person confirms. Running it again updates the same posts rather than
 duplicating them: projects take the bundle's survey fields and keep their editorial
 fields (rule 4), and topics and settings are written only when they don't exist yet,
-so a reviewed synthesis is never overwritten. The plugin checks the bundle itself: a
+so a reviewed synthesis is never overwritten. The same goes for the Firehouse pages:
+the import creates the landing page from the bundle's landing content, as its blocks,
+only when there's no `firehouse` page, and the About page under it the same way
+(decided by Eric, 10 November; the About page comes with its own change). The About
+page's team portraits are uploaded to the Media Library by an administrator, a step in
+the runbook, rather than shipped in the plugin. The plugin checks the bundle itself: a
 field it doesn't store, or anything shaped like an email address but a team work
 address in the About page's team mailbox field, stops the import.
 
@@ -1132,6 +1141,17 @@ signed off on the frame.
     "covers" lines, and the Submit button's label, still go through `esc_html()`;
     they're the team's wording, not researchers'.*
   - *The page's `<title>` and description are still WordPress's (next item).*
+- *Landing page done 10 November, without the map: the Import screen creates the
+  `firehouse` page from the bundle's landing content, as the `firehouse/hero` block with
+  `firehouse/stats` inside it, `firehouse/top-needs` and `firehouse/submit-band`, only
+  when there's none. Its words are the blocks' attributes; the counts, cards and note
+  are computed as it renders, from the projects a visitor may see, with the topic
+  pages' counting, so a need naming a hidden project counts only the rest. It matches
+  the reference's accessibility snapshots at both widths, without the map's region
+  (`LATER` in `scripts/compare-plugin.mjs`), and its sections match by eye in both
+  themes. A link to the survey address is stored empty and follows the settings; with
+  none set, its button is left out. The frame prints a tree page's blocks directly,
+  not through `the_content`.*
 - Description and Open Graph tags, and whether a Firehouse page's `<title>` names The
   Firehouse. Today it is WordPress's "Page not found - Global Systems Laboratory",
   where the site's is "Page not found — The Firehouse".
@@ -1225,8 +1245,9 @@ ships.
   for good (trash, then Delete Permanently, which takes its fields and revisions
   with it).
 - Launch: close the Google Form and run the import script one last time, build the
-  seed bundle, install on prod and run the seed import, build the page tree behind the
-  bridge, remove the static directory, and point Submit a Finding at the Submit page.
+  seed bundle, install on prod and run the seed import (which builds the page tree
+  behind the bridge), remove the static directory, and point Submit a Finding at the
+  Submit page.
 - Confirm link previews on prod.
 - Retire the React app and the static-hosting files.
 

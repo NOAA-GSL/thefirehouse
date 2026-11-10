@@ -49,6 +49,7 @@ final class ImporterTest extends WordPressTestCase {
 		$this->posts   = array();
 		$this->options = array();
 		$this->refuse  = '';
+		self::stand_in_serialize_blocks();
 		Functions\when( 'rest_validate_value_from_schema' )->justReturn( true );
 		Functions\when( 'sanitize_title' )->alias( static fn( string $title ): string => trim( (string) preg_replace( '/[^a-z0-9]+/', '-', strtolower( $title ) ), '-' ) );
 		Functions\when( 'sanitize_text_field' )->alias( static fn( string $text ): string => trim( $text ) );
@@ -339,7 +340,87 @@ final class ImporterTest extends WordPressTestCase {
 		$plan = Importer::plan( self::content(), array(), array(), null, array( 'A dropped link.' ) );
 
 		$this->assertSame( 'A dropped link.', $plan['notes'][0] );
-		$this->assertStringContainsString( 'Phase 4', end( $plan['notes'] ) );
+		$this->assertStringContainsString( 'About page', end( $plan['notes'] ) );
+	}
+
+	/**
+	 * With no `firehouse` page, the landing page is planned: a published page at the
+	 * top of the tree, with no author, titled with the site's name, its blocks from the
+	 * bundle's landing content. A link to the bundle's survey address is stored empty,
+	 * so it follows the settings.
+	 */
+	public function test_the_landing_page_is_created_when_there_is_none(): void {
+		$landing = Importer::plan( self::content(), array(), array(), null )['landing'];
+
+		$this->assertSame( 'create', $landing['action'] );
+		$this->assertSame(
+			array(
+				'post_type'   => 'page',
+				'post_name'   => 'firehouse',
+				'post_parent' => 0,
+				'post_status' => 'publish',
+				'post_author' => 0,
+				'post_title'  => 'The Firehouse',
+			),
+			array_diff_key( $landing['post'], array( 'post_content' => true ) )
+		);
+		$blocks = $landing['post']['post_content'];
+		$this->assertMatchesRegularExpression( '#^<!-- wp:firehouse/hero \{.*\} --><!-- wp:firehouse/stats \{"items":\[.*\]\} /--><!-- /wp:firehouse/hero --><!-- wp:firehouse/top-needs \{.*\} /--><!-- wp:firehouse/submit-band \{.*\} /-->$#s', $blocks );
+		$this->assertStringContainsString( '"primaryCta":{"label":"Submit a Finding","href":""}', $blocks );
+		$this->assertStringNotContainsString( 'forms.example.org', $blocks );
+		$this->assertSame( array(), $landing['problems'] );
+	}
+
+	/**
+	 * A `firehouse` page that exists, in any status, is left as it is: its words are the
+	 * editors'.
+	 */
+	public function test_an_existing_landing_page_is_left_alone(): void {
+		$landing = Importer::plan( self::content(), array(), array(), null, array(), array(), 77 )['landing'];
+
+		$this->assertSame( 'unchanged', $landing['action'] );
+		$this->assertSame( 77, $landing['post_id'] );
+		$this->assertSame( array(), $landing['post'] );
+		$this->assertStringContainsString( 'already exists', $landing['notes'][0] );
+	}
+
+	/**
+	 * A run creates the landing page and reads it back; the next finds it and leaves
+	 * it alone.
+	 */
+	public function test_a_run_creates_the_landing_page_once(): void {
+		$this->stand_in_wordpress();
+
+		$first = Importer::run( self::content() );
+		$id    = $first['landing']['post_id'];
+
+		$this->assertSame( array(), $first['landing']['problems'] );
+		$this->assertSame( 'firehouse', $this->posts[ $id ]['post_name'] );
+		$this->assertStringStartsWith( '<!-- wp:firehouse/hero ', $this->posts[ $id ]['post_content'] );
+
+		$second = Importer::run( self::content() );
+		$this->assertSame( 'unchanged', $second['landing']['action'] );
+		$this->assertSame( $id, $second['landing']['post_id'] );
+	}
+
+	/**
+	 * A landing page WordPress saves at another address, as it would beside a page of
+	 * the same name in the trash, is a problem.
+	 */
+	public function test_a_landing_page_at_another_address_is_a_problem(): void {
+		$this->stand_in_wordpress();
+		$posts = &$this->posts;
+		Functions\when( 'wp_insert_post' )->alias(
+			static function ( array $postarr ) use ( &$posts ): int {
+				$id           = 200 + count( $posts );
+				$posts[ $id ] = array( 'post_name' => 'page' === $postarr['post_type'] ? 'firehouse-2' : $postarr['post_name'] ) + $postarr;
+				return $id;
+			}
+		);
+
+		$landing = Importer::run( self::content() )['landing'];
+
+		$this->assertStringContainsString( 'isn’t at /firehouse/', $landing['problems'][0] );
 	}
 
 	/**
@@ -387,11 +468,13 @@ final class ImporterTest extends WordPressTestCase {
 	private static function as_post( int $id, array $post ): \WP_Post {
 		return new \WP_Post(
 			array(
-				'ID'          => $id,
-				'post_type'   => $post['post_type'],
-				'post_name'   => $post['post_name'],
-				'post_status' => $post['post_status'],
-				'post_title'  => $post['post_title'],
+				'ID'           => $id,
+				'post_type'    => $post['post_type'],
+				'post_name'    => $post['post_name'],
+				'post_status'  => $post['post_status'],
+				'post_title'   => $post['post_title'],
+				'post_parent'  => $post['post_parent'] ?? 0,
+				'post_content' => $post['post_content'] ?? '',
 			)
 		);
 	}
@@ -413,8 +496,8 @@ final class ImporterTest extends WordPressTestCase {
 			static function ( array $args ) use ( &$posts ): array {
 				$found = array();
 				foreach ( $posts as $id => $post ) {
-					if ( $args['post_type'] === $post['post_type'] ) {
-						$found[] = self::as_post( $id, $post );
+					if ( $args['post_type'] === $post['post_type'] && ( ! isset( $args['name'] ) || ( $args['name'] === $post['post_name'] && ( $post['post_parent'] ?? 0 ) === $args['post_parent'] ) ) ) {
+						$found[] = 'ids' === ( $args['fields'] ?? '' ) ? $id : self::as_post( $id, $post );
 					}
 				}
 				return $found;

@@ -41,15 +41,18 @@ final class Markup {
 	 * @param string                        $variant `primary`, `secondary`, `accent`, `ghost` or `link`.
 	 * @param 'sm'|'md'|'lg'                $size    Its size.
 	 * @param array{0?: string, 1?: string} $icons The icons before and after the words, by name.
+	 * @param string[]                      $modifiers `on-dark` for a dark surface, and
+	 *                                                 `block-mobile` for full width on a
+	 *                                                 phone, as `Button` takes them.
 	 */
-	public static function button( string $label, string $url, string $variant = 'primary', string $size = 'md', array $icons = array() ): string {
+	public static function button( string $label, string $url, string $variant = 'primary', string $size = 'md', array $icons = array(), array $modifiers = array() ): string {
 		$icon = self::BUTTON_ICON[ $size ] ?? 16;
 		$raw  = self::raw_url( $url );
 		// Decided from the address the link leads to, after esc_url_raw() has added any
 		// scheme it lacked: `www.example.org` is another site's.
 		$external = self::is_external( $raw );
 		return sprintf(
-			'<a href="%1$s" class="fh-btn fh-btn--%2$s fh-btn--%3$s"%4$s>%5$s%6$s%7$s%8$s</a>',
+			'<a href="%1$s" class="fh-btn fh-btn--%2$s fh-btn--%3$s%9$s"%4$s>%5$s%6$s%7$s%8$s</a>',
 			self::text( $raw ),
 			esc_attr( $variant ),
 			esc_attr( $size ),
@@ -57,7 +60,8 @@ final class Markup {
 			isset( $icons[0] ) ? Icons::svg( $icons[0], $icon ) : '',
 			esc_html( $label ),
 			isset( $icons[1] ) ? Icons::svg( $icons[1], $icon ) : '',
-			$external ? '<span class="fh-visually-hidden"> ' . esc_html__( '(opens in a new tab)', 'firehouse' ) . '</span>' : ''
+			$external ? '<span class="fh-visually-hidden"> ' . esc_html__( '(opens in a new tab)', 'firehouse' ) . '</span>' : '',
+			implode( '', array_map( static fn( string $modifier ): string => ' fh-btn--' . $modifier, array_values( array_intersect( array( 'on-dark', 'block-mobile' ), $modifiers ) ) ) )
 		);
 	}
 
@@ -143,8 +147,9 @@ final class Markup {
 	 * @param int         $source_count How many projects the pass read.
 	 * @param int         $published    How many projects a visitor may see now.
 	 * @param bool        $show_status  Whether to say whether it's reviewed.
+	 * @param string      $extra_class  Another class for it, as the component's `className`.
 	 */
-	public static function synthesis_note( ?string $model, ?string $reviewed_by, ?string $updated_at, int $source_count, int $published, bool $show_status = true ): string {
+	public static function synthesis_note( ?string $model, ?string $reviewed_by, ?string $updated_at, int $source_count, int $published, bool $show_status = true, string $extra_class = '' ): string {
 		$projects = $source_count < $published
 			/* translators: 1: how many projects the synthesis read, 2: how many the site shows. */
 			? sprintf( __( '%1$d of %2$d projects', 'firehouse' ), $source_count, $published )
@@ -172,7 +177,7 @@ final class Markup {
 
 		return sprintf(
 			'<p class="fh-synthesis-note%1$s"><span class="fh-synthesis-note__dot" aria-hidden="true"></span><span>%2$s%3$s</span></p>',
-			$show_status && ! $reviewed ? ' fh-synthesis-note--draft' : '',
+			( $show_status && ! $reviewed ? ' fh-synthesis-note--draft' : '' ) . ( '' !== $extra_class ? ' ' . esc_attr( $extra_class ) : '' ),
 			sprintf(
 				/* translators: 1: "AI-synthesized" or "Synthesized", 2: which projects, e.g. "all 8 projects". */
 				esc_html__( '%1$s across %2$s.', 'firehouse' ),

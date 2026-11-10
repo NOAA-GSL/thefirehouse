@@ -35,7 +35,32 @@ const PLACEHOLDER = 'This page is being built.';
  * kind of page (`topic--`). Each one must be there and match; the rest are listed as
  * not built yet. Each Phase 4 page adds itself here.
  */
-export const BUILT = ['not-found', 'project--', 'topic--'];
+export const BUILT = ['home', 'not-found', 'project--', 'topic--'];
+
+/**
+ * Parts of a built page that come in a later phase, by the region's name in the
+ * reference: they're left out of the reference before comparing, and listed. The
+ * landing page's coverage map comes with the explorer in Phase 5.
+ */
+export const LATER = { home: ['Where the research comes from'] };
+
+/** A snapshot's lines without each named region and everything inside it. */
+export function withoutRegions(lines, names = []) {
+  const out = [];
+  let skipping = -1;
+  for (const line of lines) {
+    const indent = line.search(/\S/);
+    if (skipping >= 0 && indent > skipping) continue;
+    skipping = -1;
+    const region = line.match(/^\s*- region "(.*)"/);
+    if (region && names.includes(region[1])) {
+      skipping = indent;
+      continue;
+    }
+    out.push(line);
+  }
+  return out;
+}
 
 /** Whether a reference page is one the plugin has built. */
 export function isBuilt(name, built = BUILT) {
@@ -162,11 +187,12 @@ async function main() {
           fail(`FAIL  ${widthName} ${name} (${path}): still the placeholder`);
           continue;
         }
-        const expected = mainOf(readFileSync(resolve(ROOT, 'reference/aria', widthName, `${name}.yml`), 'utf8'));
+        const later = LATER[name] ?? [];
+        const expected = withoutRegions(mainOf(readFileSync(resolve(ROOT, 'reference/aria', widthName, `${name}.yml`), 'utf8')), later);
         const actual = normalize(mainOf(await page.locator('main').ariaSnapshot()));
         const changes = diff(expected, actual);
         if (changes.length === 0) {
-          console.log(`ok    ${widthName} ${name}`);
+          console.log(`ok    ${widthName} ${name}${later.length > 0 ? ` (without, for later: ${later.join(', ')})` : ''}`);
         } else {
           fail(`DIFF  ${widthName} ${name} (${path}): - reference, + plugin\n    ${changes.join('\n    ')}`);
         }

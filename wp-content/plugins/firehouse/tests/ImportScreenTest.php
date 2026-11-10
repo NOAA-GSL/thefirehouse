@@ -30,6 +30,7 @@ final class ImportScreenTest extends WordPressTestCase {
 	 */
 	protected function setUp(): void {
 		parent::setUp();
+		self::stand_in_serialize_blocks();
 		$this->kept = array();
 		$kept       = &$this->kept;
 		$content    = array_intersect_key( Cases::site(), array_flip( array( 'projects', 'topics', 'topicSummaries', 'settings' ) ) );

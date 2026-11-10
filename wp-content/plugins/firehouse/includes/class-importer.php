@@ -30,12 +30,16 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   its fields and synthesis, each need's projects as post IDs (rule 5). An existing
  *   one is left as it is: a synthesis changes through review, not the seed.
  * - **Settings** are written only if they have never been saved.
+ * - **The landing page**, the `firehouse` page at the top of the Firehouse tree, is
+ *   created from the bundle's landing content, as the landing page's blocks
+ *   (Landing_Page::blocks()), only if there's no such page yet, in any status: after
+ *   that its words are the editors'.
  *
  * Every difference kept from WordPress is noted. Nothing is written while anything is
  * wrong, and the dry run lists every problem. Projects in WordPress that the bundle
- * doesn't have are left as they are. The landing and About pages are checked but not
- * written: their pages are built from blocks in Phase 4. New posts have no author: the
- * researcher's work isn't credited to whoever imported it.
+ * doesn't have are left as they are. The About page is checked but not written yet.
+ * New posts have no author: the researcher's work isn't credited to whoever imported
+ * it.
  */
 final class Importer {
 
@@ -65,7 +69,7 @@ final class Importer {
 	 */
 	public static function preview( array $content, array $notes = array(), array $problems = array() ): array {
 		$saved = false !== get_option( Settings::OPTION, false ) ? Settings::get() : null;
-		return self::plan( $content, Store::projects(), Store::topics(), $saved, $notes, $problems );
+		return self::plan( $content, Store::projects(), Store::topics(), $saved, $notes, $problems, Capabilities::root_id() );
 	}
 
 	/**
@@ -125,7 +129,37 @@ final class Importer {
 			update_option( Settings::OPTION, $plan['settings']['value'] );
 		}
 
+		if ( 'create' === $plan['landing']['action'] ) {
+			$saved = self::create_landing( $plan['landing'] );
+			if ( is_wp_error( $saved ) ) {
+				$plan['landing']['problems'][] = 'WordPress didn’t save it: ' . $saved->get_error_message();
+			} else {
+				$plan['landing']['post_id'] = $saved;
+			}
+		}
+
 		return array_merge( self::verify( $plan ), array( 'imported' => true ) );
+	}
+
+	/**
+	 * Creates the landing page: published, at /firehouse/, with no author, its blocks as
+	 * planned. The kses filters are off while it's written, as for the plugin's other
+	 * writes, so the blocks' attributes are saved exactly as serialize_blocks() wrote
+	 * them, whoever runs the import.
+	 *
+	 * @param array<string, mixed> $landing The landing page's plan.
+	 * @return int|\WP_Error The page's ID, or why it wasn't saved.
+	 */
+	private static function create_landing( array $landing ): int|\WP_Error {
+		$kses = (bool) has_filter( 'content_save_pre', 'wp_filter_post_kses' );
+		kses_remove_filters();
+		try {
+			return wp_insert_post( wp_slash( $landing['post'] ), true );
+		} finally {
+			if ( $kses ) {
+				kses_init_filters();
+			}
+		}
 	}
 
 	/**
@@ -142,6 +176,7 @@ final class Importer {
 			}
 		}
 		$summary[] = array( $plan['settings']['action'], $plan['settings']['changes'] );
+		$summary[] = array( $plan['landing']['action'], $plan['landing']['post_id'] );
 		return hash( 'sha256', serialize( $summary ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize -- Hashed, never stored or unserialized.
 	}
 
@@ -158,9 +193,10 @@ final class Importer {
 	 * @param array<string, mixed>|null  $settings The saved settings, or null if never saved.
 	 * @param string[]                   $notes    Notes about the bundle itself.
 	 * @param string[]                   $problems Problems with the bundle itself.
-	 * @return array{ok: bool, problems: list<string>, projects: list<array<string, mixed>>, topics: list<array<string, mixed>>, settings: array<string, mixed>, left_alone: list<array<string, mixed>>, notes: list<string>}
+	 * @param int                        $root     The `firehouse` page's ID, from Capabilities::root_id(), or 0 for none.
+	 * @return array{ok: bool, problems: list<string>, projects: list<array<string, mixed>>, topics: list<array<string, mixed>>, settings: array<string, mixed>, landing: array<string, mixed>, left_alone: list<array<string, mixed>>, notes: list<string>}
 	 */
-	public static function plan( array $content, array $projects, array $topics, ?array $settings, array $notes = array(), array $problems = array() ): array {
+	public static function plan( array $content, array $projects, array $topics, ?array $settings, array $notes = array(), array $problems = array(), int $root = 0 ): array {
 		$by_id      = array();
 		$repeats    = array();
 		$slugs      = array();
@@ -199,13 +235,15 @@ final class Importer {
 			'projects'   => $planned,
 			'topics'     => self::plan_topics( $content, $topics, $post_ids ),
 			'settings'   => self::plan_settings( $content['settings'], $settings ),
+			'landing'    => self::plan_landing( $content, $root ),
 			'left_alone' => $left_alone,
-			'notes'      => array_merge( array_values( $notes ), array( 'The landing and About pages are checked but not written: their pages are built in Phase 4.' ) ),
+			'notes'      => array_merge( array_values( $notes ), array( 'The About page is checked but not written yet.' ) ),
 		);
 
 		$all        = array_merge(
 			$plan['problems'],
 			$plan['settings']['problems'],
+			$plan['landing']['problems'],
 			...array_column( $plan['projects'], 'problems' ),
 			...array_column( $plan['topics'], 'problems' )
 		);
@@ -500,9 +538,48 @@ final class Importer {
 	}
 
 	/**
+	 * Plans the landing page: created from the bundle's landing content if there's no
+	 * `firehouse` page, in any status; otherwise left as it is, its words the editors'.
+	 * Its title is the bundle's site name, which WordPress's lists and the page's
+	 * `<title>` show.
+	 *
+	 * @param array<string, mixed> $content Normalized content.
+	 * @param int                  $root    The `firehouse` page's ID, or 0 for none.
+	 * @return array{action: string, post_id: int, post: array<string, mixed>, problems: list<string>, notes: list<string>}
+	 */
+	private static function plan_landing( array $content, int $root ): array {
+		if ( 0 !== $root ) {
+			return array(
+				'action'   => 'unchanged',
+				'post_id'  => $root,
+				'post'     => array(),
+				'problems' => array(),
+				'notes'    => array( 'The landing page already exists, so its words are left as editors have them.' ),
+			);
+		}
+		$settings = is_array( $content['settings'] ?? null ) ? $content['settings'] : array();
+		$name     = is_string( $settings['siteName'] ?? null ) && '' !== $settings['siteName'] ? $settings['siteName'] : 'The Firehouse';
+		return array(
+			'action'   => 'create',
+			'post_id'  => 0,
+			'post'     => array(
+				'post_type'    => 'page',
+				'post_name'    => Query::ROOT_PATH,
+				'post_parent'  => 0,
+				'post_status'  => 'publish',
+				'post_author'  => 0,
+				'post_title'   => Store::label( $name ),
+				'post_content' => Landing_Page::blocks( is_array( $content['landing'] ?? null ) ? $content['landing'] : array(), is_string( $settings['submitFormUrl'] ?? null ) ? $settings['submitFormUrl'] : '' ),
+			),
+			'problems' => array(),
+			'notes'    => array(),
+		);
+	}
+
+	/**
 	 * Reads back what the run wrote, and lists as a problem anything that reads back
-	 * differently: a field, a field that should be gone, the title, slug or status, or
-	 * a setting.
+	 * differently: a field, a field that should be gone, the title, slug or status, a
+	 * setting, or the landing page.
 	 *
 	 * @param array<string, mixed> $plan The plan, after the writes.
 	 * @return array<string, mixed>
@@ -546,6 +623,18 @@ final class Importer {
 
 		if ( 'update' === $plan['settings']['action'] && ! self::same( $plan['settings']['value'], Settings::get() ) ) {
 			$plan['settings']['problems'][] = 'The settings read back differently from what was imported.';
+		}
+
+		$landing = $plan['landing'];
+		if ( 'create' === $landing['action'] && array() === $landing['problems'] ) {
+			$page = get_post( $landing['post_id'] );
+			if ( ! $page instanceof \WP_Post ) {
+				$plan['landing']['problems'][] = 'It can’t be read back.';
+			} elseif ( Capabilities::root_id() !== $page->ID ) {
+				$plan['landing']['problems'][] = 'It isn’t at /' . Query::ROOT_PATH . '/: WordPress gave it the address /' . $page->post_name . '/.';
+			} elseif ( $page->post_content !== $landing['post']['post_content'] || 'publish' !== $page->post_status ) {
+				$plan['landing']['problems'][] = 'It reads back differently from what was imported.';
+			}
 		}
 		return $plan;
 	}

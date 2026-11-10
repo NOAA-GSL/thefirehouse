@@ -1,0 +1,41 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "firehouse/hero",
+	"title": "Firehouse hero",
+	"category": "widgets",
+	"description": "The landing page's hero: the wordmark, its words, the Submit and Explore buttons, and the live counts beside them.",
+	"textdomain": "firehouse",
+	"allowedBlocks": [
+		"firehouse/stats"
+	],
+	"attributes": {
+		"eyebrow": {
+			"type": "string",
+			"default": ""
+		},
+		"heading": {
+			"type": "string",
+			"default": ""
+		},
+		"body": {
+			"type": "string",
+			"default": ""
+		},
+		"primaryCta": {
+			"type": "object",
+			"default": {}
+		},
+		"secondaryCta": {
+			"type": "object",
+			"default": {}
+		}
+	},
+	"supports": {
+		"html": false,
+		"inserter": false,
+		"multiple": false,
+		"reusable": false
+	},
+	"render": "file:./render.php"
+}

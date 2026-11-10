@@ -63,6 +63,7 @@ require_once __DIR__ . '/includes/class-frame.php';
 require_once __DIR__ . '/includes/class-icons.php';
 require_once __DIR__ . '/includes/class-markup.php';
 require_once __DIR__ . '/includes/class-not-found.php';
+require_once __DIR__ . '/includes/class-landing-page.php';
 require_once __DIR__ . '/includes/class-project-page.php';
 require_once __DIR__ . '/includes/class-topic-page.php';
 require_once __DIR__ . '/includes/class-verbatim.php';

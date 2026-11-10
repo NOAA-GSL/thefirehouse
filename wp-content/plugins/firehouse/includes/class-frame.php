@@ -199,8 +199,8 @@ final class Frame {
 
 	/**
 	 * Prints the page's content: the not-found page at a missing address, a project's or
-	 * a topic area's page at its address, and a placeholder on each page Phase 4 hasn't
-	 * built yet.
+	 * a topic area's page at its address, a page in the Firehouse tree's own blocks, and
+	 * a placeholder on each page Phase 4 hasn't built yet.
 	 */
 	public static function content(): void {
 		if ( is_404() ) {
@@ -215,7 +215,28 @@ final class Frame {
 			echo do_blocks( '<!-- wp:firehouse/topic /-->' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- as above.
 			return;
 		}
+		$page = get_queried_object();
+		if ( is_page() && $page instanceof \WP_Post && '' !== trim( $page->post_content ) ) {
+			self::page( $page );
+			return;
+		}
 		self::placeholder();
+	}
+
+	/**
+	 * A page in the Firehouse tree: its blocks, rendered as they are, or WordPress's
+	 * password form if it has a password the visitor hasn't given. Not through
+	 * `the_content`, whose filters (paragraphs added, other plugins' additions) were
+	 * written for a theme's posts, not for a page of the plugin's own blocks.
+	 *
+	 * @param \WP_Post $page The page.
+	 */
+	public static function page( \WP_Post $page ): void {
+		if ( post_password_required( $page ) ) {
+			echo get_the_password_form( $page ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- WordPress's own form.
+			return;
+		}
+		echo do_blocks( $page->post_content ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- the page's blocks, each of which escapes what it prints.
 	}
 
 	/**
