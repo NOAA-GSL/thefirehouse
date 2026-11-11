@@ -1164,9 +1164,12 @@ signed off on the frame.
     vanishes against the white Canvas (a logotype, so not a WCAG failure, but hard to
     read); and the landing page's own scroll margins on `#top-needs` and
     `#needs-source` leave out WordPress's toolbar, so a signed-in editor's jump lands
-    the section a little under the bar. To check with the frame: whether the skip
-    link, focused, shows above GSL's header, since `.fh-app`'s `clip-path` makes the
-    wrapper its own stacking context.*
+    the section a little under the bar. The review also asked whether the skip link,
+    focused, shows above GSL's header, since `.fh-app`'s `clip-path` makes the
+    wrapper its own stacking context. It does: `.fh-app` is `position: relative`, so
+    the link slides in at the top of the wrapper, over the Firehouse bar and below
+    the header, and is the topmost element there at desktop and phone width (checked
+    11 November).*
   - *For Phase 6: a Firehouse Editor has no `unfiltered_html`, so saving the page in
     the block editor runs every attribute string through kses, which turns a `&` into
     `&amp;` (then shown as written) and can alter a `<`. Today's landing words have
