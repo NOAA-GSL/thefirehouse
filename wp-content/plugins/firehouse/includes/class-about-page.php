@@ -335,9 +335,11 @@ final class About_Page {
 
 	/**
 	 * Whether the page shows this image as a portrait: an image in the Media Library,
-	 * uploaded on its own or to a page visitors may see. One attached to a draft or
-	 * private post isn't shown, whatever the page's attributes say, so the page can't
-	 * be used to show what WordPress keeps from visitors.
+	 * uploaded on its own or to a post visitors may see without a password. One
+	 * attached to a draft, private or password-protected post isn't shown, whatever the
+	 * page's attributes say, so the page can't be used to show what WordPress keeps from
+	 * visitors. is_post_publicly_viewable() checks the post's type and status, not its
+	 * password, so that is checked here.
 	 *
 	 * @param int $id The image's ID.
 	 */
@@ -346,7 +348,14 @@ final class About_Page {
 			return false;
 		}
 		$image = get_post( $id );
-		return $image instanceof \WP_Post && ( 0 === (int) $image->post_parent || is_post_publicly_viewable( (int) $image->post_parent ) );
+		if ( ! $image instanceof \WP_Post ) {
+			return false;
+		}
+		if ( 0 === (int) $image->post_parent ) {
+			return true;
+		}
+		$parent = get_post( (int) $image->post_parent );
+		return $parent instanceof \WP_Post && '' === $parent->post_password && is_post_publicly_viewable( $parent );
 	}
 
 	/**

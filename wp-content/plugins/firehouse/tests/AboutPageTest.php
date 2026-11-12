@@ -388,30 +388,45 @@ final class AboutPageTest extends WordPressTestCase {
 	}
 
 	/**
-	 * An image attached to a post visitors can't see isn't shown as a portrait, whatever
-	 * the page's attributes say; one on its own, or attached to a public page, is.
+	 * An image attached to a post visitors can't see, or can see only with its password,
+	 * isn't shown as a portrait, whatever the page's attributes say; one on its own, or
+	 * attached to a public page, is.
 	 */
 	public function test_only_an_image_visitors_may_see_is_shown(): void {
 		$parents = array(
 			9  => 0,
 			10 => 70,
 			11 => 71,
+			13 => 72,
+		);
+		$pages   = array(
+			70 => array( 'publish', '' ),
+			71 => array( 'private', '' ),
+			72 => array( 'publish', 'a password' ),
 		);
 		Functions\when( 'wp_attachment_is_image' )->alias( static fn( int $id ): bool => isset( $parents[ $id ] ) );
 		Functions\when( 'get_post' )->alias(
 			static fn( mixed $id ): \WP_Post => new \WP_Post(
-				array(
-					'ID'          => (int) $id,
-					'post_type'   => 'attachment',
-					'post_parent' => $parents[ (int) $id ] ?? 0,
-				)
+				isset( $pages[ (int) $id ] )
+					? array(
+						'ID'            => (int) $id,
+						'post_type'     => 'page',
+						'post_status'   => $pages[ (int) $id ][0],
+						'post_password' => $pages[ (int) $id ][1],
+					)
+					: array(
+						'ID'          => (int) $id,
+						'post_type'   => 'attachment',
+						'post_parent' => $parents[ (int) $id ] ?? 0,
+					)
 			)
 		);
-		Functions\when( 'is_post_publicly_viewable' )->alias( static fn( int $id ): bool => 70 === $id );
+		Functions\when( 'is_post_publicly_viewable' )->alias( static fn( \WP_Post $post ): bool => 'publish' === $post->post_status );
 
 		$this->assertTrue( About_Page::shows( 9 ), 'On its own.' );
 		$this->assertTrue( About_Page::shows( 10 ), 'Attached to a public page.' );
 		$this->assertFalse( About_Page::shows( 11 ), 'Attached to a private post.' );
+		$this->assertFalse( About_Page::shows( 13 ), 'Attached to a published page with a password.' );
 		$this->assertFalse( About_Page::shows( 12 ), 'Not an image.' );
 		$this->assertFalse( About_Page::shows( 0 ) );
 	}
