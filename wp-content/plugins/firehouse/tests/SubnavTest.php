@@ -39,15 +39,14 @@ final class SubnavTest extends WordPressTestCase {
 		Functions\when( 'wp_parse_url' )->alias( static fn( string $url, int $component = -1 ): mixed => parse_url( $url, $component ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url -- the stand-in for wp_parse_url.
 		self::settings( array() );
 		self::resolve( array() );
-		Subnav::forget();
 	}
 
 	/**
-	 * A page has one bar: the frame's. The bar's block typed into the page's content
-	 * prints nothing after it, so there's one menu button and one drawer ID; outside a
-	 * Firehouse page it prints nothing at all.
+	 * A page has one bar, the frame's: its block prints the bar only while the frame
+	 * places it. A copy typed into the page's content prints nothing, rendered before
+	 * the frame's bar or after it; outside a Firehouse page, not even the frame's.
 	 */
-	public function test_a_page_has_one_bar(): void {
+	public function test_a_page_has_one_bar_the_frames(): void {
 		self::resolve( array( 'singular' => 'fh_project' ) );
 		Functions\when( 'is_embed' )->justReturn( false );
 		// The frame asks with a list of types.
@@ -57,19 +56,26 @@ final class SubnavTest extends WordPressTestCase {
 			require dirname( __DIR__ ) . '/blocks/subnav/render.php';
 			return (string) ob_get_clean();
 		};
+		Functions\when( 'do_blocks' )->alias(
+			static function ( string $content ) use ( $block ): string {
+				return '<!-- wp:firehouse/subnav /-->' === $content ? $block() : '';
+			}
+		);
 
-		$first  = $block();
-		$second = $block();
+		$typed_before = $block();
+		$frames       = Subnav::place();
+		$typed_after  = $block();
 
-		$this->assertSame( 1, substr_count( $first, 'id="' . Subnav::DRAWER_ID . '"' ) );
-		$this->assertSame( '', $second );
+		$this->assertSame( '', $typed_before, 'Content rendered before the frame places the bar.' );
+		$this->assertSame( 1, substr_count( $frames, 'id="' . Subnav::DRAWER_ID . '"' ) );
+		$this->assertSame( '', $typed_after );
+		$this->assertFalse( Subnav::placing() );
 
-		// Outside the Firehouse, not even the first.
-		Subnav::forget();
+		// Outside the Firehouse, not even the frame's.
 		self::resolve( array() );
 		Functions\when( 'is_singular' )->justReturn( false );
 		Functions\when( 'is_404' )->justReturn( false );
-		$this->assertSame( '', $block() );
+		$this->assertSame( '', Subnav::place() );
 	}
 
 	/**

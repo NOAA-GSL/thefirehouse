@@ -21,7 +21,7 @@ get_header();
 ?>
 <div class="fh-app">
 	<a class="fh-skip-link" href="#fh-content"><?php esc_html_e( 'Skip to main content', 'firehouse' ); ?></a>
-	<?php echo do_blocks( '<!-- wp:firehouse/subnav /-->' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- the plugin's own block, which escapes what it prints. ?>
+	<?php echo \Firehouse\Subnav::place(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- the plugin's own block, which escapes what it prints. ?>
 	<main id="fh-content" tabindex="-1">
 		<?php
 		\Firehouse\Frame::content();
