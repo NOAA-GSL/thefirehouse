@@ -358,8 +358,8 @@ final class HeadTest extends WordPressTestCase {
 		$this->assertStringNotContainsString( 'og:url', (string) ob_get_clean() );
 		$this->request['post']->post_status = 'publish';
 
-		// No abstract: the summary.
-		$this->meta[21]['fh_abstract'] = ' ';
+		// No abstract, only a no-break space, which JavaScript trims too: the summary.
+		$this->meta[21]['fh_abstract'] = "\u{00A0}";
 		ob_start();
 		Head::tags();
 		$this->assertStringContainsString( '<meta name="description" content="An editorial summary." />', (string) ob_get_clean() );
