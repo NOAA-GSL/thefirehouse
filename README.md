@@ -66,9 +66,9 @@ wp-content/plugins/firehouse/
                     loads the content logic in PHP (domain/) and what hooks
                     into WordPress (includes/); templates/frame.php, the frame
                     every Firehouse page sits in; blocks/, the server-rendered
-                    blocks the templates place (so far the Firehouse bar, the
-                    not-found page, the project pages and the topic pages);
-                    the shared
+                    blocks the templates and pages place (so far the Firehouse
+                    bar, the not-found page, the project pages, the topic
+                    pages and the landing page); the shared
                     vocabularies and test cases; and the PHP tests.
                     assets/css/firehouse.css is generated from src/, and
                     assets/css/frame.css is written by hand;
@@ -312,7 +312,8 @@ nothing from the database. Each class's docblock has the detail; this is the map
     goes public), kept in `Frame::disclaimer()`, not as a setting, and held to the
     site's `settings.json` by a test. A missing address gets the `firehouse/not-found`
     block, a project's address the `firehouse/project` block, a topic's address the
-    `firehouse/topic` block, and a page Phase 4 hasn't built yet a placeholder.
+    `firehouse/topic` block, a page in the Firehouse tree its own blocks (not through
+    `the_content`), and a page Phase 4 hasn't built yet a placeholder.
   - **Stylesheets:** it loads `fonts.css`, `firehouse.css` and `frame.css` after the
     theme's stylesheet, at the plugin's version and each file's modified time, and adds
     `fh-page` to the body. Nothing depends on the fonts, so dequeuing `firehouse-fonts`
@@ -453,8 +454,23 @@ nothing from the database. Each class's docblock has the detail; this is the map
     doesn't have are left alone.
   - Topics and settings are written only when they don't exist yet; after that,
     WordPress's are kept, so importing again never overwrites a reviewed synthesis.
-  - Each post is read back after it is written. The landing and About pages are
-    checked but not written until Phase 4.
+  - The landing page, the `firehouse` page at `/firehouse/`, is created from the
+    bundle's landing content as the landing page's blocks, only when there's no such
+    page in any status but the trash; after that its words are the editors'. One in
+    the trash, or anything else holding the address (a Media Library file named
+    `firehouse`), stops the import, and a page WordPress saves at another address
+    anyway is deleted, not left published. A link to the bundle's survey address is
+    stored empty, so it follows the settings. Two confirmations of one dry run, as a
+    double click sends, import once.
+  - Each post is read back after it is written. The About page is checked but not
+    written yet.
+- `Landing_Page` is the landing page's blocks: `firehouse/hero` with `firehouse/stats`
+  inside it, `firehouse/top-needs` and `firehouse/submit-band`, as the site's
+  `LandingPage` renders them, without the coverage map, which comes with the explorer
+  in Phase 5. The words are the blocks' attributes; the counts, the four topic cards
+  and the synthesis note are computed as the page renders, from the projects a visitor
+  may see and the published topics, with the topic pages' counting. A button with
+  nowhere to go, such as Submit a Finding with no survey address set, is left out.
 
 The traps, for whoever changes this code next:
 

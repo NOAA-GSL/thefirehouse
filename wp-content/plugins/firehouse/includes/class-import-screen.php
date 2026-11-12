@@ -43,7 +43,7 @@ final class Import_Screen {
 	/**
 	 * The content blocks the import writes, and so the only ones kept between steps.
 	 */
-	private const KEPT = array( 'projects', 'topics', 'topicSummaries', 'settings' );
+	private const KEPT = array( 'projects', 'topics', 'topicSummaries', 'settings', 'landing' );
 
 	/**
 	 * The settings the import reads, and so the only ones kept between steps.
@@ -124,6 +124,7 @@ final class Import_Screen {
 		$prefix = match ( true ) {
 			null === $state                                     => '',
 			'refused' === $state['step'] || ! empty( $state['changed'] ) => __( 'Not imported:', 'firehouse' ),
+			'claimed' === $state['step']                        => __( 'Already confirmed:', 'firehouse' ),
 			'preview' === $state['step'] && $state['plan']['ok'] => __( 'Ready to import:', 'firehouse' ),
 			'preview' === $state['step']                        => __( 'Not ready to import:', 'firehouse' ),
 			! $state['plan']['imported']                        => __( 'Not imported:', 'firehouse' ),
@@ -147,6 +148,10 @@ final class Import_Screen {
 		switch ( $state['step'] ) {
 			case 'refused':
 				self::summary( 'error', __( 'Not imported: the bundle was refused', 'firehouse' ), array( $state['message'] ) );
+				self::upload_form();
+				break;
+			case 'claimed':
+				self::summary( 'info', __( 'This dry run was already confirmed', 'firehouse' ), array( __( 'Another confirmation of it, such as the first of a double click, is importing it or has imported it. Open this screen again to see what WordPress now holds, or upload the bundle to see what another import would change.', 'firehouse' ) ) );
 				self::upload_form();
 				break;
 			case 'preview':
@@ -230,7 +235,12 @@ final class Import_Screen {
 			return self::keep( $state, $bundle );
 		}
 
-		delete_transient( self::transient() );
+		// Only the request whose delete removes the dry run imports it: a second
+		// confirmation sent at the same time, as a double click sends, finds it gone,
+		// and says so without claiming the import failed, since the first one ran.
+		if ( ! delete_transient( self::transient() ) ) {
+			return array( 'step' => 'claimed' );
+		}
 		return array(
 			'step' => 'done',
 			'plan' => Importer::run( $bundle['content'], $bundle['notes'], $bundle['problems'] ),
@@ -324,6 +334,9 @@ final class Import_Screen {
 		}
 		foreach ( $plan['settings']['problems'] as $problem ) {
 			$found[] = array( 'firehouse-import-settings', __( 'Settings', 'firehouse' ) . ': ' . $problem );
+		}
+		foreach ( $plan['landing']['problems'] as $problem ) {
+			$found[] = array( 'firehouse-import-landing', __( 'Landing page', 'firehouse' ) . ': ' . $problem );
 		}
 		return $found;
 	}
@@ -508,6 +521,16 @@ final class Import_Screen {
 			echo '<p>' . esc_html__( 'No change.', 'firehouse' ) . '</p>';
 		}
 		self::messages( $settings['problems'], $settings['notes'] );
+
+		echo '<h2 id="firehouse-import-landing" tabindex="-1">' . esc_html__( 'Landing page', 'firehouse' ) . '</h2>';
+		$landing = $plan['landing'];
+		if ( 'create' === $landing['action'] && array() !== $landing['problems'] ) {
+			echo '<p>' . esc_html__( 'Not created: see the problems below.', 'firehouse' ) . '</p>';
+		} elseif ( 'create' === $landing['action'] ) {
+			/* translators: %s: the page's address. */
+			echo '<p>' . esc_html( sprintf( ! empty( $plan['imported'] ) ? __( 'Created at %s, with the bundle’s words.', 'firehouse' ) : __( 'Will be created at %s, with the bundle’s words.', 'firehouse' ), '/' . Query::ROOT_PATH . '/' ) ) . '</p>';
+		}
+		self::messages( $landing['problems'], $landing['notes'] );
 
 		echo '<h2>' . esc_html__( 'Notes', 'firehouse' ) . '</h2>';
 		self::messages( array(), $plan['notes'] );

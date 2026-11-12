@@ -1,0 +1,25 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "firehouse/stats",
+	"title": "Firehouse live counts",
+	"category": "widgets",
+	"description": "The hub statistics beside the hero: each count computed when the page renders, with its label and caption.",
+	"textdomain": "firehouse",
+	"parent": [
+		"firehouse/hero"
+	],
+	"attributes": {
+		"items": {
+			"type": "array",
+			"default": []
+		}
+	},
+	"supports": {
+		"html": false,
+		"inserter": false,
+		"multiple": false,
+		"reusable": false
+	},
+	"render": "file:./render.php"
+}

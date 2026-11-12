@@ -1,0 +1,30 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "firehouse/submit-band",
+	"title": "Firehouse submit band",
+	"category": "widgets",
+	"description": "The landing page's closing band: its heading and body, and the Submit a Finding button.",
+	"textdomain": "firehouse",
+	"attributes": {
+		"heading": {
+			"type": "string",
+			"default": ""
+		},
+		"body": {
+			"type": "string",
+			"default": ""
+		},
+		"cta": {
+			"type": "object",
+			"default": {}
+		}
+	},
+	"supports": {
+		"html": false,
+		"inserter": false,
+		"multiple": false,
+		"reusable": false
+	},
+	"render": "file:./render.php"
+}

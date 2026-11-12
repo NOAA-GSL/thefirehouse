@@ -70,6 +70,13 @@ if ( ! class_exists( 'WP_Post' ) ) {
 		public string $post_title = '';
 
 		/**
+		 * The content.
+		 *
+		 * @var string
+		 */
+		public string $post_content = '';
+
+		/**
 		 * Sets the fields given.
 		 *
 		 * @param array<string, mixed> $fields The fields.

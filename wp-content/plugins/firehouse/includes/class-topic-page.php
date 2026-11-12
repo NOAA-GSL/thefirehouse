@@ -69,7 +69,18 @@ final class Topic_Page {
 	 * @return list<array<string, mixed>>
 	 */
 	public static function top( mixed $needs ): array {
-		return array_slice( array_values( array_filter( is_array( $needs ) ? $needs : array(), array( self::class, 'is_need' ) ) ), 0, self::NEEDS );
+		return array_slice( self::valid( $needs ), 0, self::NEEDS );
+	}
+
+	/**
+	 * Every stored need that is a need, with text to show, in order. The landing page's
+	 * cards take as many as they show from these.
+	 *
+	 * @param mixed $needs The topic's stored needs.
+	 * @return list<array<string, mixed>>
+	 */
+	public static function valid( mixed $needs ): array {
+		return array_values( array_filter( is_array( $needs ) ? $needs : array(), array( self::class, 'is_need' ) ) );
 	}
 
 	/**

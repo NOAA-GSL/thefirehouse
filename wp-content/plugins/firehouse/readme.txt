@@ -61,6 +61,9 @@ one is.
   the researcher submitted them, the facts at a glance, and the projects either side.
   A need card that scrolls can be reached and scrolled by keyboard. Stored text shows
   exactly as stored, on the topic pages too.
+* The landing page, created by the Import screen from the seed bundle when there's
+  none: the hero with live counts, the four topic areas' top needs, and the submit
+  band. The coverage map comes later.
 * The topic area pages: each area's top needs with the projects behind them, what it
   covers, and the other areas. A need lists only projects a visitor may see:
   published, without a password, and with IRB approval or exemption.

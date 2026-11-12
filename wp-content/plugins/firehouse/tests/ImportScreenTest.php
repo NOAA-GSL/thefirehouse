@@ -11,6 +11,7 @@ namespace Firehouse\Tests;
 
 use Brain\Monkey\Functions;
 use Firehouse\Import_Screen;
+use Firehouse\Importer;
 
 /**
  * A confirmation imports only the dry run that was shown.
@@ -30,9 +31,10 @@ final class ImportScreenTest extends WordPressTestCase {
 	 */
 	protected function setUp(): void {
 		parent::setUp();
+		self::stand_in_serialize_blocks();
 		$this->kept = array();
 		$kept       = &$this->kept;
-		$content    = array_intersect_key( Cases::site(), array_flip( array( 'projects', 'topics', 'topicSummaries', 'settings' ) ) );
+		$content    = array_intersect_key( Cases::site(), array_flip( array( 'projects', 'topics', 'topicSummaries', 'settings', 'landing' ) ) );
 		Functions\when( 'current_user_can' )->justReturn( true );
 		Functions\when( 'wp_add_inline_style' )->justReturn( true );
 		Functions\when( 'check_admin_referer' )->justReturn( 1 );
@@ -42,6 +44,7 @@ final class ImportScreenTest extends WordPressTestCase {
 		Functions\when( 'get_current_user_id' )->justReturn( 6 );
 		Functions\when( 'get_option' )->justReturn( false );
 		Functions\when( 'get_posts' )->justReturn( array() );
+		Functions\when( 'wp_unique_post_slug' )->returnArg();
 		Functions\when( 'rest_validate_value_from_schema' )->justReturn( true );
 		Functions\when( 'sanitize_title' )->returnArg();
 		Functions\when( 'wp_parse_url' )->alias( static fn( string $url ): mixed => parse_url( $url ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url -- Standing in for wp_parse_url().
@@ -91,6 +94,26 @@ final class ImportScreenTest extends WordPressTestCase {
 		$this->assertSame( 'Not imported: Import', Import_Screen::title( 'Import' ) );
 		$this->assertSame( 'a-new-token', $this->kept['firehouse_import_6']['token'] );
 		$this->assertNotSame( 'what WordPress would have done then', $this->kept['firehouse_import_6']['fingerprint'] );
+	}
+
+	/**
+	 * A confirmation that finds the dry run already claimed, as the second of a double
+	 * click does, imports nothing: only the request whose delete removes it imports. It
+	 * says the dry run was already confirmed, not that the import failed.
+	 */
+	public function test_a_second_confirmation_imports_nothing(): void {
+		$waiting                = get_transient( 'firehouse_import_6' );
+		$waiting['fingerprint'] = Importer::fingerprint( Importer::preview( $waiting['bundle']['content'] ) );
+		Functions\when( 'get_transient' )->justReturn( $waiting );
+		Functions\when( 'delete_transient' )->justReturn( false );
+		Functions\expect( 'wp_insert_post' )->never();
+		Functions\expect( 'update_option' )->never();
+		$_POST['firehouse_step']  = 'import';
+		$_POST['firehouse_token'] = 'the-token';
+
+		Import_Screen::handle();
+
+		$this->assertSame( 'Already confirmed: Import', Import_Screen::title( 'Import' ) );
 	}
 
 	/**
