@@ -1264,7 +1264,10 @@ signed off on the frame.
     password check a page in the tree gets (`Frame::content()`); its title is only the
     topic's label, which WordPress shows for protected posts anyway. For whoever next
     changes the topic page.*
-- Check that projects appear in the sitemap.
+- Check that projects appear in the sitemap. *Done 12 November, on the local copy:
+  WordPress's sitemap lists the eight projects, the four topics, and the landing and
+  About pages, each at its address under `/firehouse/`; a project a visitor may not see
+  stays out of it (Visibility, checked 10 November).*
 - Test link previews in Slack and Teams, with the first release on the test site (see
   Where each phase is reviewed).
 - Weight, measured on the frame (6 November): `firehouse.css` is about 28 KB
@@ -1287,7 +1290,9 @@ signed off on the frame.
 - Rerun the frame's style and focus checks on the real pages.
 - Keep the Firehouse bar to one per page once a page's own content renders blocks. The
   bar's block prints on any Firehouse page, so its comment typed into a page in the tree
-  would print a second bar, with a duplicate drawer ID.
+  would print a second bar, with a duplicate drawer ID. *Done 12 November: the block
+  prints the bar only the first time on a request (`Subnav::claim()`), and the frame's,
+  above the page's content, is the first.*
 
 **Done when:** these pages match the reference screenshots and accessibility
 snapshots, and Stephanie and Emily can review them on the test site.

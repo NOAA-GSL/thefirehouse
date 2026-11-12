@@ -39,6 +39,37 @@ final class SubnavTest extends WordPressTestCase {
 		Functions\when( 'wp_parse_url' )->alias( static fn( string $url, int $component = -1 ): mixed => parse_url( $url, $component ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url -- the stand-in for wp_parse_url.
 		self::settings( array() );
 		self::resolve( array() );
+		Subnav::forget();
+	}
+
+	/**
+	 * A page has one bar: the frame's. The bar's block typed into the page's content
+	 * prints nothing after it, so there's one menu button and one drawer ID; outside a
+	 * Firehouse page it prints nothing at all.
+	 */
+	public function test_a_page_has_one_bar(): void {
+		self::resolve( array( 'singular' => 'fh_project' ) );
+		Functions\when( 'is_embed' )->justReturn( false );
+		// The frame asks with a list of types.
+		Functions\when( 'is_singular' )->alias( static fn( mixed $types ): bool => in_array( 'fh_project', (array) $types, true ) );
+		$block = static function (): string {
+			ob_start();
+			require dirname( __DIR__ ) . '/blocks/subnav/render.php';
+			return (string) ob_get_clean();
+		};
+
+		$first  = $block();
+		$second = $block();
+
+		$this->assertSame( 1, substr_count( $first, 'id="' . Subnav::DRAWER_ID . '"' ) );
+		$this->assertSame( '', $second );
+
+		// Outside the Firehouse, not even the first.
+		Subnav::forget();
+		self::resolve( array() );
+		Functions\when( 'is_singular' )->justReturn( false );
+		Functions\when( 'is_404' )->justReturn( false );
+		$this->assertSame( '', $block() );
 	}
 
 	/**

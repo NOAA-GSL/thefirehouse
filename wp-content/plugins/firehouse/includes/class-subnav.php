@@ -40,6 +40,34 @@ final class Subnav {
 	public const DRAWER_ID = 'fh-subnav-drawer';
 
 	/**
+	 * Whether this request has had its bar.
+	 *
+	 * @var bool
+	 */
+	private static bool $placed = false;
+
+	/**
+	 * Claims the page's one bar: true the first time on a request, false after. The
+	 * frame's bar, printed above the page's content, is the first; the bar's block
+	 * typed into a page's own content then prints nothing, so a page has one bar, one
+	 * menu button and one drawer ID.
+	 */
+	public static function claim(): bool {
+		if ( self::$placed ) {
+			return false;
+		}
+		self::$placed = true;
+		return true;
+	}
+
+	/**
+	 * Forgets that the bar was placed, for tests.
+	 */
+	public static function forget(): void {
+		self::$placed = false;
+	}
+
+	/**
 	 * The bar's links, in order: each one's label, its address under /firehouse/, and
 	 * whether it is the current page's.
 	 *
