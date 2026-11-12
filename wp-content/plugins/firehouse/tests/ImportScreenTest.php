@@ -34,7 +34,7 @@ final class ImportScreenTest extends WordPressTestCase {
 		self::stand_in_serialize_blocks();
 		$this->kept = array();
 		$kept       = &$this->kept;
-		$content    = array_intersect_key( Cases::site(), array_flip( array( 'projects', 'topics', 'topicSummaries', 'settings', 'landing' ) ) );
+		$content    = array_intersect_key( Cases::site(), array_flip( array( 'projects', 'topics', 'topicSummaries', 'settings', 'landing', 'about' ) ) );
 		Functions\when( 'current_user_can' )->justReturn( true );
 		Functions\when( 'wp_add_inline_style' )->justReturn( true );
 		Functions\when( 'check_admin_referer' )->justReturn( 1 );
@@ -114,6 +114,48 @@ final class ImportScreenTest extends WordPressTestCase {
 		Import_Screen::handle();
 
 		$this->assertSame( 'Already confirmed: Import', Import_Screen::title( 'Import' ) );
+	}
+
+	/**
+	 * A dry run keeps every part of the bundle the import writes, the landing and About
+	 * pages' words included, and nothing else; of the settings, only those it sets.
+	 */
+	public function test_a_dry_run_keeps_what_the_import_writes(): void {
+		$content                       = Cases::site();
+		$content['notForWordPress']    = array( 'x' );
+		$content['settings']['footer'] = 'not kept';
+
+		$kept = Import_Screen::kept( $content );
+
+		$this->assertEqualsCanonicalizing( array( 'projects', 'topics', 'topicSummaries', 'settings', 'landing', 'about' ), array_keys( $kept ) );
+		$this->assertEqualsCanonicalizing( array( 'siteName', 'submitLabel', 'submitFormUrl', 'nav' ), array_keys( $kept['settings'] ) );
+		$this->assertSame( $content['about'], $kept['about'] );
+	}
+
+	/**
+	 * The dry run's report has a section for the About page, and its problems are in
+	 * the summary at the top, each a link to that section.
+	 */
+	public function test_the_report_shows_the_about_page(): void {
+		$waiting = get_transient( 'firehouse_import_6' );
+		$waiting['bundle']['content']['about']['mission']['heading'] = '';
+		Functions\when( 'get_transient' )->justReturn( $waiting );
+		Functions\stubTranslationFunctions();
+		Functions\stubEscapeFunctions();
+		Functions\when( 'get_admin_page_title' )->justReturn( 'Import Firehouse content' );
+		Functions\when( 'admin_url' )->alias( static fn( string $path = '' ): string => 'https://example.test/wp-admin/' . $path );
+		Functions\when( 'wp_nonce_field' )->justReturn( '' );
+		Functions\when( 'submit_button' )->justReturn( '' );
+		$_POST['firehouse_step']  = 'import';
+		$_POST['firehouse_token'] = 'the-token';
+
+		Import_Screen::handle();
+		ob_start();
+		Import_Screen::render();
+		$html = (string) ob_get_clean();
+
+		$this->assertMatchesRegularExpression( '#<a href="\#firehouse-import-about">About page: The bundle’s about content has no about\.mission\.heading\.#', $html );
+		$this->assertStringContainsString( '<h2 id="firehouse-import-about" tabindex="-1">About page</h2><p>Not created: see the problems below.</p>', $html );
 	}
 
 	/**

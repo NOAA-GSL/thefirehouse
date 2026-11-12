@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Button, Icon } from '../design-system';
 import { useContent } from '../content/ContentProvider';
+import { initials } from '../content/format';
 import type { LinkRef, TeamMember } from '../content/types';
 import './AboutPage.css';
 
@@ -25,22 +26,6 @@ function portraitFor(member: TeamMember): string | undefined {
     ([path]) => path.split('/').pop()?.replace(/\.[^.]+$/, '') === member.photo,
   );
   return match?.[1];
-}
-
-/**
- * Initials for the stand-in monogram.
- *
- * Honorifics are stripped so "Dr. Emily Wells" reads EW rather than DE — the
- * monogram is only useful if it matches the name printed beside it.
- */
-function initials(name: string): string {
-  return name
-    .replace(/^(?:Dr|Prof|Mr|Ms|Mrs)\.?\s+/i, '')
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('');
 }
 
 function ProcessLink({ link }: { link: LinkRef }) {
@@ -138,8 +123,9 @@ export function AboutPage() {
         {/* ---- How it works ----
             An ordered list because the steps are a sequence, not a set: a project is
             submitted before it can be synthesized, and synthesized before it can be
-            traced. The numerals are drawn by CSS from the list itself, so the order
-            a screen reader announces and the order the eye reads are the same one. */}
+            traced. Each step's numeral is printed beside it and hidden from screen
+            readers, which announce the list's own position instead, so the order a
+            screen reader announces and the order the eye reads are the same one. */}
         <section className="fh-about__section" aria-labelledby="about-process">
           <div className="fh-about__section-intro">
             {process.eyebrow && <span className="fh-eyebrow">{process.eyebrow}</span>}
@@ -185,7 +171,10 @@ export function AboutPage() {
             {teamEmail && (
               <p className="fh-about__section-body">
                 {emailLead && <>{emailLead} </>}
-                <a className="fh-about__team-email" href={`mailto:${teamEmail}`}>
+                <a
+                  className="fh-about__team-email"
+                  href={`mailto:${teamEmail.replace(/[%?#&]/g, encodeURIComponent)}`}
+                >
                   {teamEmail}
                 </a>
               </p>

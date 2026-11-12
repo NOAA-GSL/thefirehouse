@@ -43,7 +43,7 @@ final class Import_Screen {
 	/**
 	 * The content blocks the import writes, and so the only ones kept between steps.
 	 */
-	private const KEPT = array( 'projects', 'topics', 'topicSummaries', 'settings', 'landing' );
+	private const KEPT = array( 'projects', 'topics', 'topicSummaries', 'settings', 'landing', 'about' );
 
 	/**
 	 * The settings the import reads, and so the only ones kept between steps.
@@ -177,6 +177,22 @@ final class Import_Screen {
 	}
 
 	/**
+	 * The parts of a bundle's content the import writes, which a dry run keeps for its
+	 * confirmation: the projects, topics and syntheses, the settings it sets, and the
+	 * landing and About pages' words. Nothing else is kept.
+	 *
+	 * @param array<string, mixed> $content The bundle's content, normalized.
+	 * @return array<string, mixed>
+	 */
+	public static function kept( array $content ): array {
+		$kept = array_intersect_key( $content, array_flip( self::KEPT ) );
+		if ( is_array( $kept['settings'] ?? null ) ) {
+			$kept['settings'] = array_intersect_key( $kept['settings'], array_flip( self::KEPT_SETTINGS ) );
+		}
+		return $kept;
+	}
+
+	/**
 	 * The dry run of an uploaded bundle. Only a dry run with no problems is kept for
 	 * its confirmation.
 	 *
@@ -199,8 +215,7 @@ final class Import_Screen {
 		} catch ( Content_Error $e ) {
 			return self::refused( self::without_prefix( $e->getMessage() ) );
 		}
-		$bundle['content']             = array_intersect_key( $bundle['content'], array_flip( self::KEPT ) );
-		$bundle['content']['settings'] = array_intersect_key( $bundle['content']['settings'], array_flip( self::KEPT_SETTINGS ) );
+		$bundle['content'] = self::kept( $bundle['content'] );
 
 		$state = array(
 			'step' => 'preview',
@@ -241,9 +256,21 @@ final class Import_Screen {
 		if ( ! delete_transient( self::transient() ) ) {
 			return array( 'step' => 'claimed' );
 		}
+		// The run plans again; if that plan isn't the one just checked, as an upload in
+		// between could make it, it imports nothing, and the new dry run is shown.
+		$plan = Importer::run( $bundle['content'], $bundle['notes'], $bundle['problems'], (string) $waiting['fingerprint'] );
+		if ( ! empty( $plan['changed'] ) ) {
+			$state = array(
+				'step'    => 'preview',
+				'plan'    => $plan,
+				'file'    => (string) ( $waiting['file'] ?? '' ),
+				'changed' => true,
+			);
+			return self::keep( $state, $bundle );
+		}
 		return array(
 			'step' => 'done',
-			'plan' => Importer::run( $bundle['content'], $bundle['notes'], $bundle['problems'] ),
+			'plan' => $plan,
 		);
 	}
 
@@ -337,6 +364,9 @@ final class Import_Screen {
 		}
 		foreach ( $plan['landing']['problems'] as $problem ) {
 			$found[] = array( 'firehouse-import-landing', __( 'Landing page', 'firehouse' ) . ': ' . $problem );
+		}
+		foreach ( $plan['about']['problems'] as $problem ) {
+			$found[] = array( 'firehouse-import-about', __( 'About page', 'firehouse' ) . ': ' . $problem );
 		}
 		return $found;
 	}
@@ -523,17 +553,32 @@ final class Import_Screen {
 		self::messages( $settings['problems'], $settings['notes'] );
 
 		echo '<h2 id="firehouse-import-landing" tabindex="-1">' . esc_html__( 'Landing page', 'firehouse' ) . '</h2>';
-		$landing = $plan['landing'];
-		if ( 'create' === $landing['action'] && array() !== $landing['problems'] ) {
-			echo '<p>' . esc_html__( 'Not created: see the problems below.', 'firehouse' ) . '</p>';
-		} elseif ( 'create' === $landing['action'] ) {
-			/* translators: %s: the page's address. */
-			echo '<p>' . esc_html( sprintf( ! empty( $plan['imported'] ) ? __( 'Created at %s, with the bundle’s words.', 'firehouse' ) : __( 'Will be created at %s, with the bundle’s words.', 'firehouse' ), '/' . Query::ROOT_PATH . '/' ) ) . '</p>';
-		}
-		self::messages( $landing['problems'], $landing['notes'] );
+		self::page_report( $plan['landing'], '/' . Query::ROOT_PATH . '/', ! empty( $plan['imported'] ) );
+
+		echo '<h2 id="firehouse-import-about" tabindex="-1">' . esc_html__( 'About page', 'firehouse' ) . '</h2>';
+		self::page_report( $plan['about'], '/' . Query::ROOT_PATH . '/' . About_Page::SLUG . '/', ! empty( $plan['imported'] ) );
 
 		echo '<h2>' . esc_html__( 'Notes', 'firehouse' ) . '</h2>';
 		self::messages( array(), $plan['notes'] );
+	}
+
+	/**
+	 * What happened to a page the import creates: not created, created, or to be
+	 * created at its address; then its problems and notes. A page that exists already
+	 * says so in its notes.
+	 *
+	 * @param array<string, mixed> $page     The page's plan.
+	 * @param string               $address  Its address.
+	 * @param bool                 $imported Whether the import ran.
+	 */
+	private static function page_report( array $page, string $address, bool $imported ): void {
+		if ( 'create' === $page['action'] && array() !== $page['problems'] ) {
+			echo '<p>' . esc_html__( 'Not created: see the problems below.', 'firehouse' ) . '</p>';
+		} elseif ( 'create' === $page['action'] ) {
+			/* translators: %s: the page's address. */
+			echo '<p>' . esc_html( sprintf( $imported ? __( 'Created at %s, with the bundle’s words.', 'firehouse' ) : __( 'Will be created at %s, with the bundle’s words.', 'firehouse' ), $address ) ) . '</p>';
+		}
+		self::messages( $page['problems'], $page['notes'] );
 	}
 
 	/**

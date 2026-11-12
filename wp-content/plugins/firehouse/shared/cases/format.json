@@ -42,6 +42,17 @@
     { "name": "the year 0 isn't on the calendar", "fn": "formatReviewDate", "args": ["0000-01-01"], "expected": "0000-01-01" },
     { "name": "a zone that takes a date back before the year 1 leaves it as written", "fn": "formatReviewDate", "args": ["0001-01-01T00:30:00+01:00"], "expected": "0001-01-01T00:30:00+01:00" },
     { "name": "a backslash ends the host, as a browser reads it", "fn": "linkLabel", "args": ["https://evil.example\\@doi.org/10.1175/x"], "expected": "evil.example\\@doi.org/10.1175/x" },
-    { "name": "a link that isn't http or https comes back unchanged", "fn": "linkLabel", "args": ["s3://doi.org\\@evil.example/x"], "expected": "s3://doi.org\\@evil.example/x" }
+    { "name": "a link that isn't http or https comes back unchanged", "fn": "linkLabel", "args": ["s3://doi.org\\@evil.example/x"], "expected": "s3://doi.org\\@evil.example/x" },
+    { "name": "an honorific is dropped", "fn": "initials", "args": ["Dr. Emily Wells"], "expected": "EW" },
+    { "name": "an honorific without its full stop is dropped too", "fn": "initials", "args": ["Dr Stephanie Hoekstra"], "expected": "SH" },
+    { "name": "an honorific in any case", "fn": "initials", "args": ["mrs. ann lee"], "expected": "AL" },
+    { "name": "only the first two words count", "fn": "initials", "args": ["Ann Marie Lee"], "expected": "AM" },
+    { "name": "letters beyond ASCII are capitalized", "fn": "initials", "args": ["émile öz"], "expected": "ÉÖ" },
+    { "name": "extra spaces around and between words are ignored", "fn": "initials", "args": ["  Ida   Member  "], "expected": "IM" },
+    { "name": "a non-breaking space separates words", "fn": "initials", "args": ["Ida Member"], "expected": "IM" },
+    { "name": "a zero-width no-break space separates words, as JavaScript reads it", "fn": "initials", "args": ["Ida\ufeffMember"], "expected": "IM" },
+    { "name": "a single word gives one letter", "fn": "initials", "args": ["Cher"], "expected": "C" },
+    { "name": "an honorific with nothing after it is a name", "fn": "initials", "args": ["Dr."], "expected": "D" },
+    { "name": "an empty name has no initials", "fn": "initials", "args": [""], "expected": "" }
   ]
 }

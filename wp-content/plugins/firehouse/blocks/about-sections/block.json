@@ -1,0 +1,23 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "firehouse/about-sections",
+	"title": "Firehouse About sections",
+	"category": "widgets",
+	"description": "The About page's body, holding its four sections in order.",
+	"textdomain": "firehouse",
+	"allowedBlocks": [
+		"firehouse/about-mission",
+		"firehouse/about-audiences",
+		"firehouse/about-process",
+		"firehouse/about-team"
+	],
+	"attributes": {},
+	"supports": {
+		"html": false,
+		"inserter": false,
+		"multiple": false,
+		"reusable": false
+	},
+	"render": "file:./render.php"
+}

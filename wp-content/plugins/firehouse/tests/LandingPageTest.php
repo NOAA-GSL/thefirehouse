@@ -11,6 +11,7 @@ namespace Firehouse\Tests;
 
 use Brain\Monkey\Functions;
 use Firehouse\Landing_Page;
+use Firehouse\Page_Blocks;
 
 /**
  * The landing page is the site's: the hero with its live counts, a card for each
@@ -249,16 +250,16 @@ final class LandingPageTest extends WordPressTestCase {
 	 * else, or no survey address, is nowhere.
 	 */
 	public function test_where_a_link_goes(): void {
-		$this->assertSame( 'https://example.test/firehouse/projects/', Landing_Page::link( array( 'to' => '/projects' ) ) );
-		$this->assertSame( 'https://example.test/firehouse/', Landing_Page::link( array( 'to' => '/' ) ) );
-		$this->assertSame( 'https://example.test/firehouse/#top-needs', Landing_Page::link( array( 'to' => '/#top-needs' ) ) );
-		$this->assertSame( 'https://elsewhere.example.org/', Landing_Page::link( array( 'href' => 'https://elsewhere.example.org/' ) ) );
-		$this->assertSame( self::SURVEY, Landing_Page::link( array( 'href' => '' ) ) );
-		$this->assertSame( self::SURVEY, Landing_Page::link( array() ) );
-		$this->assertSame( '', Landing_Page::link( 'https://example.org/' ) );
+		$this->assertSame( 'https://example.test/firehouse/projects/', Page_Blocks::link( array( 'to' => '/projects' ) ) );
+		$this->assertSame( 'https://example.test/firehouse/', Page_Blocks::link( array( 'to' => '/' ) ) );
+		$this->assertSame( 'https://example.test/firehouse/#top-needs', Page_Blocks::link( array( 'to' => '/#top-needs' ) ) );
+		$this->assertSame( 'https://elsewhere.example.org/', Page_Blocks::link( array( 'href' => 'https://elsewhere.example.org/' ) ) );
+		$this->assertSame( self::SURVEY, Page_Blocks::link( array( 'href' => '' ) ) );
+		$this->assertSame( self::SURVEY, Page_Blocks::link( array() ) );
+		$this->assertSame( '', Page_Blocks::link( 'https://example.org/' ) );
 
 		Functions\when( 'get_option' )->justReturn( array() );
-		$this->assertSame( '', Landing_Page::link( array( 'href' => '' ) ) );
+		$this->assertSame( '', Page_Blocks::link( array( 'href' => '' ) ) );
 	}
 
 	/**
@@ -342,9 +343,9 @@ final class LandingPageTest extends WordPressTestCase {
 	 * A route keeps its query and fragment, and gets the leading slash it lacks.
 	 */
 	public function test_a_route_keeps_its_query(): void {
-		$this->assertSame( 'https://example.test/firehouse/projects/?topics=warning', Landing_Page::link( array( 'to' => '/projects?topics=warning' ) ) );
-		$this->assertSame( 'https://example.test/firehouse/projects/', Landing_Page::link( array( 'to' => 'projects' ) ) );
-		$this->assertSame( 'https://example.test/firehouse/projects/#grid', Landing_Page::link( array( 'to' => '/projects/#grid' ) ) );
+		$this->assertSame( 'https://example.test/firehouse/projects/?topics=warning', Page_Blocks::link( array( 'to' => '/projects?topics=warning' ) ) );
+		$this->assertSame( 'https://example.test/firehouse/projects/', Page_Blocks::link( array( 'to' => 'projects' ) ) );
+		$this->assertSame( 'https://example.test/firehouse/projects/#grid', Page_Blocks::link( array( 'to' => '/projects/#grid' ) ) );
 	}
 
 	/**

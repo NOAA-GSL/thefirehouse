@@ -103,3 +103,20 @@ export function linkLabel(url: string): string {
   const host = match[1].replace(/[A-Z]+/g, (letters) => letters.toLowerCase());
   return `${host.replace(/^www\./, '')}${match[2].replace(/\/+$/, '')}`;
 }
+
+/**
+ * Initials for a team member's stand-in monogram.
+ *
+ * Honorifics are stripped so "Dr. Emily Wells" reads EW rather than DE — the
+ * monogram is only useful if it matches the name printed beside it. The plugin's
+ * Format::initials() is the same; shared/cases/format.json holds both to it.
+ */
+export function initials(name: string): string {
+  return name
+    .replace(/^(?:Dr|Prof|Mr|Ms|Mrs)\.?\s+/i, '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
+}

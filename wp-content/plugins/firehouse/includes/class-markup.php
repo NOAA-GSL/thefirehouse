@@ -44,15 +44,21 @@ final class Markup {
 	 * @param string[]                      $modifiers `on-dark` for a dark surface, and
 	 *                                                 `block-mobile` for full width on a
 	 *                                                 phone, as `Button` takes them.
+	 * @param string                        $extra_class A class of the page's own, last, as
+	 *                                                   `Button`'s `className` goes.
+	 * @param int|null                      $icon_size   The icons' size, for an icon a page
+	 *                                                   passes as a child, at its own size,
+	 *                                                   rather than as `iconRight`; null for
+	 *                                                   the size's own.
 	 */
-	public static function button( string $label, string $url, string $variant = 'primary', string $size = 'md', array $icons = array(), array $modifiers = array() ): string {
-		$icon = self::BUTTON_ICON[ $size ] ?? 16;
+	public static function button( string $label, string $url, string $variant = 'primary', string $size = 'md', array $icons = array(), array $modifiers = array(), string $extra_class = '', ?int $icon_size = null ): string {
+		$icon = $icon_size ?? self::BUTTON_ICON[ $size ] ?? 16;
 		$raw  = self::raw_url( $url );
 		// Decided from the address the link leads to, after esc_url_raw() has added any
 		// scheme it lacked: `www.example.org` is another site's.
 		$external = self::is_external( $raw );
 		return sprintf(
-			'<a href="%1$s" class="fh-btn fh-btn--%2$s fh-btn--%3$s%9$s"%4$s>%5$s%6$s%7$s%8$s</a>',
+			'<a href="%1$s" class="fh-btn fh-btn--%2$s fh-btn--%3$s%9$s%10$s"%4$s>%5$s%6$s%7$s%8$s</a>',
 			self::text( $raw ),
 			esc_attr( $variant ),
 			esc_attr( $size ),
@@ -61,7 +67,8 @@ final class Markup {
 			esc_html( $label ),
 			isset( $icons[1] ) ? Icons::svg( $icons[1], $icon ) : '',
 			$external ? '<span class="fh-visually-hidden"> ' . esc_html__( '(opens in a new tab)', 'firehouse' ) . '</span>' : '',
-			implode( '', array_map( static fn( string $modifier ): string => ' fh-btn--' . $modifier, array_values( array_intersect( array( 'on-dark', 'block-mobile' ), $modifiers ) ) ) )
+			implode( '', array_map( static fn( string $modifier ): string => ' fh-btn--' . $modifier, array_values( array_intersect( array( 'on-dark', 'block-mobile' ), $modifiers ) ) ) ),
+			'' !== $extra_class ? ' ' . esc_attr( $extra_class ) : ''
 		);
 	}
 

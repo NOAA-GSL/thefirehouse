@@ -81,6 +81,7 @@ final class Capabilities {
 		add_filter( 'authenticate', array( self::class, 'refuse_xmlrpc' ), 100 );
 		add_action( 'load-post-new.php', array( self::class, 'refuse_new_page_screen' ) );
 		add_action( 'pre_get_posts', array( self::class, 'limit_page_list' ) );
+		add_filter( 'pre_delete_post', array( self::class, 'keep_tree_root' ), 10, 2 );
 	}
 
 	/**
@@ -296,6 +297,56 @@ final class Capabilities {
 			}
 		}
 		return $data;
+	}
+
+	/**
+	 * Refuses to delete the landing page for good while pages outside the trash are
+	 * under it: WordPress would move them to the top of the site, and the About page
+	 * would become a second top-level `about` beside the site's own. Pages in the trash
+	 * don't count: moved, they keep the name WordPress gave them there, so emptying the
+	 * trash of the whole tree works. Putting the landing page in the trash is allowed:
+	 * its pages stay under it. They aren't Firehouse pages while it's there, though one
+	 * that's published still answers under the trashed page's address
+	 * (/firehouse__trashed/about/), as an ordinary page of the theme's; restoring the
+	 * landing page brings them back.
+	 *
+	 * On the two screens where someone deletes a page for good, the Pages list's trash
+	 * and the page's own Delete Permanently, it says why and what to do, before
+	 * WordPress's "Error in deleting the item." would stop the request without either.
+	 * Anywhere else, such as another plugin's clean-up, the refusal is just false.
+	 *
+	 * @param mixed    $check What an earlier filter decided, or null for nothing yet.
+	 * @param \WP_Post $post  The post to be deleted.
+	 * @return mixed False to refuse; otherwise what an earlier filter decided.
+	 */
+	public static function keep_tree_root( mixed $check, \WP_Post $post ): mixed {
+		if ( null !== $check || 'page' !== $post->post_type || 0 !== (int) $post->post_parent ) {
+			return $check;
+		}
+		if ( ! in_array( Query::ROOT_PATH, array( $post->post_name, get_post_meta( $post->ID, '_wp_desired_post_slug', true ) ), true ) ) {
+			return $check;
+		}
+		$children = get_posts(
+			array(
+				'post_type'   => 'page',
+				'post_parent' => $post->ID,
+				'post_status' => array( 'publish', 'future', 'draft', 'pending', 'private' ),
+				'numberposts' => 1,
+				'fields'      => 'ids',
+			)
+		);
+		if ( array() === $children ) {
+			return $check;
+		}
+		global $pagenow;
+		if ( in_array( $pagenow ?? '', array( 'post.php', 'edit.php' ), true ) && is_admin() && ! wp_doing_ajax() ) {
+			wp_die(
+				esc_html__( 'The Firehouse landing page wasn’t deleted: pages are under it, such as the About page, and WordPress would move them to the top of the site. Move those pages to the Trash first, or leave the landing page in the Trash.', 'firehouse' ),
+				esc_html__( 'The landing page wasn’t deleted', 'firehouse' ),
+				array( 'back_link' => true )
+			);
+		}
+		return false;
 	}
 
 	/**
