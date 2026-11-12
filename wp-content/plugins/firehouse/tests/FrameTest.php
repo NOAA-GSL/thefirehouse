@@ -363,10 +363,33 @@ final class FrameTest extends WordPressTestCase {
 
 		Functions\when( 'is_singular' )->justReturn( false );
 		Functions\when( 'is_page' )->justReturn( true );
+		Functions\when( 'is_post_type_archive' )->justReturn( false );
 		Functions\when( 'get_post' )->justReturn( new \WP_Post( array( 'post_type' => 'page' ) ) );
 		ob_start();
 		Frame::content();
 		$this->assertSame( '<section class="fh-section"><div class="fh-container"><h1>The Firehouse</h1><p>This page is being built.</p></div></section>', ob_get_clean() );
+
+		// The explorer's placeholder is named as the link to it is, as its title is.
+		Functions\when( 'is_page' )->justReturn( false );
+		Functions\when( 'is_post_type_archive' )->justReturn( true );
+		Functions\when( 'get_option' )->justReturn( array( 'navLabels' => array( 'projects' => 'Browse the research' ) ) );
+		ob_start();
+		Frame::content();
+		$this->assertStringContainsString( '<h1>Browse the research</h1>', (string) ob_get_clean() );
+	}
+
+	/**
+	 * Whatever an earlier template filter returned is passed on as it was outside the
+	 * Firehouse, `null` included, so no page fails over it.
+	 */
+	public function test_an_earlier_template_filters_nothing_is_passed_on(): void {
+		Functions\when( 'is_embed' )->justReturn( false );
+		Functions\when( 'is_singular' )->justReturn( false );
+		Functions\when( 'is_post_type_archive' )->justReturn( false );
+		Functions\when( 'is_page' )->justReturn( false );
+		Functions\when( 'is_404' )->justReturn( false );
+
+		$this->assertNull( Frame::template( null ) );
 	}
 
 	/**
@@ -507,6 +530,7 @@ final class FrameTest extends WordPressTestCase {
 		Functions\when( 'is_404' )->justReturn( false );
 		Functions\when( 'is_singular' )->justReturn( false );
 		Functions\when( 'is_page' )->justReturn( false );
+		Functions\when( 'is_post_type_archive' )->justReturn( false );
 		Functions\when( 'get_queried_object' )->justReturn( null );
 		Functions\when( 'get_post' )->justReturn( null );
 

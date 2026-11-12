@@ -147,11 +147,14 @@ final class Frame {
 	}
 
 	/**
-	 * The plugin's frame for a Firehouse request; the theme's choice for any other.
+	 * The plugin's frame for a Firehouse request; the theme's choice for any other. The
+	 * filter runs on every page, and an earlier one may return anything, so it's taken
+	 * as given and passed on as it was.
 	 *
-	 * @param string $template The template WordPress chose.
+	 * @param mixed $template The template WordPress, or an earlier filter, chose.
+	 * @return mixed
 	 */
-	public static function template( string $template ): string {
+	public static function template( mixed $template ): mixed {
 		return self::is_firehouse_request() ? dirname( __DIR__ ) . '/templates/frame.php' : $template;
 	}
 
@@ -245,9 +248,11 @@ final class Frame {
 	 * What the frame holds on a page Phase 4 hasn't built yet: a heading and a line.
 	 */
 	public static function placeholder(): void {
+		// Its heading names the page it stands in for, as the page's title does: the
+		// explorer is named as the link to it is.
 		printf(
 			'<section class="fh-section"><div class="fh-container"><h1>%1$s</h1><p>%2$s</p></div></section>',
-			esc_html__( 'The Firehouse', 'firehouse' ),
+			esc_html( is_post_type_archive( Post_Types::PROJECT ) ? (string) Settings::get()['navLabels']['projects'] : __( 'The Firehouse', 'firehouse' ) ),
 			esc_html__( 'This page is being built.', 'firehouse' )
 		);
 	}

@@ -78,10 +78,15 @@ final class Head {
 	 * a project titled "R&amp;D" says so; WordPress's title escaping would show "R&D".
 	 * Anything else keeps what an earlier filter gave, or WordPress's.
 	 *
-	 * @param string $title An earlier filter's title, or "" for WordPress's.
+	 * The filter runs on every page of the site, and an earlier filter may return
+	 * anything, `null` included: it's taken as WordPress takes it, an empty one leaving
+	 * the title to the next, so no page fails over another plugin's answer.
+	 *
+	 * @param mixed $title An earlier filter's title, or "" for WordPress's.
+	 * @return mixed The title, or what was given.
 	 */
-	public static function document_title( string $title ): string {
-		if ( '' !== $title || ! self::active() ) {
+	public static function document_title( mixed $title ): mixed {
+		if ( ! empty( $title ) || ! self::active() ) {
 			return $title;
 		}
 		$own = self::title();
@@ -89,9 +94,12 @@ final class Head {
 			return $title;
 		}
 		// WordPress's own separator filter, applied as wp_get_document_title() applies it,
-		// so the suffix reads as the rest of the site's titles do.
+		// and its "-" shown as the rest of the site's titles show it, the en dash
+		// wptexturize() makes of it: on Firehouse pages wptexturize() is off, to keep
+		// researchers' text as written, and a researcher's own " - " shouldn't read as
+		// the separator.
 		$separator = (string) apply_filters( 'document_title_separator', '-' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WordPress's own filter.
-		return Markup::text( $own ) . ' ' . esc_html( $separator ) . ' ' . get_bloginfo( 'name', 'display' );
+		return Markup::text( $own ) . ' ' . ( '-' === $separator ? '&#8211;' : esc_html( $separator ) ) . ' ' . esc_html( get_bloginfo( 'name', 'display' ) );
 	}
 
 	/**
@@ -109,7 +117,8 @@ final class Head {
 		$description = '' !== $own ? $own : self::DESCRIPTION;
 		$preview     = '' !== $own ? $own : self::PREVIEW;
 		$image       = plugins_url( self::IMAGE, dirname( __DIR__ ) . '/firehouse.php' );
-		$url         = is_singular() ? wp_get_canonical_url() : false;
+		$queried     = get_queried_object();
+		$url         = is_singular() && $queried instanceof \WP_Post && 'publish' === get_post_status( $queried ) ? get_permalink( $queried ) : false;
 		$site        = (string) Settings::get()['siteName'];
 
 		$tags = array(
@@ -142,10 +151,11 @@ final class Head {
 
 	/**
 	 * The page's own title, as the site gives it: "Page not found — The Firehouse", a
-	 * project's or topic area's "{title} — The Firehouse", "Explore projects — The
-	 * Firehouse", the landing page's "The Firehouse — Fire Weather Social Science Hub",
-	 * and the About page's "About — The Firehouse", named as the About link is. The
-	 * site's name is the settings'. "" for any other page, which keeps WordPress's.
+	 * project's or topic area's "{title} — The Firehouse", the landing page's "The
+	 * Firehouse — Fire Weather Social Science Hub", and the explorer's and the About
+	 * page's "Explore Projects — The Firehouse" and "About — The Firehouse", each named as
+	 * the link to it is, so a title agrees with the link followed. The site's name and
+	 * the links' are the settings'. "" for any other page, which keeps WordPress's.
 	 */
 	public static function title(): string {
 		$settings = Settings::get();
@@ -163,7 +173,7 @@ final class Head {
 			return $with( (string) Store::topic( $post )['fields']['label'] );
 		}
 		if ( is_post_type_archive( Post_Types::PROJECT ) ) {
-			return $with( __( 'Explore projects', 'firehouse' ) );
+			return $with( (string) $settings['navLabels']['projects'] );
 		}
 		if ( is_page() && $post instanceof \WP_Post ) {
 			$root = Capabilities::root_id();

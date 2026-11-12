@@ -63,7 +63,8 @@ final class HeadTest extends WordPressTestCase {
 		Functions\when( 'get_locale' )->justReturn( 'en_US' );
 		Functions\when( 'wp_specialchars_decode' )->alias( static fn( string $text ): string => htmlspecialchars_decode( $text, ENT_QUOTES ) );
 		Functions\when( 'plugins_url' )->alias( static fn( string $path ): string => 'https://example.test/wp-content/plugins/firehouse/' . $path );
-		Functions\when( 'wp_get_canonical_url' )->justReturn( 'https://example.test/firehouse/projects/smoke-alerts/' );
+		Functions\when( 'get_permalink' )->justReturn( 'https://example.test/firehouse/projects/smoke-alerts/' );
+		Functions\when( 'get_post_status' )->alias( static fn( \WP_Post $post ): string => $post->post_status );
 		Functions\when( 'is_embed' )->justReturn( false );
 		Functions\when( 'get_posts' )->justReturn( array( 10 ) );
 		Functions\when( 'get_post_ancestors' )->alias( static fn( \WP_Post $post ): array => 0 !== $post->post_parent ? array( $post->post_parent ) : array() );
@@ -167,7 +168,7 @@ final class HeadTest extends WordPressTestCase {
 	public function test_each_page_is_titled_as_the_site_titles_it(): void {
 		$cases = array(
 			'Page not found — The Firehouse'       => array( 'not-found' ),
-			'Explore projects — The Firehouse'     => array( 'explorer' ),
+			'Explore Projects — The Firehouse'     => array( 'explorer' ),
 			'Forecasts & Modeling — The Firehouse' => array(
 				'topic',
 				array(
@@ -199,7 +200,7 @@ final class HeadTest extends WordPressTestCase {
 		foreach ( $cases as $expected => $request ) {
 			$this->visit( ...$request );
 			$this->assertSame( $expected, Head::title(), $expected );
-			$this->assertSame( htmlspecialchars( $expected, ENT_QUOTES ) . ' - Global Systems Laboratory', Head::document_title( '' ), $expected );
+			$this->assertSame( htmlspecialchars( $expected, ENT_QUOTES ) . ' &#8211; Global Systems Laboratory', Head::document_title( '' ), $expected );
 		}
 	}
 
@@ -211,7 +212,40 @@ final class HeadTest extends WordPressTestCase {
 		$this->visit_project();
 
 		$this->assertSame( 'R&amp;D on "smoke" <alerts> — The Firehouse', Head::title() );
-		$this->assertSame( 'R&amp;amp;D on &quot;smoke&quot; &lt;alerts&gt; — The Firehouse - Global Systems Laboratory', Head::document_title( '' ) );
+		$this->assertSame( 'R&amp;amp;D on &quot;smoke&quot; &lt;alerts&gt; — The Firehouse &#8211; Global Systems Laboratory', Head::document_title( '' ) );
+	}
+
+	/**
+	 * The separator before the site's name is the en dash the site's other titles show
+	 * for WordPress's "-"; another a theme sets is kept, escaped. The site's name is
+	 * escaped too.
+	 */
+	public function test_the_suffix_reads_as_the_sites_other_titles(): void {
+		$this->visit( 'explorer' );
+		Functions\when( 'get_bloginfo' )->justReturn( 'Lab <&> Co' );
+		Filters\expectApplied( 'document_title_separator' )->once()->andReturn( '<|>' );
+
+		$this->assertSame( 'Explore Projects — The Firehouse &lt;|&gt; Lab &lt;&amp;&gt; Co', Head::document_title( '' ) );
+	}
+
+	/**
+	 * An earlier title filter that returned nothing at all, as one with a missing
+	 * return does, fails no page: off the Firehouse it's passed on as it was, and on a
+	 * Firehouse page the Firehouse's title takes its place.
+	 */
+	public function test_an_earlier_filters_nothing_fails_no_page(): void {
+		$this->visit(
+			'page',
+			array(
+				'ID'        => 40,
+				'post_type' => 'page',
+				'post_name' => 'research',
+			)
+		);
+		$this->assertNull( Head::document_title( null ) );
+
+		$this->visit( 'explorer' );
+		$this->assertSame( 'Explore Projects — The Firehouse &#8211; Global Systems Laboratory', Head::document_title( null ) );
 	}
 
 	/**
@@ -274,6 +308,13 @@ final class HeadTest extends WordPressTestCase {
 		$this->assertStringContainsString( '<meta property="og:image" content="https://example.test/wp-content/plugins/firehouse/assets/images/og-image.png" />', $html );
 		$this->assertStringContainsString( '<meta name="twitter:card" content="summary_large_image" />', $html );
 		$this->assertSame( 15, substr_count( $html, '<meta ' ), 'Description, eleven Open Graph tags and four Twitter tags, less nothing.' );
+
+		// A project that isn't published has no address in its preview.
+		$this->request['post']->post_status = 'draft';
+		ob_start();
+		Head::tags();
+		$this->assertStringNotContainsString( 'og:url', (string) ob_get_clean() );
+		$this->request['post']->post_status = 'publish';
 
 		// No abstract: the summary.
 		$this->meta[21]['fh_abstract'] = ' ';
