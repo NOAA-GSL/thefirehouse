@@ -42,6 +42,43 @@ final class SubnavTest extends WordPressTestCase {
 	}
 
 	/**
+	 * A page has one bar, the frame's: its block prints the bar only while the frame
+	 * places it. A copy typed into the page's content prints nothing, rendered before
+	 * the frame's bar or after it; outside a Firehouse page, not even the frame's.
+	 */
+	public function test_a_page_has_one_bar_the_frames(): void {
+		self::resolve( array( 'singular' => 'fh_project' ) );
+		Functions\when( 'is_embed' )->justReturn( false );
+		// The frame asks with a list of types.
+		Functions\when( 'is_singular' )->alias( static fn( mixed $types ): bool => in_array( 'fh_project', (array) $types, true ) );
+		$block = static function (): string {
+			ob_start();
+			require dirname( __DIR__ ) . '/blocks/subnav/render.php';
+			return (string) ob_get_clean();
+		};
+		Functions\when( 'do_blocks' )->alias(
+			static function ( string $content ) use ( $block ): string {
+				return '<!-- wp:firehouse/subnav /-->' === $content ? $block() : '';
+			}
+		);
+
+		$typed_before = $block();
+		$frames       = Subnav::place();
+		$typed_after  = $block();
+
+		$this->assertSame( '', $typed_before, 'Content rendered before the frame places the bar.' );
+		$this->assertSame( 1, substr_count( $frames, 'id="' . Subnav::DRAWER_ID . '"' ) );
+		$this->assertSame( '', $typed_after );
+		$this->assertFalse( Subnav::placing() );
+
+		// Outside the Firehouse, not even the frame's.
+		self::resolve( array() );
+		Functions\when( 'is_singular' )->justReturn( false );
+		Functions\when( 'is_404' )->justReturn( false );
+		$this->assertSame( '', Subnav::place() );
+	}
+
+	/**
 	 * Stands in for the stored settings.
 	 *
 	 * @param array<string, mixed> $stored What get_option() returns.

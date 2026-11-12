@@ -40,6 +40,37 @@ final class Subnav {
 	public const DRAWER_ID = 'fh-subnav-drawer';
 
 	/**
+	 * Whether the frame is placing the bar right now.
+	 *
+	 * @var bool
+	 */
+	private static bool $placing = false;
+
+	/**
+	 * The page's one bar, as the frame places it: the bar's block, rendered while the
+	 * frame places it. Its block prints the bar only then (placing()), so a copy typed
+	 * into a page's own content prints nothing, whenever and wherever that content
+	 * renders, before the frame's bar or after it: a page has one bar, one menu button
+	 * and one drawer ID, and it's always the frame's.
+	 */
+	public static function place(): string {
+		self::$placing = true;
+		try {
+			return do_blocks( '<!-- wp:firehouse/subnav /-->' );
+		} finally {
+			self::$placing = false;
+		}
+	}
+
+	/**
+	 * Whether the frame is placing the bar right now, which is the only time its block
+	 * prints it.
+	 */
+	public static function placing(): bool {
+		return self::$placing;
+	}
+
+	/**
 	 * The bar's links, in order: each one's label, its address under /firehouse/, and
 	 * whether it is the current page's.
 	 *
