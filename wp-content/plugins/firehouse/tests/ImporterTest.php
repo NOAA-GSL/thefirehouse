@@ -734,6 +734,7 @@ final class ImporterTest extends WordPressTestCase {
 			array(
 				'ID'          => 9,
 				'post_type'   => 'attachment',
+				'post_status' => 'inherit',
 				'post_title'  => 'ida-member',
 				'post_author' => 3,
 				'post_date'   => '2026-11-11 09:30:00',
@@ -767,8 +768,8 @@ final class ImporterTest extends WordPressTestCase {
 
 	/**
 	 * The note names the uploader by their login, which they can't change, beside their
-	 * display name, which they can; it says nothing more when they could import, and
-	 * says when the page wouldn't show the image at all.
+	 * display name, which they can, and says nothing more when they could import. An
+	 * image the page wouldn't show is a problem, not a note.
 	 */
 	public function test_the_portrait_note_names_who_uploaded_it(): void {
 		$content = self::content();
@@ -794,6 +795,7 @@ final class ImporterTest extends WordPressTestCase {
 						array(
 							'ID'          => 9,
 							'post_type'   => 'attachment',
+							'post_status' => 'inherit',
 							'post_author' => 2,
 							'post_parent' => $attached,
 						)
@@ -815,8 +817,12 @@ final class ImporterTest extends WordPressTestCase {
 
 		$this->assertStringContainsString( '“hal-member.webp”, uploaded by admin (The Admin). Check', Importer::plan( $content, array(), array(), null )['about']['notes'][0] );
 
+		// An image the page wouldn't show, which it would once its post went public,
+		// stops the import, naming who uploaded it.
 		$attached = 70;
-		$this->assertStringContainsString( 'is attached to a post visitors can’t see, so the About page wouldn’t show it', Importer::plan( $content, array(), array(), null )['about']['notes'][0] );
+		$plan     = Importer::plan( $content, array(), array(), null );
+		$this->assertFalse( $plan['ok'] );
+		$this->assertSame( 'The newest Media Library image titled “hal-member”, for Hal Member’s portrait, is image 9, uploaded by admin (The Admin), and the About page wouldn’t show it: it’s attached to a post visitors can’t see. Delete it, or change its Title, so the portrait uploaded under Media → Add New Media File is the newest with that Title, then preview the import again.', $plan['about']['problems'][0] );
 	}
 
 	/**

@@ -753,9 +753,15 @@ final class Importer {
 			if ( '' === $photo ) {
 				continue;
 			}
-			$plan['notes'][] = isset( $plan['portraits'][ $photo ] )
-				? self::portrait_note( $name, $plan['portraits'][ $photo ] )
-				: sprintf( 'No Media Library image has the Title “%1$s”, so %2$s’s card will show initials. Upload the portrait first (WordPress sets its Title from the file’s name), then preview the import again.', $photo, $name );
+			if ( ! isset( $plan['portraits'][ $photo ] ) ) {
+				$plan['notes'][] = sprintf( 'No Media Library image has the Title “%1$s”, so %2$s’s card will show initials. Upload the portrait first (WordPress sets its Title from the file’s name), then preview the import again.', $photo, $name );
+			} elseif ( ! About_Page::shows( $plan['portraits'][ $photo ] ) ) {
+				// Kept, the page would show it the day its post went public: a problem,
+				// not a note, so it isn't imported by someone who skims the notes.
+				$plan['problems'][] = sprintf( 'The newest Media Library image titled “%1$s”, for %2$s’s portrait, is image %3$d, uploaded by %4$s, and the About page wouldn’t show it: it’s attached to a post visitors can’t see. Delete it, or change its Title, so the portrait uploaded under Media → Add New Media File is the newest with that Title, then preview the import again.', $photo, $name, $plan['portraits'][ $photo ], self::uploader( $plan['portraits'][ $photo ] ) );
+			} else {
+				$plan['notes'][] = self::portrait_note( $name, $plan['portraits'][ $photo ] );
+			}
 		}
 
 		$label        = is_string( $settings['navLabels']['about'] ?? null ) && '' !== $settings['navLabels']['about'] ? $settings['navLabels']['about'] : 'About';
@@ -809,32 +815,37 @@ final class Importer {
 
 	/**
 	 * Which image a member's portrait will be, for whoever imports to check: its ID,
-	 * file, upload date and uploader.
+	 * file and uploader.
 	 *
 	 * @param string $name The member's name.
 	 * @param int    $id   The image's ID.
 	 */
 	private static function portrait_note( string $name, int $id ): string {
-		if ( ! About_Page::shows( $id ) ) {
-			return sprintf( 'The Media Library image titled for %1$s’s portrait (image %2$d) is attached to a post visitors can’t see, so the About page wouldn’t show it: upload the portrait from Media → Add Media File instead, then preview the import again.', $name, $id );
-		}
-		$image  = get_post( $id );
-		$author = $image instanceof \WP_Post ? (int) $image->post_author : 0;
-		$login  = 0 !== $author ? (string) get_the_author_meta( 'user_login', $author ) : '';
-		// The login, which its owner can't change, beside the display name, which they
-		// can; and whether they could import, which an administrator can.
-		$by = '' === $login ? 'no one recorded' : sprintf(
-			'%1$s (%2$s)%3$s',
-			$login,
-			(string) get_the_author_meta( 'display_name', $author ),
-			user_can( $author, Capabilities::IMPORT ) ? '' : ', who can’t import'
-		);
 		return sprintf(
 			'%1$s’s portrait will be Media Library image %2$d, “%3$s”, uploaded by %4$s. Check it’s the right person before importing: the page keeps this image.',
 			$name,
 			$id,
 			wp_basename( (string) get_attached_file( $id ) ),
-			$by
+			self::uploader( $id )
+		);
+	}
+
+	/**
+	 * Who uploaded an image: their login, which they can't change, beside their display
+	 * name, which they can, and whether they could import, which an administrator can;
+	 * or "no one recorded".
+	 *
+	 * @param int $id The image's ID.
+	 */
+	private static function uploader( int $id ): string {
+		$image  = get_post( $id );
+		$author = $image instanceof \WP_Post ? (int) $image->post_author : 0;
+		$login  = 0 !== $author ? (string) get_the_author_meta( 'user_login', $author ) : '';
+		return '' === $login ? 'no one recorded' : sprintf(
+			'%1$s (%2$s)%3$s',
+			$login,
+			(string) get_the_author_meta( 'display_name', $author ),
+			user_can( $author, Capabilities::IMPORT ) ? '' : ', who can’t import'
 		);
 	}
 

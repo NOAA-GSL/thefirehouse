@@ -334,8 +334,9 @@ final class About_Page {
 	}
 
 	/**
-	 * Whether the page shows this image as a portrait: an image in the Media Library,
-	 * uploaded on its own or to a post visitors may see without a password. One
+	 * Whether the page shows this image as a portrait: an image in the Media Library, in
+	 * the status uploads have (the import looks for no other), uploaded on its own or to
+	 * a post visitors may see without a password. One
 	 * attached to a draft, private or password-protected post isn't shown, whatever the
 	 * page's attributes say, so the page can't be used to show what WordPress keeps from
 	 * visitors. is_post_publicly_viewable() checks the post's type and status, not its
@@ -348,7 +349,7 @@ final class About_Page {
 			return false;
 		}
 		$image = get_post( $id );
-		if ( ! $image instanceof \WP_Post ) {
+		if ( ! $image instanceof \WP_Post || 'inherit' !== $image->post_status ) {
 			return false;
 		}
 		if ( 0 === (int) $image->post_parent ) {

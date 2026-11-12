@@ -89,8 +89,9 @@ final class AboutPageTest extends WordPressTestCase {
 		Functions\when( 'get_post' )->alias(
 			static fn( mixed $id ): \WP_Post => new \WP_Post(
 				array(
-					'ID'        => (int) $id,
-					'post_type' => 'attachment',
+					'ID'          => (int) $id,
+					'post_type'   => 'attachment',
+					'post_status' => 'inherit',
 				)
 			)
 		);
@@ -398,6 +399,7 @@ final class AboutPageTest extends WordPressTestCase {
 			10 => 70,
 			11 => 71,
 			13 => 72,
+			14 => 0,
 		);
 		$pages   = array(
 			70 => array( 'publish', '' ),
@@ -417,6 +419,7 @@ final class AboutPageTest extends WordPressTestCase {
 					: array(
 						'ID'          => (int) $id,
 						'post_type'   => 'attachment',
+						'post_status' => 14 === (int) $id ? 'trash' : 'inherit',
 						'post_parent' => $parents[ (int) $id ] ?? 0,
 					)
 			)
@@ -428,6 +431,7 @@ final class AboutPageTest extends WordPressTestCase {
 		$this->assertFalse( About_Page::shows( 11 ), 'Attached to a private post.' );
 		$this->assertFalse( About_Page::shows( 13 ), 'Attached to a published page with a password.' );
 		$this->assertFalse( About_Page::shows( 12 ), 'Not an image.' );
+		$this->assertFalse( About_Page::shows( 14 ), 'In the trash.' );
 		$this->assertFalse( About_Page::shows( 0 ) );
 	}
 
