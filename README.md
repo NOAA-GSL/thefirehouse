@@ -73,7 +73,8 @@ wp-content/plugins/firehouse/
                     assets/css/firehouse.css is generated from src/, and
                     assets/css/frame.css is written by hand;
                     assets/fonts/ and assets/css/fonts.css hold the fonts;
-                    assets/icons/ and assets/logos/ are generated from src/.
+                    assets/icons/, assets/logos/ and assets/preview/ are generated
+                    from src/ and public/.
 ```
 
 ### The design system
@@ -619,7 +620,8 @@ one is missing.
 `assets/icons/` holds every icon in the site's registry (`ICON_NAMES` in
 `src/design-system/Icon.tsx`) as an SVG file, drawn by the site's own `Icon` component,
 and `assets/logos/` the images `BrandMark` imports. Don't edit either: `npm run
-plugin:assets` writes both from `src/`, and CI fails if they fall behind. An icon file
+plugin:assets` writes both from `src/`, and the link-preview image from
+`public/og-image.png`, and CI fails if they fall behind. An icon file
 keeps the drawing exactly as the site renders it, at Lucide's 24×24, and leaves off what
 belongs to one use (class, inline style, `aria-hidden`, `focusable`). Where the plugin
 inlines an icon it adds those and replaces the size, as `Icon` does. Every icon may hold

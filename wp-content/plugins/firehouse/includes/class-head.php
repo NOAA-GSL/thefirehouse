@@ -19,10 +19,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  * built from (decided by Eric, 12 November).
  *
  * - **The title** names both: the site's title for the page, "About — The Firehouse",
- *   then the site's own suffix, " - Global Systems Laboratory".
+ *   then the site's own suffix, " – Global Systems Laboratory".
  * - **The description** is the site's, from `index.html`, except on a project's page,
- *   where it's the project's abstract, or its summary if it has none, as the
- *   researcher wrote it.
+ *   where it's the project's abstract as the researcher wrote it, or, with none, its
+ *   editorial summary.
  * - **The preview** uses the page's title, the shorter description the site gives
  *   previews (or the project's own), and the site's preview image.
  *
@@ -53,9 +53,15 @@ final class Head {
 	public const IMAGE_ALT = 'The Firehouse — fire weather social science needs and findings, NOAA Global Systems Laboratory.';
 
 	/**
-	 * The preview image, in the plugin's assets, and its size.
+	 * The preview image, in the plugin's assets (`npm run plugin:assets` copies it from
+	 * the site's `public/og-image.png`).
 	 */
-	private const IMAGE = 'assets/images/og-image.png';
+	private const IMAGE = 'assets/preview/og-image.png';
+
+	/**
+	 * The preview image's size, in pixels, which the tags give.
+	 */
+	public const IMAGE_SIZE = array( 1200, 630 );
 
 	/**
 	 * Constants an SEO plugin defines, one of which means it prints its own titles and
@@ -116,10 +122,12 @@ final class Head {
 		$own         = self::project_description();
 		$description = '' !== $own ? $own : self::DESCRIPTION;
 		$preview     = '' !== $own ? $own : self::PREVIEW;
-		$image       = plugins_url( self::IMAGE, dirname( __DIR__ ) . '/firehouse.php' );
-		$queried     = get_queried_object();
-		$url         = is_singular() && $queried instanceof \WP_Post && 'publish' === get_post_status( $queried ) ? get_permalink( $queried ) : false;
-		$site        = (string) Settings::get()['siteName'];
+		// Versioned as the stylesheets are, so a replaced image isn't served from a
+		// preview's cache under the old address.
+		$image   = plugins_url( self::IMAGE, dirname( __DIR__ ) . '/firehouse.php' ) . '?ver=' . rawurlencode( VERSION . '-' . (int) filemtime( dirname( __DIR__ ) . '/' . self::IMAGE ) );
+		$queried = get_queried_object();
+		$url     = is_singular() && $queried instanceof \WP_Post && 'publish' === get_post_status( $queried ) ? get_permalink( $queried ) : false;
+		$site    = (string) Settings::get()['siteName'];
 
 		$tags = array(
 			array( 'name', 'description', $description ),
@@ -135,8 +143,8 @@ final class Head {
 		array_push(
 			$tags,
 			array( 'property', 'og:image', $image ),
-			array( 'property', 'og:image:width', '1200' ),
-			array( 'property', 'og:image:height', '630' ),
+			array( 'property', 'og:image:width', (string) self::IMAGE_SIZE[0] ),
+			array( 'property', 'og:image:height', (string) self::IMAGE_SIZE[1] ),
 			array( 'property', 'og:image:alt', self::IMAGE_ALT ),
 			array( 'name', 'twitter:card', 'summary_large_image' ),
 			array( 'name', 'twitter:title', $title ),
@@ -154,8 +162,10 @@ final class Head {
 	 * project's or topic area's "{title} — The Firehouse", the landing page's "The
 	 * Firehouse — Fire Weather Social Science Hub", and the explorer's and the About
 	 * page's "Explore Projects — The Firehouse" and "About — The Firehouse", each named as
-	 * the link to it is, so a title agrees with the link followed. The site's name and
-	 * the links' are the settings'. "" for any other page, which keeps WordPress's.
+	 * the link to it is, so a title agrees with the link followed; and any other page in
+	 * the tree, "{its title} — The Firehouse". The site's name and the links' are the
+	 * settings'. "" for anything else, which keeps WordPress's. For Firehouse requests:
+	 * document_title() and tags() ask it only on one.
 	 */
 	public static function title(): string {
 		$settings = Settings::get();
@@ -175,7 +185,7 @@ final class Head {
 		if ( is_post_type_archive( Post_Types::PROJECT ) ) {
 			return $with( (string) $settings['navLabels']['projects'] );
 		}
-		if ( is_page() && $post instanceof \WP_Post ) {
+		if ( is_page() && $post instanceof \WP_Post && Capabilities::in_tree( $post ) ) {
 			$root = Capabilities::root_id();
 			if ( $root === $post->ID ) {
 				return $site . ' — ' . self::HUB;
@@ -183,13 +193,15 @@ final class Head {
 			if ( $root === (int) $post->post_parent && About_Page::SLUG === $post->post_name ) {
 				return $with( (string) $settings['navLabels']['about'] );
 			}
+			return $with( wp_specialchars_decode( $post->post_title, ENT_QUOTES ) );
 		}
 		return '';
 	}
 
 	/**
-	 * On a project's page, its abstract, or its summary if it has none, as the
-	 * researcher wrote it; "" on any other page.
+	 * On a project's page, its abstract as the researcher wrote it, or, with none, its
+	 * editorial summary; "" on any other page. Only spaces is none, as JavaScript
+	 * trims them.
 	 */
 	private static function project_description(): string {
 		$post = get_queried_object();
@@ -198,7 +210,7 @@ final class Head {
 		}
 		$fields = Store::project( $post )['fields'];
 		foreach ( array( 'abstract', 'summary' ) as $name ) {
-			if ( is_string( $fields[ $name ] ?? null ) && '' !== trim( $fields[ $name ] ) ) {
+			if ( is_string( $fields[ $name ] ?? null ) && '' !== Domain\Js::trim( $fields[ $name ] ) ) {
 				return $fields[ $name ];
 			}
 		}
@@ -207,20 +219,24 @@ final class Head {
 
 	/**
 	 * Whether the Firehouse gives this request its title and tags: a Firehouse page,
-	 * with no SEO plugin printing its own and the filter not saying no.
+	 * with no SEO plugin printing its own, unless the filter says otherwise.
 	 */
 	private static function active(): bool {
+		if ( ! Frame::is_firehouse_request() ) {
+			return false;
+		}
+		$seo = false;
 		foreach ( self::SEO_PLUGINS as $constant ) {
-			if ( defined( $constant ) ) {
-				return false;
-			}
+			$seo = $seo || defined( $constant );
 		}
 		/**
 		 * Whether the Firehouse prints its own titles, descriptions and link previews
-		 * on its pages. Return false to leave them to the theme or another plugin.
+		 * on its pages. Return false to leave them to the theme or another plugin, or
+		 * true to keep them where an SEO plugin is active but leaves Firehouse pages
+		 * alone.
 		 *
 		 * @param bool $print True unless an SEO plugin is active.
 		 */
-		return (bool) apply_filters( 'firehouse_head_tags', true ) && Frame::is_firehouse_request();
+		return (bool) apply_filters( 'firehouse_head_tags', ! $seo );
 	}
 }

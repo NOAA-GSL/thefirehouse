@@ -12,6 +12,8 @@ namespace Firehouse\Tests;
 use Brain\Monkey\Filters;
 use Brain\Monkey\Functions;
 use Firehouse\Head;
+use PHPUnit\Framework\Attributes\PreserveGlobalState;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 
 /**
  * Each Firehouse page is titled as the site titles it, then GSL's suffix; it describes
@@ -67,7 +69,13 @@ final class HeadTest extends WordPressTestCase {
 		Functions\when( 'get_post_status' )->alias( static fn( \WP_Post $post ): string => $post->post_status );
 		Functions\when( 'is_embed' )->justReturn( false );
 		Functions\when( 'get_posts' )->justReturn( array( 10 ) );
-		Functions\when( 'get_post_ancestors' )->alias( static fn( \WP_Post $post ): array => 0 !== $post->post_parent ? array( $post->post_parent ) : array() );
+		Functions\when( 'get_post_ancestors' )->alias(
+			static fn( \WP_Post $post ): array => array(
+				0  => array(),
+				10 => array( 10 ),
+				12 => array( 12, 10 ),
+			)[ $post->post_parent ] ?? array( $post->post_parent )
+		);
 
 		$request = &$this->request;
 		$meta    = &$this->meta;
@@ -257,12 +265,14 @@ final class HeadTest extends WordPressTestCase {
 		$this->visit(
 			'page',
 			array(
-				'ID'        => 40,
-				'post_type' => 'page',
-				'post_name' => 'research',
+				'ID'         => 40,
+				'post_type'  => 'page',
+				'post_name'  => 'research',
+				'post_title' => 'Research',
 			)
 		);
 		$this->assertSame( '', Head::document_title( '' ) );
+		$this->assertSame( '', Head::title(), 'Asked directly, it still titles only Firehouse pages.' );
 		ob_start();
 		Head::tags();
 		$this->assertSame( '', ob_get_clean() );
@@ -276,8 +286,13 @@ final class HeadTest extends WordPressTestCase {
 		ob_start();
 		Head::tags();
 		$this->assertSame( '', ob_get_clean() );
+	}
 
-		// A page in the tree other than the two the site titles.
+	/**
+	 * Any other page in the Firehouse tree is titled with its own title and The
+	 * Firehouse, an `about` page that isn't the About page included.
+	 */
+	public function test_other_pages_in_the_tree_are_titled_with_their_own(): void {
 		$this->visit(
 			'page',
 			array(
@@ -285,9 +300,35 @@ final class HeadTest extends WordPressTestCase {
 				'post_type'   => 'page',
 				'post_name'   => 'more',
 				'post_parent' => 10,
+				'post_title'  => 'More &amp; less',
 			)
 		);
-		$this->assertSame( '', Head::document_title( '' ) );
+		$this->assertSame( 'More & less — The Firehouse', Head::title() );
+
+		$this->visit(
+			'page',
+			array(
+				'ID'          => 13,
+				'post_type'   => 'page',
+				'post_name'   => 'about',
+				'post_parent' => 12,
+				'post_title'  => 'An older about',
+			)
+		);
+		$this->assertSame( 'An older about — The Firehouse', Head::title() );
+	}
+
+	/**
+	 * The site's name in a title and a preview is the settings', not a fixed one.
+	 */
+	public function test_the_sites_name_is_the_settings(): void {
+		Functions\when( 'get_option' )->justReturn( array( 'siteName' => 'Firehouse Test' ) );
+		$this->visit( 'not-found' );
+
+		$this->assertSame( 'Page not found — Firehouse Test', Head::title() );
+		ob_start();
+		Head::tags();
+		$this->assertStringContainsString( '<meta property="og:site_name" content="Firehouse Test" />', (string) ob_get_clean() );
 	}
 
 	/**
@@ -305,9 +346,10 @@ final class HeadTest extends WordPressTestCase {
 		$this->assertStringContainsString( '<meta property="og:title" content="R&amp;amp;D on &quot;smoke&quot; &lt;alerts&gt; — The Firehouse" />', $html );
 		$this->assertStringContainsString( '<meta property="og:description" content="What the researchers studied, in their words &amp; no one else&#039;s." />', $html );
 		$this->assertStringContainsString( '<meta property="og:url" content="https://example.test/firehouse/projects/smoke-alerts/" />', $html );
-		$this->assertStringContainsString( '<meta property="og:image" content="https://example.test/wp-content/plugins/firehouse/assets/images/og-image.png" />', $html );
+		$this->assertMatchesRegularExpression( '#<meta property="og:image" content="https://example\.test/wp-content/plugins/firehouse/assets/preview/og-image\.png\?ver=0\.2\.0-[0-9]+" />#', $html );
+		$this->assertStringContainsString( '<meta property="og:image:width" content="1200" />', $html );
 		$this->assertStringContainsString( '<meta name="twitter:card" content="summary_large_image" />', $html );
-		$this->assertSame( 15, substr_count( $html, '<meta ' ), 'Description, eleven Open Graph tags and four Twitter tags, less nothing.' );
+		$this->assertSame( 15, substr_count( $html, '<meta ' ), 'The description, ten Open Graph tags and four Twitter tags.' );
 
 		// A project that isn't published has no address in its preview.
 		$this->request['post']->post_status = 'draft';
@@ -341,6 +383,53 @@ final class HeadTest extends WordPressTestCase {
 	}
 
 	/**
+	 * The landing page's preview names its address; a missing address's names none.
+	 */
+	public function test_a_preview_names_the_pages_address_only_where_it_has_one(): void {
+		Functions\when( 'is_singular' )->alias( static fn( mixed $types = '' ): bool => '' === $types );
+		Functions\when( 'get_permalink' )->justReturn( 'https://example.test/firehouse/' );
+		$this->visit(
+			'page',
+			array(
+				'ID'          => 10,
+				'post_type'   => 'page',
+				'post_name'   => 'firehouse',
+				'post_status' => 'publish',
+			)
+		);
+		ob_start();
+		Head::tags();
+		$this->assertStringContainsString( '<meta property="og:url" content="https://example.test/firehouse/" />', (string) ob_get_clean() );
+
+		$this->visit( 'not-found' );
+		Functions\when( 'is_singular' )->justReturn( false );
+		ob_start();
+		Head::tags();
+		$html = (string) ob_get_clean();
+		$this->assertStringContainsString( '<meta property="og:title" content="Page not found — The Firehouse" />', $html );
+		$this->assertStringNotContainsString( 'og:url', $html );
+	}
+
+	/**
+	 * Where an SEO plugin is active, the Firehouse leaves titles and tags to it, unless
+	 * the filter keeps them, as for one that leaves Firehouse pages alone.
+	 */
+	#[RunInSeparateProcess]
+	#[PreserveGlobalState( false )]
+	public function test_it_steps_aside_for_an_seo_plugin(): void {
+		define( 'WPSEO_VERSION', 'a test' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- standing in for an SEO plugin's own constant.
+		$this->visit( 'not-found' );
+
+		$this->assertSame( '', Head::document_title( '' ) );
+		ob_start();
+		Head::tags();
+		$this->assertSame( '', ob_get_clean() );
+
+		Filters\expectApplied( 'firehouse_head_tags' )->with( false )->andReturn( true );
+		$this->assertSame( 'Page not found — The Firehouse &#8211; Global Systems Laboratory', Head::document_title( '' ) );
+	}
+
+	/**
 	 * With the filter saying no, as it would for a theme or plugin that prints its own,
 	 * the Firehouse prints nothing and keeps WordPress's titles.
 	 */
@@ -355,8 +444,9 @@ final class HeadTest extends WordPressTestCase {
 	}
 
 	/**
-	 * The words are the site's, from index.html: its description, the preview's, the
-	 * image's alternative text, and what its title calls the hub.
+	 * The words are the site's, from index.html and its pages: its description, the
+	 * preview's, the image's alternative text and size, what its title calls the hub,
+	 * and the not-found page's title; and the image is the size the tags say.
 	 */
 	public function test_the_words_are_the_sites(): void {
 		$html = (string) file_get_contents( dirname( __DIR__, 4 ) . '/index.html' );
@@ -370,5 +460,15 @@ final class HeadTest extends WordPressTestCase {
 		$this->assertSame( Head::IMAGE_ALT, $meta( 'property', 'og:image:alt' ) );
 		$this->assertStringContainsString( '<title>The Firehouse — ' . Head::HUB . ' | NOAA GSL</title>', $html );
 		$this->assertSame( 'The Firehouse — ' . Head::HUB, $meta( 'property', 'og:title' ) );
+		$this->assertSame( array( (string) Head::IMAGE_SIZE[0], (string) Head::IMAGE_SIZE[1] ), array( $meta( 'property', 'og:image:width' ), $meta( 'property', 'og:image:height' ) ) );
+
+		// The titles' own words, from the site's pages.
+		$pages = dirname( __DIR__, 4 ) . '/src/pages/';
+		$this->assertStringContainsString( '`${content.settings.siteName} — ' . Head::HUB . ' | NOAA GSL`', (string) file_get_contents( $pages . 'LandingPage.tsx' ) );
+		$this->assertStringContainsString( '`Page not found — ${settings.siteName}`', (string) file_get_contents( $pages . 'NotFoundPage.tsx' ) );
+
+		// The image the tags describe is that size.
+		$png = (string) file_get_contents( dirname( __DIR__ ) . '/assets/preview/og-image.png' );
+		$this->assertSame( Head::IMAGE_SIZE, array_values( unpack( 'N2', substr( $png, 16, 8 ) ) ) );
 	}
 }

@@ -17,7 +17,7 @@
  * - `wp-content/plugins/firehouse/assets/logos/`: the images `BrandMark` imports,
  *   read from the component and copied unchanged. The NOAA and GSL logos stay with the
  *   static build; GSL's header carries its own.
- * - `wp-content/plugins/firehouse/assets/images/og-image.png`: the site's link-preview
+ * - `wp-content/plugins/firehouse/assets/preview/og-image.png`: the site's link-preview
  *   image (`public/og-image.png`), copied unchanged, which Firehouse pages name in their
  *   Open Graph tags (includes/class-head.php).
  *
@@ -95,7 +95,7 @@ try {
 // Lucide's licence asks for its notice in every copy of the icons.
 files.set('icons/LICENSE.txt', readFileSync(resolve(ROOT, 'node_modules/lucide-react/LICENSE')));
 for (const name of LOGOS) files.set(`logos/${name}`, readFileSync(resolve(ROOT, 'src/assets/logos', name)));
-files.set('images/og-image.png', readFileSync(resolve(ROOT, 'public/og-image.png')));
+files.set('preview/og-image.png', readFileSync(resolve(ROOT, 'public/og-image.png')));
 
 const folders = [...new Set([...files.keys()].map((path) => path.split('/')[0]))];
 
