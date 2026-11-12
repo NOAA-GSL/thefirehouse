@@ -105,7 +105,7 @@ final class AboutPageTest extends WordPressTestCase {
 		$about['hero']['eyebrow']    = 'About The Firehouse';
 		$about['hero']['body']       = 'What the hub is.';
 		$about['team']['emailLead']  = ' Write to the team at ';
-		$about['team']['email']      = ' team@example.gov ';
+		$about['team']['email']      = ' team@noaa.gov ';
 		$about['team']['members'][]  = array(
 			'name'  => 'Dr. Ida Member',
 			'photo' => 'ida-member',
@@ -177,7 +177,7 @@ final class AboutPageTest extends WordPressTestCase {
 			),
 			$attributes['about-team']['members'][0]
 		);
-		$this->assertSame( ' team@example.gov ', $attributes['about-team']['email'], 'Kept as written; trimmed when shown.' );
+		$this->assertSame( ' team@noaa.gov ', $attributes['about-team']['email'], 'Kept as written; trimmed when shown.' );
 		$this->assertSame(
 			array(
 				'label' => 'Submit a Finding',
@@ -205,6 +205,7 @@ final class AboutPageTest extends WordPressTestCase {
 
 		$this->assertStringNotContainsString( 'not for the page', $blocks );
 		$this->assertStringNotContainsString( 'nor this', $blocks );
+		$this->assertArrayNotHasKey( 'photoUrl', $attributes['about-team']['members'][0] );
 		$this->assertSame( '', $attributes['about-intro']['heading'] );
 		$this->assertSame(
 			array(
@@ -261,29 +262,83 @@ final class AboutPageTest extends WordPressTestCase {
 
 	/**
 	 * The team's one mailbox is said once, trimmed, after its lead; with no address,
-	 * there's no line for it.
+	 * or one that isn't a team work address (rule 2), there's no line for it. Anything
+	 * in the address that a `mailto:` link would read as more than the address, such
+	 * as a copy to someone else, is encoded.
 	 */
 	public function test_the_team_mailbox(): void {
 		$team = self::attributes( About_Page::blocks( self::about(), self::SURVEY ) )['about-team'];
 
-		$this->assertStringContainsString( '<h2 id="about-team" class="fh-about__section-heading">Team</h2><p class="fh-about__section-body">Write to the team at <a class="fh-about__team-email" href="mailto:team@example.gov">team@example.gov</a></p></div><ul class="fh-about__team">', About_Page::team( $team ) );
+		$this->assertStringContainsString( '<h2 id="about-team" class="fh-about__section-heading">Team</h2><p class="fh-about__section-body">Write to the team at <a class="fh-about__team-email" href="mailto:team@noaa.gov">team@noaa.gov</a></p></div><ul class="fh-about__team">', About_Page::team( $team ) );
 
 		$team['emailLead'] = '';
-		$this->assertStringContainsString( '<p class="fh-about__section-body"><a class="fh-about__team-email" href="mailto:team@example.gov">', About_Page::team( $team ) );
+		$this->assertStringContainsString( '<p class="fh-about__section-body"><a class="fh-about__team-email" href="mailto:team@noaa.gov">', About_Page::team( $team ) );
 
-		$team['email'] = '  ';
-		$this->assertStringNotContainsString( 'mailto:', About_Page::team( $team ) );
+		$team['email'] = 'team?bcc=a%40evil.example&x=@noaa.gov';
+		$this->assertStringContainsString( 'href="mailto:team%3Fbcc=a%2540evil.example%26x=@noaa.gov"', About_Page::team( $team ) );
+
+		foreach ( array( '  ', 'someone@example.org', 'Name.Surname@noaa.gov, other@noaa.gov' ) as $email ) {
+			$team['email'] = $email;
+			$this->assertStringNotContainsString( 'mailto:', About_Page::team( $team ), $email );
+		}
 	}
 
 	/**
-	 * A member whose portrait is in the Media Library gets it, as WordPress prints it:
-	 * offered at the width it's drawn, loaded lazily, its alternative text empty since
-	 * the name follows. A member with none gets their initials, hidden from screen
-	 * readers. Each image is the newest with the portrait's title.
+	 * A process link with neither a route nor an address is left out, as it leads
+	 * nowhere on the site, rather than becoming a Submit link; an empty address is the
+	 * survey's.
+	 */
+	public function test_a_link_with_nowhere_to_go_is_left_out(): void {
+		$process          = self::attributes( About_Page::blocks( self::about(), self::SURVEY ) )['about-process'];
+		$process['links'] = array(
+			array( 'label' => 'Nowhere' ),
+			array(
+				'label' => 'Survey',
+				'href'  => '',
+			),
+		);
+
+		$html = About_Page::process( $process );
+
+		$this->assertStringNotContainsString( 'Nowhere', $html );
+		$this->assertStringContainsString( '<a href="https://forms.example.org/firehouse" class="fh-btn fh-btn--link fh-btn--md fh-about__process-link" target="_blank" rel="noopener noreferrer">Survey', $html );
+	}
+
+	/**
+	 * A member's portrait is the image the import found, kept in the page by its ID;
+	 * a member without one has none.
+	 */
+	public function test_the_import_keeps_each_portrait_by_id(): void {
+		$members = self::attributes( About_Page::blocks( self::about(), self::SURVEY, array( 'ida-member' => 9 ) ) )['about-team']['members'];
+
+		$this->assertArrayNotHasKey( 'photoId', $members[0] );
+		$this->assertSame(
+			array(
+				'name'    => 'Dr. Ida Member',
+				'photo'   => 'ida-member',
+				'photoId' => 9,
+				'bio'     => array( 'First paragraph.', 'Second paragraph.' ),
+			),
+			$members[1]
+		);
+	}
+
+	/**
+	 * A member whose page holds a portrait gets it, as WordPress prints it: offered at
+	 * the width it's drawn, loaded lazily, its alternative text empty since the name
+	 * follows. A member with none, or whose image is gone or isn't an image, gets their
+	 * initials, hidden from screen readers. The page looks nothing up as it renders, so
+	 * an image uploaded later under the same Title changes nothing.
 	 */
 	public function test_portraits_and_initials(): void {
-		$this->images = array( 'ida-member' => 9 );
-		$team         = self::attributes( About_Page::blocks( self::about(), self::SURVEY ) )['about-team'];
+		$images = array( 9 );
+		Functions\when( 'wp_attachment_is_image' )->alias(
+			static function ( int $id ) use ( &$images ): bool {
+				return in_array( $id, $images, true );
+			}
+		);
+		$this->images = array( 'ida-member' => 12 );
+		$team         = self::attributes( About_Page::blocks( self::about(), self::SURVEY, array( 'ida-member' => 9 ) ) )['about-team'];
 
 		$html = About_Page::team( $team );
 
@@ -306,16 +361,42 @@ final class AboutPageTest extends WordPressTestCase {
 			),
 			$this->printed
 		);
-		$this->assertCount( 1, $this->queries, 'Only a member who names a portrait is looked up.' );
-		$this->assertSame( 'attachment', $this->queries[0]['post_type'] );
-		$this->assertSame( 'image', $this->queries[0]['post_mime_type'] );
-		$this->assertSame( 'ida-member', $this->queries[0]['title'] );
-		$this->assertSame( array( 1, 'ID', 'DESC' ), array( $this->queries[0]['numberposts'], $this->queries[0]['orderby'], $this->queries[0]['order'] ), 'The newest image with the title.' );
+		$this->assertSame( array(), $this->queries, 'Nothing is looked up as the page renders.' );
 
 		// A portrait that carries information of its own says so.
 		$team['members'][1]['photoAlt'] = 'Ida at the forecast desk';
 		About_Page::team( $team );
 		$this->assertSame( 'Ida at the forecast desk', $this->printed[1][3]['alt'] );
+
+		// An image that's gone, or isn't an image, leaves the initials.
+		$images = array();
+		$this->assertStringContainsString( '<span class="fh-person__monogram" aria-hidden="true">IM</span>', About_Page::team( $team ) );
+		$team['members'][1]['photoId'] = '9';
+		$this->assertStringNotContainsString( '<img', About_Page::team( $team ), 'Only a number is an ID.' );
+	}
+
+	/**
+	 * For the import, each portrait is the newest image with its Title: by date, then
+	 * ID, which WordPress's index on type and date answers.
+	 */
+	public function test_the_import_finds_the_newest_image_with_the_title(): void {
+		$this->images = array( 'ida-member' => 9 );
+
+		$this->assertSame( array( 'ida-member' => 9 ), About_Page::portraits( array( 'ida-member' ) ) );
+		$this->assertSame( 'attachment', $this->queries[0]['post_type'] );
+		$this->assertSame( 'inherit', $this->queries[0]['post_status'] );
+		$this->assertSame( 'image', $this->queries[0]['post_mime_type'] );
+		$this->assertSame( 'ida-member', $this->queries[0]['title'] );
+		$this->assertSame(
+			array(
+				1,
+				array(
+					'date' => 'DESC',
+					'ID'   => 'DESC',
+				),
+			),
+			array( $this->queries[0]['numberposts'], $this->queries[0]['orderby'] )
+		);
 	}
 
 	/**
@@ -334,18 +415,5 @@ final class AboutPageTest extends WordPressTestCase {
 
 		$this->assertSame( array( 'b' => 4 ), About_Page::portraits( array( 'a', '', 'b', 'a' ) ) );
 		$this->assertSame( array( 'a', 'b' ), array_column( $this->queries, 'title' ) );
-	}
-
-	/**
-	 * Initials as the site draws them: a leading honorific dropped, the first letters
-	 * of the first two words, in capitals.
-	 */
-	public function test_initials(): void {
-		$this->assertSame( 'EW', About_Page::initials( 'Dr. Emily Wells' ) );
-		$this->assertSame( 'SH', About_Page::initials( 'Dr Stephanie Hoekstra' ) );
-		$this->assertSame( 'AL', About_Page::initials( 'mrs. ann lee' ) );
-		$this->assertSame( 'ÉÖ', About_Page::initials( '  Émile  Öz  Third ' ) );
-		$this->assertSame( 'C', About_Page::initials( 'Cher' ) );
-		$this->assertSame( '', About_Page::initials( '' ) );
 	}
 }

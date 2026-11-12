@@ -76,6 +76,7 @@ final class HooksTest extends WordPressTestCase {
 		Filters\expectAdded( 'authenticate' )->once()->with( array( Capabilities::class, 'refuse_xmlrpc' ), 100, 1 );
 		Actions\expectAdded( 'load-post-new.php' )->once()->with( array( Capabilities::class, 'refuse_new_page_screen' ), 10, 1 );
 		Actions\expectAdded( 'pre_get_posts' )->once()->with( array( Capabilities::class, 'limit_page_list' ), 10, 1 );
+		Filters\expectAdded( 'pre_delete_post' )->once()->with( array( Capabilities::class, 'keep_tree_root' ), 10, 2 );
 
 		Capabilities::hook();
 	}

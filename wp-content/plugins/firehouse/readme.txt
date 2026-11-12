@@ -27,8 +27,10 @@ a missing Firehouse address shows the Firehouse not-found page. Each topic area'
 page shows its top needs, the published projects behind each, and what the area
 covers. On Firehouse pages, WordPress no longer curls quotes, converts dashes, turns
 smileys into images or recapitalizes its own name, so researchers' text appears as
-they wrote it. The other pages come in a later phase; until then the frame shows a
-placeholder.
+they wrote it. The Import screen creates the landing page and the About page from the
+seed bundle; the About page's portraits are uploaded to the Media Library by an
+administrator. The remaining pages come in a later phase; until then the frame shows
+a placeholder.
 
 The fonts in assets/fonts/, Archivo and Public Sans, are third-party, under the SIL
 Open Font License 1.1, whose text is beside them. assets/fonts/SOURCES.json records
@@ -65,8 +67,10 @@ one is.
   none: the hero with live counts, the four topic areas' top needs, and the submit
   band. The coverage map comes later.
 * The About page, created by the Import screen under the landing page when there's
-  none: what the hub is, who it serves, how it works, the team with their portraits
-  from the Media Library, and the submit band.
+  none: what the hub is, who it serves, how it works, the team, with portraits an
+  administrator uploads to the Media Library before importing (initials otherwise),
+  and the submit band. The landing page can't be deleted for good while pages are
+  under it.
 * The topic area pages: each area's top needs with the projects behind them, what it
   covers, and the other areas. A need lists only projects a visitor may see:
   published, without a password, and with IRB approval or exemption.

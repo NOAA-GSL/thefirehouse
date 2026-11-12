@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { asJson, readCases } from './cases';
-import { formatByline, formatReviewDate, linkLabel, splitNeedLead } from './format';
+import { formatByline, formatReviewDate, initials, linkLabel, splitNeedLead } from './format';
 
 interface Case {
   name: string;
@@ -14,6 +14,7 @@ const FUNCTIONS = {
   formatByline: (authors: { name: string }[], max?: number) => formatByline(authors, max),
   splitNeedLead: (need: string) => splitNeedLead(need),
   linkLabel: (url: string) => linkLabel(url),
+  initials: (name: string) => initials(name),
 } as const;
 
 const { cases } = readCases<{ cases: Case[] }>('format.json');

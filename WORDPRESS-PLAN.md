@@ -222,7 +222,8 @@ wp-content/plugins/firehouse/
                    interactive (Interactivity API) · an editor preview once editors
                    place it
   templates/       frame.php, the one template every Firehouse page uses
-  patterns/        landing and About layouts, locked to text-only edits
+  patterns/        landing and About layouts, locked to text-only edits (Phase 6; today
+                   the Import screen creates both pages from custom blocks)
   assets/          tokens and component CSS, icons, logos, fonts, GACC boundaries
   shared/          vocabulary.json, the project and topic schemas, the email pattern,
                    the icon allowlist and test cases, read by PHP and JS
@@ -262,7 +263,9 @@ bridge resolves unchanged under the plugin. The Submit page is new.
   by **post ID**; the ID is turned back into a slug when the page renders.
 - **Landing and About.** Ordinary WordPress pages built from blocks. Their layouts are
   locked to text-only editing (`contentOnly`), with a short allowed-blocks list and no
-  Custom HTML block.
+  Custom HTML block. *Their sections are custom blocks whose attributes hold the words
+  (Blocks, below), which `contentOnly` doesn't show to editors; how they're edited is
+  decided in Phase 6.*
 - **The disclaimer.** It ends every Firehouse page, above GSL's footer (`disclaimer`
   in `settings.json`). The Phase 1 import doesn't read it. Phase 4 decides whether the
   plugin keeps it as a setting or as the templates' own copy (*decided: the templates'
@@ -281,7 +284,8 @@ bridge resolves unchanged under the plugin. The Submit page is new.
 ### Blocks
 
 Core blocks carry copy. Custom blocks exist only where data is computed or input is
-handled:
+handled, or where a section's markup isn't core blocks' (the landing and About pages,
+below):
 
 | Block | Renders | Interactive |
 | --- | --- | --- |
@@ -311,10 +315,12 @@ at the Google Form until the plugin's form opens on prod. *Until the editing scr
 (Phase 6), the landing page's Submit buttons are inside its own blocks, which read the
 setting for a link stored empty; the closing band is the `firehouse/submit-band`
 block, since its markup (a labelled section, the glow) isn't core blocks'. The About
-page is built the same way (11 November): every section of it is a labelled section,
-so each is a block whose attributes hold its words, and its audience cards are a list
-in one block's attributes, as the landing page's counts are, rather than a
-`firehouse/audience` block each.*
+page is built the same way (11 November): its parts' markup (labelled sections, icon
+cards, numbered steps, the closing band) isn't core blocks', so each is a block whose
+attributes hold its words, and its audience cards are a list in one block's
+attributes, as the landing page's counts are, rather than a `firehouse/audience` block
+each. Whether these blocks stay, edited through their own controls, or give way to
+core blocks in a locked pattern is decided in Phase 6.*
 
 **Editor previews** are rendered on the server, so each block's markup is written once,
 in PHP.
@@ -532,18 +538,25 @@ so a reviewed synthesis is never overwritten. The same goes for the Firehouse pa
 the import creates the landing page from the bundle's landing content, as its blocks,
 only when there's no `firehouse` page in any status but the trash, and the About
 page under it the same way (decided by Eric, 10 November; done 11 November), once the
-landing page has read back as planned. A `firehouse` page in the trash, or anything else holding the address
+landing page exists, or this run has created it and read it back as planned. A
+`firehouse` page in the trash, or anything else holding the address
 (an unattached Media Library file named `firehouse` takes it from a new page), stops
 the import, and a page WordPress saves at another address anyway is deleted. The About
-page's team portraits are uploaded to the Media Library by an administrator, a step in
-the runbook, rather than shipped in the plugin. Each is titled as the bundle's `photo`
-(`stephanie-hoekstra`, `emily-wells`), which a file's title starts as, and the page
-shows the newest image with that title, or the person's initials until there is one.
-Their names can't be used: WordPress gives an upload a name no other post has, and
-GSL's staff profile pages already have these, so an upload becomes
-`stephanie-hoekstra-2`. The plugin checks the bundle itself: a
-field it doesn't store, or anything shaped like an email address but a team work
-address in the About page's team mailbox field, stops the import.
+page's team portraits are uploaded to the Media Library by an administrator before the
+import, a step in the runbook, rather than shipped in the plugin. The import finds each
+as the newest image titled as the bundle's `photo` (`stephanie-hoekstra`,
+`emily-wells`), which WordPress sets from the file name; the dry run names the image
+and who uploaded it, for whoever imports to check; and the page keeps it by its ID
+(decided by Eric, 12 November, after the security review found that a lookup by title
+as the page renders let anyone who can upload media change a portrait). Until an
+editor can choose a portrait in Phase 6, one uploaded after the import changes
+nothing, and a card with none shows the person's initials. The slug can't be used:
+WordPress gives every upload a slug no other post has, so where a staff profile page
+already uses `stephanie-hoekstra`, as on the copy of GSL's site this was built
+against, the upload becomes `stephanie-hoekstra-2`. The plugin checks the bundle
+itself: a field it doesn't store in a project, topic or synthesis, or anything shaped
+like an email address but a team work address in the About page's team mailbox field,
+stops the import; the landing and About pages keep only the text their blocks use.
 
 The uploaded file itself is never saved. After a dry run with no problems, the parts of
 the content the import writes wait in a transient keyed to the person who uploaded it,
@@ -1170,10 +1183,12 @@ signed off on the frame.
   themes. A link to the survey address is stored empty and follows the settings; with
   none set, or one WordPress refuses, its button is left out. The frame prints a tree
   page's blocks directly, not through `the_content`.*
-  - *Decided with the About page (11 November): tree pages keep printing their blocks
-    directly, without `the_content` or `wp_filter_content_tags`. The portraits aren't
-    core image blocks: the team block prints them with `wp_get_attachment_image()`,
-    which gives them their `srcset`, `sizes`, dimensions and lazy loading itself.*
+  - *Settled in the About page's change (11 November), for Eric to confirm in its
+    review: tree pages keep printing their blocks directly, without `the_content` or
+    `wp_filter_content_tags`. The portraits aren't core image blocks: the team block
+    prints them with `wp_get_attachment_image()`, which adds their `srcset` and
+    dimensions, with the `sizes` and lazy loading the block passes. Revisit if a tree
+    page ever holds a core image block.*
   - *Found in the accessibility review, for a change to both sites: in a light
     forced-colors palette the hero's wordmark, drawn for the dark hero, mostly
     vanishes against the white Canvas (a logotype, so not a WCAG failure, but hard to
@@ -1185,6 +1200,11 @@ signed off on the frame.
     the link slides in at the top of the wrapper, over the Firehouse bar and below
     the header, and is the topmost element there at desktop and phone width (checked
     11 November).*
+  - *Found in the About page's accessibility review, for a change to both sites: Safari
+    doesn't expose a list styled `list-style: none` as a list to VoiceOver, so the
+    About page's audiences, steps and team, and the other pages' lists of the same
+    kind, lose their count there. Add `role="list"` to them, which leaves the
+    reference snapshots as they are, and confirm in the screen-reader audit.*
   - *For Phase 6: a Firehouse Editor has no `unfiltered_html`, so saving the page in
     the block editor runs every attribute string through kses, which turns a `&` into
     `&amp;` (then shown as written) and can alter a `<`. Today's landing and About
@@ -1197,8 +1217,9 @@ signed off on the frame.
   `about-mission`, `about-audiences`, `about-process` and `about-team`, and
   `about-cta`). It matches the reference's accessibility snapshots at both widths, and
   every section, card and portrait is the same size as the site's at both widths in
-  both themes. The portraits are the newest Media Library images titled as each
-  member's `photo`, or their initials until there is one.*
+  both themes. Each portrait is the image the import found by Title and kept by its
+  ID, or the member's initials. Its title is "About — The Firehouse", as the site's
+  is. No one can delete the landing page for good while pages are under it.*
 - Description and Open Graph tags, and whether a Firehouse page's `<title>` names The
   Firehouse. Today it is WordPress's "Page not found - Global Systems Laboratory",
   where the site's is "Page not found — The Firehouse".
@@ -1219,7 +1240,9 @@ signed off on the frame.
   generated PHP array, cached by opcache, not by reading their SVG files on each
   request. *The hero's wordmark file is about 2.8 times the size a 2× screen needs (752
   by 240 for 226 by 72 CSS pixels); a smaller one belongs in the design system's
-  `src/assets`, for both sites.*
+  `src/assets`, for both sites. Likewise the team portraits: a 2× screen takes the
+  640 by 800 originals (186 KB for the two) for a 168 by 210 box; exported at 336 by
+  420 they'd be about 55 KB, in `src/assets/people/` and the Media Library both.*
 - Rerun the frame's style and focus checks on the real pages.
 - Keep the Firehouse bar to one per page once a page's own content renders blocks. The
   bar's block prints on any Firehouse page, so its comment typed into a page in the tree
@@ -1241,7 +1264,10 @@ behaves the same, and the accessibility snapshots match.
 
 - Project and topic edit screens: survey fields read-only, editorial fields editable,
   publishing through WordPress's Publish button.
-- Landing and About layouts locked to text-only edits.
+- Landing and About layouts locked to text-only edits. Their sections are custom
+  blocks whose words are attributes, which `contentOnly` locking doesn't show to
+  editors: decide whether they get their own text controls or become core blocks in a
+  locked pattern.
 - Whether an editor can reword the cleared disclaimer.
 - The synthesis screen: paste, validation, the comparison against the published
   synthesis, and **Mark reviewed**. Validation includes the order: each topic area's

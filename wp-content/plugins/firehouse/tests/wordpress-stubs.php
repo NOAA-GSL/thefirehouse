@@ -77,6 +77,20 @@ if ( ! class_exists( 'WP_Post' ) ) {
 		public string $post_content = '';
 
 		/**
+		 * Who wrote or uploaded it, by user ID, as WordPress holds it: a numeric string.
+		 *
+		 * @var int|string
+		 */
+		public int|string $post_author = '0';
+
+		/**
+		 * When it was published or uploaded, in the site's time: "Y-m-d H:i:s".
+		 *
+		 * @var string
+		 */
+		public string $post_date = '0000-00-00 00:00:00';
+
+		/**
 		 * Sets the fields given.
 		 *
 		 * @param array<string, mixed> $fields The fields.

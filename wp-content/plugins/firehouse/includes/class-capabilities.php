@@ -81,6 +81,7 @@ final class Capabilities {
 		add_filter( 'authenticate', array( self::class, 'refuse_xmlrpc' ), 100 );
 		add_action( 'load-post-new.php', array( self::class, 'refuse_new_page_screen' ) );
 		add_action( 'pre_get_posts', array( self::class, 'limit_page_list' ) );
+		add_filter( 'pre_delete_post', array( self::class, 'keep_tree_root' ), 10, 2 );
 	}
 
 	/**
@@ -296,6 +297,36 @@ final class Capabilities {
 			}
 		}
 		return $data;
+	}
+
+	/**
+	 * Refuses to delete the landing page for good while pages are under it, in any
+	 * status: WordPress would move them to the top of the site, and the About page would
+	 * become a second top-level `about` beside the site's own. Move or delete the pages
+	 * under it first. Putting it in the trash is allowed: its pages stay under it, out of
+	 * reach, until it's restored.
+	 *
+	 * @param mixed    $check What an earlier filter decided, or null for nothing yet.
+	 * @param \WP_Post $post  The post to be deleted.
+	 * @return mixed False to refuse; otherwise what an earlier filter decided.
+	 */
+	public static function keep_tree_root( mixed $check, \WP_Post $post ): mixed {
+		if ( null !== $check || 'page' !== $post->post_type || 0 !== (int) $post->post_parent ) {
+			return $check;
+		}
+		if ( ! in_array( Query::ROOT_PATH, array( $post->post_name, get_post_meta( $post->ID, '_wp_desired_post_slug', true ) ), true ) ) {
+			return $check;
+		}
+		$children = get_posts(
+			array(
+				'post_type'   => 'page',
+				'post_parent' => $post->ID,
+				'post_status' => array( 'publish', 'future', 'draft', 'pending', 'private', 'trash' ),
+				'numberposts' => 1,
+				'fields'      => 'ids',
+			)
+		);
+		return array() === $children ? $check : false;
 	}
 
 	/**

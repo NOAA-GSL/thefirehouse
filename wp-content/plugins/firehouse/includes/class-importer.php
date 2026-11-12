@@ -179,7 +179,7 @@ final class Importer {
 		$page             = get_post( $saved );
 		if ( ! $page instanceof \WP_Post ) {
 			$about['problems'][] = 'It can’t be read back.';
-		} elseif ( $parent !== $page->post_parent || About_Page::SLUG !== $page->post_name ) {
+		} elseif ( $parent !== $page->post_parent || Query::ROOT_PATH . '/' . About_Page::SLUG !== get_page_uri( $page ) ) {
 			$about['problems'][] = 'It isn’t at /' . Query::ROOT_PATH . '/' . About_Page::SLUG . '/: WordPress gave it the address /' . get_page_uri( $page ) . '/.';
 		} elseif ( $page->post_content !== $about['post']['post_content'] || 'publish' !== $page->post_status ) {
 			$about['problems'][] = 'It reads back differently from what was imported.';
@@ -244,7 +244,7 @@ final class Importer {
 		}
 		$summary[] = array( $plan['settings']['action'], $plan['settings']['changes'] );
 		$summary[] = array( $plan['landing']['action'], $plan['landing']['post_id'] );
-		$summary[] = array( $plan['about']['action'], $plan['about']['post_id'] );
+		$summary[] = array( $plan['about']['action'], $plan['about']['post_id'], $plan['about']['portraits'] ?? array() );
 		return hash( 'sha256', serialize( $summary ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize -- Hashed, never stored or unserialized.
 	}
 
@@ -305,7 +305,7 @@ final class Importer {
 			'topics'     => self::plan_topics( $content, $topics, $post_ids ),
 			'settings'   => $settings_plan,
 			'landing'    => self::plan_landing( $content, $root ),
-			'about'      => self::plan_about( $content, $root, (string) ( $settings_plan['value']['navLabels']['about'] ?? '' ) ),
+			'about'      => self::plan_about( $content, $root, is_array( $settings_plan['value'] ?? null ) ? $settings_plan['value'] : array() ),
 			'left_alone' => $left_alone,
 			'notes'      => array_values( $notes ),
 		);
@@ -669,60 +669,145 @@ final class Importer {
 	 * Plans the About page: created under the landing page from the bundle's about
 	 * content if there's no `about` page under it in any status but the trash; otherwise
 	 * left as it is, its words the editors'. A trashed one, or anything else under the
-	 * landing page holding the address, is a problem. With no landing page yet, it's
-	 * created under the one the run creates. Its title is the About link's label.
+	 * landing page holding the address, is a problem, as is a section with no heading.
+	 * With no landing page yet, it's created under the one the run creates. Its title
+	 * is the site's for the page, "About — The Firehouse", from the settings the run
+	 * leaves.
 	 *
-	 * @param array<string, mixed> $content Normalized content.
-	 * @param int                  $root    The `firehouse` page's ID, or 0 for none.
-	 * @param string               $title   The About link's label in the settings the run leaves.
-	 * @return array{action: string, post_id: int, post: array<string, mixed>, problems: list<string>, notes: list<string>}
+	 * Each member's portrait is the newest Media Library image with their `photo` as its
+	 * Title, stored in the page as its ID. The notes name each image found, and who
+	 * uploaded it, so whoever imports can check it's the right person; and each one
+	 * missing, whose card shows initials.
+	 *
+	 * @param array<string, mixed> $content  Normalized content.
+	 * @param int                  $root     The `firehouse` page's ID, or 0 for none.
+	 * @param array<string, mixed> $settings The settings the run leaves.
+	 * @return array{action: string, post_id: int, post: array<string, mixed>, portraits: array<string, int>, problems: list<string>, notes: list<string>}
 	 */
-	private static function plan_about( array $content, int $root, string $title ): array {
-		$about   = is_array( $content['about'] ?? null ) ? $content['about'] : array();
+	private static function plan_about( array $content, int $root, array $settings ): array {
 		$address = '/' . Query::ROOT_PATH . '/' . About_Page::SLUG . '/';
 		$page    = 0 !== $root ? self::child_page( $root, About_Page::SLUG ) : null;
 		if ( null !== $page ) {
 			return array(
-				'action'   => 'unchanged',
-				'post_id'  => $page->ID,
-				'post'     => array(),
-				'problems' => array(),
-				'notes'    => array(
+				'action'    => 'unchanged',
+				'post_id'   => $page->ID,
+				'post'      => array(),
+				'portraits' => array(),
+				'problems'  => array(),
+				'notes'     => array(
 					'' === trim( $page->post_content )
 						? 'The About page exists but is empty, so it shows a placeholder: the import doesn’t write into an existing page. Delete it permanently, then import again to create it.'
-						: 'The About page already exists, so its words are left as editors have them.',
+						: 'The About page already exists, so its words and portraits are left as editors have them.',
 				),
 			);
 		}
 
-		$problems = array();
+		$plan = array(
+			'action'    => 'create',
+			'post_id'   => 0,
+			'post'      => array(),
+			'portraits' => array(),
+			'problems'  => array(),
+			'notes'     => array(),
+		);
+		if ( ! is_array( $content['about'] ?? null ) ) {
+			// A dry run kept before the About page was imported has none.
+			$plan['problems'][] = 'The bundle has no About page content, so the page can’t be created. Upload the bundle again.';
+			return $plan;
+		}
+		$about = $content['about'];
+
 		if ( 0 !== $root && self::trashed( $root, About_Page::SLUG ) ) {
-			$problems[] = 'An About page is in the trash. Restore it, or delete it permanently, then import again: a new one beside it would leave two pages claiming ' . $address . '.';
+			$plan['problems'][] = 'An About page is in the trash. Restore it, or delete it permanently, then import again: a new one beside it would leave two pages claiming ' . $address . '.';
 		} elseif ( 0 !== $root && wp_unique_post_slug( About_Page::SLUG, 0, 'publish', 'page', $root ) !== About_Page::SLUG ) {
-			$problems[] = 'Something else holds the address ' . $address . ', such as a Media Library file named “' . About_Page::SLUG . '” uploaded to the landing page, so the page would land elsewhere. Rename or remove it, then import again.';
+			$plan['problems'][] = 'Something else holds the address ' . $address . ', such as a Media Library file whose slug is “' . About_Page::SLUG . '” uploaded to the landing page, so the page would land elsewhere. Rename or remove it, then import again.';
+		}
+		$unnamed = self::unnamed_about_parts( $about );
+		if ( array() !== $unnamed ) {
+			$plan['problems'][] = sprintf( 'The bundle’s about content has no %s. Each section of the About page, and each audience card and step, needs its heading: screen readers name the sections by them. Fix about.json, then upload the bundle again.', implode( ', ', $unnamed ) );
 		}
 
-		$notes   = array();
-		$photos  = array_values( array_filter( array_map( static fn( mixed $member ): string => is_array( $member ) && is_string( $member['photo'] ?? null ) ? $member['photo'] : '', is_array( $about['team']['members'] ?? null ) ? $about['team']['members'] : array() ) ) );
-		$missing = array_values( array_diff( $photos, array_keys( About_Page::portraits( $photos ) ) ) );
-		if ( array() !== $missing ) {
-			$notes[] = sprintf( 'The team’s portraits aren’t in the bundle: upload them to the Media Library titled %s (a file’s title starts as its name), and the About page shows them. Until then it shows each person’s initials.', implode( ', ', array_map( static fn( string $name ): string => '“' . $name . '”', $missing ) ) );
+		$landing = 0 !== $root ? get_post( $root ) : null;
+		if ( $landing instanceof \WP_Post && 'publish' !== $landing->post_status ) {
+			$plan['notes'][] = 'The landing page isn’t published, but the About page will be: ' . $address . ' is public as soon as it’s imported.';
 		}
-		$settings = is_array( $content['settings'] ?? null ) ? $content['settings'] : array();
-		return array(
-			'action'   => 'create',
-			'post_id'  => 0,
-			'post'     => array(
-				'post_type'    => 'page',
-				'post_name'    => About_Page::SLUG,
-				'post_parent'  => $root,
-				'post_status'  => 'publish',
-				'post_author'  => 0,
-				'post_title'   => Store::label( '' !== $title ? $title : 'About' ),
-				'post_content' => About_Page::blocks( $about, is_string( $settings['submitFormUrl'] ?? null ) ? $settings['submitFormUrl'] : '' ),
-			),
-			'problems' => $problems,
-			'notes'    => $notes,
+
+		$members           = is_array( $about['team']['members'] ?? null ) ? array_values( array_filter( $about['team']['members'], 'is_array' ) ) : array();
+		$plan['portraits'] = About_Page::portraits( array_map( static fn( array $member ): string => is_string( $member['photo'] ?? null ) ? $member['photo'] : '', $members ) );
+		foreach ( $members as $member ) {
+			$name  = is_string( $member['name'] ?? null ) ? $member['name'] : '';
+			$photo = is_string( $member['photo'] ?? null ) ? $member['photo'] : '';
+			if ( is_string( $member['photoUrl'] ?? null ) && '' !== $member['photoUrl'] ) {
+				$plan['notes'][] = sprintf( '%s’s portrait address in the bundle isn’t carried over: the About page shows a Media Library image.', $name );
+			}
+			if ( '' === $photo ) {
+				continue;
+			}
+			$plan['notes'][] = isset( $plan['portraits'][ $photo ] )
+				? self::portrait_note( $name, $plan['portraits'][ $photo ] )
+				: sprintf( 'No Media Library image has the Title “%1$s”, so %2$s’s card will show initials. Upload the portrait first (WordPress sets its Title from the file’s name), then preview the import again.', $photo, $name );
+		}
+
+		$label        = is_string( $settings['navLabels']['about'] ?? null ) && '' !== $settings['navLabels']['about'] ? $settings['navLabels']['about'] : 'About';
+		$site         = is_string( $settings['siteName'] ?? null ) && '' !== $settings['siteName'] ? $settings['siteName'] : 'The Firehouse';
+		$bundle       = is_array( $content['settings'] ?? null ) ? $content['settings'] : array();
+		$plan['post'] = array(
+			'post_type'    => 'page',
+			'post_name'    => About_Page::SLUG,
+			'post_parent'  => $root,
+			'post_status'  => 'publish',
+			'post_author'  => 0,
+			'post_title'   => Store::label( $label . ' — ' . $site ),
+			'post_content' => About_Page::blocks( $about, is_string( $bundle['submitFormUrl'] ?? null ) ? $bundle['submitFormUrl'] : '', $plan['portraits'] ),
+		);
+		return $plan;
+	}
+
+	/**
+	 * The parts of the About page that must have a heading or title and don't: each
+	 * section's heading, and each audience card's and step's title, as bundle paths.
+	 *
+	 * @param array<string, mixed> $about The bundle's about content.
+	 * @return list<string>
+	 */
+	private static function unnamed_about_parts( array $about ): array {
+		$named   = static fn( mixed $text ): bool => is_string( $text ) && '' !== \Firehouse\Domain\Js::trim( $text );
+		$unnamed = array();
+		foreach ( array( 'hero', 'mission', 'audiences', 'process', 'team', 'cta' ) as $section ) {
+			if ( ! $named( $about[ $section ]['heading'] ?? null ) ) {
+				$unnamed[] = 'about.' . $section . '.heading';
+			}
+		}
+		foreach ( array(
+			'audiences' => 'items',
+			'process'   => 'steps',
+		) as $section => $list ) {
+			foreach ( is_array( $about[ $section ][ $list ] ?? null ) ? array_values( $about[ $section ][ $list ] ) : array() as $index => $item ) {
+				if ( ! $named( is_array( $item ) ? $item['title'] ?? null : null ) ) {
+					$unnamed[] = sprintf( 'about.%s.%s[%d].title', $section, $list, $index );
+				}
+			}
+		}
+		return $unnamed;
+	}
+
+	/**
+	 * Which image a member's portrait will be, for whoever imports to check: its ID,
+	 * file, upload date and uploader.
+	 *
+	 * @param string $name The member's name.
+	 * @param int    $id   The image's ID.
+	 */
+	private static function portrait_note( string $name, int $id ): string {
+		$image    = get_post( $id );
+		$uploader = $image instanceof \WP_Post ? (string) get_the_author_meta( 'display_name', (int) $image->post_author ) : '';
+		return sprintf(
+			'%1$s’s portrait will be Media Library image %2$d, “%3$s”, uploaded %4$s by %5$s. Check it’s the right person before importing: the page keeps this image.',
+			$name,
+			$id,
+			wp_basename( (string) get_attached_file( $id ) ),
+			$image instanceof \WP_Post ? substr( $image->post_date, 0, 10 ) : 'on an unknown date',
+			'' !== $uploader ? $uploader : 'no one recorded'
 		);
 	}
 

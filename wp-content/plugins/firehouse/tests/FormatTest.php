@@ -30,6 +30,7 @@ final class FormatTest extends DomainTestCase {
 			'formatByline'     => Format::byline( ...$args ),
 			'splitNeedLead'    => Format::need_lead( ...$args ),
 			'linkLabel'        => Format::link_label( ...$args ),
+			'initials'         => Format::initials( ...$args ),
 		};
 
 		$this->assertSame( Cases::canonical( $shared_case['expected'] ), Cases::canonical( $result ) );

@@ -266,11 +266,26 @@ overrides are isolated so a re-sync doesn't lose them.
 - [ ] **Ask GSL for a `wp_body_open()` hook** in its theme. Firehouse's skip link then
       moves before the theme's header; until then it sits at the top of the Firehouse
       area, after the header's links (plan, Phase 3).
-- [ ] **Upload the team's portraits** to the Media Library on each site, titled
-      `stephanie-hoekstra` and `emily-wells` (a file's title starts as its name), from
-      `src/assets/people/`. The About page shows them as soon as they're there; until
-      then it shows each person's initials. The Import screen's dry run names any that
-      are missing.
+- [ ] **Record that Stephanie and Emily agree** to their photos and biographies
+      appearing publicly on gsl.noaa.gov: who confirmed, what they agreed to, and when.
+      `src/assets/people/README.md` asks for this before the page goes live; that they
+      supplied the photos isn't a recorded agreement.
+- [ ] **Upload the team's portraits before importing,** to the Media Library on each
+      WordPress site the plugin runs on (the test site, then gsl.noaa.gov), once the
+      item above is done. Use the two files in
+      [`src/assets/people/`](src/assets/people/), `stephanie-hoekstra.webp` and
+      `emily-wells.webp`, without renaming them, under Media → Add Media File; not
+      originals, which can carry the location a phone photo was taken, removed from
+      these. WordPress sets each image's **Title** to its file name without the
+      extension; leave it as it is, since the import finds each portrait by that Title,
+      the member's `photo` in `about.json`. The image's Alternative Text isn't used:
+      the name printed beside the photo already says who it is. The dry run names the
+      image it found for each person, with who uploaded it, or says it found none:
+      check each is the right person before confirming. The import keeps those images
+      in the page, so one uploaded later changes nothing until Phase 6's editing
+      screens let an editor choose it; until then, a card with no portrait shows the
+      person's initials. After importing, open `/firehouse/about/` and check that each
+      photo sits under the right name.
 - [ ] **Run an audit with a real screen reader**, and check the remaining federal
       requirements the brief flags as unconfirmed (USWDS conventions, privacy
       notice, .gov branding).
@@ -442,7 +457,9 @@ nothing from the database. Each class's docblock has the detail; this is the map
   settings and the `firehouse` page tree, and nothing else on the site. The role
   stores `read` and Firehouse's own capabilities; WordPress's page capabilities are
   lent only while the plugin runs, so with the plugin off its users can only sign
-  in. Only administrators have `firehouse_import`.
+  in. Only administrators have `firehouse_import`. No one can delete the landing page
+  for good while pages are under it: WordPress would move them to the top of the site,
+  the About page beside the site's own `/about/`.
 - `Installer` stores the role and the administrators' capabilities and has the
   rewrite rules rebuilt, on activation and after `Installer::REVISION` changes.
 - `Settings` is Firehouse → Settings: the site name, the Submit a Finding label and
@@ -468,10 +485,16 @@ nothing from the database. Each class's docblock has the detail; this is the map
     stored empty, so it follows the settings. Two confirmations of one dry run, as a
     double click sends, import once.
   - The About page, the `about` page under it at `/firehouse/about/`, is created the
-    same way from the bundle's about content, once the landing page is there and has
-    read back as planned: a landing page the import deletes takes nothing with it. One
-    in the trash under the landing page, or a file uploaded to the landing page named
-    `about`, stops the import.
+    same way from the bundle's about content, under the landing page: one that already
+    exists, or one this run created and read back as planned. If the run deletes a
+    misplaced landing page, the About page isn't created, so WordPress can't move it to
+    the top of the site. An About page in the trash under the landing page, a file
+    uploaded to the landing page whose slug is `about`, or a section, audience card or
+    step without its heading, stops the import. Each member's portrait is the newest
+    Media Library image whose Title is their `photo`: the dry run names it and who
+    uploaded it, for whoever imports to check, and the import keeps it in the page by
+    its ID (decided by Eric, 12 November). The page's title is "About — The
+    Firehouse", as the site's is, so it isn't a second "About" beside the site's own.
   - Each post and page is read back after it is written.
 - `Landing_Page` is the landing page's blocks: `firehouse/hero` with `firehouse/stats`
   inside it, `firehouse/top-needs` and `firehouse/submit-band`, as the site's
@@ -484,13 +507,17 @@ nothing from the database. Each class's docblock has the detail; this is the map
   `firehouse/about-intro`, `firehouse/about-sections` holding `about-mission`,
   `about-audiences`, `about-process` and `about-team`, and `firehouse/about-cta`. The
   words are the blocks' attributes, the biographies printed as written. Each member's
-  portrait is the newest Media Library image titled as their `photo` in `about.json`
-  (`stephanie-hoekstra`), printed by `wp_get_attachment_image()` with its sizes for the
-  168px it's drawn at; until there is one, the card shows their initials. The title,
-  not the name: WordPress gives an upload a name no other post has, and pages elsewhere
-  on a site, such as staff profiles, may already have a person's.
+  portrait is the image the import kept by its ID, printed by
+  `wp_get_attachment_image()` with its sizes for the 168px it's drawn at; the page
+  looks nothing up as it renders, and without one the card shows their initials
+  (`Format::initials()`, held to the site's by `shared/cases/format.json`). The import
+  finds the image by its Title, not its slug: WordPress gives every upload a slug no
+  other post on the site has, so where a page such as a staff profile already uses
+  `stephanie-hoekstra`, the upload becomes `stephanie-hoekstra-2`. The team's mailbox
+  shows only if it's a team work address, with anything a `mailto:` link would read
+  as more than the address encoded.
 - `Page_Blocks` is what the two share: building their blocks from the bundle's text,
-  and where a stored link goes.
+  where a stored link goes, and its button, left out when it leads nowhere.
 
 The traps, for whoever changes this code next:
 
@@ -506,9 +533,10 @@ The traps, for whoever changes this code next:
   ("2025", "1") as that type, so a restored revision still saves; but its refusal is
   only a `false` from WordPress's function, with no message. No one may change a
   field through WordPress's custom-field routes.
-- **The plugin checks the bundle itself.** It refuses fields it doesn't store and
-  anything shaped like an email address but a team work address in the About page's
-  team mailbox field, by the same pattern and field list as the Node scripts
+- **The plugin checks the bundle itself.** It refuses fields it doesn't store in a
+  project, topic or synthesis (the landing and About pages keep only the text their
+  blocks use, and drop the rest), and anything shaped like an email address but a team
+  work address in the About page's team mailbox field, by the same pattern and field list as the Node scripts
   (`shared/email-shape.json`).
 - `uninstall.php` removes the role, so users who had it are left with no role on the
   site, and the capabilities; the content stays.

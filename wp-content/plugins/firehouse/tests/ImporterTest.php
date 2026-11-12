@@ -606,7 +606,7 @@ final class ImporterTest extends WordPressTestCase {
 				'post_parent' => 0,
 				'post_status' => 'publish',
 				'post_author' => 0,
-				'post_title'  => 'About',
+				'post_title'  => 'About — The Firehouse',
 			),
 			array_diff_key( $about['post'], array( 'post_content' => true ) )
 		);
@@ -629,7 +629,7 @@ final class ImporterTest extends WordPressTestCase {
 		$settings['submitFormUrl']      = 'https://forms.example.org/firehouse';
 		$settings['navLabels']['about'] = 'About us';
 
-		$this->assertSame( 'About us', Importer::plan( self::content(), array(), array(), $settings )['about']['post']['post_title'] );
+		$this->assertSame( 'About us — The Firehouse', Importer::plan( self::content(), array(), array(), $settings )['about']['post']['post_title'] );
 	}
 
 	/**
@@ -717,10 +717,12 @@ final class ImporterTest extends WordPressTestCase {
 	}
 
 	/**
-	 * A member's portrait that isn't in the Media Library yet is noted by the title to
-	 * upload it under; one that is, isn't.
+	 * The dry run names the image it found for each member's portrait, and who
+	 * uploaded it, so whoever imports can check it's the right person; the page keeps
+	 * that image by its ID. A member whose portrait has no image is noted, with how to
+	 * add it.
 	 */
-	public function test_portraits_to_upload_are_noted(): void {
+	public function test_the_dry_run_names_each_portrait(): void {
 		$content = self::content();
 		$content['about']['team']['members'][0]['photo'] = 'hal-member';
 		$content['about']['team']['members'][]           = array(
@@ -728,25 +730,202 @@ final class ImporterTest extends WordPressTestCase {
 			'photo' => 'ida-member',
 			'bio'   => array( 'Another.' ),
 		);
+		$image = new \WP_Post(
+			array(
+				'ID'          => 9,
+				'post_type'   => 'attachment',
+				'post_title'  => 'ida-member',
+				'post_author' => 3,
+				'post_date'   => '2026-11-11 09:30:00',
+			)
+		);
+		Functions\when( 'get_posts' )->alias( static fn( array $args ): array => 'attachment' === $args['post_type'] && 'ida-member' === ( $args['title'] ?? '' ) ? array( $image ) : array() );
+		Functions\when( 'get_post' )->alias( static fn( mixed $id ): ?\WP_Post => 9 === (int) $id ? $image : null );
+		Functions\when( 'get_attached_file' )->justReturn( '/uploads/2026/11/ida-member.webp' );
+		Functions\when( 'wp_basename' )->alias( static fn( string $path ): string => basename( $path ) );
+		Functions\when( 'get_the_author_meta' )->alias( static fn( string $field, int $user ): string => 3 === $user ? 'A. Administrator' : '' );
+
+		$about = Importer::plan( $content, array(), array(), null )['about'];
+
+		$this->assertSame( array( 'ida-member' => 9 ), $about['portraits'] );
+		$this->assertSame(
+			array(
+				'No Media Library image has the Title “hal-member”, so Hal Member’s card will show initials. Upload the portrait first (WordPress sets its Title from the file’s name), then preview the import again.',
+				'Ida Member’s portrait will be Media Library image 9, “ida-member.webp”, uploaded 2026-11-11 by A. Administrator. Check it’s the right person before importing: the page keeps this image.',
+			),
+			$about['notes']
+		);
+		$this->assertStringContainsString( '"photo":"ida-member","photoId":9,', $about['post']['post_content'] );
+	}
+
+	/**
+	 * The fingerprint changes when a portrait the dry run named is replaced before the
+	 * confirmation, so the import never keeps an image no one was shown.
+	 */
+	public function test_the_fingerprint_follows_the_portraits(): void {
+		$content = self::content();
+		$content['about']['team']['members'][0]['photo'] = 'hal-member';
+		$id = 9;
 		Functions\when( 'get_posts' )->alias(
-			static fn( array $args ): array => 'attachment' === $args['post_type'] && 'ida-member' === ( $args['title'] ?? '' )
-				? array(
-					new \WP_Post(
-						array(
-							'ID'         => 9,
-							'post_type'  => 'attachment',
-							'post_title' => 'ida-member',
-						)
-					),
+			static function ( array $args ) use ( &$id ): array {
+				return 'attachment' === $args['post_type']
+					? array(
+						new \WP_Post(
+							array(
+								'ID'        => $id,
+								'post_type' => 'attachment',
+							)
+						),
+					)
+					: array();
+			}
+		);
+		Functions\when( 'get_attached_file' )->justReturn( '' );
+		Functions\when( 'wp_basename' )->justReturn( '' );
+		Functions\when( 'get_the_author_meta' )->justReturn( '' );
+
+		$before = Importer::fingerprint( Importer::plan( $content, array(), array(), null ) );
+		$id     = 12;
+
+		$this->assertNotSame( $before, Importer::fingerprint( Importer::plan( $content, array(), array(), null ) ) );
+	}
+
+	/**
+	 * A member's portrait address in the bundle, which the site can use, isn't carried
+	 * over, and the dry run says so.
+	 */
+	public function test_a_portrait_address_is_noted(): void {
+		$content = self::content();
+		$content['about']['team']['members'][0]['photoUrl'] = 'https://example.org/hal.jpg';
+
+		$about = Importer::plan( $content, array(), array(), null )['about'];
+
+		$this->assertSame( 'Hal Member’s portrait address in the bundle isn’t carried over: the About page shows a Media Library image.', $about['notes'][0] );
+		$this->assertStringNotContainsString( 'hal.jpg', $about['post']['post_content'] );
+	}
+
+	/**
+	 * A section with no heading, or an audience card or step with no title, stops the
+	 * import: the page needs each, and screen readers name the sections by them.
+	 */
+	public function test_a_missing_heading_stops_the_import(): void {
+		$content                                = self::content();
+		$content['about']['mission']['heading'] = '';
+		$content['about']['cta']['heading']     = " \u{00A0}";
+		$content['about']['audiences']['items'][0]['title'] = '';
+		unset( $content['about']['process']['steps'][0]['title'] );
+
+		$plan = Importer::plan( $content, array(), array(), null );
+
+		$this->assertFalse( $plan['ok'] );
+		$this->assertSame(
+			array( 'The bundle’s about content has no about.mission.heading, about.cta.heading, about.audiences.items[0].title, about.process.steps[0].title. Each section of the About page, and each audience card and step, needs its heading: screen readers name the sections by them. Fix about.json, then upload the bundle again.' ),
+			$plan['about']['problems']
+		);
+	}
+
+	/**
+	 * Content with no About page, as a dry run kept before the About page was imported
+	 * holds, creates nothing: the page would have no words.
+	 */
+	public function test_content_without_the_about_page_creates_nothing(): void {
+		$content = self::content();
+		unset( $content['about'] );
+
+		$plan = Importer::plan( $content, array(), array(), null );
+
+		$this->assertFalse( $plan['ok'] );
+		$this->assertStringContainsString( 'no About page content', $plan['about']['problems'][0] );
+		$this->assertSame( array(), $plan['about']['post'] );
+	}
+
+	/**
+	 * Under a landing page that isn't published, the About page will be, and the dry
+	 * run says so.
+	 */
+	public function test_an_unpublished_landing_page_is_noted(): void {
+		Functions\when( 'get_post' )->justReturn(
+			new \WP_Post(
+				array(
+					'ID'           => 77,
+					'post_type'    => 'page',
+					'post_status'  => 'private',
+					'post_content' => '<!-- wp:firehouse/hero /-->',
 				)
-				: array()
+			)
 		);
 
-		$notes = Importer::plan( $content, array(), array(), null )['about']['notes'];
+		$about = Importer::plan( self::content(), array(), array(), null, array(), array(), 77 )['about'];
 
-		$this->assertCount( 1, $notes );
-		$this->assertStringContainsString( 'titled “hal-member” (a file’s title starts as its name), and the About page shows them', $notes[0] );
-		$this->assertStringNotContainsString( 'ida-member', $notes[0] );
+		$this->assertSame( 'The landing page isn’t published, but the About page will be: /firehouse/about/ is public as soon as it’s imported.', $about['notes'][0] );
+	}
+
+	/**
+	 * An About page WordPress saves outside the landing page, which would put it at
+	 * the top of the site, is a problem, and is deleted; so is one saved in another
+	 * status. The landing page stays.
+	 */
+	public function test_an_about_page_outside_the_tree_or_unpublished_is_deleted(): void {
+		$this->stand_in_wordpress();
+		$posts  = &$this->posts;
+		$change = array( 'post_parent' => 0 );
+		Functions\when( 'wp_insert_post' )->alias(
+			static function ( array $postarr ) use ( &$posts, &$change ): int {
+				$id           = 200 + count( $posts );
+				$posts[ $id ] = 'about' === $postarr['post_name'] ? $change + $postarr : $postarr;
+				return $id;
+			}
+		);
+
+		$result = Importer::run( self::content() );
+
+		$this->assertSame( 'It isn’t at /firehouse/about/: WordPress gave it the address /about/.', $result['about']['problems'][0] );
+		$this->assertStringContainsString( 'It was deleted', $result['about']['problems'][1] );
+		$this->assertSame( array(), $result['landing']['problems'] );
+		$this->assertSame( array( 'firehouse' ), array_column( array_filter( $posts, static fn( array $post ): bool => 'page' === $post['post_type'] ), 'post_name' ) );
+
+		$this->posts = array();
+		$change      = array( 'post_status' => 'draft' );
+		$about       = Importer::run( self::content() )['about'];
+		$this->assertStringContainsString( 'reads back differently', $about['problems'][0] );
+		$this->assertSame( 0, $about['post_id'] );
+	}
+
+	/**
+	 * A landing page saved in another status than published is a problem, and is
+	 * deleted, and the About page isn't created under it.
+	 */
+	public function test_a_landing_page_not_published_is_deleted(): void {
+		$this->stand_in_wordpress();
+		$posts = &$this->posts;
+		Functions\when( 'wp_insert_post' )->alias(
+			static function ( array $postarr ) use ( &$posts ): int {
+				$id           = 200 + count( $posts );
+				$posts[ $id ] = 'firehouse' === $postarr['post_name'] ? array( 'post_status' => 'draft' ) + $postarr : $postarr;
+				return $id;
+			}
+		);
+
+		$result = Importer::run( self::content() );
+
+		$this->assertStringContainsString( 'reads back differently', $result['landing']['problems'][0] );
+		$this->assertSame( 0, $result['landing']['post_id'] );
+		$this->assertStringContainsString( 'wasn’t created, since the landing page', $result['about']['problems'][0] );
+	}
+
+	/**
+	 * An About page WordPress refuses to save is a problem; the landing page stays.
+	 */
+	public function test_an_about_page_wordpress_refuses_is_a_problem(): void {
+		$this->stand_in_wordpress();
+		$this->refuse = 'about';
+
+		$result = Importer::run( self::content() );
+
+		$this->assertStringContainsString( 'WordPress didn’t save it', $result['about']['problems'][0] );
+		$this->assertSame( 0, $result['about']['post_id'] );
+		$this->assertSame( array(), $result['landing']['problems'] );
+		$this->assertNotSame( 0, $result['landing']['post_id'] );
 	}
 
 	/**
@@ -950,6 +1129,17 @@ final class ImporterTest extends WordPressTestCase {
 			}
 		);
 		Functions\when( 'wp_slash' )->returnArg();
+		Functions\when( 'get_page_uri' )->alias(
+			static function ( \WP_Post $page ) use ( &$posts ): string {
+				$path   = $page->post_name;
+				$parent = (int) $page->post_parent;
+				while ( 0 !== $parent && isset( $posts[ $parent ] ) ) {
+					$path   = $posts[ $parent ]['post_name'] . '/' . $path;
+					$parent = (int) ( $posts[ $parent ]['post_parent'] ?? 0 );
+				}
+				return $path;
+			}
+		);
 		Functions\when( 'wp_delete_post' )->alias(
 			static function ( int $id ) use ( &$posts, &$writes ): \WP_Post {
 				$writes[] = 'delete post';

@@ -145,4 +145,22 @@ final class Format {
 		}
 		return preg_replace( '/^www\./', '', strtolower( $match[1] ) ) . rtrim( $match[2], '/' );
 	}
+
+	/**
+	 * Initials for a team member's stand-in monogram, as the site's `initials()` draws
+	 * them: a leading honorific dropped, so "Dr. Emily Wells" reads EW, then the first
+	 * letter of the first two words, in capitals. Words are split on any Unicode space,
+	 * as JavaScript's `\s` splits them.
+	 *
+	 * @param string $name The member's name.
+	 */
+	public static function initials( string $name ): string {
+		$words    = preg_split( '/(*UCP)\s+/u', (string) preg_replace( '/(*UCP)^(?:Dr|Prof|Mr|Ms|Mrs)\.?\s+/iu', '', $name ), -1, PREG_SPLIT_NO_EMPTY );
+		$initials = '';
+		foreach ( array_slice( is_array( $words ) ? $words : array(), 0, 2 ) as $word ) {
+			$letter    = mb_substr( $word, 0, 1 );
+			$initials .= function_exists( 'mb_strtoupper' ) ? mb_strtoupper( $letter ) : strtoupper( $letter );
+		}
+		return $initials;
+	}
 }

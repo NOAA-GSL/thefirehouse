@@ -9,6 +9,8 @@ declare( strict_types = 1 );
 
 namespace Firehouse;
 
+use Firehouse\Domain\Email_Shape;
+use Firehouse\Domain\Format;
 use Firehouse\Domain\Js;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -28,10 +30,13 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - `firehouse/about-team`: who is behind it, the team's mailbox, a card for each member.
  * - `firehouse/about-cta`: the closing band with the Submit button.
  *
- * Each member's portrait is the Media Library image titled as the member's `photo`
- * (`stephanie-hoekstra`), uploaded by an administrator; until there is one, the card
- * shows the member's initials, as the site does. Biographies are printed as stored,
- * one paragraph each: they were written by the people they describe.
+ * Each member's portrait is a Media Library image an administrator uploaded, which
+ * the import found by its Title, the member's `photo` (`stephanie-hoekstra`), named in
+ * the dry run so whoever imports can check it, and stored in the page as its ID. The
+ * page looks nothing up when it renders, so an image uploaded later under the same
+ * Title changes nothing; without one, the card shows the member's initials, as the
+ * site does. Biographies are printed as stored, one paragraph each: they were written
+ * by the people they describe.
  */
 final class About_Page {
 
@@ -39,6 +44,17 @@ final class About_Page {
 	 * The page's name under `firehouse`, so its address is /firehouse/about/.
 	 */
 	public const SLUG = 'about';
+
+	/**
+	 * The characters that would end a `mailto:` address or add to it, encoded
+	 * (RFC 6068), so the link goes to the address shown and nowhere else.
+	 */
+	private const MAILTO = array(
+		'%' => '%25',
+		'?' => '%3F',
+		'#' => '%23',
+		'&' => '%26',
+	);
 
 	/**
 	 * How wide a portrait is drawn, at every width (`.fh-person__portrait`).
@@ -49,19 +65,25 @@ final class About_Page {
 	 * The page's blocks, from the bundle's about content, as the Import screen saves
 	 * them. Only text reaches the page: each section's words, its items' text, and a
 	 * link's label and where it goes, with a link to the bundle's survey address stored
-	 * empty so it follows the settings. A key the site doesn't have, or a value that
-	 * isn't text, is left out.
+	 * empty so it follows the settings; and each member's portrait, as the ID of the
+	 * image the import found for it. Anything else is left out: a value that isn't
+	 * text, and a key the page doesn't use, such as a member's `photoUrl`, which the
+	 * site uses for a portrait hosted elsewhere.
 	 *
 	 * @param array<string, mixed> $about      The bundle's about content, normalized.
 	 * @param string               $submit_url The bundle's survey address.
+	 * @param array<string, int>   $portraits  The portraits found, by `photo` name (portraits()).
 	 */
-	public static function blocks( array $about, string $submit_url ): string {
+	public static function blocks( array $about, string $submit_url, array $portraits = array() ): string {
 		$part    = static fn( string $name ): mixed => $about[ $name ] ?? null;
 		$words   = static fn( mixed $section, array $names ): array => Page_Blocks::text_fields( $section, $names ) + array_fill_keys( $names, '' );
 		$link    = static fn( mixed $item ): array => Page_Blocks::link_fields( $item, $submit_url );
 		$members = array();
 		foreach ( self::list_of( $part( 'team' )['members'] ?? null ) as $member ) {
-			$members[] = Page_Blocks::text_fields( $member, array( 'name', 'photo', 'photoAlt' ) ) + array( 'bio' => self::strings( $member['bio'] ?? null ) );
+			$photo     = self::text( $member, 'photo' );
+			$members[] = Page_Blocks::text_fields( $member, array( 'name', 'photo', 'photoAlt' ) )
+				+ ( isset( $portraits[ $photo ] ) ? array( 'photoId' => (int) $portraits[ $photo ] ) : array() )
+				+ array( 'bio' => self::strings( $member['bio'] ?? null ) );
 		}
 
 		return serialize_blocks(
@@ -189,6 +211,11 @@ final class About_Page {
 		}
 		$links = '';
 		foreach ( self::list_of( $attributes['links'] ?? null ) as $link ) {
+			// A link with neither a route nor an address goes nowhere, as on the site;
+			// an empty address is the survey's.
+			if ( ! is_string( $link['to'] ?? null ) && ! is_string( $link['href'] ?? null ) ) {
+				continue;
+			}
 			$links .= Page_Blocks::button(
 				$link,
 				'link',
@@ -211,26 +238,26 @@ final class About_Page {
 
 	/**
 	 * Who is behind it: the section's words, the team's one mailbox, said once, and a
-	 * card for each member: the portrait or initials, the name, and the biography as
-	 * written.
+	 * card for each member: the portrait the page holds, or initials, the name, and the
+	 * biography as written. The mailbox is shown only if it's a team work address, as
+	 * the import requires (rule 2), with the characters that would add to a `mailto:`
+	 * link encoded.
 	 *
 	 * @param array<string, mixed> $attributes The block's attributes.
 	 */
 	public static function team( array $attributes ): string {
-		$members   = self::list_of( $attributes['members'] ?? null );
-		$portraits = self::portraits( array_map( static fn( array $member ): string => self::text( $member, 'photo' ), $members ) );
-		$cards     = '';
-		foreach ( $members as $member ) {
+		$cards = '';
+		foreach ( self::list_of( $attributes['members'] ?? null ) as $member ) {
 			$name     = self::text( $member, 'name' );
-			$photo    = $portraits[ self::text( $member, 'photo' ) ] ?? 0;
-			$portrait = 0 !== $photo ? self::portrait( $photo, is_string( $member['photoAlt'] ?? null ) ? $member['photoAlt'] : '' ) : '';
+			$photo    = is_int( $member['photoId'] ?? null ) ? $member['photoId'] : 0;
+			$portrait = $photo > 0 && wp_attachment_is_image( $photo ) ? self::portrait( $photo, is_string( $member['photoAlt'] ?? null ) ? $member['photoAlt'] : '' ) : '';
 			$bio      = '';
 			foreach ( self::strings( $member['bio'] ?? null ) as $paragraph ) {
 				$bio .= '<p>' . Markup::text( $paragraph ) . '</p>';
 			}
 			$cards .= sprintf(
 				'<li class="fh-person fh-glass"><div class="fh-person__head"><div class="fh-person__portrait">%1$s</div><div class="fh-person__id"><h3 class="fh-person__name">%2$s</h3></div></div><div class="fh-person__bio">%3$s</div></li>',
-				'' !== $portrait ? $portrait : '<span class="fh-person__monogram" aria-hidden="true">' . Markup::text( self::initials( $name ) ) . '</span>',
+				'' !== $portrait ? $portrait : '<span class="fh-person__monogram" aria-hidden="true">' . Markup::text( Format::initials( $name ) ) . '</span>',
 				Markup::text( $name ),
 				$bio
 			);
@@ -238,7 +265,7 @@ final class About_Page {
 
 		$email   = Js::trim( self::text( $attributes, 'email' ) );
 		$lead    = Js::trim( self::text( $attributes, 'emailLead' ) );
-		$mailto  = '' !== $email ? Markup::url( 'mailto:' . $email ) : '';
+		$mailto  = Email_Shape::is_team_email( $email ) ? Markup::url( 'mailto:' . strtr( $email, self::MAILTO ) ) : '';
 		$mailbox = '' !== $mailto
 			? sprintf(
 				'<p class="fh-about__section-body">%1$s<a class="fh-about__team-email" href="%2$s">%3$s</a></p>',
@@ -270,12 +297,12 @@ final class About_Page {
 	}
 
 	/**
-	 * The Media Library images titled as these portraits: for each, the newest image
-	 * with that title, so uploading a replacement under the same title replaces it. A
-	 * title starts as the file's name and can be changed in the Media Library. The name
-	 * WordPress gives an upload can't be used: it has to differ from every other post's,
-	 * and a page elsewhere on the site, such as a staff profile, may already have
-	 * `stephanie-hoekstra`, making the upload `stephanie-hoekstra-2`.
+	 * The Media Library images titled as these portraits, for the import to store: for
+	 * each, the newest image with that Title, which WordPress sets from the file's name.
+	 * The slug WordPress gives an upload can't be used: it has to differ from every other
+	 * post's, and a page elsewhere on the site, such as a staff profile, may already have
+	 * `stephanie-hoekstra`, making the upload `stephanie-hoekstra-2`. Newest by date, so
+	 * the query reads only attachments, through WordPress's index on type and date.
 	 *
 	 * @param string[] $names The members' `photo` names; empty ones are skipped.
 	 * @return array<string, int> Each found image's ID, by the name it was found under.
@@ -293,8 +320,10 @@ final class About_Page {
 					'post_mime_type'         => 'image',
 					'title'                  => $name,
 					'numberposts'            => 1,
-					'orderby'                => 'ID',
-					'order'                  => 'DESC',
+					'orderby'                => array(
+						'date' => 'DESC',
+						'ID'   => 'DESC',
+					),
 					'update_post_term_cache' => false,
 				)
 			);
@@ -303,23 +332,6 @@ final class About_Page {
 			}
 		}
 		return $found;
-	}
-
-	/**
-	 * Initials for the stand-in monogram, as the site draws them: a leading honorific
-	 * dropped, so "Dr. Emily Wells" reads EW, then the first letter of the first two
-	 * words, in capitals.
-	 *
-	 * @param string $name The member's name.
-	 */
-	public static function initials( string $name ): string {
-		$words    = preg_split( '/\s+/u', (string) preg_replace( '/^(?:Dr|Prof|Mr|Ms|Mrs)\.?\s+/iu', '', $name ), -1, PREG_SPLIT_NO_EMPTY );
-		$initials = '';
-		foreach ( array_slice( is_array( $words ) ? $words : array(), 0, 2 ) as $word ) {
-			$letter    = mb_substr( $word, 0, 1 );
-			$initials .= function_exists( 'mb_strtoupper' ) ? mb_strtoupper( $letter ) : strtoupper( $letter );
-		}
-		return $initials;
 	}
 
 	/**

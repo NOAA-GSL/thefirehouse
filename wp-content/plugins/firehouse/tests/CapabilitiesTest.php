@@ -355,6 +355,50 @@ final class CapabilitiesTest extends WordPressTestCase {
 	}
 
 	/**
+	 * The landing page isn't deleted for good while pages are under it, in any status:
+	 * WordPress would move them to the top of the site, the About page beside the
+	 * site's own. In the trash, it's still the landing page. With nothing under it, or
+	 * once another filter has decided, the deletion goes ahead as WordPress decides.
+	 */
+	public function test_the_landing_page_isnt_deleted_from_under_its_pages(): void {
+		$children = array( 11 );
+		$asked    = array();
+		Functions\when( 'get_posts' )->alias(
+			static function ( array $args ) use ( &$children, &$asked ): array {
+				$asked[] = $args;
+				return $children;
+			}
+		);
+		Functions\when( 'get_post_meta' )->alias( static fn( int $id, string $key ): string => 21 === $id && '_wp_desired_post_slug' === $key ? 'firehouse' : '' );
+
+		$this->assertFalse( Capabilities::keep_tree_root( null, $this->posts[10] ) );
+		$this->assertSame( 10, $asked[0]['post_parent'] );
+		$this->assertContains( 'trash', $asked[0]['post_status'], 'Pages in the trash under it would move too.' );
+		$this->assertContains( 'draft', $asked[0]['post_status'] );
+
+		// In the trash, WordPress has renamed it, and keeps the name it wants back.
+		$this->assertFalse( Capabilities::keep_tree_root( null, $this->posts[21] ) );
+
+		$this->assertSame( 'decided', Capabilities::keep_tree_root( 'decided', $this->posts[10] ) );
+		$children = array();
+		$this->assertNull( Capabilities::keep_tree_root( null, $this->posts[10] ) );
+	}
+
+	/**
+	 * Every other deletion is WordPress's to decide: another top-level page with pages
+	 * under it, a page in the tree, and anything that isn't a page.
+	 */
+	public function test_other_deletions_are_left_alone(): void {
+		Functions\when( 'get_posts' )->justReturn( array( 12 ) );
+		Functions\when( 'get_post_meta' )->justReturn( '' );
+
+		$this->assertNull( Capabilities::keep_tree_root( null, $this->posts[20] ) );
+		$this->assertNull( Capabilities::keep_tree_root( null, $this->posts[11] ) );
+		$this->assertNull( Capabilities::keep_tree_root( null, $this->posts[40] ) );
+		$this->assertNull( Capabilities::keep_tree_root( null, self::post( 60, 'post', 0, 'firehouse' ) ) );
+	}
+
+	/**
 	 * New posts, projects and others' pages are saved as given.
 	 */
 	public function test_others_saves_are_left_alone(): void {
