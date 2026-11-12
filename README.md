@@ -252,6 +252,13 @@ overrides are isolated so a re-sync doesn't lose them.
       the callout, and now the only area copy on `/topics/…`. The longer `intro`
       paragraphs are no longer rendered (September 2026 review) but are kept in the
       data. Stephanie or Emily should own the wording.
+- [ ] **Confirm the page titles and link-preview text** with Stephanie and Emily. The
+      titles are the site's: "{page} — The Firehouse", and the landing page's "The
+      Firehouse — Fire Weather Social Science Hub". The explorer's title and placeholder
+      heading follow its link label, "Explore Projects", where the React site's title
+      says "Explore projects". The description, preview text and image alt text in
+      `index.html` are repeated by the plugin (`includes/class-head.php`), and the alt
+      text describes the hub, not the image. Record who confirmed what text, and when.
 - [ ] **Build with the right variables** for each copy (see [Hosting](#hosting)), so
       `og:image` is emitted and the test-site copy isn't indexed.
 - [ ] **Confirm the SPA fallback with Matt** — which of `.htaccess` / `_redirects` /
