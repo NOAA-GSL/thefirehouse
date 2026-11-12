@@ -300,11 +300,20 @@ final class Capabilities {
 	}
 
 	/**
-	 * Refuses to delete the landing page for good while pages are under it, in any
-	 * status: WordPress would move them to the top of the site, and the About page would
-	 * become a second top-level `about` beside the site's own. Move or delete the pages
-	 * under it first. Putting it in the trash is allowed: its pages stay under it, out of
-	 * reach, until it's restored.
+	 * Refuses to delete the landing page for good while pages outside the trash are
+	 * under it: WordPress would move them to the top of the site, and the About page
+	 * would become a second top-level `about` beside the site's own. Pages in the trash
+	 * don't count: moved, they keep the name WordPress gave them there, so emptying the
+	 * trash of the whole tree works. Putting the landing page in the trash is allowed:
+	 * its pages stay under it. They aren't Firehouse pages while it's there, though one
+	 * that's published still answers under the trashed page's address
+	 * (/firehouse__trashed/about/), as an ordinary page of the theme's; restoring the
+	 * landing page brings them back.
+	 *
+	 * On the two screens where someone deletes a page for good, the Pages list's trash
+	 * and the page's own Delete Permanently, it says why and what to do, before
+	 * WordPress's "Error in deleting the item." would stop the request without either.
+	 * Anywhere else, such as another plugin's clean-up, the refusal is just false.
 	 *
 	 * @param mixed    $check What an earlier filter decided, or null for nothing yet.
 	 * @param \WP_Post $post  The post to be deleted.
@@ -321,12 +330,23 @@ final class Capabilities {
 			array(
 				'post_type'   => 'page',
 				'post_parent' => $post->ID,
-				'post_status' => array( 'publish', 'future', 'draft', 'pending', 'private', 'trash' ),
+				'post_status' => array( 'publish', 'future', 'draft', 'pending', 'private' ),
 				'numberposts' => 1,
 				'fields'      => 'ids',
 			)
 		);
-		return array() === $children ? $check : false;
+		if ( array() === $children ) {
+			return $check;
+		}
+		global $pagenow;
+		if ( in_array( $pagenow ?? '', array( 'post.php', 'edit.php' ), true ) && is_admin() && ! wp_doing_ajax() ) {
+			wp_die(
+				esc_html__( 'The Firehouse landing page wasn’t deleted: pages are under it, such as the About page, and WordPress would move them to the top of the site. Move those pages to the Trash first, or leave the landing page in the Trash.', 'firehouse' ),
+				esc_html__( 'The landing page wasn’t deleted', 'firehouse' ),
+				array( 'back_link' => true )
+			);
+		}
+		return false;
 	}
 
 	/**

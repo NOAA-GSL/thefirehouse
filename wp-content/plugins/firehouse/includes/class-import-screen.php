@@ -256,9 +256,21 @@ final class Import_Screen {
 		if ( ! delete_transient( self::transient() ) ) {
 			return array( 'step' => 'claimed' );
 		}
+		// The run plans again; if that plan isn't the one just checked, as an upload in
+		// between could make it, it imports nothing, and the new dry run is shown.
+		$plan = Importer::run( $bundle['content'], $bundle['notes'], $bundle['problems'], (string) $waiting['fingerprint'] );
+		if ( ! empty( $plan['changed'] ) ) {
+			$state = array(
+				'step'    => 'preview',
+				'plan'    => $plan,
+				'file'    => (string) ( $waiting['file'] ?? '' ),
+				'changed' => true,
+			);
+			return self::keep( $state, $bundle );
+		}
 		return array(
 			'step' => 'done',
-			'plan' => Importer::run( $bundle['content'], $bundle['notes'], $bundle['problems'] ),
+			'plan' => $plan,
 		);
 	}
 

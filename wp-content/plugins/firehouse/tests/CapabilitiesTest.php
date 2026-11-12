@@ -373,7 +373,7 @@ final class CapabilitiesTest extends WordPressTestCase {
 
 		$this->assertFalse( Capabilities::keep_tree_root( null, $this->posts[10] ) );
 		$this->assertSame( 10, $asked[0]['post_parent'] );
-		$this->assertContains( 'trash', $asked[0]['post_status'], 'Pages in the trash under it would move too.' );
+		$this->assertNotContains( 'trash', $asked[0]['post_status'], 'Pages in the trash keep their trash name when moved, so they don\'t hold it.' );
 		$this->assertContains( 'draft', $asked[0]['post_status'] );
 
 		// In the trash, WordPress has renamed it, and keeps the name it wants back.
@@ -382,6 +382,37 @@ final class CapabilitiesTest extends WordPressTestCase {
 		$this->assertSame( 'decided', Capabilities::keep_tree_root( 'decided', $this->posts[10] ) );
 		$children = array();
 		$this->assertNull( Capabilities::keep_tree_root( null, $this->posts[10] ) );
+	}
+
+	/**
+	 * On the screens where someone deletes the landing page for good, the refusal says
+	 * why and what to do, with a link back; anywhere else it is just false.
+	 */
+	public function test_the_delete_screens_say_why(): void {
+		global $pagenow;
+		Functions\when( 'get_posts' )->justReturn( array( 11 ) );
+		Functions\when( 'get_post_meta' )->justReturn( '' );
+		Functions\stubTranslationFunctions();
+		Functions\stubEscapeFunctions();
+		Functions\when( 'is_admin' )->justReturn( true );
+		Functions\when( 'wp_doing_ajax' )->justReturn( false );
+		$said = array();
+		Functions\when( 'wp_die' )->alias(
+			static function ( string $message, string $title, array $args ) use ( &$said ): void {
+				$said[] = array( $message, $title, $args );
+			}
+		);
+
+		foreach ( array( 'post.php', 'edit.php', 'admin-post.php' ) as $screen ) {
+			$pagenow = $screen; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- standing in for the screen WordPress names.
+			$this->assertFalse( Capabilities::keep_tree_root( null, $this->posts[10] ), $screen );
+		}
+		$pagenow = null; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- puts it back.
+
+		$this->assertCount( 2, $said, 'Only the Pages screens say why.' );
+		$this->assertStringContainsString( 'pages are under it, such as the About page', $said[0][0] );
+		$this->assertStringContainsString( 'Move those pages to the Trash first, or leave the landing page in the Trash', $said[0][0] );
+		$this->assertSame( array( 'back_link' => true ), $said[0][2] );
 	}
 
 	/**

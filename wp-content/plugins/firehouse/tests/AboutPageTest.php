@@ -86,6 +86,14 @@ final class AboutPageTest extends WordPressTestCase {
 					: array();
 			}
 		);
+		Functions\when( 'get_post' )->alias(
+			static fn( mixed $id ): \WP_Post => new \WP_Post(
+				array(
+					'ID'        => (int) $id,
+					'post_type' => 'attachment',
+				)
+			)
+		);
 		Functions\when( 'wp_get_attachment_image' )->alias(
 			static function ( int $id, string $size, bool $icon, array $attributes ) use ( &$printed ): string {
 				$printed[] = array( $id, $size, $icon, $attributes );
@@ -293,6 +301,10 @@ final class AboutPageTest extends WordPressTestCase {
 		$process['links'] = array(
 			array( 'label' => 'Nowhere' ),
 			array(
+				'label' => 'Nowhere either',
+				'to'    => '',
+			),
+			array(
 				'label' => 'Survey',
 				'href'  => '',
 			),
@@ -376,8 +388,37 @@ final class AboutPageTest extends WordPressTestCase {
 	}
 
 	/**
-	 * For the import, each portrait is the newest image with its Title: by date, then
-	 * ID, which WordPress's index on type and date answers.
+	 * An image attached to a post visitors can't see isn't shown as a portrait, whatever
+	 * the page's attributes say; one on its own, or attached to a public page, is.
+	 */
+	public function test_only_an_image_visitors_may_see_is_shown(): void {
+		$parents = array(
+			9  => 0,
+			10 => 70,
+			11 => 71,
+		);
+		Functions\when( 'wp_attachment_is_image' )->alias( static fn( int $id ): bool => isset( $parents[ $id ] ) );
+		Functions\when( 'get_post' )->alias(
+			static fn( mixed $id ): \WP_Post => new \WP_Post(
+				array(
+					'ID'          => (int) $id,
+					'post_type'   => 'attachment',
+					'post_parent' => $parents[ (int) $id ] ?? 0,
+				)
+			)
+		);
+		Functions\when( 'is_post_publicly_viewable' )->alias( static fn( int $id ): bool => 70 === $id );
+
+		$this->assertTrue( About_Page::shows( 9 ), 'On its own.' );
+		$this->assertTrue( About_Page::shows( 10 ), 'Attached to a public page.' );
+		$this->assertFalse( About_Page::shows( 11 ), 'Attached to a private post.' );
+		$this->assertFalse( About_Page::shows( 12 ), 'Not an image.' );
+		$this->assertFalse( About_Page::shows( 0 ) );
+	}
+
+	/**
+	 * For the import, each portrait is the newest image with its Title, by ID: no one
+	 * can set an image's ID, where its date can be changed.
 	 */
 	public function test_the_import_finds_the_newest_image_with_the_title(): void {
 		$this->images = array( 'ida-member' => 9 );
@@ -387,16 +428,7 @@ final class AboutPageTest extends WordPressTestCase {
 		$this->assertSame( 'inherit', $this->queries[0]['post_status'] );
 		$this->assertSame( 'image', $this->queries[0]['post_mime_type'] );
 		$this->assertSame( 'ida-member', $this->queries[0]['title'] );
-		$this->assertSame(
-			array(
-				1,
-				array(
-					'date' => 'DESC',
-					'ID'   => 'DESC',
-				),
-			),
-			array( $this->queries[0]['numberposts'], $this->queries[0]['orderby'] )
-		);
+		$this->assertSame( array( 1, 'ID', 'DESC' ), array( $this->queries[0]['numberposts'], $this->queries[0]['orderby'], $this->queries[0]['order'] ), 'Newest by ID, which no uploader can set.' );
 	}
 
 	/**

@@ -211,9 +211,9 @@ final class About_Page {
 		}
 		$links = '';
 		foreach ( self::list_of( $attributes['links'] ?? null ) as $link ) {
-			// A link with neither a route nor an address goes nowhere, as on the site;
-			// an empty address is the survey's.
-			if ( ! is_string( $link['to'] ?? null ) && ! is_string( $link['href'] ?? null ) ) {
+			// A link with neither a route nor an address goes nowhere, as on the site,
+			// and an empty route is none; an empty address is the survey's.
+			if ( ! ( is_string( $link['to'] ?? null ) && '' !== $link['to'] ) && ! is_string( $link['href'] ?? null ) ) {
 				continue;
 			}
 			$links .= Page_Blocks::button(
@@ -250,7 +250,7 @@ final class About_Page {
 		foreach ( self::list_of( $attributes['members'] ?? null ) as $member ) {
 			$name     = self::text( $member, 'name' );
 			$photo    = is_int( $member['photoId'] ?? null ) ? $member['photoId'] : 0;
-			$portrait = $photo > 0 && wp_attachment_is_image( $photo ) ? self::portrait( $photo, is_string( $member['photoAlt'] ?? null ) ? $member['photoAlt'] : '' ) : '';
+			$portrait = self::shows( $photo ) ? self::portrait( $photo, is_string( $member['photoAlt'] ?? null ) ? $member['photoAlt'] : '' ) : '';
 			$bio      = '';
 			foreach ( self::strings( $member['bio'] ?? null ) as $paragraph ) {
 				$bio .= '<p>' . Markup::text( $paragraph ) . '</p>';
@@ -301,8 +301,9 @@ final class About_Page {
 	 * each, the newest image with that Title, which WordPress sets from the file's name.
 	 * The slug WordPress gives an upload can't be used: it has to differ from every other
 	 * post's, and a page elsewhere on the site, such as a staff profile, may already have
-	 * `stephanie-hoekstra`, making the upload `stephanie-hoekstra-2`. Newest by date, so
-	 * the query reads only attachments, through WordPress's index on type and date.
+	 * `stephanie-hoekstra`, making the upload `stephanie-hoekstra-2`. Newest by ID, which
+	 * no one can set: an upload's date can be changed, so a date could put a planted
+	 * image first. It runs only in the import's dry run, not as the page renders.
 	 *
 	 * @param string[] $names The members' `photo` names; empty ones are skipped.
 	 * @return array<string, int> Each found image's ID, by the name it was found under.
@@ -320,10 +321,8 @@ final class About_Page {
 					'post_mime_type'         => 'image',
 					'title'                  => $name,
 					'numberposts'            => 1,
-					'orderby'                => array(
-						'date' => 'DESC',
-						'ID'   => 'DESC',
-					),
+					'orderby'                => 'ID',
+					'order'                  => 'DESC',
 					'update_post_term_cache' => false,
 				)
 			);
@@ -332,6 +331,22 @@ final class About_Page {
 			}
 		}
 		return $found;
+	}
+
+	/**
+	 * Whether the page shows this image as a portrait: an image in the Media Library,
+	 * uploaded on its own or to a page visitors may see. One attached to a draft or
+	 * private post isn't shown, whatever the page's attributes say, so the page can't
+	 * be used to show what WordPress keeps from visitors.
+	 *
+	 * @param int $id The image's ID.
+	 */
+	public static function shows( int $id ): bool {
+		if ( $id <= 0 || ! wp_attachment_is_image( $id ) ) {
+			return false;
+		}
+		$image = get_post( $id );
+		return $image instanceof \WP_Post && ( 0 === (int) $image->post_parent || is_post_publicly_viewable( (int) $image->post_parent ) );
 	}
 
 	/**

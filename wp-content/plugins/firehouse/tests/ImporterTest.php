@@ -743,7 +743,14 @@ final class ImporterTest extends WordPressTestCase {
 		Functions\when( 'get_post' )->alias( static fn( mixed $id ): ?\WP_Post => 9 === (int) $id ? $image : null );
 		Functions\when( 'get_attached_file' )->justReturn( '/uploads/2026/11/ida-member.webp' );
 		Functions\when( 'wp_basename' )->alias( static fn( string $path ): string => basename( $path ) );
-		Functions\when( 'get_the_author_meta' )->alias( static fn( string $field, int $user ): string => 3 === $user ? 'A. Administrator' : '' );
+		Functions\when( 'get_the_author_meta' )->alias(
+			static fn( string $field, int $user ): string => 3 === $user ? array(
+				'user_login'   => 'aauthor',
+				'display_name' => 'A. Administrator',
+			)[ $field ] : ''
+		);
+		Functions\when( 'wp_attachment_is_image' )->justReturn( true );
+		Functions\when( 'user_can' )->justReturn( false );
 
 		$about = Importer::plan( $content, array(), array(), null )['about'];
 
@@ -751,11 +758,82 @@ final class ImporterTest extends WordPressTestCase {
 		$this->assertSame(
 			array(
 				'No Media Library image has the Title “hal-member”, so Hal Member’s card will show initials. Upload the portrait first (WordPress sets its Title from the file’s name), then preview the import again.',
-				'Ida Member’s portrait will be Media Library image 9, “ida-member.webp”, uploaded 2026-11-11 by A. Administrator. Check it’s the right person before importing: the page keeps this image.',
+				'Ida Member’s portrait will be Media Library image 9, “ida-member.webp”, uploaded by aauthor (A. Administrator), who can’t import. Check it’s the right person before importing: the page keeps this image.',
 			),
 			$about['notes']
 		);
 		$this->assertStringContainsString( '"photo":"ida-member","photoId":9,', $about['post']['post_content'] );
+	}
+
+	/**
+	 * The note names the uploader by their login, which they can't change, beside their
+	 * display name, which they can; it says nothing more when they could import, and
+	 * says when the page wouldn't show the image at all.
+	 */
+	public function test_the_portrait_note_names_who_uploaded_it(): void {
+		$content = self::content();
+		$content['about']['team']['members'][0]['photo'] = 'hal-member';
+		$attached                                        = 0;
+		Functions\when( 'get_posts' )->alias(
+			static fn( array $args ): array => 'attachment' === $args['post_type']
+				? array(
+					new \WP_Post(
+						array(
+							'ID'          => 9,
+							'post_type'   => 'attachment',
+							'post_author' => 2,
+						)
+					),
+				)
+				: array()
+		);
+		Functions\when( 'get_post' )->alias(
+			static function ( mixed $id ) use ( &$attached ): ?\WP_Post {
+				return 9 === (int) $id
+					? new \WP_Post(
+						array(
+							'ID'          => 9,
+							'post_type'   => 'attachment',
+							'post_author' => 2,
+							'post_parent' => $attached,
+						)
+					)
+					: null;
+			}
+		);
+		Functions\when( 'wp_attachment_is_image' )->justReturn( true );
+		Functions\when( 'is_post_publicly_viewable' )->justReturn( false );
+		Functions\when( 'get_attached_file' )->justReturn( '/uploads/hal-member.webp' );
+		Functions\when( 'wp_basename' )->alias( static fn( string $path ): string => basename( $path ) );
+		Functions\when( 'get_the_author_meta' )->alias(
+			static fn( string $field ): string => array(
+				'user_login'   => 'admin',
+				'display_name' => 'The Admin',
+			)[ $field ]
+		);
+		Functions\when( 'user_can' )->justReturn( true );
+
+		$this->assertStringContainsString( '“hal-member.webp”, uploaded by admin (The Admin). Check', Importer::plan( $content, array(), array(), null )['about']['notes'][0] );
+
+		$attached = 70;
+		$this->assertStringContainsString( 'is attached to a post visitors can’t see, so the About page wouldn’t show it', Importer::plan( $content, array(), array(), null )['about']['notes'][0] );
+	}
+
+	/**
+	 * A run given the fingerprint of the dry run being confirmed imports nothing if its
+	 * own plan differs, as it would if something changed after the check, and says so.
+	 */
+	public function test_a_run_imports_only_the_plan_that_was_checked(): void {
+		$this->stand_in_wordpress();
+
+		$result = Importer::run( self::content(), array(), array(), 'the fingerprint of another plan' );
+
+		$this->assertFalse( $result['imported'] );
+		$this->assertTrue( $result['changed'] );
+		$this->assertSame( array(), $this->writes );
+
+		$plan = Importer::preview( self::content() );
+		$this->assertTrue( Importer::run( self::content(), array(), array(), Importer::fingerprint( $plan ) )['imported'] );
 	}
 
 	/**
@@ -783,6 +861,7 @@ final class ImporterTest extends WordPressTestCase {
 		Functions\when( 'get_attached_file' )->justReturn( '' );
 		Functions\when( 'wp_basename' )->justReturn( '' );
 		Functions\when( 'get_the_author_meta' )->justReturn( '' );
+		Functions\when( 'wp_attachment_is_image' )->justReturn( false );
 
 		$before = Importer::fingerprint( Importer::plan( $content, array(), array(), null ) );
 		$id     = 12;
@@ -805,8 +884,9 @@ final class ImporterTest extends WordPressTestCase {
 	}
 
 	/**
-	 * A section with no heading, or an audience card or step with no title, stops the
-	 * import: the page needs each, and screen readers name the sections by them.
+	 * A section with no heading, an audience card or step with no title, or a team
+	 * member with no name, stops the import: the page needs each, and screen readers
+	 * name the sections and cards by them. Only spaces is none.
 	 */
 	public function test_a_missing_heading_stops_the_import(): void {
 		$content                                = self::content();
@@ -814,12 +894,13 @@ final class ImporterTest extends WordPressTestCase {
 		$content['about']['cta']['heading']     = " \u{00A0}";
 		$content['about']['audiences']['items'][0]['title'] = '';
 		unset( $content['about']['process']['steps'][0]['title'] );
+		$content['about']['team']['members'][0]['name'] = '  ';
 
 		$plan = Importer::plan( $content, array(), array(), null );
 
 		$this->assertFalse( $plan['ok'] );
 		$this->assertSame(
-			array( 'The bundle’s about content has no about.mission.heading, about.cta.heading, about.audiences.items[0].title, about.process.steps[0].title. Each section of the About page, and each audience card and step, needs its heading: screen readers name the sections by them. Fix about.json, then upload the bundle again.' ),
+			array( 'The bundle’s about content has no about.mission.heading, about.cta.heading, about.audiences.items[0].title, about.process.steps[0].title, about.team.members[0].name. Each section of the About page needs its heading, and each audience card, step and team member its title or name: screen readers name the sections and cards by them. Fix about.json, then upload the bundle again.' ),
 			$plan['about']['problems']
 		);
 	}

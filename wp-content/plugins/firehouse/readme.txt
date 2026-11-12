@@ -69,8 +69,8 @@ one is.
 * The About page, created by the Import screen under the landing page when there's
   none: what the hub is, who it serves, how it works, the team, with portraits an
   administrator uploads to the Media Library before importing (initials otherwise),
-  and the submit band. The landing page can't be deleted for good while pages are
-  under it.
+  and the submit band. The landing page can't be deleted for good while pages
+  outside the trash are under it.
 * The topic area pages: each area's top needs with the projects behind them, what it
   covers, and the other areas. A need lists only projects a visitor may see:
   published, without a password, and with IRB approval or exemption.

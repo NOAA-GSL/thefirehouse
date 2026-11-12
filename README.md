@@ -274,14 +274,17 @@ overrides are isolated so a re-sync doesn't lose them.
       WordPress site the plugin runs on (the test site, then gsl.noaa.gov), once the
       item above is done. Use the two files in
       [`src/assets/people/`](src/assets/people/), `stephanie-hoekstra.webp` and
-      `emily-wells.webp`, without renaming them, under Media → Add Media File; not
+      `emily-wells.webp`, without renaming them, under Media → Add New Media File; not
       originals, which can carry the location a phone photo was taken, removed from
       these. WordPress sets each image's **Title** to its file name without the
       extension; leave it as it is, since the import finds each portrait by that Title,
       the member's `photo` in `about.json`. The image's Alternative Text isn't used:
       the name printed beside the photo already says who it is. The dry run names the
-      image it found for each person, with who uploaded it, or says it found none:
-      check each is the right person before confirming. The import keeps those images
+      image it found for each person, the newest with that Title, with who uploaded it
+      (their login, and whether they can import), or says it found none: check each is
+      the right person before confirming. If it names the wrong image, such as a staff
+      headshot uploaded since, change that image's Title in the Media Library, or
+      upload the right file again so it's the newest, then preview again. The import keeps those images
       in the page, so one uploaded later changes nothing until Phase 6's editing
       screens let an editor choose it; until then, a card with no portrait shows the
       person's initials. After importing, open `/firehouse/about/` and check that each
@@ -458,8 +461,9 @@ nothing from the database. Each class's docblock has the detail; this is the map
   stores `read` and Firehouse's own capabilities; WordPress's page capabilities are
   lent only while the plugin runs, so with the plugin off its users can only sign
   in. Only administrators have `firehouse_import`. No one can delete the landing page
-  for good while pages are under it: WordPress would move them to the top of the site,
-  the About page beside the site's own `/about/`.
+  for good while pages outside the trash are under it: WordPress would move them to the
+  top of the site, the About page beside the site's own `/about/`. The Pages screens
+  say why.
 - `Installer` stores the role and the administrators' capabilities and has the
   rewrite rules rebuilt, on activation and after `Installer::REVISION` changes.
 - `Settings` is Firehouse → Settings: the site name, the Submit a Finding label and

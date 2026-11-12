@@ -50,6 +50,7 @@
     { "name": "letters beyond ASCII are capitalized", "fn": "initials", "args": ["émile öz"], "expected": "ÉÖ" },
     { "name": "extra spaces around and between words are ignored", "fn": "initials", "args": ["  Ida   Member  "], "expected": "IM" },
     { "name": "a non-breaking space separates words", "fn": "initials", "args": ["Ida Member"], "expected": "IM" },
+    { "name": "a zero-width no-break space separates words, as JavaScript reads it", "fn": "initials", "args": ["Ida\ufeffMember"], "expected": "IM" },
     { "name": "a single word gives one letter", "fn": "initials", "args": ["Cher"], "expected": "C" },
     { "name": "an honorific with nothing after it is a name", "fn": "initials", "args": ["Dr."], "expected": "D" },
     { "name": "an empty name has no initials", "fn": "initials", "args": [""], "expected": "" }

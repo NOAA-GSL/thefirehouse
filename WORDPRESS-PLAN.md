@@ -1219,10 +1219,23 @@ signed off on the frame.
   every section, card and portrait is the same size as the site's at both widths in
   both themes. Each portrait is the image the import found by Title and kept by its
   ID, or the member's initials. Its title is "About — The Firehouse", as the site's
-  is. No one can delete the landing page for good while pages are under it.*
+  is. No one can delete the landing page for good while pages outside the trash are
+  under it. After the security review's second pass (12 November): the dry run finds
+  the newest image by ID, which no uploader can set, where a date can be changed; its
+  note names the uploader's login and whether they can import; the page shows only an
+  image on its own or attached to a public page; and the confirmation imports only the
+  plan it checked. The headings rule is the importer's: `about.json` itself passes the
+  site's checks without it.*
+  - *For Phase 6: trashing the landing page leaves a published About page answering at
+    `/firehouse__trashed/about/`, as an ordinary page of GSL's theme with nothing in
+    it, until the landing page is restored. Decide whether trashing the landing page
+    trashes the pages under it.*
 - Description and Open Graph tags, and whether a Firehouse page's `<title>` names The
   Firehouse. Today it is WordPress's "Page not found - Global Systems Laboratory",
-  where the site's is "Page not found — The Firehouse".
+  where the site's is "Page not found — The Firehouse". *The About page's own title,
+  set by the import, already reads "About — The Firehouse": a filter that adds the
+  site name would need to leave it alone, and it doesn't follow a later change to the
+  site name or the About link's label.*
 - Check that projects appear in the sitemap.
 - Test link previews in Slack and Teams, with the first release on the test site (see
   Where each phase is reviewed).

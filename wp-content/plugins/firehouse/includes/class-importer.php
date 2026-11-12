@@ -88,11 +88,21 @@ final class Importer {
 	 * @param array<string, mixed> $content  Normalized content, from Seed_Bundle::read().
 	 * @param string[]             $notes    Seed_Bundle::read()'s notes about the bundle.
 	 * @param string[]             $problems Seed_Bundle::read()'s problems with the bundle.
+	 * @param string|null          $expected The fingerprint of the dry run being confirmed, if
+	 *                                       any: a plan that differs from it, as one
+	 *                                       would if something changed after the check,
+	 *                                       imports nothing and comes back as `changed`.
 	 * @return array<string, mixed> The plan, with each post's ID, `imported`, and any
 	 *                              write that failed or read back differently as a problem.
 	 */
-	public static function run( array $content, array $notes = array(), array $problems = array() ): array {
+	public static function run( array $content, array $notes = array(), array $problems = array(), ?string $expected = null ): array {
 		$plan = self::preview( $content, $notes, $problems );
+		if ( null !== $expected && ! hash_equals( $expected, self::fingerprint( $plan ) ) ) {
+			return $plan + array(
+				'imported' => false,
+				'changed'  => true,
+			);
+		}
 		if ( ! $plan['ok'] ) {
 			return $plan + array( 'imported' => false );
 		}
@@ -724,7 +734,7 @@ final class Importer {
 		}
 		$unnamed = self::unnamed_about_parts( $about );
 		if ( array() !== $unnamed ) {
-			$plan['problems'][] = sprintf( 'The bundle’s about content has no %s. Each section of the About page, and each audience card and step, needs its heading: screen readers name the sections by them. Fix about.json, then upload the bundle again.', implode( ', ', $unnamed ) );
+			$plan['problems'][] = sprintf( 'The bundle’s about content has no %s. Each section of the About page needs its heading, and each audience card, step and team member its title or name: screen readers name the sections and cards by them. Fix about.json, then upload the bundle again.', implode( ', ', $unnamed ) );
 		}
 
 		$landing = 0 !== $root ? get_post( $root ) : null;
@@ -764,8 +774,9 @@ final class Importer {
 	}
 
 	/**
-	 * The parts of the About page that must have a heading or title and don't: each
-	 * section's heading, and each audience card's and step's title, as bundle paths.
+	 * The parts of the About page that must have a heading, title or name and don't:
+	 * each section's heading, each audience card's and step's title, and each team
+	 * member's name, as bundle paths. Only spaces is none.
 	 *
 	 * @param array<string, mixed> $about The bundle's about content.
 	 * @return list<string>
@@ -788,6 +799,11 @@ final class Importer {
 				}
 			}
 		}
+		foreach ( is_array( $about['team']['members'] ?? null ) ? array_values( $about['team']['members'] ) : array() as $index => $member ) {
+			if ( ! $named( is_array( $member ) ? $member['name'] ?? null : null ) ) {
+				$unnamed[] = sprintf( 'about.team.members[%d].name', $index );
+			}
+		}
 		return $unnamed;
 	}
 
@@ -799,15 +815,26 @@ final class Importer {
 	 * @param int    $id   The image's ID.
 	 */
 	private static function portrait_note( string $name, int $id ): string {
-		$image    = get_post( $id );
-		$uploader = $image instanceof \WP_Post ? (string) get_the_author_meta( 'display_name', (int) $image->post_author ) : '';
+		if ( ! About_Page::shows( $id ) ) {
+			return sprintf( 'The Media Library image titled for %1$s’s portrait (image %2$d) is attached to a post visitors can’t see, so the About page wouldn’t show it: upload the portrait from Media → Add Media File instead, then preview the import again.', $name, $id );
+		}
+		$image  = get_post( $id );
+		$author = $image instanceof \WP_Post ? (int) $image->post_author : 0;
+		$login  = 0 !== $author ? (string) get_the_author_meta( 'user_login', $author ) : '';
+		// The login, which its owner can't change, beside the display name, which they
+		// can; and whether they could import, which an administrator can.
+		$by = '' === $login ? 'no one recorded' : sprintf(
+			'%1$s (%2$s)%3$s',
+			$login,
+			(string) get_the_author_meta( 'display_name', $author ),
+			user_can( $author, Capabilities::IMPORT ) ? '' : ', who can’t import'
+		);
 		return sprintf(
-			'%1$s’s portrait will be Media Library image %2$d, “%3$s”, uploaded %4$s by %5$s. Check it’s the right person before importing: the page keeps this image.',
+			'%1$s’s portrait will be Media Library image %2$d, “%3$s”, uploaded by %4$s. Check it’s the right person before importing: the page keeps this image.',
 			$name,
 			$id,
 			wp_basename( (string) get_attached_file( $id ) ),
-			$image instanceof \WP_Post ? substr( $image->post_date, 0, 10 ) : 'on an unknown date',
-			'' !== $uploader ? $uploader : 'no one recorded'
+			$by
 		);
 	}
 

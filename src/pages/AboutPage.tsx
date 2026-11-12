@@ -171,7 +171,10 @@ export function AboutPage() {
             {teamEmail && (
               <p className="fh-about__section-body">
                 {emailLead && <>{emailLead} </>}
-                <a className="fh-about__team-email" href={`mailto:${teamEmail}`}>
+                <a
+                  className="fh-about__team-email"
+                  href={`mailto:${teamEmail.replace(/[%?#&]/g, encodeURIComponent)}`}
+                >
                   {teamEmail}
                 </a>
               </p>
