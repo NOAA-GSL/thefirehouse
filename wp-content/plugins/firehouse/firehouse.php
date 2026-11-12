@@ -71,6 +71,7 @@ require_once __DIR__ . '/includes/class-topic-page.php';
 require_once __DIR__ . '/includes/class-verbatim.php';
 require_once __DIR__ . '/includes/class-subnav.php';
 require_once __DIR__ . '/includes/class-blocks.php';
+require_once __DIR__ . '/includes/class-head.php';
 
 /*
  * Where the plugin acts beyond the Firehouse pages and its own admin screens:
@@ -142,6 +143,10 @@ require_once __DIR__ . '/includes/class-blocks.php';
  *   Only for one does the plugin replace the template, add its stylesheets and body
  *   class, and turn off WordPress's text rewrites (Verbatim). Anywhere else, these
  *   hooks change nothing.
+ * - Head::document_title (the `pre_get_document_title` filter) and Head::tags (on
+ *   wp_head) give a Firehouse page its title, description and link-preview tags. They
+ *   change nothing on any other page, nor anywhere while an SEO plugin is active or
+ *   the `firehouse_head_tags` filter says no.
  *
  * From the permission and field filters (Capabilities, Meta), which run on every
  * capability check, save, sign-in and query:
@@ -153,6 +158,10 @@ require_once __DIR__ . '/includes/class-blocks.php';
  *   directly sees them granted.
  * - On any page on the site, a signed-in user who may not delete it can't move it into
  *   or out of the trash, by any route.
+ * - Every deletion for good is checked (the `pre_delete_post` filter): only the
+ *   Firehouse landing page is refused, while pages outside the trash are under it, and
+ *   only on the Pages screens does the refusal stop the request to say why. Any other
+ *   deletion is WordPress's to decide.
  * - A Firehouse field is checked whenever it's added or updated through add_post_meta
  *   or update_post_meta, meta_input included. WordPress's by-ID route for custom
  *   fields isn't checked; the fields' edit_post_meta check refuses it to everyone but
@@ -175,3 +184,4 @@ Frame::hook();
 Visibility::hook();
 Blocks::hook();
 Verbatim::hook();
+Head::hook();

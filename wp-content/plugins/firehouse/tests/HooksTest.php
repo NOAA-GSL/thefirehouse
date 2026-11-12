@@ -14,6 +14,7 @@ use Brain\Monkey\Filters;
 use Brain\Monkey\Functions;
 use Firehouse\Blocks;
 use Firehouse\Capabilities;
+use Firehouse\Head;
 use Firehouse\Frame;
 use Firehouse\Import_Screen;
 use Firehouse\Installer;
@@ -61,6 +62,17 @@ final class HooksTest extends WordPressTestCase {
 		Filters\expectAdded( 'request' )->once()->with( array( Query::class, 'request' ), 10, 1 );
 
 		Query::hook();
+	}
+
+	/**
+	 * The title is WordPress's own filter for it, and the tags print early in the
+	 * head, beside the title.
+	 */
+	public function test_the_head_hooks(): void {
+		Filters\expectAdded( 'pre_get_document_title' )->once()->with( array( Head::class, 'document_title' ), 10, 1 );
+		Actions\expectAdded( 'wp_head' )->once()->with( array( Head::class, 'tags' ), 5, 1 );
+
+		Head::hook();
 	}
 
 	/**

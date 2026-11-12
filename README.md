@@ -522,6 +522,13 @@ nothing from the database. Each class's docblock has the detail; this is the map
   as more than the address encoded.
 - `Page_Blocks` is what the two share: building their blocks from the bundle's text,
   where a stored link goes, and its button, left out when it leads nowhere.
+- `Head` gives each Firehouse page its title, the site's title for it then GSL's
+  suffix ("About — The Firehouse - Global Systems Laboratory"; decided by Eric, 12
+  November), and the description and Open Graph and Twitter tags a shared link's
+  preview is built from: the site's words from `index.html`, or on a project's page its
+  abstract as the researcher wrote it. It changes nothing on any other page, and
+  leaves everything to an SEO plugin if one is active, or when the `firehouse_head_tags`
+  filter returns false.
 
 The traps, for whoever changes this code next:
 

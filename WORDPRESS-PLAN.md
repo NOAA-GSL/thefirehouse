@@ -1232,11 +1232,19 @@ signed off on the frame.
     it, until the landing page is restored. Decide whether trashing the landing page
     trashes the pages under it.*
 - Description and Open Graph tags, and whether a Firehouse page's `<title>` names The
-  Firehouse. Today it is WordPress's "Page not found - Global Systems Laboratory",
-  where the site's is "Page not found — The Firehouse". *The About page's own title,
-  set by the import, already reads "About — The Firehouse": a filter that adds the
-  site name would need to leave it alone, and it doesn't follow a later change to the
-  site name or the About link's label.*
+  Firehouse. *Done 12 November (`includes/class-head.php`). Decided by Eric, as GSL's
+  web team, 12 November: a Firehouse page's title names both, the site's title for it
+  and then GSL's suffix ("FWT Evaluation 001. WoFS-Smoke — The Firehouse - Global
+  Systems Laboratory"), and the plugin prints a description and Open Graph and Twitter
+  tags on Firehouse pages, since GSL's site prints none, stepping aside if an SEO
+  plugin is active or the `firehouse_head_tags` filter says no. The words are the
+  site's, from `index.html`, which a test holds them to; a project's page has its
+  abstract, or its summary, as the researcher wrote it, and its title escaped as
+  stored text is. Titles are computed as the page renders, from the settings, so the
+  About page's follows its link's label (its post title, set by the import, stays
+  "About — The Firehouse" for WordPress's lists). The preview image is the site's
+  `public/og-image.png`, which `npm run plugin:assets` copies into the plugin. A
+  preview names the page's canonical address where WordPress has one.*
 - Check that projects appear in the sitemap.
 - Test link previews in Slack and Teams, with the first release on the test site (see
   Where each phase is reviewed).
