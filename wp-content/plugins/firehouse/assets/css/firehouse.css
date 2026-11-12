@@ -2880,6 +2880,9 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  /* Its parts set their own colours; this keeps the link's own from being the
+     browser's default link colour, which follows the colour scheme. */
+  color: inherit;
   padding: var(--space-md) var(--space-lg);
   border-radius: var(--radius-xl);
   border: var(--border-width) solid var(--color-border);

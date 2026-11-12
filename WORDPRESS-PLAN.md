@@ -1287,7 +1287,15 @@ signed off on the frame.
   `src/assets`, for both sites. Likewise the team portraits: a 2× screen takes the
   640 by 800 originals (186 KB for the two) for a 168 by 210 box; exported at 336 by
   420 they'd be about 55 KB, in `src/assets/people/` and the Media Library both.*
-- Rerun the frame's style and focus checks on the real pages.
+- Rerun the frame's style and focus checks on the real pages. *Done 12 November, on the
+  local copy against the site's build: every element in the main content of the
+  landing, About, project, topic and not-found pages has the site's computed styles, at
+  desktop and phone width in both themes, and so does every focusable element there
+  with keyboard focus, each showing its focus ring. Left out: the landing page's
+  coverage map (Phase 5), and the site's About wrapper, which has no styles. It found
+  one difference, invisible on both sites: the project pager's link took the browser's
+  default link colour, which follows the colour scheme the frame sets; its parts set
+  their own, and the link now inherits (`ProjectPage.css`). Hover isn't checked.*
 - Keep the Firehouse bar to one per page once a page's own content renders blocks. The
   bar's block prints on any Firehouse page, so its comment typed into a page in the tree
   would print a second bar, with a duplicate drawer ID. *Done 12 November: the frame
