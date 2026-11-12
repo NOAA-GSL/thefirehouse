@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Writes the plugin's icons and logos from the site's own.
+ * Writes the plugin's icons, logos and link-preview image from the site's own.
  *
  *   node scripts/plugin-assets.mjs           write them
  *   node scripts/plugin-assets.mjs --check   fail if the committed copies are out of date
@@ -17,6 +17,9 @@
  * - `wp-content/plugins/firehouse/assets/logos/`: the images `BrandMark` imports,
  *   read from the component and copied unchanged. The NOAA and GSL logos stay with the
  *   static build; GSL's header carries its own.
+ * - `wp-content/plugins/firehouse/assets/preview/og-image.png`: the site's link-preview
+ *   image (`public/og-image.png`), copied unchanged, which Firehouse pages name in their
+ *   Open Graph tags (includes/class-head.php).
  *
  * Each folder holds exactly these files, so an icon dropped from the registry goes too.
  */
@@ -92,6 +95,7 @@ try {
 // Lucide's licence asks for its notice in every copy of the icons.
 files.set('icons/LICENSE.txt', readFileSync(resolve(ROOT, 'node_modules/lucide-react/LICENSE')));
 for (const name of LOGOS) files.set(`logos/${name}`, readFileSync(resolve(ROOT, 'src/assets/logos', name)));
+files.set('preview/og-image.png', readFileSync(resolve(ROOT, 'public/og-image.png')));
 
 const folders = [...new Set([...files.keys()].map((path) => path.split('/')[0]))];
 
@@ -119,10 +123,10 @@ if (process.argv.includes('--check')) {
     }
   }
   if (stale.length) {
-    console.error(`The plugin's icons and logos are out of date with src/:\n  ${stale.join('\n  ')}\nRun: npm run plugin:assets`);
+    console.error(`The plugin's icons, logos and preview image are out of date with the site's:\n  ${stale.join('\n  ')}\nRun: npm run plugin:assets`);
     process.exit(1);
   }
-  console.log(`Icons and logos are up to date: ${files.size} files.`);
+  console.log(`Icons, logos and the preview image are up to date: ${files.size} files.`);
 } else {
   for (const folder of folders) {
     rmSync(resolve(ASSETS, folder), { recursive: true, force: true });

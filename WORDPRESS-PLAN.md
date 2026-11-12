@@ -1232,11 +1232,38 @@ signed off on the frame.
     it, until the landing page is restored. Decide whether trashing the landing page
     trashes the pages under it.*
 - Description and Open Graph tags, and whether a Firehouse page's `<title>` names The
-  Firehouse. Today it is WordPress's "Page not found - Global Systems Laboratory",
-  where the site's is "Page not found — The Firehouse". *The About page's own title,
-  set by the import, already reads "About — The Firehouse": a filter that adds the
-  site name would need to leave it alone, and it doesn't follow a later change to the
-  site name or the About link's label.*
+  Firehouse. *Done 12 November (`includes/class-head.php`). Decided by Eric, as GSL's
+  web team, 12 November: a Firehouse page's title names both, the site's title for it
+  and then GSL's suffix ("FWT Evaluation 001. WoFS-Smoke — The Firehouse – Global
+  Systems Laboratory"), and the plugin prints a description and Open Graph and Twitter
+  tags on Firehouse pages, since GSL's site prints none, stepping aside if an SEO
+  plugin is active or the `firehouse_head_tags` filter says no. The words are the
+  site's, from `index.html`, which a test holds them to; a project's page has its
+  abstract as the researcher wrote it, or, with none, its editorial summary, and its
+  title escaped as stored text is. Any other page in the tree is titled "{its title} —
+  The Firehouse". The filter can also keep the tags where an SEO plugin leaves
+  Firehouse pages alone. The separator before GSL's name is the en dash GSL's own titles show
+  (WordPress makes it of "-" with wptexturize(), which is off on Firehouse pages), so a
+  researcher's own " - " doesn't read as the separator. Titles are computed as the
+  page renders, from the settings, so the About page's and the explorer's follow their
+  links' labels (About's post title, set by the import, stays "About — The Firehouse"
+  for WordPress's lists), and the explorer's placeholder heading names it too. The
+  preview image is the site's `public/og-image.png`, which `npm run plugin:assets`
+  copies into the plugin's `assets/preview/`, its address versioned so a replacement
+  isn't served from a preview's cache. A published page's preview names its address.*
+  - *From the review, left as they are: a missing address under `/firehouse/topics/`
+    is titled "Page not found" over the heading "Topic area not found", as on the site;
+    a change would go to both sites. The preview image's alternative text, the site's,
+    describes the hub rather than the image (its "Fire Weather Research Hub" against
+    the title's "Social Science Hub"): wording for Stephanie and Emily, on both sites.
+    The SEO plugins the Firehouse steps aside for are a fixed list; another plugin that
+    prints its own preview tags, Jetpack's for one, would need `firehouse_head_tags`.
+    A search within projects (`/firehouse/projects/?s=`) is titled as the explorer, as
+    on the site; decide with the explorer in Phase 5.*
+  - *Found in review, outside this change: a topic's page renders without the
+    password check a page in the tree gets (`Frame::content()`); its title is only the
+    topic's label, which WordPress shows for protected posts anyway. For whoever next
+    changes the topic page.*
 - Check that projects appear in the sitemap.
 - Test link previews in Slack and Teams, with the first release on the test site (see
   Where each phase is reviewed).

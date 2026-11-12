@@ -9,6 +9,12 @@ on:
   push:
     paths:
       - 'wp-content/**'
+      # The site files the plugin's tests hold it to.
+      - 'index.html'
+      - 'src/content/data/settings.json'
+      - 'src/pages/LandingPage.tsx'
+      - 'src/pages/NotFoundPage.tsx'
+      - 'public/og-image.png'
       - 'composer.json'
       - 'composer.lock'
       - 'phpcs.xml.dist'
@@ -17,6 +23,12 @@ on:
   pull_request:
     paths:
       - 'wp-content/**'
+      # The site files the plugin's tests hold it to.
+      - 'index.html'
+      - 'src/content/data/settings.json'
+      - 'src/pages/LandingPage.tsx'
+      - 'src/pages/NotFoundPage.tsx'
+      - 'public/og-image.png'
       - 'composer.json'
       - 'composer.lock'
       - 'phpcs.xml.dist'

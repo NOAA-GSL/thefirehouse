@@ -73,7 +73,8 @@ wp-content/plugins/firehouse/
                     assets/css/firehouse.css is generated from src/, and
                     assets/css/frame.css is written by hand;
                     assets/fonts/ and assets/css/fonts.css hold the fonts;
-                    assets/icons/ and assets/logos/ are generated from src/.
+                    assets/icons/, assets/logos/ and assets/preview/ are generated
+                    from src/ and public/.
 ```
 
 ### The design system
@@ -251,6 +252,13 @@ overrides are isolated so a re-sync doesn't lose them.
       the callout, and now the only area copy on `/topics/…`. The longer `intro`
       paragraphs are no longer rendered (September 2026 review) but are kept in the
       data. Stephanie or Emily should own the wording.
+- [ ] **Confirm the page titles and link-preview text** with Stephanie and Emily. The
+      titles are the site's: "{page} — The Firehouse", and the landing page's "The
+      Firehouse — Fire Weather Social Science Hub". The explorer's title and placeholder
+      heading follow its link label, "Explore Projects", where the React site's title
+      says "Explore projects". The description, preview text and image alt text in
+      `index.html` are repeated by the plugin (`includes/class-head.php`), and the alt
+      text describes the hub, not the image. Record who confirmed what text, and when.
 - [ ] **Build with the right variables** for each copy (see [Hosting](#hosting)), so
       `og:image` is emitted and the test-site copy isn't indexed.
 - [ ] **Confirm the SPA fallback with Matt** — which of `.htaccess` / `_redirects` /
@@ -522,6 +530,13 @@ nothing from the database. Each class's docblock has the detail; this is the map
   as more than the address encoded.
 - `Page_Blocks` is what the two share: building their blocks from the bundle's text,
   where a stored link goes, and its button, left out when it leads nowhere.
+- `Head` gives each Firehouse page its title, the site's title for it then GSL's
+  suffix ("About — The Firehouse – Global Systems Laboratory"; decided by Eric, 12
+  November), and the description and Open Graph and Twitter tags a shared link's
+  preview is built from: the site's words from `index.html`, or on a project's page its
+  abstract as the researcher wrote it. It changes nothing on any other page, and
+  leaves everything to an SEO plugin if one is active, or when the `firehouse_head_tags`
+  filter returns false.
 
 The traps, for whoever changes this code next:
 
@@ -612,7 +627,8 @@ one is missing.
 `assets/icons/` holds every icon in the site's registry (`ICON_NAMES` in
 `src/design-system/Icon.tsx`) as an SVG file, drawn by the site's own `Icon` component,
 and `assets/logos/` the images `BrandMark` imports. Don't edit either: `npm run
-plugin:assets` writes both from `src/`, and CI fails if they fall behind. An icon file
+plugin:assets` writes both from `src/`, and the link-preview image from
+`public/og-image.png`, and CI fails if they fall behind. An icon file
 keeps the drawing exactly as the site renders it, at Lucide's 24×24, and leaves off what
 belongs to one use (class, inline style, `aria-hidden`, `focusable`). Where the plugin
 inlines an icon it adds those and replaces the size, as `Icon` does. Every icon may hold

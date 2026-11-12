@@ -71,6 +71,10 @@ one is.
   administrator uploads to the Media Library before importing (initials otherwise),
   and the submit band. The landing page can't be deleted for good while pages
   outside the trash are under it.
+* Each Firehouse page's title names the page and The Firehouse, then the site's own
+  name, and carries a description and link-preview tags: a project's page, the
+  project's own abstract. Nothing changes on any other page, nor when an SEO plugin is
+  active.
 * The topic area pages: each area's top needs with the projects behind them, what it
   covers, and the other areas. A need lists only projects a visitor may see:
   published, without a password, and with IRB approval or exemption.
