@@ -1223,9 +1223,9 @@ signed off on the frame.
   under it. After the security review's second pass (12 November): the dry run finds
   the newest image by ID, which no uploader can set, where a date can be changed; its
   note names the uploader's login and whether they can import; the page shows only an
-  image on its own or attached to a page visitors may see without a password; and the confirmation imports only the
-  plan it checked. The headings rule is the importer's: `about.json` itself passes the
-  site's checks without it.*
+  image on its own or attached to a page visitors may see without a password; and the
+  confirmation imports only the plan it checked. The headings rule is the importer's:
+  `about.json` itself passes the site's checks without it.*
   - *For Phase 6: trashing the landing page leaves a published About page answering at
     `/firehouse__trashed/about/`, as an ordinary page of GSL's theme with nothing in
     it, until the landing page is restored. Decide whether trashing the landing page
