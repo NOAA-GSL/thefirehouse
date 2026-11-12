@@ -294,7 +294,13 @@ handled:
 | `firehouse/explorer` | Search, filters, sort, project grid, quick look | Yes |
 | `firehouse/project` | Project page: header, abstract, takeaways, needs, papers, at-a-glance panel, prev/next | Scrollable need cards |
 | `firehouse/topic` | Topic page: ranked needs with sources, what the area covers, other areas | — |
-| `firehouse/audience` | An About audience card with its icon | — |
+| `firehouse/about-intro` | The About page's introduction: eyebrow, heading and what the hub is | — |
+| `firehouse/about-sections` | The About page's body, holding the four sections below in order | — |
+| `firehouse/about-mission` | Why it exists: a heading and its paragraphs | — |
+| `firehouse/about-audiences` | Who it serves: the section's words and a card for each audience, with its icon | — |
+| `firehouse/about-process` | How it works: the numbered steps and the links after them | — |
+| `firehouse/about-team` | Who is behind it: the team's mailbox, and a card for each member with a portrait from the Media Library | — |
+| `firehouse/about-cta` | The About page's closing band: heading, body and the Submit button | — |
 | `firehouse/not-found` | The Firehouse 404 | — |
 | `firehouse/survey-form` | The survey: questions, repeated need entries, validation messages, the thank-you message | Adding and removing entries (works without JavaScript) |
 
@@ -304,7 +310,11 @@ job the empty-`href` convention does today. It points at the plugin's Submit pag
 at the Google Form until the plugin's form opens on prod. *Until the editing screens
 (Phase 6), the landing page's Submit buttons are inside its own blocks, which read the
 setting for a link stored empty; the closing band is the `firehouse/submit-band`
-block, since its markup (a labelled section, the glow) isn't core blocks'.*
+block, since its markup (a labelled section, the glow) isn't core blocks'. The About
+page is built the same way (11 November): every section of it is a labelled section,
+so each is a block whose attributes hold its words, and its audience cards are a list
+in one block's attributes, as the landing page's counts are, rather than a
+`firehouse/audience` block each.*
 
 **Editor previews** are rendered on the server, so each block's markup is written once,
 in PHP.
@@ -521,12 +531,17 @@ fields (rule 4), and topics and settings are written only when they don't exist 
 so a reviewed synthesis is never overwritten. The same goes for the Firehouse pages:
 the import creates the landing page from the bundle's landing content, as its blocks,
 only when there's no `firehouse` page in any status but the trash, and the About
-page under it the same way (decided by Eric, 10 November; the About page comes with
-its own change). A `firehouse` page in the trash, or anything else holding the address
+page under it the same way (decided by Eric, 10 November; done 11 November), once the
+landing page has read back as planned. A `firehouse` page in the trash, or anything else holding the address
 (an unattached Media Library file named `firehouse` takes it from a new page), stops
 the import, and a page WordPress saves at another address anyway is deleted. The About
 page's team portraits are uploaded to the Media Library by an administrator, a step in
-the runbook, rather than shipped in the plugin. The plugin checks the bundle itself: a
+the runbook, rather than shipped in the plugin. Each is titled as the bundle's `photo`
+(`stephanie-hoekstra`, `emily-wells`), which a file's title starts as, and the page
+shows the newest image with that title, or the person's initials until there is one.
+Their names can't be used: WordPress gives an upload a name no other post has, and
+GSL's staff profile pages already have these, so an upload becomes
+`stephanie-hoekstra-2`. The plugin checks the bundle itself: a
 field it doesn't store, or anything shaped like an email address but a team work
 address in the About page's team mailbox field, stops the import.
 
@@ -1155,10 +1170,10 @@ signed off on the frame.
   themes. A link to the survey address is stored empty and follows the settings; with
   none set, or one WordPress refuses, its button is left out. The frame prints a tree
   page's blocks directly, not through `the_content`.*
-  - *Decide with the About page: `the_content` also runs `wp_filter_content_tags`,
-    which gives Media Library images their `srcset`, `sizes`, dimensions and lazy
-    loading. The About page's portraits will be core image blocks, so the frame should
-    run that filter (or `the_content`) on tree pages by then.*
+  - *Decided with the About page (11 November): tree pages keep printing their blocks
+    directly, without `the_content` or `wp_filter_content_tags`. The portraits aren't
+    core image blocks: the team block prints them with `wp_get_attachment_image()`,
+    which gives them their `srcset`, `sizes`, dimensions and lazy loading itself.*
   - *Found in the accessibility review, for a change to both sites: in a light
     forced-colors palette the hero's wordmark, drawn for the dark hero, mostly
     vanishes against the white Canvas (a logotype, so not a WCAG failure, but hard to
@@ -1172,8 +1187,18 @@ signed off on the frame.
     11 November).*
   - *For Phase 6: a Firehouse Editor has no `unfiltered_html`, so saving the page in
     the block editor runs every attribute string through kses, which turns a `&` into
-    `&amp;` (then shown as written) and can alter a `<`. Today's landing words have
-    neither; the editing screens need to keep editors' text as typed.*
+    `&amp;` (then shown as written) and can alter a `<`. Today's landing and About
+    words have neither; the editing screens need to keep editors' text as typed.*
+- *About page done 11 November: the Import screen creates the `about` page under
+  `firehouse` from the bundle's about content, only when there's none, and only after
+  the landing page has read back as planned, so deleting a misplaced landing page can't
+  move the About page to the top of the site, where GSL's own `/about/` is. Its words
+  are the blocks' attributes (`firehouse/about-intro`, `about-sections` holding
+  `about-mission`, `about-audiences`, `about-process` and `about-team`, and
+  `about-cta`). It matches the reference's accessibility snapshots at both widths, and
+  every section, card and portrait is the same size as the site's at both widths in
+  both themes. The portraits are the newest Media Library images titled as each
+  member's `photo`, or their initials until there is one.*
 - Description and Open Graph tags, and whether a Firehouse page's `<title>` names The
   Firehouse. Today it is WordPress's "Page not found - Global Systems Laboratory",
   where the site's is "Page not found — The Firehouse".

@@ -34,7 +34,7 @@ final class ImportScreenTest extends WordPressTestCase {
 		self::stand_in_serialize_blocks();
 		$this->kept = array();
 		$kept       = &$this->kept;
-		$content    = array_intersect_key( Cases::site(), array_flip( array( 'projects', 'topics', 'topicSummaries', 'settings', 'landing' ) ) );
+		$content    = array_intersect_key( Cases::site(), array_flip( array( 'projects', 'topics', 'topicSummaries', 'settings', 'landing', 'about' ) ) );
 		Functions\when( 'current_user_can' )->justReturn( true );
 		Functions\when( 'wp_add_inline_style' )->justReturn( true );
 		Functions\when( 'check_admin_referer' )->justReturn( 1 );
@@ -114,6 +114,22 @@ final class ImportScreenTest extends WordPressTestCase {
 		Import_Screen::handle();
 
 		$this->assertSame( 'Already confirmed: Import', Import_Screen::title( 'Import' ) );
+	}
+
+	/**
+	 * A dry run keeps every part of the bundle the import writes, the landing and About
+	 * pages' words included, and nothing else; of the settings, only those it sets.
+	 */
+	public function test_a_dry_run_keeps_what_the_import_writes(): void {
+		$content                       = Cases::site();
+		$content['notForWordPress']    = array( 'x' );
+		$content['settings']['footer'] = 'not kept';
+
+		$kept = Import_Screen::kept( $content );
+
+		$this->assertEqualsCanonicalizing( array( 'projects', 'topics', 'topicSummaries', 'settings', 'landing', 'about' ), array_keys( $kept ) );
+		$this->assertEqualsCanonicalizing( array( 'siteName', 'submitLabel', 'submitFormUrl', 'nav' ), array_keys( $kept['settings'] ) );
+		$this->assertSame( $content['about'], $kept['about'] );
 	}
 
 	/**

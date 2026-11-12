@@ -64,6 +64,9 @@ one is.
 * The landing page, created by the Import screen from the seed bundle when there's
   none: the hero with live counts, the four topic areas' top needs, and the submit
   band. The coverage map comes later.
+* The About page, created by the Import screen under the landing page when there's
+  none: what the hub is, who it serves, how it works, the team with their portraits
+  from the Media Library, and the submit band.
 * The topic area pages: each area's top needs with the projects behind them, what it
   covers, and the other areas. A need lists only projects a visitor may see:
   published, without a password, and with IRB approval or exemption.

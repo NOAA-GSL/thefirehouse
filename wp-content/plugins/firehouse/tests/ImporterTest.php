@@ -337,13 +337,12 @@ final class ImporterTest extends WordPressTestCase {
 	}
 
 	/**
-	 * The bundle's own notes come first, then the plan's.
+	 * The bundle's own notes are shown.
 	 */
 	public function test_the_bundles_notes_are_shown(): void {
 		$plan = Importer::plan( self::content(), array(), array(), null, array( 'A dropped link.' ) );
 
-		$this->assertSame( 'A dropped link.', $plan['notes'][0] );
-		$this->assertStringContainsString( 'About page', end( $plan['notes'] ) );
+		$this->assertSame( array( 'A dropped link.' ), $plan['notes'] );
 	}
 
 	/**
@@ -587,6 +586,286 @@ final class ImporterTest extends WordPressTestCase {
 			Importer::fingerprint( Importer::plan( self::content(), array(), array(), null ) ),
 			Importer::fingerprint( Importer::plan( self::content(), array(), array(), null, array(), array(), 77 ) )
 		);
+	}
+
+	/**
+	 * With no landing page yet, the About page is planned to go under the one the run
+	 * creates: a published page named `about`, with no author, titled with the About
+	 * link's label, its blocks from the bundle's about content. A link to the bundle's
+	 * survey address is stored empty, so it follows the settings, and a biography given
+	 * as one string is one paragraph.
+	 */
+	public function test_the_about_page_is_planned_under_the_new_landing_page(): void {
+		$about = Importer::plan( self::content(), array(), array(), null )['about'];
+
+		$this->assertSame( 'create', $about['action'] );
+		$this->assertSame(
+			array(
+				'post_type'   => 'page',
+				'post_name'   => 'about',
+				'post_parent' => 0,
+				'post_status' => 'publish',
+				'post_author' => 0,
+				'post_title'  => 'About',
+			),
+			array_diff_key( $about['post'], array( 'post_content' => true ) )
+		);
+		$blocks = $about['post']['post_content'];
+		$this->assertMatchesRegularExpression( '#^<!-- wp:firehouse/about-intro \{.*?\} /--><!-- wp:firehouse/about-sections --><!-- wp:firehouse/about-mission \{.*?\} /--><!-- wp:firehouse/about-audiences \{.*?\} /--><!-- wp:firehouse/about-process \{.*?\} /--><!-- wp:firehouse/about-team \{.*?\} /--><!-- /wp:firehouse/about-sections --><!-- wp:firehouse/about-cta \{.*?\} /-->$#s', $blocks );
+		$this->assertStringContainsString( '"links":[{"label":"Submit a finding","href":""},{"label":"Projects","to":"/projects"}]', $blocks );
+		$this->assertStringContainsString( '"cta":{"label":"Submit a Finding","href":""}', $blocks );
+		$this->assertStringContainsString( '"bio":["A one-paragraph biography."]', $blocks );
+		$this->assertStringNotContainsString( 'forms.example.org', $blocks );
+		$this->assertSame( array(), $about['problems'] );
+		$this->assertSame( array(), $about['notes'], 'No member has a portrait to upload.' );
+	}
+
+	/**
+	 * The About page's title is the About link's label as the settings will have it:
+	 * the site's own, once they're saved.
+	 */
+	public function test_the_about_page_is_titled_with_the_about_link(): void {
+		$settings                       = Settings::defaults();
+		$settings['submitFormUrl']      = 'https://forms.example.org/firehouse';
+		$settings['navLabels']['about'] = 'About us';
+
+		$this->assertSame( 'About us', Importer::plan( self::content(), array(), array(), $settings )['about']['post']['post_title'] );
+	}
+
+	/**
+	 * An `about` page under the landing page, in any status but the trash, is left as
+	 * it is: its words are the editors'. One with nothing in it is noted.
+	 */
+	public function test_an_existing_about_page_is_left_alone(): void {
+		$content = 'Words';
+		Functions\when( 'get_posts' )->alias(
+			static function ( array $args ) use ( &$content ): array {
+				return 'about' === ( $args['name'] ?? '' ) && 77 === $args['post_parent'] && is_array( $args['post_status'] )
+					? array(
+						new \WP_Post(
+							array(
+								'ID'           => 78,
+								'post_type'    => 'page',
+								'post_content' => $content,
+							)
+						),
+					)
+					: array();
+			}
+		);
+
+		$about = Importer::plan( self::content(), array(), array(), null, array(), array(), 77 )['about'];
+
+		$this->assertSame( 'unchanged', $about['action'] );
+		$this->assertSame( 78, $about['post_id'] );
+		$this->assertSame( array(), $about['post'] );
+		$this->assertStringContainsString( 'already exists', $about['notes'][0] );
+
+		$content = '';
+		$this->assertStringContainsString( 'exists but is empty', Importer::plan( self::content(), array(), array(), null, array(), array(), 77 )['about']['notes'][0] );
+	}
+
+	/**
+	 * An About page in the trash under the landing page stops the import, whether it
+	 * was trashed with WordPress keeping its name or still holds it.
+	 */
+	public function test_an_about_page_in_the_trash_stops_the_import(): void {
+		$trashed = array(
+			new \WP_Post(
+				array(
+					'ID'          => 56,
+					'post_type'   => 'page',
+					'post_name'   => 'about__trashed',
+					'post_parent' => 77,
+				)
+			),
+		);
+		$asked   = array();
+		Functions\when( 'get_posts' )->alias(
+			static function ( array $args ) use ( &$trashed, &$asked ): array {
+				if ( 'trash' !== ( $args['post_status'] ?? '' ) ) {
+					return array();
+				}
+				$asked[] = $args['post_parent'];
+				return $trashed;
+			}
+		);
+		Functions\when( 'get_post_meta' )->alias( static fn( int $id, string $key ): string => 56 === $id && '_wp_desired_post_slug' === $key ? 'about' : '' );
+
+		$plan = Importer::plan( self::content(), array(), array(), null, array(), array(), 77 );
+
+		$this->assertFalse( $plan['ok'] );
+		$this->assertStringContainsString( 'An About page is in the trash', $plan['about']['problems'][0] );
+		$this->assertSame( array( 77 ), $asked, 'Only the trash under the landing page is looked at.' );
+
+		$trashed[0]->post_name = 'about';
+		Functions\when( 'get_post_meta' )->justReturn( '' );
+		$this->assertStringContainsString( 'in the trash', Importer::plan( self::content(), array(), array(), null, array(), array(), 77 )['about']['problems'][0] );
+	}
+
+	/**
+	 * Something else under the landing page holding the About page's address, such as
+	 * a file uploaded to it named "about", stops the import.
+	 */
+	public function test_an_about_address_held_elsewhere_stops_the_import(): void {
+		Functions\when( 'wp_unique_post_slug' )->alias( static fn( string $slug, int $id, string $status, string $type, int $parent_id ): string => 77 === $parent_id ? 'about-2' : $slug );
+
+		$plan = Importer::plan( self::content(), array(), array(), null, array(), array(), 77 );
+
+		$this->assertFalse( $plan['ok'] );
+		$this->assertStringContainsString( 'holds the address /firehouse/about/', $plan['about']['problems'][0] );
+	}
+
+	/**
+	 * A member's portrait that isn't in the Media Library yet is noted by the title to
+	 * upload it under; one that is, isn't.
+	 */
+	public function test_portraits_to_upload_are_noted(): void {
+		$content = self::content();
+		$content['about']['team']['members'][0]['photo'] = 'hal-member';
+		$content['about']['team']['members'][]           = array(
+			'name'  => 'Ida Member',
+			'photo' => 'ida-member',
+			'bio'   => array( 'Another.' ),
+		);
+		Functions\when( 'get_posts' )->alias(
+			static fn( array $args ): array => 'attachment' === $args['post_type'] && 'ida-member' === ( $args['title'] ?? '' )
+				? array(
+					new \WP_Post(
+						array(
+							'ID'         => 9,
+							'post_type'  => 'attachment',
+							'post_title' => 'ida-member',
+						)
+					),
+				)
+				: array()
+		);
+
+		$notes = Importer::plan( $content, array(), array(), null )['about']['notes'];
+
+		$this->assertCount( 1, $notes );
+		$this->assertStringContainsString( 'titled “hal-member” (a file’s title starts as its name), and the About page shows them', $notes[0] );
+		$this->assertStringNotContainsString( 'ida-member', $notes[0] );
+	}
+
+	/**
+	 * A run creates the landing page, then the About page under it, and reads both
+	 * back; the next finds them and leaves them alone.
+	 */
+	public function test_a_run_creates_the_about_page_under_the_landing_page(): void {
+		$this->stand_in_wordpress();
+
+		$first   = Importer::run( self::content() );
+		$landing = $first['landing']['post_id'];
+		$about   = $first['about']['post_id'];
+
+		$this->assertSame( array(), $first['about']['problems'] );
+		$this->assertSame( 'about', $this->posts[ $about ]['post_name'] );
+		$this->assertSame( $landing, $this->posts[ $about ]['post_parent'] );
+		$this->assertStringStartsWith( '<!-- wp:firehouse/about-intro ', $this->posts[ $about ]['post_content'] );
+
+		$second = Importer::run( self::content() );
+		$this->assertSame( 'unchanged', $second['about']['action'] );
+		$this->assertSame( $about, $second['about']['post_id'] );
+	}
+
+	/**
+	 * Under a landing page that exists already, the About page goes under that one.
+	 */
+	public function test_the_about_page_goes_under_an_existing_landing_page(): void {
+		$this->stand_in_wordpress();
+		$this->posts[77] = array(
+			'post_type'    => 'page',
+			'post_name'    => 'firehouse',
+			'post_status'  => 'publish',
+			'post_title'   => 'The Firehouse',
+			'post_parent'  => 0,
+			'post_content' => '<!-- wp:firehouse/hero /-->',
+		);
+
+		$result = Importer::run( self::content() );
+
+		$this->assertSame( 'unchanged', $result['landing']['action'] );
+		$this->assertSame( array(), $result['about']['problems'] );
+		$this->assertSame( 77, $this->posts[ $result['about']['post_id'] ]['post_parent'] );
+	}
+
+	/**
+	 * When the landing page doesn't survive the run, the About page isn't created: under
+	 * a page that was just deleted, WordPress would move it to the top of the site.
+	 */
+	public function test_no_about_page_without_the_landing_page(): void {
+		$this->stand_in_wordpress();
+		$posts = &$this->posts;
+		Functions\when( 'wp_insert_post' )->alias(
+			static function ( array $postarr ) use ( &$posts ): int {
+				$id           = 200 + count( $posts );
+				$posts[ $id ] = array( 'post_name' => 'firehouse' === $postarr['post_name'] ? 'firehouse-2' : $postarr['post_name'] ) + $postarr;
+				return $id;
+			}
+		);
+
+		$about = Importer::run( self::content() )['about'];
+
+		$this->assertStringContainsString( 'wasn’t created, since the landing page it goes under wasn’t', $about['problems'][0] );
+		$this->assertSame( 0, $about['post_id'] );
+		$this->assertSame( array(), array_filter( $posts, static fn( array $post ): bool => 'page' === $post['post_type'] ) );
+	}
+
+	/**
+	 * An About page WordPress saves at another address, or with other blocks, is a
+	 * problem, and is deleted rather than left published; the landing page stays.
+	 */
+	public function test_an_about_page_not_as_planned_is_deleted(): void {
+		$this->stand_in_wordpress();
+		$posts = &$this->posts;
+		$break = 'name';
+		Functions\when( 'get_page_uri' )->alias( static fn( \WP_Post $page ): string => 'firehouse/' . $page->post_name );
+		Functions\when( 'wp_insert_post' )->alias(
+			static function ( array $postarr ) use ( &$posts, &$break ): int {
+				$id = 200 + count( $posts );
+				if ( 'about' === $postarr['post_name'] ) {
+					$postarr = array( 'name' === $break ? 'post_name' : 'post_content' => 'name' === $break ? 'about-2' : 'Something else' ) + $postarr;
+				}
+				$posts[ $id ] = $postarr;
+				return $id;
+			}
+		);
+
+		$result = Importer::run( self::content() );
+
+		$this->assertSame( 'It isn’t at /firehouse/about/: WordPress gave it the address /firehouse/about-2/.', $result['about']['problems'][0] );
+		$this->assertStringContainsString( 'It was deleted, so the Firehouse has no About page yet', $result['about']['problems'][1] );
+		$this->assertSame( 0, $result['about']['post_id'] );
+		$this->assertSame( array(), $result['landing']['problems'] );
+		$this->assertSame( array( 'firehouse' ), array_column( array_filter( $posts, static fn( array $post ): bool => 'page' === $post['post_type'] ), 'post_name' ) );
+
+		$this->posts = array();
+		$break       = 'content';
+		$this->assertStringContainsString( 'reads back differently', Importer::run( self::content() )['about']['problems'][0] );
+	}
+
+	/**
+	 * The fingerprint changes when an About page appears between the dry run and the
+	 * confirmation.
+	 */
+	public function test_the_fingerprint_follows_the_about_page(): void {
+		$before = Importer::fingerprint( Importer::plan( self::content(), array(), array(), null, array(), array(), 77 ) );
+		Functions\when( 'get_posts' )->alias(
+			static fn( array $args ): array => 'about' === ( $args['name'] ?? '' )
+				? array(
+					new \WP_Post(
+						array(
+							'ID'        => 78,
+							'post_type' => 'page',
+						)
+					),
+				)
+				: array()
+		);
+
+		$this->assertNotSame( $before, Importer::fingerprint( Importer::plan( self::content(), array(), array(), null, array(), array(), 77 ) ) );
 	}
 
 	/**

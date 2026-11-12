@@ -1,0 +1,41 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "firehouse/about-process",
+	"title": "Firehouse About process",
+	"category": "widgets",
+	"description": "How the hub works: the section's words, the numbered steps and the links after them.",
+	"textdomain": "firehouse",
+	"parent": [
+		"firehouse/about-sections"
+	],
+	"attributes": {
+		"eyebrow": {
+			"type": "string",
+			"default": ""
+		},
+		"heading": {
+			"type": "string",
+			"default": ""
+		},
+		"body": {
+			"type": "string",
+			"default": ""
+		},
+		"steps": {
+			"type": "array",
+			"default": []
+		},
+		"links": {
+			"type": "array",
+			"default": []
+		}
+	},
+	"supports": {
+		"html": false,
+		"inserter": false,
+		"multiple": false,
+		"reusable": false
+	},
+	"render": "file:./render.php"
+}

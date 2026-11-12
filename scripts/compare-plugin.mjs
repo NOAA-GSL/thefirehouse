@@ -35,7 +35,7 @@ const PLACEHOLDER = 'This page is being built.';
  * kind of page (`topic--`). Each one must be there and match; the rest are listed as
  * not built yet. Each Phase 4 page adds itself here.
  */
-export const BUILT = ['home', 'not-found', 'project--', 'topic--'];
+export const BUILT = ['about', 'home', 'not-found', 'project--', 'topic--'];
 
 /**
  * Parts of a built page that come in a later phase, by the region's name in the

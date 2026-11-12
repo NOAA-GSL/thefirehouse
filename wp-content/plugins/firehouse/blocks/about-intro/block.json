@@ -1,0 +1,30 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "firehouse/about-intro",
+	"title": "Firehouse About introduction",
+	"category": "widgets",
+	"description": "The About page's introduction: its eyebrow, its heading and what the hub is.",
+	"textdomain": "firehouse",
+	"attributes": {
+		"eyebrow": {
+			"type": "string",
+			"default": ""
+		},
+		"heading": {
+			"type": "string",
+			"default": ""
+		},
+		"body": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"supports": {
+		"html": false,
+		"inserter": false,
+		"multiple": false,
+		"reusable": false
+	},
+	"render": "file:./render.php"
+}

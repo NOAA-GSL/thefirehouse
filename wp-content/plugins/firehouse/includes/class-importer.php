@@ -37,12 +37,15 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   or page holding the address, stops the import, since the new page would land at
  *   another address; one created at another address anyway is deleted, not left
  *   published.
+ * - **The About page**, the `about` page under it, is created the same way from the
+ *   bundle's about content (About_Page::blocks()), once the landing page it goes under
+ *   exists and has read back as planned. One in the trash under the landing page, or
+ *   an attachment of the landing page holding the address, stops the import.
  *
  * Every difference kept from WordPress is noted. Nothing is written while anything is
  * wrong, and the dry run lists every problem. Projects in WordPress that the bundle
- * doesn't have are left as they are. The About page is checked but not written yet.
- * New posts have no author: the researcher's work isn't credited to whoever imported
- * it.
+ * doesn't have are left as they are. New posts have no author: the researcher's work
+ * isn't credited to whoever imported it.
  */
 final class Importer {
 
@@ -133,7 +136,7 @@ final class Importer {
 		}
 
 		if ( 'create' === $plan['landing']['action'] ) {
-			$saved = self::create_landing( $plan['landing'] );
+			$saved = self::create_page( $plan['landing']['post'] );
 			if ( is_wp_error( $saved ) ) {
 				$plan['landing']['problems'][] = 'WordPress didn’t save it: ' . $saved->get_error_message();
 			} else {
@@ -141,33 +144,84 @@ final class Importer {
 			}
 		}
 
-		$plan = self::verify( $plan );
-		if ( 'create' === $plan['landing']['action'] && 0 !== $plan['landing']['post_id'] && array() !== $plan['landing']['problems'] ) {
-			// A page that isn't the landing page as planned isn't left published.
-			if ( wp_delete_post( $plan['landing']['post_id'], true ) ) {
-				$plan['landing']['problems'][] = 'It was deleted, so the Firehouse has no landing page yet. Fix the problem above, then import again.';
-				$plan['landing']['post_id']    = 0;
-			} else {
-				$plan['landing']['problems'][] = sprintf( 'WordPress didn’t delete it, so it is still published: delete the page with ID %d from the Pages list, then import again.', $plan['landing']['post_id'] );
-			}
+		$plan            = self::verify( $plan );
+		$plan['landing'] = self::discard( $plan['landing'], 'landing page' );
+
+		// The About page goes under the landing page as it now stands: not under one
+		// that was just deleted, whose pages WordPress would move to the top of the site.
+		if ( 'create' === $plan['about']['action'] ) {
+			$plan['about'] = self::discard( self::create_about( $plan['about'], $plan['landing'] ), 'About page' );
 		}
 		return array_merge( $plan, array( 'imported' => true ) );
 	}
 
 	/**
-	 * Creates the landing page: published, at /firehouse/, with no author, its blocks as
-	 * planned. The kses filters are off while it's written, as for the plugin's other
-	 * writes, so the blocks' attributes are saved exactly as serialize_blocks() wrote
-	 * them, whoever runs the import.
+	 * Creates the About page under the landing page, if the landing page is there, and
+	 * reads it back: under the landing page, at its address, with its blocks, published.
 	 *
-	 * @param array<string, mixed> $landing The landing page's plan.
+	 * @param array<string, mixed> $about   The About page's plan.
+	 * @param array<string, mixed> $landing The landing page's, after the run.
+	 * @return array<string, mixed> The About page's plan, with its ID and any problem.
+	 */
+	private static function create_about( array $about, array $landing ): array {
+		$parent = array() === $landing['problems'] ? (int) $landing['post_id'] : 0;
+		if ( 0 === $parent ) {
+			$about['problems'][] = 'It wasn’t created, since the landing page it goes under wasn’t. Fix the landing page’s problem, then import again.';
+			return $about;
+		}
+		$about['post']['post_parent'] = $parent;
+		$saved                        = self::create_page( $about['post'] );
+		if ( is_wp_error( $saved ) ) {
+			$about['problems'][] = 'WordPress didn’t save it: ' . $saved->get_error_message();
+			return $about;
+		}
+		$about['post_id'] = $saved;
+		$page             = get_post( $saved );
+		if ( ! $page instanceof \WP_Post ) {
+			$about['problems'][] = 'It can’t be read back.';
+		} elseif ( $parent !== $page->post_parent || About_Page::SLUG !== $page->post_name ) {
+			$about['problems'][] = 'It isn’t at /' . Query::ROOT_PATH . '/' . About_Page::SLUG . '/: WordPress gave it the address /' . get_page_uri( $page ) . '/.';
+		} elseif ( $page->post_content !== $about['post']['post_content'] || 'publish' !== $page->post_status ) {
+			$about['problems'][] = 'It reads back differently from what was imported.';
+		}
+		return $about;
+	}
+
+	/**
+	 * Deletes a page the run created that isn't as planned, so it isn't left published,
+	 * and says so; or says WordPress refused, with the page's ID.
+	 *
+	 * @param array<string, mixed> $page The page's plan, after the run.
+	 * @param string               $name What the page is, as the message names it.
+	 * @return array<string, mixed>
+	 */
+	private static function discard( array $page, string $name ): array {
+		if ( 'create' !== $page['action'] || 0 === $page['post_id'] || array() === $page['problems'] ) {
+			return $page;
+		}
+		if ( wp_delete_post( $page['post_id'], true ) ) {
+			$page['problems'][] = sprintf( 'It was deleted, so the Firehouse has no %s yet. Fix the problem above, then import again.', $name );
+			$page['post_id']    = 0;
+		} else {
+			$page['problems'][] = sprintf( 'WordPress didn’t delete it, so it is still published: delete the page with ID %d from the Pages list, then import again.', $page['post_id'] );
+		}
+		return $page;
+	}
+
+	/**
+	 * Creates a page as planned: published, with no author, its blocks as planned. The
+	 * kses filters are off while it's written, as for the plugin's other writes, so the
+	 * blocks' attributes are saved exactly as serialize_blocks() wrote them, whoever runs
+	 * the import.
+	 *
+	 * @param array<string, mixed> $post The page, as wp_insert_post() takes it.
 	 * @return int|\WP_Error The page's ID, or why it wasn't saved.
 	 */
-	private static function create_landing( array $landing ): int|\WP_Error {
+	private static function create_page( array $post ): int|\WP_Error {
 		$kses = (bool) has_filter( 'content_save_pre', 'wp_filter_post_kses' );
 		kses_remove_filters();
 		try {
-			return wp_insert_post( wp_slash( $landing['post'] ), true );
+			return wp_insert_post( wp_slash( $post ), true );
 		} finally {
 			if ( $kses ) {
 				kses_init_filters();
@@ -190,6 +244,7 @@ final class Importer {
 		}
 		$summary[] = array( $plan['settings']['action'], $plan['settings']['changes'] );
 		$summary[] = array( $plan['landing']['action'], $plan['landing']['post_id'] );
+		$summary[] = array( $plan['about']['action'], $plan['about']['post_id'] );
 		return hash( 'sha256', serialize( $summary ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize -- Hashed, never stored or unserialized.
 	}
 
@@ -207,7 +262,7 @@ final class Importer {
 	 * @param string[]                   $notes    Notes about the bundle itself.
 	 * @param string[]                   $problems Problems with the bundle itself.
 	 * @param int                        $root     The `firehouse` page's ID, from Capabilities::root_id(), or 0 for none.
-	 * @return array{ok: bool, problems: list<string>, projects: list<array<string, mixed>>, topics: list<array<string, mixed>>, settings: array<string, mixed>, landing: array<string, mixed>, left_alone: list<array<string, mixed>>, notes: list<string>}
+	 * @return array{ok: bool, problems: list<string>, projects: list<array<string, mixed>>, topics: list<array<string, mixed>>, settings: array<string, mixed>, landing: array<string, mixed>, about: array<string, mixed>, left_alone: list<array<string, mixed>>, notes: list<string>}
 	 */
 	public static function plan( array $content, array $projects, array $topics, ?array $settings, array $notes = array(), array $problems = array(), int $root = 0 ): array {
 		$by_id      = array();
@@ -243,20 +298,23 @@ final class Importer {
 			$post_ids[ $project['slug'] ] = $project['post_id'];
 		}
 
-		$plan = array(
+		$settings_plan = self::plan_settings( $content['settings'], $settings );
+		$plan          = array(
 			'problems'   => array_values( $problems ),
 			'projects'   => $planned,
 			'topics'     => self::plan_topics( $content, $topics, $post_ids ),
-			'settings'   => self::plan_settings( $content['settings'], $settings ),
+			'settings'   => $settings_plan,
 			'landing'    => self::plan_landing( $content, $root ),
+			'about'      => self::plan_about( $content, $root, (string) ( $settings_plan['value']['navLabels']['about'] ?? '' ) ),
 			'left_alone' => $left_alone,
-			'notes'      => array_merge( array_values( $notes ), array( 'The About page is checked but not written yet.' ) ),
+			'notes'      => array_values( $notes ),
 		);
 
 		$all        = array_merge(
 			$plan['problems'],
 			$plan['settings']['problems'],
 			$plan['landing']['problems'],
+			$plan['about']['problems'],
 			...array_column( $plan['projects'], 'problems' ),
 			...array_column( $plan['topics'], 'problems' )
 		);
@@ -579,7 +637,7 @@ final class Importer {
 		}
 
 		$problems = array();
-		if ( self::trashed_root() ) {
+		if ( self::trashed( 0, Query::ROOT_PATH ) ) {
 			$problems[] = 'A landing page is in the trash. Restore it, or delete it permanently, then import again: a new one beside it would leave two pages claiming /' . Query::ROOT_PATH . '/.';
 		} elseif ( wp_unique_post_slug( Query::ROOT_PATH, 0, 'publish', 'page', 0 ) !== Query::ROOT_PATH ) {
 			$problems[] = 'Something else holds the address /' . Query::ROOT_PATH . '/, such as a Media Library file named “' . Query::ROOT_PATH . '”, so the page would land elsewhere. Rename or remove it, then import again.';
@@ -608,22 +666,107 @@ final class Importer {
 	}
 
 	/**
-	 * Whether a top-level page that had the landing page's address is in the trash:
-	 * trashed with it (WordPress keeps the address it wants back), or older trash still
-	 * holding it. WordPress gives its address back when it's restored, beside any new
-	 * one. One query for the pages and their fields.
+	 * Plans the About page: created under the landing page from the bundle's about
+	 * content if there's no `about` page under it in any status but the trash; otherwise
+	 * left as it is, its words the editors'. A trashed one, or anything else under the
+	 * landing page holding the address, is a problem. With no landing page yet, it's
+	 * created under the one the run creates. Its title is the About link's label.
+	 *
+	 * @param array<string, mixed> $content Normalized content.
+	 * @param int                  $root    The `firehouse` page's ID, or 0 for none.
+	 * @param string               $title   The About link's label in the settings the run leaves.
+	 * @return array{action: string, post_id: int, post: array<string, mixed>, problems: list<string>, notes: list<string>}
 	 */
-	private static function trashed_root(): bool {
+	private static function plan_about( array $content, int $root, string $title ): array {
+		$about   = is_array( $content['about'] ?? null ) ? $content['about'] : array();
+		$address = '/' . Query::ROOT_PATH . '/' . About_Page::SLUG . '/';
+		$page    = 0 !== $root ? self::child_page( $root, About_Page::SLUG ) : null;
+		if ( null !== $page ) {
+			return array(
+				'action'   => 'unchanged',
+				'post_id'  => $page->ID,
+				'post'     => array(),
+				'problems' => array(),
+				'notes'    => array(
+					'' === trim( $page->post_content )
+						? 'The About page exists but is empty, so it shows a placeholder: the import doesn’t write into an existing page. Delete it permanently, then import again to create it.'
+						: 'The About page already exists, so its words are left as editors have them.',
+				),
+			);
+		}
+
+		$problems = array();
+		if ( 0 !== $root && self::trashed( $root, About_Page::SLUG ) ) {
+			$problems[] = 'An About page is in the trash. Restore it, or delete it permanently, then import again: a new one beside it would leave two pages claiming ' . $address . '.';
+		} elseif ( 0 !== $root && wp_unique_post_slug( About_Page::SLUG, 0, 'publish', 'page', $root ) !== About_Page::SLUG ) {
+			$problems[] = 'Something else holds the address ' . $address . ', such as a Media Library file named “' . About_Page::SLUG . '” uploaded to the landing page, so the page would land elsewhere. Rename or remove it, then import again.';
+		}
+
+		$notes   = array();
+		$photos  = array_values( array_filter( array_map( static fn( mixed $member ): string => is_array( $member ) && is_string( $member['photo'] ?? null ) ? $member['photo'] : '', is_array( $about['team']['members'] ?? null ) ? $about['team']['members'] : array() ) ) );
+		$missing = array_values( array_diff( $photos, array_keys( About_Page::portraits( $photos ) ) ) );
+		if ( array() !== $missing ) {
+			$notes[] = sprintf( 'The team’s portraits aren’t in the bundle: upload them to the Media Library titled %s (a file’s title starts as its name), and the About page shows them. Until then it shows each person’s initials.', implode( ', ', array_map( static fn( string $name ): string => '“' . $name . '”', $missing ) ) );
+		}
+		$settings = is_array( $content['settings'] ?? null ) ? $content['settings'] : array();
+		return array(
+			'action'   => 'create',
+			'post_id'  => 0,
+			'post'     => array(
+				'post_type'    => 'page',
+				'post_name'    => About_Page::SLUG,
+				'post_parent'  => $root,
+				'post_status'  => 'publish',
+				'post_author'  => 0,
+				'post_title'   => Store::label( '' !== $title ? $title : 'About' ),
+				'post_content' => About_Page::blocks( $about, is_string( $settings['submitFormUrl'] ?? null ) ? $settings['submitFormUrl'] : '' ),
+			),
+			'problems' => $problems,
+			'notes'    => $notes,
+		);
+	}
+
+	/**
+	 * The page under a parent with this name, in any status but the trash, or null.
+	 *
+	 * @param int    $parent_id The parent page's ID.
+	 * @param string $name      The page's name.
+	 */
+	private static function child_page( int $parent_id, string $name ): ?\WP_Post {
+		$pages = get_posts(
+			array(
+				'post_type'   => 'page',
+				'name'        => $name,
+				'post_parent' => $parent_id,
+				'post_status' => array( 'publish', 'future', 'draft', 'pending', 'private' ),
+				'orderby'     => 'ID',
+				'order'       => 'ASC',
+				'numberposts' => 1,
+			)
+		);
+		return isset( $pages[0] ) && $pages[0] instanceof \WP_Post ? $pages[0] : null;
+	}
+
+	/**
+	 * Whether a page under this parent that had this name is in the trash: trashed
+	 * with it (WordPress keeps the name it wants back), or older trash still holding
+	 * it. WordPress gives its name back when it's restored, beside any new page. One
+	 * query for the pages and their fields.
+	 *
+	 * @param int    $parent_id The parent's ID: 0 for the top of the site.
+	 * @param string $name      The page's name.
+	 */
+	private static function trashed( int $parent_id, string $name ): bool {
 		$trashed = get_posts(
 			array(
 				'post_type'   => 'page',
 				'post_status' => 'trash',
-				'post_parent' => 0,
+				'post_parent' => $parent_id,
 				'numberposts' => -1,
 			)
 		);
 		foreach ( $trashed as $page ) {
-			if ( Query::ROOT_PATH === $page->post_name || Query::ROOT_PATH === get_post_meta( $page->ID, '_wp_desired_post_slug', true ) ) {
+			if ( in_array( $name, array( $page->post_name, get_post_meta( $page->ID, '_wp_desired_post_slug', true ) ), true ) ) {
 				return true;
 			}
 		}

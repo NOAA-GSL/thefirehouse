@@ -31,9 +31,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * The coverage map comes with the explorer in Phase 5.
  *
- * A link to the survey address is stored empty and follows the Submit a Finding
- * address in the settings, so the address lives in one field; with none set, its
- * button is left out rather than pointing nowhere.
+ * Its links are stored as Page_Blocks keeps them: one to the survey address follows the
+ * Submit a Finding address in the settings, and with none set, its button is left out
+ * rather than pointing nowhere.
  */
 final class Landing_Page {
 
@@ -56,101 +56,39 @@ final class Landing_Page {
 	 */
 	public static function blocks( array $landing, string $submit_url ): string {
 		$hero  = is_array( $landing['hero'] ?? null ) ? $landing['hero'] : array();
-		$cta   = static function ( mixed $link ) use ( $submit_url ): array {
-			$link = self::text_fields( $link, array( 'label', 'to', 'href' ) );
-			if ( isset( $link['href'] ) && $link['href'] === $submit_url ) {
-				$link['href'] = '';
-			}
-			return $link;
-		};
+		$cta   = static fn( mixed $link ): array => Page_Blocks::link_fields( $link, $submit_url );
 		$stats = array();
 		foreach ( is_array( $landing['stats'] ?? null ) ? $landing['stats'] : array() as $stat ) {
-			$stats[] = self::text_fields( $stat, array( 'id', 'source', 'value', 'label', 'caption' ) )
+			$stats[] = Page_Blocks::text_fields( $stat, array( 'id', 'source', 'value', 'label', 'caption' ) )
 				+ ( is_array( $stat ) && isset( $stat['accent'] ) ? array( 'accent' => Js::truthy( $stat['accent'] ) ) : array() );
 		}
-		$words = static fn( mixed $section ): array => self::text_fields( $section, array( 'eyebrow', 'heading', 'body' ) ) + array(
+		$words = static fn( mixed $section ): array => Page_Blocks::text_fields( $section, array( 'eyebrow', 'heading', 'body' ) ) + array(
 			'eyebrow' => '',
 			'heading' => '',
 			'body'    => '',
 		);
 		return serialize_blocks(
 			array(
-				self::block(
+				Page_Blocks::block(
 					'firehouse/hero',
 					$words( $hero ) + array(
 						'primaryCta'   => $cta( $hero['primaryCta'] ?? null ),
 						'secondaryCta' => $cta( $hero['secondaryCta'] ?? null ),
 					),
-					array( self::block( 'firehouse/stats', array( 'items' => $stats ) ) )
+					array( Page_Blocks::block( 'firehouse/stats', array( 'items' => $stats ) ) )
 				),
-				self::block(
+				Page_Blocks::block(
 					'firehouse/top-needs',
-					self::text_fields( $landing['topicSection'] ?? null, array( 'eyebrow', 'heading', 'body' ) )
+					Page_Blocks::text_fields( $landing['topicSection'] ?? null, array( 'eyebrow', 'heading', 'body' ) )
 						+ array( 'needsPerCard' => is_int( $landing['needsPerCard'] ?? null ) ? $landing['needsPerCard'] : Topic_Page::NEEDS )
 				),
-				self::block(
+				Page_Blocks::block(
 					'firehouse/submit-band',
 					array_intersect_key( $words( $landing['submitBand'] ?? null ), array_flip( array( 'heading', 'body' ) ) )
 						+ array( 'cta' => $cta( $landing['submitBand']['cta'] ?? null ) )
 				),
 			)
 		);
-	}
-
-	/**
-	 * The named fields of a part of the bundle that are text, in that order; anything
-	 * else in it, and any of them that isn't text, left out.
-	 *
-	 * @param mixed    $part  The part: a link, a stat, or a section's words.
-	 * @param string[] $names The fields to keep.
-	 * @return array<string, string>
-	 */
-	private static function text_fields( mixed $part, array $names ): array {
-		$kept = array();
-		foreach ( $names as $name ) {
-			if ( is_array( $part ) && is_string( $part[ $name ] ?? null ) ) {
-				$kept[ $name ] = $part[ $name ];
-			}
-		}
-		return $kept;
-	}
-
-	/**
-	 * A parsed block, as serialize_blocks() takes it.
-	 *
-	 * @param string                     $name   The block's name.
-	 * @param array<string, mixed>       $attrs  Its attributes.
-	 * @param list<array<string, mixed>> $inner  Its inner blocks.
-	 * @return array<string, mixed>
-	 */
-	private static function block( string $name, array $attrs, array $inner = array() ): array {
-		return array(
-			'blockName'    => $name,
-			'attrs'        => $attrs,
-			'innerBlocks'  => $inner,
-			'innerHTML'    => '',
-			'innerContent' => array_fill( 0, count( $inner ), null ),
-		);
-	}
-
-	/**
-	 * Where a link goes: a Firehouse route under /firehouse/, its query and fragment
-	 * kept; an address as given; or, for one with no route and an empty or missing
-	 * address, the settings' survey address. '' when there's nowhere.
-	 *
-	 * @param mixed $link The stored link: its `label`, and a `to` or an `href`.
-	 */
-	public static function link( mixed $link ): string {
-		if ( ! is_array( $link ) ) {
-			return '';
-		}
-		if ( is_string( $link['to'] ?? null ) && '' !== $link['to'] ) {
-			$end  = strcspn( $link['to'], '?#' );
-			$path = '/' . trim( substr( $link['to'], 0, $end ), '/' );
-			return home_url( '/' . Query::ROOT_PATH . rtrim( $path, '/' ) . '/' ) . substr( $link['to'], $end );
-		}
-		$href = is_string( $link['href'] ?? null ) ? $link['href'] : '';
-		return '' !== $href ? $href : (string) Settings::get()['submitFormUrl'];
 	}
 
 	/**
@@ -162,14 +100,8 @@ final class Landing_Page {
 	 */
 	public static function hero( array $attributes, string $stats ): string {
 		$text    = static fn( string $name ): string => is_string( $attributes[ $name ] ?? null ) ? $attributes[ $name ] : '';
-		$buttons = '';
-		foreach ( array( array( 'primaryCta', 'accent', array( 'plus' ), array( 'block-mobile' ) ), array( 'secondaryCta', 'secondary', array( 1 => 'arrow-right' ), array( 'on-dark', 'block-mobile' ) ) ) as list( $name, $variant, $icons, $modifiers ) ) {
-			$url   = self::link( $attributes[ $name ] ?? null );
-			$label = is_string( $attributes[ $name ]['label'] ?? null ) ? $attributes[ $name ]['label'] : '';
-			if ( '' !== Markup::url( $url ) && '' !== $label ) {
-				$buttons .= Markup::button( $label, $url, $variant, 'lg', $icons, $modifiers );
-			}
-		}
+		$buttons = Page_Blocks::button( $attributes['primaryCta'] ?? null, 'accent', 'lg', array( 'plus' ), array( 'block-mobile' ) )
+			. Page_Blocks::button( $attributes['secondaryCta'] ?? null, 'secondary', 'lg', array( 1 => 'arrow-right' ), array( 'on-dark', 'block-mobile' ) );
 		return sprintf(
 			'<section class="fh-hero"><div class="fh-hero__media" aria-hidden="true"><div class="fh-hero__smoke"></div><div class="fh-hero__scrim"></div></div><div class="fh-hero__content fh-container"><div class="fh-hero__grid"><div class="fh-hero__panel"><img class="fh-brand fh-brand--dark fh-hero__logo" src="%1$s" alt="%2$s" style="height:72px"><span class="fh-hero__eyebrow">%3$s</span><h1 class="fh-hero__heading">%4$s</h1><p class="fh-hero__body">%5$s</p><div class="fh-hero__actions">%6$s</div></div>%7$s</div></div><span class="fh-hero__horizon" aria-hidden="true"></span></section>',
 			esc_url( plugins_url( 'assets/logos/firehouse-wordmark-on-dark.png', dirname( __DIR__ ) . '/firehouse.php' ) ),
@@ -269,15 +201,12 @@ final class Landing_Page {
 	 * @param array<string, mixed> $attributes The block's attributes.
 	 */
 	public static function submit_band( array $attributes ): string {
-		$text   = static fn( string $name ): string => is_string( $attributes[ $name ] ?? null ) ? $attributes[ $name ] : '';
-		$url    = self::link( $attributes['cta'] ?? null );
-		$label  = is_string( $attributes['cta']['label'] ?? null ) ? $attributes['cta']['label'] : '';
-		$button = '' !== Markup::url( $url ) && '' !== $label ? Markup::button( $label, $url, 'accent', 'lg', array( 'plus' ), array( 'block-mobile' ) ) : '';
+		$text = static fn( string $name ): string => is_string( $attributes[ $name ] ?? null ) ? $attributes[ $name ] : '';
 		return sprintf(
 			'<section class="fh-cta-band" aria-labelledby="submit-heading"><div class="fh-cta-band__inner fh-container fh-glass"><span class="fh-cta-band__glow" aria-hidden="true"></span><div class="fh-cta-band__copy"><h2 id="submit-heading" class="fh-cta-band__heading">%1$s</h2><p class="fh-cta-band__body">%2$s</p></div>%3$s</div></section>',
 			Markup::text( $text( 'heading' ) ),
 			Markup::text( $text( 'body' ) ),
-			$button
+			Page_Blocks::button( $attributes['cta'] ?? null, 'accent', 'lg', array( 'plus' ), array( 'block-mobile' ) )
 		);
 	}
 

@@ -266,6 +266,11 @@ overrides are isolated so a re-sync doesn't lose them.
 - [ ] **Ask GSL for a `wp_body_open()` hook** in its theme. Firehouse's skip link then
       moves before the theme's header; until then it sits at the top of the Firehouse
       area, after the header's links (plan, Phase 3).
+- [ ] **Upload the team's portraits** to the Media Library on each site, titled
+      `stephanie-hoekstra` and `emily-wells` (a file's title starts as its name), from
+      `src/assets/people/`. The About page shows them as soon as they're there; until
+      then it shows each person's initials. The Import screen's dry run names any that
+      are missing.
 - [ ] **Run an audit with a real screen reader**, and check the remaining federal
       requirements the brief flags as unconfirmed (USWDS conventions, privacy
       notice, .gov branding).
@@ -462,8 +467,12 @@ nothing from the database. Each class's docblock has the detail; this is the map
     anyway is deleted, not left published. A link to the bundle's survey address is
     stored empty, so it follows the settings. Two confirmations of one dry run, as a
     double click sends, import once.
-  - Each post is read back after it is written. The About page is checked but not
-    written yet.
+  - The About page, the `about` page under it at `/firehouse/about/`, is created the
+    same way from the bundle's about content, once the landing page is there and has
+    read back as planned: a landing page the import deletes takes nothing with it. One
+    in the trash under the landing page, or a file uploaded to the landing page named
+    `about`, stops the import.
+  - Each post and page is read back after it is written.
 - `Landing_Page` is the landing page's blocks: `firehouse/hero` with `firehouse/stats`
   inside it, `firehouse/top-needs` and `firehouse/submit-band`, as the site's
   `LandingPage` renders them, without the coverage map, which comes with the explorer
@@ -471,6 +480,17 @@ nothing from the database. Each class's docblock has the detail; this is the map
   and the synthesis note are computed as the page renders, from the projects a visitor
   may see and the published topics, with the topic pages' counting. A button with
   nowhere to go, such as Submit a Finding with no survey address set, is left out.
+- `About_Page` is the About page's blocks, as the site's `AboutPage` renders them:
+  `firehouse/about-intro`, `firehouse/about-sections` holding `about-mission`,
+  `about-audiences`, `about-process` and `about-team`, and `firehouse/about-cta`. The
+  words are the blocks' attributes, the biographies printed as written. Each member's
+  portrait is the newest Media Library image titled as their `photo` in `about.json`
+  (`stephanie-hoekstra`), printed by `wp_get_attachment_image()` with its sizes for the
+  168px it's drawn at; until there is one, the card shows their initials. The title,
+  not the name: WordPress gives an upload a name no other post has, and pages elsewhere
+  on a site, such as staff profiles, may already have a person's.
+- `Page_Blocks` is what the two share: building their blocks from the bundle's text,
+  and where a stored link goes.
 
 The traps, for whoever changes this code next:
 

@@ -72,6 +72,16 @@ final class MarkupTest extends WordPressTestCase {
 	}
 
 	/**
+	 * A page's own class goes last, as `Button`'s `className` does, and an icon passed
+	 * at its own size is drawn at that size.
+	 */
+	public function test_a_button_with_a_class_and_icon_size_of_its_own(): void {
+		$html = Markup::button( 'More', 'https://EXAMPLE.test/firehouse/', 'link', 'md', array( 1 => 'arrow-right' ), array( 'block-mobile' ), 'fh-about__process-link "x"', 15 );
+
+		$this->assertMatchesRegularExpression( '#^<a href="https://EXAMPLE.test/firehouse/" class="fh-btn fh-btn--link fh-btn--md fh-btn--block-mobile fh-about__process-link &quot;x&quot;">More<svg[^>]*width="15"[^>]*>.*</svg></a>$#s', $html );
+	}
+
+	/**
 	 * A button to another site opens in a new tab, says so to screen readers, and
 	 * carries `noopener noreferrer` (rule 11).
 	 */
