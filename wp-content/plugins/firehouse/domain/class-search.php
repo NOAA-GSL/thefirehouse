@@ -199,7 +199,7 @@ final class Search {
 	 */
 	public static function fold_without_intl( string $text ): string {
 		static $table = null;
-		$table      ??= array_combine( mb_str_split( self::ACCENTED ), mb_str_split( self::UNACCENTED ) );
+		$table      ??= array_combine( mb_str_split( self::ACCENTED, 1, 'UTF-8' ), mb_str_split( self::UNACCENTED, 1, 'UTF-8' ) );
 		return mb_strtolower( self::strip_marks( strtr( $text, $table ) ), 'UTF-8' );
 	}
 

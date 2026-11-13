@@ -13,6 +13,7 @@ use Firehouse\Domain\Derive;
 use Firehouse\Domain\Js;
 use Firehouse\Domain\Search;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 
 /**
  * Search, against the same cases as src/content/search.ts, and the JavaScript rules it
@@ -144,6 +145,17 @@ final class SearchTest extends DomainTestCase {
 			Search::facet_counts( $projects, $query, $facet, static fn( array $project ): array => Search::facet_values( $project, $facet ) );
 		}
 		$this->assertLessThan( 1.0, ( hrtime( true ) - $started ) / 1e9 );
+	}
+
+	/**
+	 * The fallback's table is read as UTF-8 whatever the server's default multibyte
+	 * encoding, so a site set to another one still searches. In a process of its own,
+	 * since the table is built once and kept.
+	 */
+	#[RunInSeparateProcess]
+	public function test_folding_without_intl_ignores_the_default_encoding(): void {
+		mb_internal_encoding( 'ISO-8859-1' );
+		$this->assertSame( 'evacuation', Search::fold_without_intl( 'Évacuation' ) );
 	}
 
 	/**
