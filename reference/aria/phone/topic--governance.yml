@@ -4,9 +4,9 @@
   - text: An official website of the United States government
   - button "Here’s how you know"
 - banner:
-  - link "The Firehouse, NOAA Global Systems Laboratory — home":
+  - link "The FireHouse, NOAA Global Systems Laboratory — home":
     - /url: /
-    - text: The Firehouse
+    - text: The FireHouse
   - button "Switch to dark theme"
   - button "Open menu"
 - main:
@@ -108,11 +108,11 @@
 - contentinfo:
   - img "NOAA"
   - img "GSL"
-  - text: The Firehouse
+  - text: The FireHouse
   - paragraph: A project of the Global Systems Laboratory (GSL), part of the National Oceanic and Atmospheric Administration (NOAA).
   - navigation "Explore":
     - heading "Explore" [level=2]
-    - link "About The Firehouse":
+    - link "About The FireHouse":
       - /url: /about
     - link "All projects":
       - /url: /projects

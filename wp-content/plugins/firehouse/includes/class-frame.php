@@ -318,7 +318,7 @@ final class Frame {
 		// explorer is named as the link to it is.
 		printf(
 			'<section class="fh-section"><div class="fh-container"><h1>%1$s</h1><p>%2$s</p></div></section>',
-			esc_html( is_post_type_archive( Post_Types::PROJECT ) ? (string) Settings::get()['navLabels']['projects'] : __( 'The Firehouse', 'firehouse' ) ),
+			esc_html( is_post_type_archive( Post_Types::PROJECT ) ? (string) Settings::get()['navLabels']['projects'] : __( 'The FireHouse', 'firehouse' ) ),
 			esc_html__( 'This page is being built.', 'firehouse' )
 		);
 	}

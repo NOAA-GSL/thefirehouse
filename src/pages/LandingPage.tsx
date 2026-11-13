@@ -248,7 +248,7 @@ export function LandingPage() {
                 the synthesis moves from NotebookLM to the plugin's AI service. */}
             <p className="fh-source__body">
               Topic areas are not assigned project by project. Every project in The
-              Firehouse is read together{synthesis.model ? `, with ${synthesis.model}` : ''}.
+              FireHouse is read together{synthesis.model ? `, with ${synthesis.model}` : ''}.
               The end-user needs its researchers recorded are grouped into the four areas
               above and ranked by how often they come up. This pass serves as an initial
               draft that our team reviews and refines before finalizing each synthesis.

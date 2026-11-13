@@ -2,7 +2,7 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
 	"name": "firehouse/top-needs",
-	"title": "Firehouse top needs",
+	"title": "FireHouse top needs",
 	"category": "widgets",
 	"description": "The landing page's top needs: a card for each topic area with its first needs, the synthesis note, and where the needs come from.",
 	"textdomain": "firehouse",

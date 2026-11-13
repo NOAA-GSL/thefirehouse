@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name:       The Firehouse
+ * Plugin Name:       The FireHouse
  * Plugin URI:        https://github.com/NOAA-GSL/thefirehouse
  * Description:       Public-facing hub for NOAA GSL's fire weather social science needs and findings.
  * Version:           0.2.0

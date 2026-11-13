@@ -2,7 +2,7 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
 	"name": "firehouse/hero",
-	"title": "Firehouse hero",
+	"title": "FireHouse hero",
 	"category": "widgets",
 	"description": "The landing page's hero: the wordmark, its words, the Submit and Explore buttons, and the live counts beside them.",
 	"textdomain": "firehouse",

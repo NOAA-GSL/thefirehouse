@@ -4,16 +4,16 @@
   - text: An official website of the United States government
   - button "Here’s how you know"
 - banner:
-  - link "The Firehouse, NOAA Global Systems Laboratory — home":
+  - link "The FireHouse, NOAA Global Systems Laboratory — home":
     - /url: /
-    - text: The Firehouse
+    - text: The FireHouse
   - button "Switch to dark theme"
   - button "Open menu"
 - main:
   - img "FireHouse — Fire Weather Research Hub"
   - text: NOAA / Global Systems Laboratory
   - heading "A shared home for fire weather social science" [level=1]
-  - paragraph: The Firehouse centralizes the needs and recommendations learned across completed fire weather research, so forecasters, researchers, and decision-makers can find what's already known — and add to it.
+  - paragraph: The FireHouse centralizes the needs and recommendations learned across completed fire weather research, so forecasters, researchers, and decision-makers can find what's already known — and add to it.
   - link "Submit a Finding (opens in a new tab)":
     - /url: https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform
   - link "Explore Projects":
@@ -25,7 +25,7 @@
   - region "Top needs across submitted projects":
     - text: Synthesized across every project
     - heading "Top needs across submitted projects" [level=2]
-    - paragraph: Forecasters, land managers, and emergency managers keep telling researchers what they need. Here, every completed fire weather social science project in The Firehouse is read together as one body of evidence, and the needs its researchers recorded are distilled into the five most pressing in each of four topic areas — in one place, ranked, with how often each one came up.
+    - paragraph: Forecasters, land managers, and emergency managers keep telling researchers what they need. Here, every completed fire weather social science project in The FireHouse is read together as one body of evidence, and the needs its researchers recorded are distilled into the five most pressing in each of four topic areas — in one place, ranked, with how often each one came up.
     - paragraph:
       - strong: AI-synthesized
       - text: across 4 of 8 projects.
@@ -75,7 +75,7 @@
         - listitem: "Staffing capacity and organizational buy-in to sustain interagency teams . Project count: 2"
     - complementary "Where these needs come from":
       - heading "Where these needs come from" [level=3]
-      - paragraph: Topic areas are not assigned project by project. Every project in The Firehouse is read together, with Claude. The end-user needs its researchers recorded are grouped into the four areas above and ranked by how often they come up. This pass serves as an initial draft that our team reviews and refines before finalizing each synthesis. Open any topic area to see which specific projects each need draws on; each project page preserves the researchers’ own words.
+      - paragraph: Topic areas are not assigned project by project. Every project in The FireHouse is read together, with Claude. The end-user needs its researchers recorded are grouped into the four areas above and ranked by how often they come up. This pass serves as an initial draft that our team reviews and refines before finalizing each synthesis. Open any topic area to see which specific projects each need draws on; each project page preserves the researchers’ own words.
       - link "Explore all projects":
         - /url: /projects
   - region "Where the research comes from":
@@ -130,11 +130,11 @@
 - contentinfo:
   - img "NOAA"
   - img "GSL"
-  - text: The Firehouse
+  - text: The FireHouse
   - paragraph: A project of the Global Systems Laboratory (GSL), part of the National Oceanic and Atmospheric Administration (NOAA).
   - navigation "Explore":
     - heading "Explore" [level=2]
-    - link "About The Firehouse":
+    - link "About The FireHouse":
       - /url: /about
     - link "All projects":
       - /url: /projects

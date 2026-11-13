@@ -29,7 +29,7 @@ final class Installer {
 	 * Raised whenever the role, the capabilities or the addresses change, so each
 	 * site applies the change once.
 	 */
-	public const REVISION = 2;
+	public const REVISION = 3;
 
 	/**
 	 * The option that records the revision a site has.

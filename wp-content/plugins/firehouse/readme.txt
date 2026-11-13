@@ -1,4 +1,4 @@
-=== The Firehouse ===
+=== The FireHouse ===
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 8.1
@@ -10,22 +10,22 @@ Public-facing hub for NOAA GSL's fire weather social science needs and findings.
 
 == Description ==
 
-The Firehouse as a section of GSL's WordPress site, at /firehouse. It is built in
+The FireHouse is a section of GSL's WordPress site, at /firehouse. It is built in
 phases; WORDPRESS-PLAN.md in https://github.com/NOAA-GSL/thefirehouse describes them.
 
 It registers the project and topic post types and their fields. Projects are at
-/firehouse/projects/ and topics at /firehouse/topics/{key}/. It adds the Firehouse
-Editor role, a Firehouse settings screen, and an Import screen that loads the site's
-content from a seed bundle. Every Firehouse address (projects, topics and pages under
+/firehouse/projects/ and topics at /firehouse/topics/{key}/. It adds the FireHouse
+Editor role, a FireHouse settings screen, and an Import screen that loads the site's
+content from a seed bundle. Every FireHouse address (projects, topics and pages under
 /firehouse/) gets the plugin's frame: the theme's header and footer, with the
-Firehouse area between them in the plugin's own stylesheets and fonts. A Firehouse
-bar under the theme's header carries the Firehouse wordmark and links, and the Submit
+FireHouse area between them in the plugin's own stylesheets and fonts. A FireHouse
+bar under the theme's header carries the FireHouse wordmark and links, and the Submit
 a Finding button once the settings give it an address. The theme's hero background
-and the mission section above its footer are hidden on those pages. Every Firehouse
+and the mission section above its footer are hidden on those pages. Every FireHouse
 page ends with a disclaimer that researchers' findings are their own, not NOAA's, and
-a missing Firehouse address shows the Firehouse not-found page. Each topic area's
+a missing FireHouse address shows the FireHouse not-found page. Each topic area's
 page shows its top needs, the published projects behind each, and what the area
-covers. On Firehouse pages, WordPress no longer curls quotes, converts dashes, turns
+covers. On FireHouse pages, WordPress no longer curls quotes, converts dashes, turns
 smileys into images or recapitalizes its own name, so researchers' text appears as
 they wrote it. The Import screen creates the landing page and the About page from the
 seed bundle; the About page's portraits are uploaded to the Media Library by an
@@ -43,22 +43,26 @@ The Import screen keeps nothing it doesn't import: the uploaded file isn't saved
 the checked content waits briefly for the confirmation and is then cleared. The plugin
 stores only what the site publishes.
 
-Deactivating the plugin keeps the Firehouse Editor role, which can then only sign in.
-Deleting the plugin removes the role and the Firehouse capabilities, and users who had
+Deactivating the plugin keeps the FireHouse Editor role, which can then only sign in.
+Deleting the plugin removes the role and the plugin's capabilities, and users who had
 the role are left with no role on the site. The content stays.
+
+An update that changes the role or its capabilities applies the role, and the
+administrators' FireHouse capabilities, as the plugin defines them, so a change made
+to either with a role editor doesn't last past it.
 
 == Changelog ==
 
 = Unreleased =
 Built since 0.2.0, and not yet through a release review; the version stays 0.2.0 until
 one is.
-* The frame: every Firehouse page in the theme's header and footer, with the plugin's
+* The frame: every FireHouse page in the theme's header and footer, with the plugin's
   stylesheets and self-hosted fonts, and the theme's hero and footer mission section
   hidden.
-* The Firehouse bar, the plugin's first block, with its menu on narrow screens.
+* The FireHouse bar, the plugin's first block, with its menu on narrow screens.
 * The site's icons and logos.
-* Researchers' text kept as they wrote it on Firehouse pages.
-* The disclaimer at the end of every Firehouse page, and the Firehouse not-found page.
+* Researchers' text kept as they wrote it on FireHouse pages.
+* The disclaimer at the end of every FireHouse page, and the FireHouse not-found page.
 * The project pages: the abstract, takeaways, needs and recommendations and papers as
   the researcher submitted them, the facts at a glance, and the projects either side.
   A need card that scrolls can be reached and scrolled by keyboard. Stored text shows
@@ -71,7 +75,7 @@ one is.
   administrator uploads to the Media Library before importing (initials otherwise),
   and the submit band. The landing page can't be deleted for good while pages
   outside the trash are under it.
-* Each Firehouse page's title names the page and The Firehouse, then the site's own
+* Each FireHouse page's title names the page and The FireHouse, then the site's own
   name, and carries a description and link-preview tags: a project's page, the
   project's own abstract. Nothing changes on any other page, nor when an SEO plugin is
   active.
@@ -91,6 +95,10 @@ one is.
   feed, the sitemap, embeds, oEmbed, menus, the redirects built from its ID and the
   not-found guess all leave it out. Someone who may edit it still sees it on its own
   page.
+* The name the plugin prints is FireHouse: the plugin's name, the role, the admin
+  menu, the block titles, and the pages' titles and words. A site that imported its
+  content before keeps the old spelling in its settings and in the landing and About
+  pages until they are edited.
 
 = 0.2.0 =
 * Project and topic post types at the Firehouse addresses, with their fields as post

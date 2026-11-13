@@ -72,7 +72,7 @@ final class Settings {
 	 */
 	public static function defaults(): array {
 		return array(
-			'siteName'      => 'The Firehouse',
+			'siteName'      => 'The FireHouse',
 			'submitLabel'   => 'Submit a Finding',
 			'submitFormUrl' => '',
 			'navLabels'     => array(
@@ -137,14 +137,14 @@ final class Settings {
 		);
 
 		add_settings_section( 'firehouse_site', __( 'Site', 'firehouse' ), '__return_null', self::PAGE );
-		self::add_field( 'firehouse_site', array( 'siteName' ), __( 'Site name', 'firehouse' ), __( 'The name in the Firehouse bar at the top of every Firehouse page.', 'firehouse' ) );
+		self::add_field( 'firehouse_site', array( 'siteName' ), __( 'Site name', 'firehouse' ), __( 'The name in the FireHouse bar at the top of every FireHouse page.', 'firehouse' ) );
 
 		add_settings_section( 'firehouse_submit', __( 'Submit a Finding', 'firehouse' ), '__return_null', self::PAGE );
 		self::add_field( 'firehouse_submit', array( 'submitLabel' ), __( 'Button label', 'firehouse' ), __( 'The words on every button and link that asks researchers to submit.', 'firehouse' ) );
 		self::add_field( 'firehouse_submit', array( 'submitFormUrl' ), __( 'Survey address', 'firehouse' ), __( 'Where those buttons and links go: the survey form. It must start with https://.', 'firehouse' ), 'url' );
 
 		add_settings_section( 'firehouse_nav', __( 'Navigation', 'firehouse' ), array( self::class, 'nav_section' ), self::PAGE );
-		self::add_field( 'firehouse_nav', array( 'navLabels', 'home' ), __( 'Home link', 'firehouse' ), __( 'Goes to the Firehouse landing page.', 'firehouse' ) );
+		self::add_field( 'firehouse_nav', array( 'navLabels', 'home' ), __( 'Home link', 'firehouse' ), __( 'Goes to the FireHouse landing page.', 'firehouse' ) );
 		self::add_field( 'firehouse_nav', array( 'navLabels', 'projects' ), __( 'Projects link', 'firehouse' ), __( 'Goes to the list of projects.', 'firehouse' ) );
 		self::add_field( 'firehouse_nav', array( 'navLabels', 'about' ), __( 'About link', 'firehouse' ), __( 'Goes to the About page.', 'firehouse' ) );
 	}
@@ -155,7 +155,7 @@ final class Settings {
 	public static function add_page(): void {
 		$hook = add_submenu_page(
 			Post_Types::MENU,
-			__( 'Firehouse settings', 'firehouse' ),
+			__( 'FireHouse settings', 'firehouse' ),
 			__( 'Settings', 'firehouse' ),
 			Capabilities::SETTINGS,
 			self::PAGE,

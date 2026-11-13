@@ -187,7 +187,7 @@ final class Landing_Page {
 			esc_html__( 'Where these needs come from', 'firehouse' ),
 			sprintf(
 				/* translators: %s: ", with" and the AI tool that read the projects, or nothing. */
-				esc_html__( 'Topic areas are not assigned project by project. Every project in The Firehouse is read together%s. The end-user needs its researchers recorded are grouped into the four areas above and ranked by how often they come up. This pass serves as an initial draft that our team reviews and refines before finalizing each synthesis. Open any topic area to see which specific projects each need draws on; each project page preserves the researchers’ own words.', 'firehouse' ),
+				esc_html__( 'Topic areas are not assigned project by project. Every project in The FireHouse is read together%s. The end-user needs its researchers recorded are grouped into the four areas above and ranked by how often they come up. This pass serves as an initial draft that our team reviews and refines before finalizing each synthesis. Open any topic area to see which specific projects each need draws on; each project page preserves the researchers’ own words.', 'firehouse' ),
 				/* translators: %s: the AI tool that read the projects. */
 				null !== $model && '' !== $model ? Markup::text( sprintf( __( ', with %s', 'firehouse' ), $model ) ) : ''
 			),

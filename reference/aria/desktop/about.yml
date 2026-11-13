@@ -4,9 +4,9 @@
   - text: An official website of the United States government
   - button "Here’s how you know"
 - banner:
-  - link "The Firehouse, NOAA Global Systems Laboratory — home":
+  - link "The FireHouse, NOAA Global Systems Laboratory — home":
     - /url: /
-    - text: The Firehouse
+    - text: The FireHouse
   - navigation "Primary":
     - link "Home":
       - /url: /
@@ -18,13 +18,13 @@
   - link "Submit a Finding (opens in a new tab)":
     - /url: https://docs.google.com/forms/d/e/1FAIpQLSfekqxdzqRyZQkYAZVibY9BzhpWzQVDxMVOffunkZ5EnmF4Ww/viewform
 - main:
-  - text: About The Firehouse
+  - text: About The FireHouse
   - heading "What this hub is, and who it is for" [level=1]
-  - paragraph: The Firehouse is NOAA's Global Systems Laboratory's public hub for fire weather social science. It gathers what completed research has already established about end-user needs and recommendations, so the next project, product or conversation can start from known unmet needs instead of rediscovering the same gaps.
+  - paragraph: The FireHouse is NOAA's Global Systems Laboratory's public hub for fire weather social science. It gathers what completed research has already established about end-user needs and recommendations, so the next project, product or conversation can start from known unmet needs instead of rediscovering the same gaps.
   - region "Why it exists":
     - heading "Why it exists" [level=2]
     - paragraph: Fire weather social science asks what partners and the public actually need from weather information when decisions can't wait. A lot of great research exists, but its findings usually stay trapped inside individual reports.
-    - paragraph: The Firehouse pulls those completed projects into a single collection—preserving the researchers' exact words, end-user needs, and recommendations. Then, analyzed collectively, these needs are distilled into the five most pressing issues across four core areas—observations, forecasts, warnings, and governance—and ranked by frequency. Every count comes directly from published work, every synthesis is human-reviewed, and every need names the projects that backed it.
+    - paragraph: The FireHouse pulls those completed projects into a single collection—preserving the researchers' exact words, end-user needs, and recommendations. Then, analyzed collectively, these needs are distilled into the five most pressing issues across four core areas—observations, forecasts, warnings, and governance—and ranked by frequency. Every count comes directly from published work, every synthesis is human-reviewed, and every need names the projects that backed it.
   - region "Built for the people who use fire weather information":
     - text: Who it serves
     - heading "Built for the people who use fire weather information" [level=2]
@@ -80,11 +80,11 @@
 - contentinfo:
   - img "NOAA"
   - img "GSL"
-  - text: The Firehouse
+  - text: The FireHouse
   - paragraph: A project of the Global Systems Laboratory (GSL), part of the National Oceanic and Atmospheric Administration (NOAA).
   - navigation "Explore":
     - heading "Explore" [level=2]
-    - link "About The Firehouse":
+    - link "About The FireHouse":
       - /url: /about
     - link "All projects":
       - /url: /projects

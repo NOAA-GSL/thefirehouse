@@ -77,7 +77,7 @@ final class Import_Screen {
 	public static function add_page(): void {
 		$hook = add_submenu_page(
 			Post_Types::MENU,
-			__( 'Import Firehouse content', 'firehouse' ),
+			__( 'Import FireHouse content', 'firehouse' ),
 			__( 'Import', 'firehouse' ),
 			Capabilities::IMPORT,
 			self::PAGE,
@@ -95,7 +95,7 @@ final class Import_Screen {
 	 */
 	public static function handle(): void {
 		if ( ! current_user_can( Capabilities::IMPORT ) ) {
-			wp_die( esc_html__( 'Only administrators can import Firehouse content.', 'firehouse' ), '', array( 'response' => 403 ) );
+			wp_die( esc_html__( 'Only administrators can import FireHouse content.', 'firehouse' ), '', array( 'response' => 403 ) );
 		}
 		wp_add_inline_style( 'common', self::STYLE );
 		if ( ! isset( $_POST['firehouse_step'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Only checks whether a form was sent; each form's nonce is checked below.

@@ -236,7 +236,7 @@ export function ProjectsPage() {
         <span className="fh-eyebrow">Project explorer</span>
         <h1 className="fh-explorer__heading">Completed research projects</h1>
         <p className="fh-explorer__body">
-          Every project analyzed for The Firehouse. Search or filter, then open one to
+          Every project analyzed for The FireHouse. Search or filter, then open one to
           read its takeaways, end-user needs, recommendations, and related papers.
         </p>
       </header>

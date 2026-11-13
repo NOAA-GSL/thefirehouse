@@ -1,7 +1,7 @@
 {
   "$comment": "A small, made-up site in the shape of today's JSON content files: the input for the shared test cases. Each project exercises something the code handles on purpose: a national study, a Pacific one, a draft, one without IRB approval, a legacy author string, bare-string needs, a repeated fire phase, and an accented word.",
   "settings": {
-    "siteName": "The Firehouse",
+    "siteName": "The FireHouse",
     "nav": [
       { "label": "Home", "to": "/" },
       { "label": "Explore Projects", "to": "/projects" },
@@ -162,7 +162,7 @@
   "landing": {
     "hero": {
       "eyebrow": "Test",
-      "heading": "The Firehouse",
+      "heading": "The FireHouse",
       "body": "A made-up hero.",
       "primaryCta": { "label": "Submit a Finding", "href": "" },
       "secondaryCta": { "label": "Explore", "to": "/projects" },

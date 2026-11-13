@@ -210,7 +210,7 @@ final class Meta {
 				'items'       => array( 'type' => 'integer' ),
 			);
 		} else {
-			throw new \InvalidArgumentException( 'Firehouse has no fields for that post type.' );
+			throw new \InvalidArgumentException( 'FireHouse has no fields for that post type.' );
 		}
 
 		self::$fields[ $post_type ] = $fields;
@@ -316,7 +316,7 @@ final class Meta {
 	private static function read( string $file ): array {
 		$schema = wp_json_file_decode( dirname( __DIR__ ) . '/shared/' . $file, array( 'associative' => true ) );
 		if ( ! is_array( $schema ) || ! is_array( $schema['properties'] ?? null ) ) {
-			throw new \RuntimeException( 'The Firehouse plugin could not read shared/' . esc_html( $file ) . '.' );
+			throw new \RuntimeException( 'The FireHouse plugin could not read shared/' . esc_html( $file ) . '.' );
 		}
 		return $schema['properties'];
 	}

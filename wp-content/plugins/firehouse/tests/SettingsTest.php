@@ -77,7 +77,7 @@ final class SettingsTest extends WordPressTestCase {
 	 */
 	private static function valid(): array {
 		return array(
-			'siteName'      => 'The Firehouse',
+			'siteName'      => 'The FireHouse',
 			'submitLabel'   => 'Submit a Finding',
 			'submitFormUrl' => 'https://forms.example.org/firehouse',
 			'navLabels'     => array(
@@ -95,7 +95,7 @@ final class SettingsTest extends WordPressTestCase {
 	public function test_unsaved_settings_are_the_defaults(): void {
 		$settings = Settings::get();
 
-		$this->assertSame( 'The Firehouse', $settings['siteName'] );
+		$this->assertSame( 'The FireHouse', $settings['siteName'] );
 		$this->assertSame( '', $settings['submitFormUrl'] );
 		$this->assertSame( array( 'home', 'projects', 'about' ), array_keys( $settings['navLabels'] ) );
 	}
@@ -107,7 +107,7 @@ final class SettingsTest extends WordPressTestCase {
 	public function test_stored_settings_are_read_over_the_defaults(): void {
 		Functions\when( 'get_option' )->justReturn(
 			array(
-				'siteName'  => 'Firehouse',
+				'siteName'  => 'FireHouse',
 				'footer'    => 'Not a setting',
 				'navLabels' => array(
 					'about' => 'Who we are',
@@ -119,7 +119,7 @@ final class SettingsTest extends WordPressTestCase {
 
 		$settings = Settings::get();
 
-		$this->assertSame( 'Firehouse', $settings['siteName'] );
+		$this->assertSame( 'FireHouse', $settings['siteName'] );
 		$this->assertArrayNotHasKey( 'footer', $settings );
 		$this->assertSame(
 			array(
@@ -182,7 +182,7 @@ final class SettingsTest extends WordPressTestCase {
 
 		list( $settings, $errors ) = Settings::validate( $input );
 
-		$this->assertSame( 'The Firehouse', $settings['siteName'] );
+		$this->assertSame( 'The FireHouse', $settings['siteName'] );
 		$this->assertSame( '', $settings['submitFormUrl'] );
 		$this->assertSame( array( 'firehouse-submitFormUrl' ), array_keys( $errors ) );
 		$this->assertSame( array(), $this->errors );
@@ -264,11 +264,11 @@ final class SettingsTest extends WordPressTestCase {
 	 * After a refused save, the browser's title says so.
 	 */
 	public function test_a_refused_save_is_in_the_title(): void {
-		$this->assertSame( 'Firehouse settings', Settings::title( 'Firehouse settings' ) );
+		$this->assertSame( 'FireHouse settings', Settings::title( 'FireHouse settings' ) );
 
 		Settings::sanitize( array( 'submitLabel' => '' ) + self::valid() );
 
-		$this->assertSame( 'Not saved: Firehouse settings', Settings::title( 'Firehouse settings' ) );
+		$this->assertSame( 'Not saved: FireHouse settings', Settings::title( 'FireHouse settings' ) );
 	}
 
 	/**
@@ -276,14 +276,14 @@ final class SettingsTest extends WordPressTestCase {
 	 * escaped.
 	 */
 	public function test_a_field_is_labelled_described_and_escaped(): void {
-		Functions\when( 'get_option' )->justReturn( array( 'siteName' => 'The "Firehouse"' ) );
+		Functions\when( 'get_option' )->justReturn( array( 'siteName' => 'The "FireHouse"' ) );
 
 		$html = self::field( array( 'siteName' ) );
 
 		$this->assertStringContainsString( 'id="firehouse-siteName"', $html );
 		$this->assertStringContainsString( 'aria-describedby="firehouse-siteName-description"', $html );
 		$this->assertStringContainsString( 'id="firehouse-siteName-description"', $html );
-		$this->assertStringContainsString( 'value="The &quot;Firehouse&quot;"', $html );
+		$this->assertStringContainsString( 'value="The &quot;FireHouse&quot;"', $html );
 		$this->assertStringContainsString( 'required', $html );
 		$this->assertStringNotContainsString( 'aria-invalid', $html );
 	}

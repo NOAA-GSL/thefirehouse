@@ -4,6 +4,10 @@ Public-facing hub for NOAA/GSL fire weather social science needs and findings.
 React + TypeScript + Vite, built against the Firehouse design system and the
 July 2026 creative brief.
 
+The site and the plugin print the name as **FireHouse** (Stephanie and Emily's
+decision, relayed by Eric, 13 November); the code says `firehouse` and `Firehouse`,
+and so do these docs, except where they quote what a page or screen shows.
+
 ```bash
 npm install
 npm run dev        # http://localhost:5173
@@ -255,8 +259,8 @@ overrides are isolated so a re-sync doesn't lose them.
       paragraphs are no longer rendered (September 2026 review) but are kept in the
       data. Stephanie or Emily should own the wording.
 - [ ] **Confirm the page titles and link-preview text** with Stephanie and Emily. The
-      titles are the site's: "{page} — The Firehouse", and the landing page's "The
-      Firehouse — Fire Weather Social Science Hub". The explorer's title and placeholder
+      titles are the site's: "{page} — The FireHouse", and the landing page's "The
+      FireHouse — Fire Weather Social Science Hub". The explorer's title and placeholder
       heading follow its link label, "Explore Projects", where the React site's title
       says "Explore projects". The description, preview text and image alt text in
       `index.html` are repeated by the plugin (`includes/class-head.php`), and the alt
@@ -400,12 +404,12 @@ nothing from the database. Each class's docblock has the detail; this is the map
     page, Explore Projects on the explorer and every project, About on the About page
     and any page under it. A topic or a missing address marks none.
   - It's a `div`, not a `header`, since the theme's header is the page's banner. Its two
-    navs, the bar's and the drawer's, are both labelled "Firehouse".
+    navs, the bar's and the drawer's, are both labelled "FireHouse".
   - It stays pinned once the theme's header has scrolled away.
   - Below 1024px its links and Submit button fold into a drawer that the menu button
     opens and closes (`blocks/subnav/view.js`). Escape closes it and returns focus to
     the menu button, and focus leaving the bar closes it. The button is named
-    "Firehouse menu" whether open or shut, since the theme's header has a menu button
+    "FireHouse menu" whether open or shut, since the theme's header has a menu button
     too; `aria-expanded` says which.
 - `Not_Found` is the Firehouse 404, the `firehouse/not-found` block: the site's
   `NotFoundPage`, with the way back, the explorer and the four topic areas. It quotes
@@ -473,7 +477,7 @@ nothing from the database. Each class's docblock has the detail; this is the map
 - `Query` drops WordPress's `year` query variable from Firehouse requests (rule 7), and
   a project or topic variable that names no post (`?fh_project[]=x`, `?fh_topic=`) from
   any request (rule 13).
-- `Capabilities` defines the Firehouse Editor role: projects, topics, the Firehouse
+- `Capabilities` defines the FireHouse Editor role: projects, topics, the FireHouse
   settings and the `firehouse` page tree, and nothing else on the site. The role
   stores `read` and Firehouse's own capabilities; WordPress's page capabilities are
   lent only while the plugin runs, so with the plugin off its users can only sign
@@ -483,14 +487,17 @@ nothing from the database. Each class's docblock has the detail; this is the map
   say why.
 - `Installer` stores the role and the administrators' capabilities and has the
   rewrite rules rebuilt, on activation and after `Installer::REVISION` changes.
-- `Settings` is Firehouse → Settings: the site name, the Submit a Finding label and
+- `Settings` is FireHouse → Settings: the site name, the Submit a Finding label and
   address, and the three navigation labels, read with `Settings::get()`.
 - `Seed_Bundle` reads a seed bundle and checks it; `Importer` plans the import and
-  writes it through `Store`; `Import_Screen` is Firehouse → Import, for
+  writes it through `Store`; `Import_Screen` is FireHouse → Import, for
   administrators. `npm run seed` writes the bundle from `src/content/data/` to
   `seed/firehouse-seed.json`, which git ignores; upload it on the screen. The screen
   shows a dry run of every change and problem, writes nothing while there is a
-  problem, and imports once confirmed.
+  problem, and imports once confirmed. A site imported before 13 November keeps "The
+  Firehouse" in its saved settings and its landing and About pages, since the import
+  writes neither again: set the name under FireHouse → Settings and edit those
+  pages, or import onto a clean site.
   - Projects are matched by response ID, so importing again updates the same posts.
     Survey fields come from the bundle; editorial fields (`Importer::EDITORIAL`, and
     the geography note and states) keep WordPress's (rule 4). Projects the bundle
@@ -515,7 +522,7 @@ nothing from the database. Each class's docblock has the detail; this is the map
     Media Library image whose Title is their `photo`: the dry run names it and who
     uploaded it, for whoever imports to check, and the import keeps it in the page by
     its ID (decided by Eric, 12 November). The page's title is "About — The
-    Firehouse", as the site's is, so it isn't a second "About" beside the site's own.
+    FireHouse", as the site's is, so it isn't a second "About" beside the site's own.
   - Each post and page is read back after it is written.
 - `Landing_Page` is the landing page's blocks: `firehouse/hero` with `firehouse/stats`
   inside it, `firehouse/top-needs` and `firehouse/submit-band`, as the site's
@@ -540,12 +547,12 @@ nothing from the database. Each class's docblock has the detail; this is the map
 - `Page_Blocks` is what the two share: building their blocks from the bundle's text,
   where a stored link goes, and its button, left out when it leads nowhere.
 - `Head` gives each Firehouse page its title, the site's title for it then GSL's
-  suffix ("About — The Firehouse – Global Systems Laboratory"; decided by Eric, 12
-  November), and the description and Open Graph and Twitter tags a shared link's
-  preview is built from: the site's words from `index.html`, or on a project's page its
-  abstract as the researcher wrote it. It changes nothing on any other page, and
-  leaves everything to an SEO plugin if one is active, or when the `firehouse_head_tags`
-  filter returns false.
+  suffix ("About — The FireHouse – Global Systems Laboratory"; decided by Eric, 12
+  November, with Stephanie and Emily's spelling), and the description and Open Graph and
+  Twitter tags a shared link's preview is built from: the site's words from
+  `index.html`, or on a project's page its abstract as the researcher wrote it. It
+  changes nothing on any other page, and leaves everything to an SEO plugin if one is
+  active, or when the `firehouse_head_tags` filter returns false.
 
 The traps, for whoever changes this code next:
 
@@ -663,7 +670,7 @@ bin/wp-init         # once: copy GSL's local database, activate the plugin
 bin/wp plugin list  # WP-CLI against that site
 bin/wp plugin install plugin-check --activate   # once
 bin/wp plugin check firehouse                   # WordPress's Plugin Check
-npm run seed        # then upload seed/firehouse-seed.json at Firehouse → Import
+npm run seed        # then upload seed/firehouse-seed.json at FireHouse → Import
 composer install
 composer lint       # PHPCS: WordPress coding standards, PHP 8.1 compatibility
 composer test       # PHPUnit

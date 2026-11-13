@@ -207,9 +207,9 @@ final class SubnavTest extends WordPressTestCase {
 		$this->assertSame( 2, substr_count( $html, '<a class="fh-header__link" href="https://example.test/firehouse/">Home</a>' ) );
 		$this->assertSame( 2, substr_count( $html, '<a class="fh-header__link fh-header__link--active" href="https://example.test/firehouse/projects/" aria-current="page">Explore Projects</a>' ) );
 		$this->assertSame( 2, substr_count( $html, 'aria-current=' ) );
-		$this->assertStringContainsString( 'href="https://example.test/firehouse/" class="fh-header__lockup" aria-label="The Firehouse — home"', $html );
-		$this->assertStringContainsString( '<span class="fh-header__wordmark">The Firehouse</span>', $html );
-		$this->assertSame( 2, substr_count( $html, 'aria-label="Firehouse"' ) );
+		$this->assertStringContainsString( 'href="https://example.test/firehouse/" class="fh-header__lockup" aria-label="The FireHouse — home"', $html );
+		$this->assertStringContainsString( '<span class="fh-header__wordmark">The FireHouse</span>', $html );
+		$this->assertSame( 2, substr_count( $html, 'aria-label="FireHouse"' ) );
 		$this->assertStringNotContainsString( '<header', $html );
 	}
 
@@ -227,7 +227,7 @@ final class SubnavTest extends WordPressTestCase {
 		$this->assertStringContainsString( '<div id="' . Subnav::DRAWER_ID . '" class="fh-header__drawer" hidden data-wp-bind--hidden="!context.open">', $html );
 		$this->assertMatchesRegularExpression( '#<span class="fh-header__menu-state" data-wp-bind--hidden="context.open"><svg[^>]*>.*?</svg></span>#s', $html );
 		$this->assertMatchesRegularExpression( '#<span class="fh-header__menu-state" hidden data-wp-bind--hidden="!context.open"><svg[^>]*>.*?</svg></span>#s', $html );
-		$this->assertMatchesRegularExpression( '#<span class="fh-visually-hidden">Firehouse menu</span>\s*</button>#', $html );
+		$this->assertMatchesRegularExpression( '#<span class="fh-visually-hidden">FireHouse menu</span>\s*</button>#', $html );
 		$this->assertStringNotContainsString( 'Open menu', $html );
 		$this->assertDoesNotMatchRegularExpression( '#<svg[^>]*data-wp-#', $html );
 		$this->assertSame( substr_count( $html, '<svg' ), substr_count( $html, 'aria-hidden="true" focusable="false"' ) );

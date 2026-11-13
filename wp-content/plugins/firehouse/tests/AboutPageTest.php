@@ -111,7 +111,7 @@ final class AboutPageTest extends WordPressTestCase {
 	 */
 	private static function about(): array {
 		$about                       = Cases::site()['about'];
-		$about['hero']['eyebrow']    = 'About The Firehouse';
+		$about['hero']['eyebrow']    = 'About The FireHouse';
 		$about['hero']['body']       = 'What the hub is.';
 		$about['team']['emailLead']  = ' Write to the team at ';
 		$about['team']['email']      = ' team@noaa.gov ';
@@ -156,7 +156,7 @@ final class AboutPageTest extends WordPressTestCase {
 		$attributes = self::attributes( $blocks );
 		$this->assertSame(
 			array(
-				'eyebrow' => 'About The Firehouse',
+				'eyebrow' => 'About The FireHouse',
 				'heading' => 'About',
 				'body'    => 'What the hub is.',
 			),
@@ -242,7 +242,7 @@ final class AboutPageTest extends WordPressTestCase {
 		$process   = About_Page::process( $attributes['about-process'] );
 		$cta       = About_Page::cta( $attributes['about-cta'] );
 
-		$this->assertSame( '<section class="fh-about__hero"><div class="fh-about__hero-inner fh-container"><span class="fh-eyebrow">About The Firehouse</span><h1 class="fh-about__heading">About</h1><p class="fh-about__lede">What the hub is.</p></div></section>', $intro );
+		$this->assertSame( '<section class="fh-about__hero"><div class="fh-about__hero-inner fh-container"><span class="fh-eyebrow">About The FireHouse</span><h1 class="fh-about__heading">About</h1><p class="fh-about__lede">What the hub is.</p></div></section>', $intro );
 		$this->assertSame( '<div class="fh-about__body fh-container"><section>…</section></div>', About_Page::sections( '<section>…</section>' ) );
 		$this->assertSame( '<section class="fh-about__section" aria-labelledby="about-mission"><h2 id="about-mission" class="fh-about__section-heading">Mission</h2><div class="fh-about__prose"><p>A made-up mission.</p><p>R&amp;amp;D &lt;b&gt;</p></div></section>', $mission );
 		$this->assertMatchesRegularExpression( '#^<section class="fh-about__section" aria-labelledby="about-audiences"><div class="fh-about__section-intro"><h2 id="about-audiences" class="fh-about__section-heading">Who it is for</h2></div><ul class="fh-about__audiences"><li class="fh-audience fh-glass"><span class="fh-audience__icon" aria-hidden="true"><svg[^>]*width="20"[^>]*>.*</svg></span><h3 class="fh-audience__title">Forecasters</h3><p class="fh-audience__body">People who forecast.</p></li></ul></section>$#s', $audiences );

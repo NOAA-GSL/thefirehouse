@@ -57,7 +57,7 @@ final class HeadTest extends WordPressTestCase {
 		);
 		Functions\when( 'get_option' )->justReturn(
 			array(
-				'siteName'  => 'The Firehouse',
+				'siteName'  => 'The FireHouse',
 				'navLabels' => array( 'about' => 'About us' ),
 			)
 		);
@@ -175,9 +175,9 @@ final class HeadTest extends WordPressTestCase {
 	 */
 	public function test_each_page_is_titled_as_the_site_titles_it(): void {
 		$cases = array(
-			'Page not found — The Firehouse'       => array( 'not-found' ),
-			'Explore Projects — The Firehouse'     => array( 'explorer' ),
-			'Forecasts & Modeling — The Firehouse' => array(
+			'Page not found — The FireHouse'       => array( 'not-found' ),
+			'Explore Projects — The FireHouse'     => array( 'explorer' ),
+			'Forecasts & Modeling — The FireHouse' => array(
 				'topic',
 				array(
 					'ID'         => 31,
@@ -186,7 +186,7 @@ final class HeadTest extends WordPressTestCase {
 					'post_title' => 'Forecasts &amp; Modeling',
 				),
 			),
-			'The Firehouse — Fire Weather Social Science Hub' => array(
+			'The FireHouse — Fire Weather Social Science Hub' => array(
 				'page',
 				array(
 					'ID'        => 10,
@@ -194,14 +194,14 @@ final class HeadTest extends WordPressTestCase {
 					'post_name' => 'firehouse',
 				),
 			),
-			'About us — The Firehouse'             => array(
+			'About us — The FireHouse'             => array(
 				'page',
 				array(
 					'ID'          => 11,
 					'post_type'   => 'page',
 					'post_name'   => 'about',
 					'post_parent' => 10,
-					'post_title'  => 'About — The Firehouse',
+					'post_title'  => 'About — The FireHouse',
 				),
 			),
 		);
@@ -219,8 +219,8 @@ final class HeadTest extends WordPressTestCase {
 	public function test_a_projects_title_shows_as_written(): void {
 		$this->visit_project();
 
-		$this->assertSame( 'R&amp;D on "smoke" <alerts> — The Firehouse', Head::title() );
-		$this->assertSame( 'R&amp;amp;D on &quot;smoke&quot; &lt;alerts&gt; — The Firehouse &#8211; Global Systems Laboratory', Head::document_title( '' ) );
+		$this->assertSame( 'R&amp;D on "smoke" <alerts> — The FireHouse', Head::title() );
+		$this->assertSame( 'R&amp;amp;D on &quot;smoke&quot; &lt;alerts&gt; — The FireHouse &#8211; Global Systems Laboratory', Head::document_title( '' ) );
 	}
 
 	/**
@@ -233,7 +233,7 @@ final class HeadTest extends WordPressTestCase {
 		Functions\when( 'get_bloginfo' )->justReturn( 'Lab <&> Co' );
 		Filters\expectApplied( 'document_title_separator' )->once()->andReturn( '<|>' );
 
-		$this->assertSame( 'Explore Projects — The Firehouse &lt;|&gt; Lab &lt;&amp;&gt; Co', Head::document_title( '' ) );
+		$this->assertSame( 'Explore Projects — The FireHouse &lt;|&gt; Lab &lt;&amp;&gt; Co', Head::document_title( '' ) );
 	}
 
 	/**
@@ -253,7 +253,7 @@ final class HeadTest extends WordPressTestCase {
 		$this->assertNull( Head::document_title( null ) );
 
 		$this->visit( 'explorer' );
-		$this->assertSame( 'Explore Projects — The Firehouse &#8211; Global Systems Laboratory', Head::document_title( null ) );
+		$this->assertSame( 'Explore Projects — The FireHouse &#8211; Global Systems Laboratory', Head::document_title( null ) );
 	}
 
 	/**
@@ -272,7 +272,7 @@ final class HeadTest extends WordPressTestCase {
 			)
 		);
 		$this->assertSame( '', Head::document_title( '' ) );
-		$this->assertSame( '', Head::title(), 'Asked directly, it still titles only Firehouse pages.' );
+		$this->assertSame( '', Head::title(), 'Asked directly, it still titles only FireHouse pages.' );
 		ob_start();
 		Head::tags();
 		$this->assertSame( '', ob_get_clean() );
@@ -303,7 +303,7 @@ final class HeadTest extends WordPressTestCase {
 				'post_title'  => 'More &amp; less',
 			)
 		);
-		$this->assertSame( 'More & less — The Firehouse', Head::title() );
+		$this->assertSame( 'More & less — The FireHouse', Head::title() );
 
 		$this->visit(
 			'page',
@@ -315,20 +315,20 @@ final class HeadTest extends WordPressTestCase {
 				'post_title'  => 'An older about',
 			)
 		);
-		$this->assertSame( 'An older about — The Firehouse', Head::title() );
+		$this->assertSame( 'An older about — The FireHouse', Head::title() );
 	}
 
 	/**
 	 * The site's name in a title and a preview is the settings', not a fixed one.
 	 */
 	public function test_the_sites_name_is_the_settings(): void {
-		Functions\when( 'get_option' )->justReturn( array( 'siteName' => 'Firehouse Test' ) );
+		Functions\when( 'get_option' )->justReturn( array( 'siteName' => 'FireHouse Test' ) );
 		$this->visit( 'not-found' );
 
-		$this->assertSame( 'Page not found — Firehouse Test', Head::title() );
+		$this->assertSame( 'Page not found — FireHouse Test', Head::title() );
 		ob_start();
 		Head::tags();
-		$this->assertStringContainsString( '<meta property="og:site_name" content="Firehouse Test" />', (string) ob_get_clean() );
+		$this->assertStringContainsString( '<meta property="og:site_name" content="FireHouse Test" />', (string) ob_get_clean() );
 	}
 
 	/**
@@ -343,7 +343,7 @@ final class HeadTest extends WordPressTestCase {
 		$html = (string) ob_get_clean();
 
 		$this->assertStringContainsString( '<meta name="description" content="What the researchers studied, in their words &amp; no one else&#039;s." />', $html );
-		$this->assertStringContainsString( '<meta property="og:title" content="R&amp;amp;D on &quot;smoke&quot; &lt;alerts&gt; — The Firehouse" />', $html );
+		$this->assertStringContainsString( '<meta property="og:title" content="R&amp;amp;D on &quot;smoke&quot; &lt;alerts&gt; — The FireHouse" />', $html );
 		$this->assertStringContainsString( '<meta property="og:description" content="What the researchers studied, in their words &amp; no one else&#039;s." />', $html );
 		$this->assertStringContainsString( '<meta property="og:url" content="https://example.test/firehouse/projects/smoke-alerts/" />', $html );
 		$this->assertMatchesRegularExpression( '#<meta property="og:image" content="https://example\.test/wp-content/plugins/firehouse/assets/preview/og-image\.png\?ver=0\.2\.0-[0-9]+" />#', $html );
@@ -378,7 +378,7 @@ final class HeadTest extends WordPressTestCase {
 
 		$this->assertStringContainsString( '<meta name="description" content="' . Head::DESCRIPTION . '" />', $html );
 		$this->assertStringContainsString( '<meta property="og:description" content="' . Head::PREVIEW . '" />', $html );
-		$this->assertStringContainsString( '<meta property="og:site_name" content="The Firehouse" />', $html );
+		$this->assertStringContainsString( '<meta property="og:site_name" content="The FireHouse" />', $html );
 		$this->assertStringNotContainsString( 'og:url', $html );
 	}
 
@@ -406,7 +406,7 @@ final class HeadTest extends WordPressTestCase {
 		ob_start();
 		Head::tags();
 		$html = (string) ob_get_clean();
-		$this->assertStringContainsString( '<meta property="og:title" content="Page not found — The Firehouse" />', $html );
+		$this->assertStringContainsString( '<meta property="og:title" content="Page not found — The FireHouse" />', $html );
 		$this->assertStringNotContainsString( 'og:url', $html );
 	}
 
@@ -426,7 +426,7 @@ final class HeadTest extends WordPressTestCase {
 		$this->assertSame( '', ob_get_clean() );
 
 		Filters\expectApplied( 'firehouse_head_tags' )->with( false )->andReturn( true );
-		$this->assertSame( 'Page not found — The Firehouse &#8211; Global Systems Laboratory', Head::document_title( '' ) );
+		$this->assertSame( 'Page not found — The FireHouse &#8211; Global Systems Laboratory', Head::document_title( '' ) );
 	}
 
 	/**
@@ -458,8 +458,8 @@ final class HeadTest extends WordPressTestCase {
 		$this->assertSame( Head::DESCRIPTION, $meta( 'name', 'description' ) );
 		$this->assertSame( Head::PREVIEW, $meta( 'property', 'og:description' ) );
 		$this->assertSame( Head::IMAGE_ALT, $meta( 'property', 'og:image:alt' ) );
-		$this->assertStringContainsString( '<title>The Firehouse — ' . Head::HUB . ' | NOAA GSL</title>', $html );
-		$this->assertSame( 'The Firehouse — ' . Head::HUB, $meta( 'property', 'og:title' ) );
+		$this->assertStringContainsString( '<title>The FireHouse — ' . Head::HUB . ' | NOAA GSL</title>', $html );
+		$this->assertSame( 'The FireHouse — ' . Head::HUB, $meta( 'property', 'og:title' ) );
 		$this->assertSame( array( (string) Head::IMAGE_SIZE[0], (string) Head::IMAGE_SIZE[1] ), array( $meta( 'property', 'og:image:width' ), $meta( 'property', 'og:image:height' ) ) );
 
 		// The titles' own words, from the site's pages.

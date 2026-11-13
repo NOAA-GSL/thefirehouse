@@ -2,7 +2,7 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
 	"name": "firehouse/topic",
-	"title": "Firehouse topic area",
+	"title": "FireHouse topic area",
 	"category": "widgets",
 	"description": "A topic area's page: its top needs and the projects behind each, what the area covers, and the other areas.",
 	"textdomain": "firehouse",

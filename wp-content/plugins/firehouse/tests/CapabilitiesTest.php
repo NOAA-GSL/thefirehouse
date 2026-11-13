@@ -241,7 +241,7 @@ final class CapabilitiesTest extends WordPressTestCase {
 		$pages = array_fill_keys( array( 'edit_pages', 'edit_others_pages', 'edit_published_pages', 'publish_pages' ), true );
 		return array(
 			'an administrator'              => array( array( 'administrator' ), $pages ),
-			'a Firehouse Editor and editor' => array( array( Capabilities::EDITOR_ROLE, 'editor' ), self::EDITOR + $pages ),
+			'a FireHouse Editor and editor' => array( array( Capabilities::EDITOR_ROLE, 'editor' ), self::EDITOR + $pages ),
 		);
 	}
 
@@ -531,7 +531,7 @@ final class CapabilitiesTest extends WordPressTestCase {
 	 */
 	public function test_install_replaces_the_role_and_equips_administrators(): void {
 		Functions\expect( 'remove_role' )->once()->with( 'firehouse_editor' );
-		Functions\expect( 'add_role' )->once()->with( 'firehouse_editor', 'Firehouse Editor', Capabilities::editor_caps() );
+		Functions\expect( 'add_role' )->once()->with( 'firehouse_editor', 'FireHouse Editor', Capabilities::editor_caps() );
 		$administrator = new class() {
 			/**
 			 * What the role holds.

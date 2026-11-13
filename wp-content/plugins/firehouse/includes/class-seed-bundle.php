@@ -69,7 +69,7 @@ final class Seed_Bundle {
 			$raw = $raw->getArrayCopy();
 		}
 		if ( ! is_array( $raw ) || self::FORMAT !== ( $raw['firehouseSeed'] ?? null ) ) {
-			throw new Content_Error( esc_html( 'The file isn’t a Firehouse seed bundle. Make one with npm run seed.' ) );
+			throw new Content_Error( esc_html( 'The file isn’t a FireHouse seed bundle. Make one with npm run seed.' ) );
 		}
 		$content  = Normalize::site_content( $raw );
 		$problems = self::unknown_fields( $content );

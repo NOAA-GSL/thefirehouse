@@ -40,7 +40,7 @@ final class Vocabulary {
 		if ( null === self::$data ) {
 			$data = wp_json_file_decode( dirname( __DIR__ ) . '/shared/vocabulary.json', array( 'associative' => true ) );
 			if ( ! is_array( $data ) ) {
-				throw new \RuntimeException( 'The Firehouse plugin could not read shared/vocabulary.json.' );
+				throw new \RuntimeException( 'The FireHouse plugin could not read shared/vocabulary.json.' );
 			}
 			self::$data = $data;
 		}

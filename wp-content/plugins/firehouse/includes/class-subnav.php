@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * is the page's banner. Below 1024px the links fold into a drawer that the Interactivity
  * API opens (blocks/subnav/view.js); without JavaScript, frame.css keeps them in the bar.
  *
- * The menu button is named "Firehouse menu", one name whether the drawer is open or
+ * The menu button is named "FireHouse menu", one name whether the drawer is open or
  * shut, where the site's header swaps "Open menu" and "Close menu": the theme's header
  * has a menu button of its own, and `aria-expanded` already says which state it's in.
  *
@@ -127,7 +127,7 @@ final class Subnav {
 		$site     = $settings['siteName'];
 		$links    = self::links();
 		$main     = dirname( __DIR__ ) . '/firehouse.php';
-		/* translators: %s: the site's name, such as "The Firehouse". */
+		/* translators: %s: the site's name, such as "The FireHouse". */
 		$home_label = sprintf( __( '%s — home', 'firehouse' ), $site );
 
 		ob_start();
@@ -143,7 +143,7 @@ final class Subnav {
 				<span class="fh-header__wordmark"><?php echo esc_html( $site ); ?></span>
 			</span>
 		</a>
-		<nav class="fh-header__nav" aria-label="<?php esc_attr_e( 'Firehouse', 'firehouse' ); ?>">
+		<nav class="fh-header__nav" aria-label="<?php esc_attr_e( 'FireHouse', 'firehouse' ); ?>">
 			<?php self::print_links( $links ); ?>
 		</nav>
 		<div class="fh-header__actions">
@@ -153,12 +153,12 @@ final class Subnav {
 			<button type="button" class="fh-header__icon-btn fh-header__menu-btn" aria-expanded="false" aria-controls="<?php echo esc_attr( self::DRAWER_ID ); ?>" data-wp-bind--aria-expanded="context.open" data-wp-on--click="actions.toggle">
 				<span class="fh-header__menu-state" data-wp-bind--hidden="context.open"><?php echo Icons::svg( 'menu', 18 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- one of the plugin's checked icons. ?></span>
 				<span class="fh-header__menu-state" hidden data-wp-bind--hidden="!context.open"><?php echo Icons::svg( 'x', 18 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- as above. ?></span>
-				<span class="fh-visually-hidden"><?php esc_html_e( 'Firehouse menu', 'firehouse' ); ?></span>
+				<span class="fh-visually-hidden"><?php esc_html_e( 'FireHouse menu', 'firehouse' ); ?></span>
 			</button>
 		</div>
 	</div>
 	<div id="<?php echo esc_attr( self::DRAWER_ID ); ?>" class="fh-header__drawer" hidden data-wp-bind--hidden="!context.open">
-		<nav class="fh-container fh-header__drawer-nav" aria-label="<?php esc_attr_e( 'Firehouse', 'firehouse' ); ?>">
+		<nav class="fh-container fh-header__drawer-nav" aria-label="<?php esc_attr_e( 'FireHouse', 'firehouse' ); ?>">
 			<?php
 			self::print_links( $links );
 			if ( '' !== $settings['submitFormUrl'] ) {

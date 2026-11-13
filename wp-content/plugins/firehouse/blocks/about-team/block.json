@@ -2,7 +2,7 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
 	"name": "firehouse/about-team",
-	"title": "Firehouse About team",
+	"title": "FireHouse About team",
 	"category": "widgets",
 	"description": "Who is behind the hub: the section's words, the team's mailbox, and a card for each member with a portrait from the Media Library.",
 	"textdomain": "firehouse",
