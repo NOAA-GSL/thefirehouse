@@ -349,7 +349,8 @@ Links people have already shared keep working either way.
   a plugin asset.
 
 If working without JavaScript turns out not to be required, the PHP search can be
-dropped. That saves about a week and removes the only logic that exists twice.
+dropped. That saves about a week and removes the only logic that exists twice. *It is
+required (open question 11, Eric, 13 November).*
 
 ---
 
@@ -897,8 +898,8 @@ PHP versions of derive (counts, region expansion for national studies, synthesis
 info), format, validation and search/filter. *Derive, format and validation are in
 `domain/` and pass their shared cases (started before Phase 1, on 1 November, while
 Phase 0's security answers were pending). Where the TypeScript would crash on a
-missing or malformed block, the PHP refuses it with a clear error. Search waits on
-open question 11.*
+missing or malformed block, the PHP refuses it with a clear error. Search followed on
+13 November, once open question 11 was answered (see Phase 5).*
 
 **Done when:** the PHP versions pass the same shared test cases as the TypeScript
 ones.
@@ -1413,6 +1414,27 @@ ties it loses today (`.fh-explorer` sits on the same element as `.fh-container`)
 check the order first. The coverage map's CSS is a chunk of its own (`DEFERRED`),
 loaded with the map.
 
+- *Search done 13 November: `domain/class-search.php` ports `search.ts` and passes
+  every case in `shared/cases/search.json`, which now also hold the query string and
+  the year to the browser's own reading. It reads a query string as `URLSearchParams`
+  does, not as PHP's `$_GET` does: the first of a repeated name wins, and `phase[]` is
+  just another name, not an array. It reads a year as JavaScript's `Number()` does
+  (`Js::number()`), keeping safe whole numbers only. Folding accents takes PHP's intl
+  extension (its Normalizer); without it, a table of Latin letters does it, held to
+  JavaScript's own folding by `scripts/search-fold.test.mjs`, and letters of other
+  alphabets, such as Greek ά or Cyrillic й, keep theirs. Word lengths and typo
+  distances count UTF-16 code units, as JavaScript does. Titles sort, and every sort
+  breaks ties, by `Derive::compare_titles()`, which also takes intl; without it,
+  titles with punctuation, digits or accented letters can sort differently. The
+  TypeScript now compares titles in `en-US` too, whatever the browser's language, so
+  the script never reorders a list the server drew.*
+- *The code review found that one long address of misspelt words cost seconds of
+  server time (about 45 at 48 projects). Both languages now count only a search's
+  first 20 words (`MAX_TERMS`, a shared case), and the PHP scores a repeated word
+  once and measures a field's words once: the same address takes about 50 ms at 48
+  projects. The explorer's handler should still get the Application Security
+  Engineer's review when it reads the query string.*
+
 **Done when:** it reaches feature parity with the React site, every URL parameter
 behaves the same, and the accessibility snapshots match.
 
@@ -1642,8 +1664,10 @@ Phases 6–7.
     Montserrat for headings)?~~ *Keep them for now (Eric, 3 November), and keep a
     switch to GSL's fonts easy.* GSL's pages already load Nunito Sans and Montserrat,
     so switching would add nothing to self-host.
-11. Is working without JavaScript a requirement? If not, the PHP search is dropped (see
-    [Interactivity](#interactivity)).
+11. ~~Is working without JavaScript a requirement? If not, the PHP search is dropped
+    (see [Interactivity](#interactivity)).~~ *Yes (Eric, 13 November): a shared
+    explorer address opens filtered from the server, with or without JavaScript, so
+    the search is ported to PHP (`domain/class-search.php`, Phase 5).*
 12. *(With NOAA's PRA clearance officer)* Does the survey count as a NOAA information
     collection under the Paperwork Reduction Act? It asks non-federal researchers the
     same questions on NOAA's behalf. The answer depends on what is collected and for

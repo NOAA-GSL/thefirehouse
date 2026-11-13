@@ -72,7 +72,8 @@ export function findTopicSummary(content: SiteContent, key: TopicKey): TopicSumm
  * be unsorted.
  */
 export function byRecency(a: Project, b: Project): number {
-  return b.completionYear - a.completionYear || a.title.localeCompare(b.title);
+  // In en-US whatever the browser's language, as the server sorts (Derive::compare_titles).
+  return b.completionYear - a.completionYear || a.title.localeCompare(b.title, 'en-US');
 }
 
 /** A need's project count: the count the synthesis stored, or else how many projects it names. */

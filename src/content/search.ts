@@ -61,7 +61,8 @@ export function parseProjectQuery(params: URLSearchParams): ProjectQuery {
     q: params.get('q') ?? '',
     phase: isFirePhase(phase) ? phase : null,
     region: isRegionKey(region) ? region : null,
-    year: Number.isInteger(year) && year > 0 ? year : null,
+    // A safe integer, so the server reads and writes it back the same.
+    year: Number.isSafeInteger(year) && year > 0 ? year : null,
     type: params.get('type')?.trim() || null,
     sort: isSort(sort) ? sort : null,
   };
@@ -91,8 +92,15 @@ function fold(text: string): string {
   return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 }
 
+/**
+ * The most words a search counts; any after them are ignored. No real search comes
+ * near it, and it bounds the work one long query string can ask of the server, which
+ * runs this search too (WORDPRESS-PLAN.md, Phase 5).
+ */
+export const MAX_TERMS = 20;
+
 function terms(q: string): string[] {
-  return fold(q).split(/\s+/).filter(Boolean);
+  return fold(q).split(/\s+/).filter(Boolean).slice(0, MAX_TERMS);
 }
 
 /**
@@ -209,11 +217,11 @@ export function filterProjects(projects: Project[], query: ProjectQuery): Projec
       scored.sort(
         (a, b) =>
           a.project.completionYear - b.project.completionYear ||
-          a.project.title.localeCompare(b.project.title),
+          a.project.title.localeCompare(b.project.title, 'en-US'),
       );
       break;
     case 'title':
-      scored.sort((a, b) => a.project.title.localeCompare(b.project.title));
+      scored.sort((a, b) => a.project.title.localeCompare(b.project.title, 'en-US'));
       break;
   }
   return scored.map(({ project }) => project);
