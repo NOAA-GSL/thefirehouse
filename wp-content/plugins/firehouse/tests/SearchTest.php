@@ -162,7 +162,8 @@ final class SearchTest extends DomainTestCase {
 		$letters = array();
 		foreach ( array( array( 0xC0, 0x24F ), array( 0x1E00, 0x1EFF ) ) as list( $first, $last ) ) {
 			for ( $code = $first; $code <= $last; $code++ ) {
-				$letters[] = mb_chr( $code, 'UTF-8' );
+				// Not mb_chr(), which Plugin Check refuses: newer WordPress ships its own copy.
+				$letters[] = (string) mb_convert_encoding( pack( 'N', $code ), 'UTF-8', 'UTF-32BE' );
 			}
 		}
 		$text = implode( ' ', $letters );
