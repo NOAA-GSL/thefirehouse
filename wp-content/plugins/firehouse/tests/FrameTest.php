@@ -303,7 +303,9 @@ final class FrameTest extends WordPressTestCase {
 	/**
 	 * The fonts, the site's stylesheet and the frame load in that order, from the
 	 * plugin's assets/css/, each at the plugin's version and the file's modified time.
-	 * Only the frame depends on another; nothing depends on the fonts.
+	 * Only the frame depends on another; nothing depends on the fonts. The site's
+	 * stylesheet is the minified copy, or the readable one under SCRIPT_DEBUG, which
+	 * WordPress's suffix says.
 	 */
 	public function test_the_stylesheets_load_in_order(): void {
 		self::resolve( array( 'singular' => 'fh_topic' ) );
@@ -321,19 +323,27 @@ final class FrameTest extends WordPressTestCase {
 			}
 		);
 
-		Frame::enqueue();
-
-		$expected = array();
 		foreach ( array(
-			array( Frame::FONTS, 'fonts.css', array() ),
-			array( Frame::STYLE, 'firehouse.css', array() ),
-			array( Frame::FRAME, 'frame.css', array( Frame::STYLE ) ),
-		) as list( $handle, $file, $deps ) ) {
-			$path = $plugin . '/assets/css/' . $file;
-			$this->assertFileExists( $path );
-			$expected[] = array( $handle, 'https://example.test/wp-content/plugins/firehouse/assets/css/' . $file, $deps, \Firehouse\VERSION . '-' . filemtime( $path ) );
+			'.min' => 'firehouse.min.css',
+			''     => 'firehouse.css',
+		) as $suffix => $site ) {
+			Functions\when( 'wp_scripts_get_suffix' )->justReturn( (string) $suffix );
+			$loaded = array();
+
+			Frame::enqueue();
+
+			$expected = array();
+			foreach ( array(
+				array( Frame::FONTS, 'fonts.css', array() ),
+				array( Frame::STYLE, $site, array() ),
+				array( Frame::FRAME, 'frame.css', array( Frame::STYLE ) ),
+			) as list( $handle, $file, $deps ) ) {
+				$path = $plugin . '/assets/css/' . $file;
+				$this->assertFileExists( $path );
+				$expected[] = array( $handle, 'https://example.test/wp-content/plugins/firehouse/assets/css/' . $file, $deps, \Firehouse\VERSION . '-' . filemtime( $path ) );
+			}
+			$this->assertSame( $expected, $loaded, $site );
 		}
-		$this->assertSame( $expected, $loaded );
 	}
 
 	/**

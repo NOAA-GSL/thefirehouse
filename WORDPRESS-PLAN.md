@@ -1295,7 +1295,32 @@ signed off on the frame.
   than none, so it isn't. A second view takes the fonts from the cache.*
   *With the first release on the test site, over HTTP/2 or 3 behind Cloudflare, where
   stylesheets can go first: measure the preloads again on a first view, and decide
-  Archivo then (at `fetchpriority="low"`, say).*
+  Archivo then (at `fetchpriority="low"`, say). The numbers above were taken with the
+  readable stylesheet, which the local copy loads under `SCRIPT_DEBUG`; check the test
+  site's pages load `firehouse.min.css` before measuring there.*
+  *Stylesheet done 12 November: the frame loads `firehouse.min.css`, and keeps
+  `firehouse.css`, the same rules readable, for review and for `SCRIPT_DEBUG`, as
+  WordPress does with its own files. `npm run plugin:css` minifies the readable copy as
+  the site's own build minifies its CSS, and the checks run on both. Both leave out the
+  explorer's CSS (its page, the project tiles and the quick look) until the explorer
+  arrives in Phase 5, and the design system's `TextField`, `TextArea` and `TopicTagRow`,
+  which no page renders. Compressed (Node's gzip), the site's CSS goes from 28.7 kB to
+  9.8 kB: leaving those out takes it to 24.6 kB, and minifying does the rest.*
+  *Not split by page. Minified the same way, one file per kind of page would be 5.1 to
+  6.7 kB compressed, 3 to 4.7 kB less than the whole; a shared file plus one per page
+  would save 1.9 to 4 kB, and need a third file, since `global.css` (the tokens, the
+  reset and the accessibility overrides) has to load after every page's rules. On the
+  local copy, on an emulated slow 4G connection, neither helps a first view: the
+  minified file arrives about 0.36 s before the last of the page's render-blocking
+  stylesheets, which aren't Firehouse's, so fewer bytes in it don't move the first
+  paint. Either split costs the next kind of page a visitor opens: its stylesheet,
+  found only once the HTML arrives, adds a round trip, about 0.6 s there (first paint
+  1.3 to 1.4 s against 0.7 s with the one file from the cache). Revisit if the file
+  grows past about 20 kB compressed.*
+  *Not minified: `frame.css` (1.8 kB compressed, 0.5 kB if minified first), written by
+  hand, and `fonts.css` (1.1 kB and 0.5 kB), which `scripts/fonts.test.mjs` and the
+  frame's tests read as text. They arrive with `firehouse.min.css`, before the page's last
+  render-blocking stylesheet.*
   Once the blocks build with
   `@wordpress/scripts`, register them from its generated manifest
   (`wp_register_block_types_from_metadata_collection()`), not by reading each
@@ -1332,7 +1357,12 @@ snapshots, and Stephanie and Emily can review them on the test site.
 
 The explorer (search, filters with counts, sort, removable filter chips, quick-look
 `<dialog>`), the coverage map and scrollable need cards. (The mobile menu came with the
-Firehouse bar in Phase 3.)
+Firehouse bar in Phase 3.) The explorer's CSS comes back with it: take its files off
+`EXPLORER` in `scripts/plugin-css-sources.mjs`, which adds about 2.1 kB compressed to
+the one stylesheet, or load it only on the explorer's page, a 2.8 kB sheet of its own. A sheet of its own would load after `global.css` and win
+ties it loses today (`.fh-explorer` sits on the same element as `.fh-container`), so
+check the order first. The coverage map's CSS is a chunk of its own (`DEFERRED`),
+loaded with the map.
 
 **Done when:** it reaches feature parity with the React site, every URL parameter
 behaves the same, and the accessibility snapshots match.
@@ -1375,6 +1405,9 @@ November; see Where each phase is reviewed).
   repeat-submission limits and spam protection, with the Submit page never cached.
 - Editable question wording on the settings screen.
 - Emails to the editors and the submitter.
+- If the form uses the design system's `TextField` or `TextArea`, take `Field.css` off
+  `UNUSED` in `scripts/plugin-css-sources.mjs`, which leaves it out of the plugin's
+  stylesheet; a test fails until then if the form's markup uses its classes.
 
 **Done when:** a test submission on the test site arrives as a draft that matches the
 import script's record of the same answers, its private answers are readable only by

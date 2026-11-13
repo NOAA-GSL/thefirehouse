@@ -70,8 +70,8 @@ wp-content/plugins/firehouse/
                     bar, the not-found page, the project pages, the topic
                     pages and the landing page); the shared
                     vocabularies and test cases; and the PHP tests.
-                    assets/css/firehouse.css is generated from src/, and
-                    assets/css/frame.css is written by hand;
+                    assets/css/firehouse.min.css and firehouse.css are generated
+                    from src/, and assets/css/frame.css is written by hand;
                     assets/fonts/ and assets/css/fonts.css hold the fonts;
                     assets/icons/, assets/logos/ and assets/preview/ are generated
                     from src/ and public/.
@@ -100,7 +100,7 @@ Three deliberate changes to how they're built, none to how they look:
 
 Every stylesheet is scoped under `.fh-app` at build time (see The WordPress plugin,
 below), so selectors are written as usual. After changing one, run `npm run plugin:css`
-to update the plugin's copy, or CI fails.
+to update the plugin's copies, or CI fails.
 
 ### The content layer
 
@@ -347,12 +347,15 @@ nothing from the database. Each class's docblock has the detail; this is the map
     block, a project's address the `firehouse/project` block, a topic's address the
     `firehouse/topic` block, a page in the Firehouse tree its own blocks (not through
     `the_content`), and a page Phase 4 hasn't built yet a placeholder.
-  - **Stylesheets:** it loads `fonts.css`, `firehouse.css` and `frame.css` after the
-    theme's stylesheet, at the plugin's version and each file's modified time, and adds
-    `fh-page` to the body. It preloads Public Sans's latin file, the text font, so
-    text doesn't shift when it arrives. Nothing depends on the fonts, so dequeuing
-    `firehouse-fonts` on `wp_enqueue_scripts` drops only them, and the preload with
-    them.
+  - **Stylesheets:** it loads `fonts.css`, `firehouse.min.css` and `frame.css` after
+    the theme's stylesheet, at the plugin's version and each file's modified time, and
+    adds `fh-page` to the body. Under `SCRIPT_DEBUG` it loads `firehouse.css`, the same
+    rules readable, in place of `firehouse.min.css`. The local WordPress turns
+    `SCRIPT_DEBUG` on (`docker-compose.yml`), so pages reviewed there use the readable
+    copy; turn it off there to see the minified one. It preloads Public Sans's latin
+    file, the text font, so text doesn't shift when it arrives. Nothing depends on the
+    fonts, so dequeuing `firehouse-fonts` on `wp_enqueue_scripts` drops only them, and
+    the preload with them.
   - **Missing addresses:** at a project's or topic's address under `/firehouse/`, the
     plugin makes its own guess at what was meant, among that type only, so a link cut
     short still finds its project. Any other missing address under `/firehouse/` gets
@@ -590,22 +593,27 @@ the same ones `npm test` runs. Search isn't ported yet: whether the explorer nee
 PHP version depends on whether the site must work without JavaScript (plan open
 question 11).
 
-`assets/css/firehouse.css` is the site's CSS, scoped under `.fh-app` so it can sit
-inside GSL's theme without reaching the theme's header and footer (plan rule 9). It
-leaves out what GSL's theme replaces (the static build's page shell, gov banner and
-footer), the coverage map's CSS until Phase 5, and the fonts, which load on their own.
-Don't edit it: `npm run plugin:css` writes it from `src/`, and CI fails if it falls
-behind.
+`assets/css/firehouse.min.css` is the site's CSS, scoped under `.fh-app` so it can sit
+inside GSL's theme without reaching the theme's header and footer (plan rule 9).
+`firehouse.css` beside it holds the same rules, readable, for review and for
+`SCRIPT_DEBUG`; the minified copy is that one minified as the site's own build
+minifies its CSS. One stylesheet serves every
+Firehouse page; it isn't split by page. Both copies leave out what GSL's theme replaces
+(the static build's page shell, gov banner and footer), the explorer's CSS and the
+coverage map's until Phase 5, the design system's components no page renders,
+and the fonts, which load on their own (`scripts/plugin-css-sources.mjs`); a test fails
+if the plugin's markup uses a class only those left-out files style. Don't edit either:
+`npm run plugin:css` writes both from `src/`, and CI fails if either falls behind.
 The site's own build scopes every stylesheet the same way (`scripts/scope-css.ts`), with
 `#root` as the wrapper, so the static site runs on the same CSS the plugin gets, and
 the build stops on any rule that could match outside the wrapper. Before writing,
-`plugin:css` also loads the result into a real browser (`scripts/css-browser-check.mjs`)
+`plugin:css` also loads both copies into a real browser (`scripts/css-browser-check.mjs`)
 and stops on any request, unscoped rule or loading value it finds there, since
 PostCSS and a browser tokenize some CSS differently.
 `src/styles/inward-reset.css` undoes GSL's element styles inside the wrapper, and
 `src/styles/page-shell.css`, which styles the static build's own `<html>` and
-`<body>`, is the one stylesheet left unscoped. The plugin loads `firehouse.css` on Firehouse
-pages, through `Frame` (above).
+`<body>`, is the one stylesheet left unscoped. The plugin loads the site's CSS on
+Firehouse pages, through `Frame` (above).
 
 `assets/fonts/` holds Archivo and Public Sans, Google Fonts' own files with their SIL
 Open Font License, and `assets/css/fonts.css` their `@font-face` rules. The static

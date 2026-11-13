@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Firehouse bar and the page's main landmark.
  *
  * The stylesheets load after the theme's, so ties go to Firehouse: the fonts, the
- * site's CSS scoped under `.fh-app` (assets/css/firehouse.css, generated from the
+ * site's CSS scoped under `.fh-app` (assets/css/firehouse.min.css, generated from the
  * site), and frame.css, the little Firehouse needs only inside a theme's page.
  */
 final class Frame {
@@ -181,15 +181,19 @@ final class Frame {
 
 	/**
 	 * Loads the Firehouse stylesheets on a Firehouse request, in order. frame.css
-	 * depends on firehouse.css; nothing depends on the fonts, so a site that wants its
+	 * depends on the site's CSS; nothing depends on the fonts, so a site that wants its
 	 * own can dequeue `firehouse-fonts` and lose nothing else.
+	 *
+	 * The site's CSS is the minified copy, firehouse.min.css, or under SCRIPT_DEBUG the
+	 * same rules readable, firehouse.css, as WordPress chooses between its own
+	 * (`wp_scripts_get_suffix()`). scripts/plugin-css.mjs writes both.
 	 */
 	public static function enqueue(): void {
 		if ( ! self::is_firehouse_request() ) {
 			return;
 		}
 		self::style( self::FONTS, 'fonts.css', array() );
-		self::style( self::STYLE, 'firehouse.css', array() );
+		self::style( self::STYLE, 'firehouse' . wp_scripts_get_suffix() . '.css', array() );
 		self::style( self::FRAME, 'frame.css', array( self::STYLE ) );
 	}
 
