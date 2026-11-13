@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BUILT, LATER, diff, isBuilt, mainOf, normalize, siteAddress, siteLink, withoutRegions } from './compare-plugin.mjs';
+import { BUILT, LATER, UNCOMPARED, diff, isBuilt, mainOf, normalize, siteAddress, siteLink, withoutRegions } from './compare-plugin.mjs';
 
 const ORIGIN = 'http://localhost:8090';
 
@@ -56,6 +56,10 @@ describe('compare-plugin', () => {
   it('leaves out only parts of pages it has built', () => {
     expect(isBuilt('home')).toBe(true);
     for (const name of Object.keys(LATER)) expect(isBuilt(name, BUILT)).toBe(true);
+  });
+
+  it("lists a page it can't compare yet apart from those it compares", () => {
+    for (const name of Object.keys(UNCOMPARED)) expect(isBuilt(name)).toBe(false);
   });
 
   it('takes the main landmark, and nothing after it', () => {

@@ -24,15 +24,18 @@ if ( ! defined( 'ABSPATH' ) ) {
  * block on the project archive's address.
  *
  * It works without JavaScript (open question 11). Every control belongs to one `GET`
- * form, so submitting it reloads the page with the same `?q=`, `?phase=`, `?region=`,
- * `?year=`, `?type=` and `?sort=` the React explorer writes, and the server searches
- * and counts with Domain\Search, the port of `search.ts`. The selects stand outside the
- * form element, where the site has them, and join it by its ID. Removing a filter and
- * clearing them all are links to the address without them.
+ * form, so sending it reloads the page with the parameters the React explorer reads,
+ * `?q=`, `?phase=`, `?region=`, `?year=`, `?type=` and `?sort=` (the empty ones a
+ * form sends read as unset), and the server searches and counts with Domain\Search, the
+ * port of `search.ts`. The selects stand outside the form element, where the site has
+ * them, and join it by its ID. A button the site doesn't have, "Update results", sends
+ * it. Clearing the search, removing a filter and clearing them all are links to the
+ * address without them, where the site has buttons.
  *
- * What only JavaScript can do isn't printed yet: results that update as you type, the
- * "/" shortcut, the button that folds the filters away on a phone (they show, unfolded),
- * and the quick look. The Interactivity API brings them, on this same markup.
+ * What only JavaScript can do isn't printed yet: results that update as you type,
+ * Escape to clear the search, the "/" shortcut, the button that folds the filters away
+ * on a phone (they show, unfolded), and the quick look. The Interactivity API brings
+ * them, on this same markup.
  *
  * Researchers' words, and the words in the address, are printed as they are, escaped
  * (rule 1).
@@ -45,6 +48,13 @@ final class Explorer_Page {
 	public const FORM = 'fh-explorer-form';
 
 	/**
+	 * Where the form and the links back to the explorer land: the page's main landmark,
+	 * the skip link's target (templates/frame.php). Without it, each reload starts at the
+	 * top of the theme's header, many keyboard stops from the search.
+	 */
+	public const LANDING = '#fh-content';
+
+	/**
 	 * The page for this request, from its address and what WordPress stores.
 	 *
 	 * The query is read from the address as the browser sent it (REQUEST_URI), not
@@ -52,13 +62,17 @@ final class Explorer_Page {
 	 * which PHP reads by its own rules (Search::params() says how they differ).
 	 */
 	public static function for_request(): string {
+		return self::render( self::projects(), Search::parse_query( self::query_string() ), (string) get_post_type_archive_link( Post_Types::PROJECT ) );
+	}
+
+	/**
+	 * This request's query string, unslashed, from its address as the browser sent it:
+	 * what follows the first "?" in REQUEST_URI, or "".
+	 */
+	public static function query_string(): string {
 		$uri = isset( $_SERVER['REQUEST_URI'] ) ? (string) wp_unslash( $_SERVER['REQUEST_URI'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- read as the browser reads its address; every value is checked or escaped where it's used.
 		$at  = strpos( $uri, '?' );
-		return self::render(
-			self::projects(),
-			Search::parse_query( false === $at ? '' : substr( $uri, $at + 1 ) ),
-			(string) get_post_type_archive_link( Post_Types::PROJECT )
-		);
+		return false === $at ? '' : substr( $uri, $at + 1 );
 	}
 
 	/**
@@ -100,10 +114,12 @@ final class Explorer_Page {
 	 * @param string                     $url   The explorer's address.
 	 */
 	public static function render( array $all, array $query, string $url ): string {
-		$projects  = Search::filter_projects( $all, $query );
+		// Each project is scored once, for the list and the four counts alike.
+		$scores    = Search::scores( $all, (string) $query['q'] );
+		$projects  = Search::filter_projects( $all, $query, $scores );
 		$searching = '' !== Js::trim( (string) $query['q'] );
 		$filtered  = $searching || Search::active_facet_count( $query ) > 0;
-		$cleared   = self::address( $url, array( 'sort' => $query['sort'] ) );
+		$cleared   = self::href( $url, array( 'sort' => $query['sort'] ) );
 
 		ob_start();
 		?>
@@ -115,12 +131,12 @@ final class Explorer_Page {
 	</header>
 
 	<search class="fh-explorer__toolbar" aria-label="<?php esc_attr_e( 'Search and filter projects', 'firehouse' ); ?>">
-		<form class="fh-search" id="<?php echo esc_attr( self::FORM ); ?>" method="get" action="<?php echo esc_url( $url ); ?>">
+		<form class="fh-search" id="<?php echo esc_attr( self::FORM ); ?>" method="get" action="<?php echo esc_url( $url . self::LANDING ); ?>" autocomplete="off">
 			<label class="fh-visually-hidden" for="fh-explorer-q"><?php esc_html_e( 'Search projects', 'firehouse' ); ?></label>
 			<?php echo Icons::svg( 'search', 18 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- one of the plugin's checked icons. ?>
 			<input id="fh-explorer-q" class="fh-search__input" type="search" name="q" value="<?php echo Markup::text( (string) $query['q'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup::text() escapes it, quotes included. ?>" placeholder="<?php esc_attr_e( 'Search projects', 'firehouse' ); ?>" autocomplete="off" spellcheck="false" enterkeyhint="search" aria-describedby="fh-explorer-q-hint">
 			<?php if ( '' !== $query['q'] ) : ?>
-			<a class="fh-search__clear" href="<?php echo esc_url( self::address( $url, array( 'q' => '' ) + $query ) ); ?>" aria-label="<?php esc_attr_e( 'Clear search', 'firehouse' ); ?>"><?php echo Icons::svg( 'x', 16 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- as above. ?></a>
+			<a class="fh-search__clear" href="<?php echo self::href( $url, array( 'q' => '' ) + $query ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- href() escapes it. ?>" aria-label="<?php esc_attr_e( 'Clear search', 'firehouse' ); ?>"><?php echo Icons::svg( 'x', 16 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- as above. ?></a>
 			<?php endif; ?>
 			<span id="fh-explorer-q-hint" class="fh-visually-hidden"><?php esc_html_e( 'Searches titles, authors, abstracts, and findings.', 'firehouse' ); ?></span>
 		</form>
@@ -128,7 +144,7 @@ final class Explorer_Page {
 		<div id="fh-explorer-facets" class="fh-explorer__facets fh-explorer__facets--open">
 			<?php
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- select() escapes what it builds.
-			echo self::facets( $all, $query, $searching );
+			echo self::facets( $all, $query, $searching, $scores );
 			?>
 			<div class="fh-explorer__apply">
 				<button type="submit" form="<?php echo esc_attr( self::FORM ); ?>" class="fh-btn fh-btn--secondary fh-btn--md"><?php esc_html_e( 'Update results', 'firehouse' ); ?></button>
@@ -149,11 +165,10 @@ final class Explorer_Page {
 			?>
 		<ul class="fh-explorer__applied" aria-label="<?php esc_attr_e( 'Applied filters', 'firehouse' ); ?>">
 			<?php foreach ( $applied as $facet => $label ) : ?>
-				<?php /* translators: %s: the filter, such as "Phase: Before". */ ?>
-			<li><a class="fh-pill" href="<?php echo esc_url( self::address( $url, array( $facet => null ) + $query ) ); ?>" aria-label="<?php echo esc_attr( sprintf( __( 'Remove filter %s', 'firehouse' ), $label ) ); ?>"><?php echo Markup::text( $label ) . Icons::svg( 'x', 14 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup::text() escapes the label, and the icon is one of the plugin's checked ones. ?></a></li>
+			<li><a class="fh-pill" href="<?php echo self::href( $url, array( $facet => null ) + $query ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- href() escapes it. ?>" aria-label="<?php echo Markup::text( sprintf( /* translators: %s: the filter, such as "Phase: Before". */ __( 'Remove filter %s', 'firehouse' ), $label ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup::text() escapes it as the label shows, a character reference included. ?>"><?php echo Markup::text( $label ) . Icons::svg( 'x', 14 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup::text() escapes the label, and the icon is one of the plugin's checked ones. ?></a></li>
 			<?php endforeach; ?>
 			<?php if ( $filtered ) : ?>
-			<li><a class="fh-explorer__clear-all" href="<?php echo esc_url( $cleared ); ?>"><?php esc_html_e( 'Clear all', 'firehouse' ); ?></a></li>
+			<li><a class="fh-explorer__clear-all" href="<?php echo $cleared; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- href() escapes it. ?>"><?php esc_html_e( 'Clear all', 'firehouse' ); ?></a></li>
 			<?php endif; ?>
 		</ul>
 		<?php endif; ?>
@@ -172,7 +187,7 @@ final class Explorer_Page {
 		<p class="fh-explorer__empty-title"><?php echo $filtered ? esc_html__( 'No projects match your search and filters.', 'firehouse' ) : esc_html__( 'No published projects are available yet.', 'firehouse' ); ?></p>
 			<?php if ( $filtered ) : ?>
 		<p class="fh-explorer__empty-body"><?php esc_html_e( 'Try fewer or shorter search words, or remove a filter. Every filter above shows how many projects each choice would leave.', 'firehouse' ); ?></p>
-		<a class="fh-explorer__empty-action" href="<?php echo esc_url( $cleared ); ?>"><?php esc_html_e( 'Clear search and filters', 'firehouse' ); ?></a>
+		<a class="fh-explorer__empty-action" href="<?php echo $cleared; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- href() escapes it. ?>"><?php esc_html_e( 'Clear search and filters', 'firehouse' ); ?></a>
 			<?php else : ?>
 		<a class="fh-explorer__empty-action" href="<?php echo esc_url( home_url( '/' . Query::ROOT_PATH . '/#top-needs' ) ); ?>"><?php esc_html_e( 'Browse topic areas', 'firehouse' ); ?></a>
 			<?php endif; ?>
@@ -190,11 +205,12 @@ final class Explorer_Page {
 	 * @param list<array<string, mixed>> $all       The projects a visitor may see.
 	 * @param array<string, mixed>       $query     The query.
 	 * @param bool                       $searching Whether there's text to search for.
+	 * @param array<float>               $scores    The projects' scores for the search text, from Search::scores().
 	 */
-	private static function facets( array $all, array $query, bool $searching ): string {
+	private static function facets( array $all, array $query, bool $searching, array $scores ): string {
 		$counts = array();
 		foreach ( Search::FACETS as $facet ) {
-			$counts[ $facet ] = Search::facet_counts( $all, $query, $facet, static fn( array $project ): array => Search::facet_values( $project, $facet ) );
+			$counts[ $facet ] = Search::facet_counts( $all, $query, $facet, static fn( array $project ): array => Search::facet_values( $project, $facet ), $scores );
 		}
 		$option = static fn( string $facet, string $value, string $label, string|int $key ): array => array(
 			'value' => $value,
@@ -240,15 +256,17 @@ final class Explorer_Page {
 		sort( $types, SORT_STRING );
 		$type_options = array_map( static fn( string $type ): array => $option( 'type', $type, $type, $type ), $types );
 
-		// "Best match" only means something while there is text to match. The sort the
-		// page falls back to, with none chosen, is sent as nothing, so it stays the
-		// fallback: once there is text, the results are by best match, as on the site.
+		// "Best match" only means something while there is text to match. The option the
+		// page falls back to sends what the address had: nothing, or "relevance" with no
+		// text to match yet. Either way, once there is text the results are by best match,
+		// as on the site. A sort chosen is sent as itself.
 		$sort  = Search::effective_sort( $query );
+		$sent  = $query['sort'] === $sort ? $sort : (string) $query['sort'];
 		$sorts = array();
 		foreach ( self::sorts() as $key => $label ) {
 			if ( 'relevance' !== $key || $searching ) {
 				$sorts[] = array(
-					'value' => null === $query['sort'] && $key === $sort ? '' : $key,
+					'value' => $key === $sort ? $sent : $key,
 					'label' => $label,
 				);
 			}
@@ -267,7 +285,7 @@ final class Explorer_Page {
 			)
 			. self::select( 'year', __( 'Year completed', 'firehouse' ), null === $query['year'] ? '' : (string) $query['year'], __( 'Any year', 'firehouse' ), array( '' => $year_options ) )
 			. self::select( 'type', __( 'Project type', 'firehouse' ), (string) $query['type'], __( 'Any type', 'firehouse' ), array( '' => $type_options ) )
-			. self::select( 'sort', __( 'Sort by', 'firehouse' ), null === $query['sort'] ? '' : $sort, null, array( '' => $sorts ), false );
+			. self::select( 'sort', __( 'Sort by', 'firehouse' ), $sent, null, array( '' => $sorts ), false );
 	}
 
 	/**
@@ -286,9 +304,10 @@ final class Explorer_Page {
 
 	/**
 	 * A labelled native select, as the site's `FilterSelect`. An option that would leave
-	 * no results is disabled, unless it's the one chosen, so an address that names it
-	 * still shows it. With nothing chosen that an option holds, the browser shows the
-	 * first.
+	 * no results says "(0)" but stays enabled, where the site disables it: without
+	 * JavaScript, the counts describe the results on the page, not a change to another
+	 * select made since, so a disabled option could refuse a choice that change makes
+	 * possible. With nothing chosen that an option holds, the browser shows the first.
 	 *
 	 * @param string                                    $name      The parameter it sets.
 	 * @param string                                    $label     Its label.
@@ -305,10 +324,9 @@ final class Explorer_Page {
 			foreach ( $items as $item ) {
 				$count = $item['count'] ?? null;
 				$html .= sprintf(
-					'<option value="%1$s"%2$s%3$s>%4$s</option>',
+					'<option value="%1$s"%2$s>%3$s</option>',
 					Markup::text( $item['value'] ),
 					$item['value'] === $value ? ' selected' : '',
-					0 === $count && $item['value'] !== $value ? ' disabled' : '',
 					Markup::text( null === $count ? $item['label'] : $item['label'] . ' (' . $count . ')' )
 				);
 			}
@@ -410,14 +428,17 @@ final class Explorer_Page {
 	}
 
 	/**
-	 * The explorer's address with a query, its unset parts left out, as the site
-	 * writes it (Search::serialize_query()).
+	 * The explorer's address with a query, its unset parts left out, as the site writes
+	 * it (Search::serialize_query()), escaped for an attribute. The query is already
+	 * percent-encoded, so only the address before it goes through esc_url(), which would
+	 * drop an encoded line break and run two search words into one. It lands on the
+	 * page's content, as the form does (LANDING).
 	 *
 	 * @param string               $url   The explorer's address.
 	 * @param array<string, mixed> $query The query.
 	 */
-	private static function address( string $url, array $query ): string {
+	private static function href( string $url, array $query ): string {
 		$string = Search::serialize_query( $query );
-		return '' === $string ? $url : $url . '?' . $string;
+		return esc_url( $url ) . ( '' === $string ? '' : Markup::text( '?' . $string ) ) . self::LANDING;
 	}
 }

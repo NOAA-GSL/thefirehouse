@@ -2,8 +2,8 @@
 /**
  * Renders the project explorer, `firehouse/explorer`. Explorer_Page builds the markup.
  *
- * The frame places it on the project archive's address. Typed into a post anywhere
- * else, it renders nothing.
+ * The frame places it on the project archive's address. At any other address, it
+ * renders nothing.
  *
  * @package Firehouse
  */

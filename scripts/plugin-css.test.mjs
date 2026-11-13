@@ -5,8 +5,8 @@ import { EXPLORER, UNUSED } from './plugin-css-sources.mjs';
 
 /**
  * The plugin's stylesheet leaves some of the site's stylesheets out until a page the
- * plugin renders needs them (scripts/plugin-css-sources.mjs): the explorer's, until
- * Phase 5, and those of the design system's components no page renders. A class only
+ * plugin renders needs them (scripts/plugin-css-sources.mjs): the explorer's quick
+ * look's, until Phase 5, and those of the design system's components no page renders. A class only
  * those style would render unstyled in the plugin, focus rings included, so the
  * plugin's markup mustn't use one until its file is taken off the list.
  */

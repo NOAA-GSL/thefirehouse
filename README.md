@@ -258,7 +258,16 @@ overrides are isolated so a re-sync doesn't lose them.
         into the plugin's `includes/class-landing-page.php`: change both, since no test
         keeps them the same). The first two also live in each imported site's landing
         and About pages, which a later import leaves as they are;
-      - whether the synthesis needs its own line saying whose it is.
+      - whether the synthesis needs its own line saying whose it is;
+      - the explorer's "Update results" button, which only the plugin has: without
+        JavaScript it sends the search and filters. The Science Communicator suggests
+        keeping the label, with "Apply filters" as the alternative;
+      - the explorer's search hint, for screen readers: without JavaScript it is
+        "Searches titles, authors, abstracts, and findings.", without the site's
+        "Results update as you type. Press Escape to clear." The Science Communicator
+        offers "Press Enter to search." in its place, and, on both sites, naming what
+        the search covers in the site's own words (organizations, takeaways, methods,
+        end-user needs and recommendations).
 - [ ] **Bring in the team's synthesis prompt.** Their "FireHouse Prompt (Final)", which
       Stephanie describes as being in their Gemini notebook, orders needs by project
       count with that tie-break. It assigns an entry that spans several topic areas by
@@ -384,8 +393,8 @@ nothing from the database. Each class's docblock has the detail; this is the map
     are left out of the site's own search, and so out of WordPress's guess at a missing
     address anywhere else.
 
-  `assets/css/frame.css`, written by hand, holds what Firehouse needs only inside the
-  theme's page:
+  `assets/css/frame.css`, written by hand, holds what Firehouse needs inside the
+  theme's page, and without the site's scripts:
   - it clips the fixed atmosphere to the Firehouse area;
   - it drops the static build's full-window height, so a short page doesn't push the
     footer down;
@@ -397,6 +406,10 @@ nothing from the database. Each class's docblock has the detail; this is the map
     the top on phones), and without JavaScript, below 1024px, it keeps the links in
     the bar on a row of their own, with the Submit button after them, and lets the
     bar scroll with the page;
+  - without the site's scripts, it shows a need card's whole entry until the project
+    page's script has measured it, sets the explorer's Update results button level
+    with its selects (on a row of its own on a phone), and keeps the links that stand
+    in for the site's buttons free of underlines, Clear all at the button's height;
   - on Firehouse pages only, it hides the theme's hero background and the mission
     section above its footer.
 
@@ -465,6 +478,17 @@ nothing from the database. Each class's docblock has the detail; this is the map
   what the area covers, the Submit button once a survey address is set, and the other
   three areas. A need that names a project a visitor may not see leaves it out and
   counts only the projects that remain, as the site's normalize step does.
+- `Explorer_Page` is the project explorer, the `firehouse/explorer` block: the site's
+  `ProjectsPage` without what needs JavaScript. Every control belongs to one `GET`
+  form; the selects stand where the site has them, outside the form element, and join
+  it by its ID, and an "Update results" button, which only the plugin has, sends it.
+  Clearing the search, removing a filter and clearing them all are links to the
+  address without them, where the site has buttons. The form and the links land on
+  the page's content (`#fh-content`). It lists the projects a visitor may see, and
+  searches, filters, sorts and counts them with `Search` (below), scoring each
+  project once. Results that update as you type, Escape to clear, the phone's Filters
+  and sort button (the filters show unfolded) and the quick look come with its view
+  script in Phase 5.
 - `Markup` writes the design system's small components as the site renders them: a
   link styled as a `Button` (opening another site in a new tab, and saying so), a
   `TopicTag`, and the `SynthesisNote` that says the needs are synthesized and whether
@@ -564,8 +588,7 @@ nothing from the database. Each class's docblock has the detail; this is the map
   - Each post and page is read back after it is written.
 - `Landing_Page` is the landing page's blocks: `firehouse/hero` with `firehouse/stats`
   inside it, `firehouse/top-needs` and `firehouse/submit-band`, as the site's
-  `LandingPage` renders them, without the coverage map, which comes with the explorer
-  in Phase 5. The words are the blocks' attributes; the counts, the four topic cards
+  `LandingPage` renders them, without the coverage map, which comes in Phase 5. The words are the blocks' attributes; the counts, the four topic cards
   and the synthesis note are computed as the page renders, from the projects a visitor
   may see and the published topics, with the topic pages' counting. A button with
   nowhere to go, such as Submit a Finding with no survey address set, is left out.
@@ -626,12 +649,16 @@ The traps, for whoever changes this code next:
   server's backstop for rule 2, by the pattern in `shared/email-shape.json`, which the
   survey import and the seed bundle script use too.
 - `Search` is the explorer's search, filters, sort and counts. An address such as
-  `/firehouse/projects/?q=smoke&region=NWCC` opens already filtered, listing what the
-  React explorer lists. `Search::params()` reads a query string as the browser's
-  `URLSearchParams` does; the explorer passes it the query part of
-  `wp_unslash( $_SERVER['REQUEST_URI'] )`, since a server's rewrite rules can change
-  `QUERY_STRING`, and not `$_GET` or anything through `sanitize_text_field()`. Only a search's first 20 words
-  count, in both languages, so one long address can't tie up the server.
+  `/firehouse/projects/?q=smoke&region=NWCC` opens already filtered, by the same
+  rules as the React explorer (both pass `shared/cases/search.json`; see the intl
+  caveats below). `Search::params()` reads a query string as the browser's
+  `URLSearchParams` does. The explorer gives it the query part of
+  `wp_unslash( $_SERVER['REQUEST_URI'] )`, the address as the browser sent it
+  (`Explorer_Page::query_string()`). Don't pass `QUERY_STRING`, which a server's
+  rewrite rules can change, or `$_GET`, or anything through `sanitize_text_field()`,
+  which deletes percent-escapes. Only a search's first 20 words count, in both
+  languages, so one long address can't tie up the server. `Search::scores()` scores
+  each project once, for a page that both lists and counts.
 - Two things match the browser only when the server has PHP's intl extension, and the
   plugin works either way. Folding (lower-casing and dropping accents, so
   "Évacuation" matches "evacuation"): without intl, `Search::fold_without_intl()`
@@ -659,9 +686,9 @@ inside GSL's theme without reaching the theme's header and footer (plan rule 9).
 `SCRIPT_DEBUG`; the minified copy is that one minified as the site's own build
 minifies its CSS. One stylesheet serves every
 Firehouse page; it isn't split by page. Both copies leave out what GSL's theme replaces
-(the static build's page shell, gov banner and footer), the explorer's quick look's
-CSS and the coverage map's until Phase 5, the design system's components no page renders,
-and the fonts, which load on their own (`scripts/plugin-css-sources.mjs`); a test fails
+(the static build's page shell, gov banner and footer), the quick look's CSS and the
+coverage map's until Phase 5, the design system's components no page renders, and the
+fonts, which load on their own (`scripts/plugin-css-sources.mjs`); a test fails
 if the plugin's markup uses a class only those left-out files style. Don't edit either:
 `npm run plugin:css` writes both from `src/`, and CI fails if either falls behind.
 The site's own build scopes every stylesheet the same way (`scripts/scope-css.ts`), with

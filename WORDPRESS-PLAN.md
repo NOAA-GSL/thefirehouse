@@ -339,7 +339,7 @@ words with what FireHouse adds (Phase 6's landing and About item).*
 
 ### Interactivity
 
-Every control is a real form element inside a `GET` form:
+Every control belongs to a `GET` form, or is a link to the address it would make:
 
 - **Without JavaScript,** submitting reloads the page with the same `?q=`, `?phase=`,
   `?region=`, `?year=`, `?type=` and `?sort=` parameters the React explorer uses today.
@@ -700,6 +700,13 @@ stay on its page, the archive, the sitemap, every topic page that cites it, and 
 previous and next links on the two project pages either side of it. Publishing would then have to purge, through
 Cloudflare's own WordPress integration or the plugin calling Cloudflare's purge API
 with a token limited to purging, and the token would be a security-review item.
+
+The explorer's HTML depends on its address's query string (`?q=`, the filters, the
+sort) and on nothing else, not the visitor. If HTML caching comes, the cache key must
+hold the whole query string as sent: a rule that ignores it would serve one search's
+results at every address. Each address is its own entry, so a purge has to reach all
+of them (everything, or by prefix), or a hidden project stays listed under every
+search that found it.
 
 Whatever Cloudflare does with other pages, **the Submit page is never cached.** A cached copy would carry an expired
 nonce, and real submissions would start failing within a day. The page is sent with
@@ -1136,7 +1143,9 @@ signed off on the frame.
     while the project was public, until that post is saved again.*
   - *WordPress limits a list before the filter, so a page of the archive or the feed
     can come back short, and `?paged=2` still pages both. The explorer (Phase 5) should
-    ask for public projects itself, as the topic pages do.*
+    ask for public projects itself, as the topic pages do. It does (13 November):
+    `Explorer_Page::projects()` asks with `Store::public_projects_query()` and checks
+    each with `Store::is_public()`.*
   - *It lands before the survey form or any screen that can publish a project. Today
     nothing in the plugin can publish a project without approval: the import drops
     one, so every draft it leaves is approved. A project's edit screen has no form for
@@ -1287,7 +1296,8 @@ signed off on the frame.
     The SEO plugins the Firehouse steps aside for are a fixed list; another plugin that
     prints its own preview tags, Jetpack's for one, would need `firehouse_head_tags`.
     A search within projects (`/firehouse/projects/?s=`) is titled as the explorer, as
-    on the site; decide with the explorer in Phase 5.*
+    on the site; still to decide, now that the explorer is here (13 November): it
+    ignores `s`, as the site's does, and lists every project.*
   - *Found in review, outside this change: a topic's page renders without the
     password check a page in the tree gets (`Frame::content()`); its title is only the
     topic's label, which WordPress shows for protected posts anyway. For whoever next
@@ -1424,12 +1434,10 @@ snapshots, and Stephanie and Emily can review them on the test site.
 
 The explorer (search, filters with counts, sort, removable filter chips, quick-look
 `<dialog>`) and the coverage map. (The mobile menu came with the Firehouse bar in Phase
-3, and the scrollable need cards with the project pages in Phase 4.) The explorer's CSS comes back with it: take its files off
-`EXPLORER` in `scripts/plugin-css-sources.mjs`, which adds about 2.1 kB compressed to
-the one stylesheet, or load it only on the explorer's page, a 2.8 kB sheet of its own. A sheet of its own would load after `global.css` and win
-ties it loses today (`.fh-explorer` sits on the same element as `.fh-container`), so
-check the order first. The coverage map's CSS is a chunk of its own (`DEFERRED`),
-loaded with the map.
+3, and the scrollable need cards with the project pages in Phase 4.) The explorer's CSS
+is in the one stylesheet, all but the quick look's, which comes off `EXPLORER` in
+`scripts/plugin-css-sources.mjs` with its dialog. The coverage map's CSS is a chunk of
+its own (`DEFERRED`), loaded with the map.
 
 - *Search done 13 November: `domain/class-search.php` ports `search.ts` and passes
   every case in `shared/cases/search.json`, which now also hold the query string and
@@ -1449,23 +1457,69 @@ loaded with the map.
   server time (about 45 at 48 projects). Both languages now count only a search's
   first 20 words (`MAX_TERMS`, a shared case), and the PHP scores a repeated word
   once and measures a field's words once: the same address takes about 50 ms at 48
-  projects. The explorer's handler should still get the Application Security
+  projects, for one pass over them (the explorer's page made five until it scored
+  once; see below). The explorer's handler should still get the Application Security
   Engineer's review when it reads the query string.*
-- *The explorer without JavaScript, 13 November: the `firehouse/explorer` block
-  (`includes/class-explorer-page.php`) renders the site's `ProjectsPage` on the
-  archive's address, with every control in one `GET` form. The selects stand where the
-  site has them, outside the form element, and join it by its ID. The sort the page
-  falls back to is sent as nothing, so a search with the sort untouched lists by best
-  match, as on the site; the address carries the empty names a form sends, until the
-  script tidies it. Removing a filter and clearing them all are links. It reads the
-  query from `REQUEST_URI`, not `QUERY_STRING`, which a server's rewrite rules can
-  change. At 34 addresses, from none to repeated, malformed and 21-word ones, its
-  main landmark matches the React explorer's, apart from what needs JavaScript: the
-  hint's "Results update as you type", the "/" shortcut, the phone's Filters and sort
-  button (the filters show unfolded), the quick look, and the button that sends the
-  form, "Update results", which only the plugin has. The explorer's CSS came in, less
-  the quick look's (about 1.4 kB compressed); `npm run plugin:compare` leaves the page
-  out until the script makes it match.*
+- *The explorer without JavaScript, 13 November: the `firehouse/explorer` block, its
+  markup built by `Explorer_Page` (`includes/class-explorer-page.php`), renders the
+  site's `ProjectsPage` from the server on the archive's address.*
+  - *Every control belongs to one `GET` form. The selects stay where the site has
+    them, outside the form element, and join it by its ID, so the markup and CSS stay
+    the site's. Without a script a select changes nothing until the form is sent, so
+    the plugin adds a button that sends it, "Update results": new wording, for
+    Stephanie and Emily (README, Before this goes public). On a phone it takes a row
+    of its own. Clearing the search, removing a filter and clearing them all are
+    links to the address without them, where the site has buttons; the script slice
+    should keep them links and intercept them, so their role doesn't change under a
+    screen reader.*
+  - *The sort's fallback option ("Newest first" with no search, "Best match" with one)
+    sends what the address had: nothing, or `relevance` with no text yet. Sent as
+    `sort=newest`, it would pin the order, and a search added later wouldn't list by
+    best match, as the site does. A sent form's address carries every name, empty
+    ones included (`?q=smoke&phase=&region=&year=&type=&sort=`), until the script
+    tidies it.*
+  - *Accepted differences without a script: an option that would leave no results
+    says "(0)" but stays enabled, since the counts don't follow a change to another
+    select until the form is sent; and a year or type no project has can't be chosen
+    in its select, so sending the form drops it, where the site keeps it until its
+    filter is removed.*
+  - *The form and every link back to the explorer land on `#fh-content`, the skip
+    link's target, so a reload doesn't put a keyboard back at the top of the theme's
+    header. Every reload has the same title; putting the result in it ("2 of 8
+    projects matching “smoke”") would be new wording, for Stephanie and Emily.*
+  - *It reads the query from `REQUEST_URI`, the address as the browser sent it, not
+    from `QUERY_STRING`, which a server's rewrite rules can change. At an address
+    with a query, it asks search engines not to index the page (`Head::robots()`):
+    the page prints words from its address, which anyone can write into a link.*
+  - *It scores each project once, for the list and the four counts
+    (`Search::scores()`), where the review found five passes. A search at 48
+    projects (the eight local ones, copied) renders in about 35–55 ms on the local
+    stack, from 150–200 ms; with no search, about 15–20 ms. Phases or regions stored
+    in the wrong shape give none, rather than stopping the page (rule 6).*
+  - *Checked by hand, with a scratch script that loads both sites: at 34 addresses,
+    from none to repeated, malformed and 21-word ones, its main landmark matched the
+    React explorer's except where the script is missing or the plugin stands in for
+    it. The hint leaves out "Results update as you type. Press Escape to clear.";
+    there is no phone Filters and sort button and no quick look; the links above are
+    buttons on the site; options aren't disabled; and "Update results" is the
+    plugin's own. `tests/ExplorerPageTest.php` reads back what the form and each link
+    would send, at 37 addresses. `npm run plugin:compare` lists the page as built but
+    not compared until the script makes it match.*
+  - *The explorer's page and tile CSS joined the one stylesheet, as Phase 4's weight
+    decided (not split by page), adding about 1.4 kB compressed. The quick look's
+    (`ProjectDetailModal.css`) stays on `EXPLORER` until its dialog comes.*
+  - *Left for the script slice, from the review: don't port the site's "/" shortcut as
+    written, a single-key shortcut with no way to turn it off (WCAG 2.1.4); after a
+    filter is removed, move focus to the next filter, then Clear all, then the search;
+    change only the status line's text, never its node; add the hint's second
+    sentence only once live updates work; and bind `disabled` on options to the live
+    counts.*
+  - *Left for changes of their own: control edges below 3:1 (about 1.6:1 in light and
+    2.2–2.8:1 in dark, the site's too; `--glass-control-border` would meet it); the
+    tiles' h3 under the page's h1, on both sites; WordPress's own query for the
+    archive, which still runs, and still answers `?s=`, `?m=` and `?paged=`; and the
+    typo match's tokenizing, which an ASCII fast path would cut, worth it past about
+    100 projects.*
 
 **Done when:** it reaches feature parity with the React site, every URL parameter
 behaves the same, and the accessibility snapshots match.

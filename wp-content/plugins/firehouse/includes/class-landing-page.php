@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   needs come from".
  * - `firehouse/submit-band`: the closing band with the Submit button.
  *
- * The coverage map comes with the explorer in Phase 5.
+ * The coverage map comes in Phase 5.
  *
  * Its links are stored as Page_Blocks keeps them: one to the survey address follows the
  * Submit a Finding address in the settings, and with none set, its button is left out

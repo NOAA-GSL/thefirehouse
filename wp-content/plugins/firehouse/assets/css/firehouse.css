@@ -6,9 +6,9 @@
  *
  * Every rule is scoped under .fh-app (WORDPRESS-PLAN.md rule 9), in the order the
  * site loads them. Left out: the static build's page shell, gov banner and footer,
- * which GSL's theme replaces; the explorer's page and the components only it uses, and
- * the coverage map, which arrive with them in Phase 5; the design system's components
- * no page renders; and the fonts, which the plugin loads on its own from fonts.css.
+ * which GSL's theme replaces; the explorer's quick look and the coverage map, which
+ * arrive in Phase 5; the design system's components no page renders; and the fonts,
+ * which the plugin loads on its own from fonts.css.
  */
 
 /* Design system Button.
@@ -2840,7 +2840,11 @@
   font-family: var(--font-body);
   text-overflow: ellipsis;
   cursor: pointer;
-  outline: none;
+  /* The ring is the box-shadow below. A transparent outline, not none: a Windows
+     contrast theme drops box-shadows and paints outlines in its own colour, so focus
+     still shows there. */
+  outline: 2px solid transparent;
+  outline-offset: 2px;
   -webkit-appearance: none;
   appearance: none;
 }

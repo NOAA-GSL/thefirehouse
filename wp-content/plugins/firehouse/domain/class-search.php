@@ -450,7 +450,9 @@ final class Search {
 	/**
 	 * A project's values for one facet, as the explorer counts and filters them: its
 	 * fire phases, its effective regions (a national study counts in every GACC), its
-	 * completion year, or its project type.
+	 * completion year, or its project type. Phases or regions stored as anything but a
+	 * list give none, and a region that isn't text is passed over, so one record stored
+	 * around Meta's checks can't stop the explorer (rule 6).
 	 *
 	 * @param array<string, mixed> $project The project.
 	 * @param string               $facet   phase, region, year or type.
@@ -458,8 +460,8 @@ final class Search {
 	 */
 	public static function facet_values( array $project, string $facet ): array {
 		return match ( $facet ) {
-			'phase'  => array_values( $project['firePhases'] ?? array() ),
-			'region' => Derive::effective_regions( $project['geo']['regions'] ?? array() ),
+			'phase'  => is_array( $project['firePhases'] ?? null ) ? array_values( $project['firePhases'] ) : array(),
+			'region' => Derive::effective_regions( is_array( $project['geo']['regions'] ?? null ) ? array_values( array_filter( $project['geo']['regions'], 'is_string' ) ) : array() ),
 			'year'   => array( $project['completionYear'] ?? null ),
 			'type'   => Js::truthy( $project['projectType'] ?? null ) ? array( $project['projectType'] ) : array(),
 			default  => array(),
@@ -482,19 +484,34 @@ final class Search {
 	}
 
 	/**
+	 * Each project's relevance to the search text, by its key in $projects: what
+	 * score_project() gives each. A page that both filters and counts scores once and
+	 * passes these to filter_projects() and facet_counts(), which would otherwise each
+	 * score every project again, five passes for the explorer.
+	 *
+	 * @param array<array<string, mixed>> $projects The projects.
+	 * @param string                      $q        The search text.
+	 * @return array<float>
+	 */
+	public static function scores( array $projects, string $q ): array {
+		return array_map( static fn( array $project ): float => self::score_project( $project, $q ), $projects );
+	}
+
+	/**
 	 * The projects that match the query, in its sort.
 	 *
 	 * @param list<array<string, mixed>> $projects The projects.
 	 * @param array<string, mixed>       $query    The query.
+	 * @param array<float>|null          $scores   The projects' scores for the query's text, from scores(), by the same keys; null to score them here.
 	 * @return list<array<string, mixed>>
 	 */
-	public static function filter_projects( array $projects, array $query ): array {
+	public static function filter_projects( array $projects, array $query, ?array $scores = null ): array {
 		$scored = array();
-		foreach ( $projects as $project ) {
+		foreach ( $projects as $index => $project ) {
 			if ( ! self::matches_facets( $project, $query ) ) {
 				continue;
 			}
-			$score = self::score_project( $project, (string) ( $query['q'] ?? '' ) );
+			$score = $scores[ $index ] ?? self::score_project( $project, (string) ( $query['q'] ?? '' ) );
 			if ( $score > 0 ) {
 				$scored[] = array( $project, $score );
 			}
@@ -526,12 +543,13 @@ final class Search {
 	 * @param array<string, mixed>       $query     The query.
 	 * @param string                     $facet     The facet.
 	 * @param callable                   $values_of A project's values for it.
+	 * @param array<float>|null          $scores    The projects' scores for the query's text, from scores(), by the same keys; null to score them here.
 	 * @return array<string|int, int>
 	 */
-	public static function facet_counts( array $projects, array $query, string $facet, callable $values_of ): array {
+	public static function facet_counts( array $projects, array $query, string $facet, callable $values_of, ?array $scores = null ): array {
 		$counts = array();
-		foreach ( $projects as $project ) {
-			if ( ! self::matches_facets( $project, $query, $facet ) || 0.0 === self::score_project( $project, (string) ( $query['q'] ?? '' ) ) ) {
+		foreach ( $projects as $index => $project ) {
+			if ( ! self::matches_facets( $project, $query, $facet ) || 0.0 === ( $scores[ $index ] ?? self::score_project( $project, (string) ( $query['q'] ?? '' ) ) ) ) {
 				continue;
 			}
 			foreach ( $values_of( $project ) as $value ) {

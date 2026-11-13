@@ -71,6 +71,7 @@ final class HooksTest extends WordPressTestCase {
 	public function test_the_head_hooks(): void {
 		Filters\expectAdded( 'pre_get_document_title' )->once()->with( array( Head::class, 'document_title' ), 10, 1 );
 		Actions\expectAdded( 'wp_head' )->once()->with( array( Head::class, 'tags' ), 5, 1 );
+		Filters\expectAdded( 'wp_robots' )->once()->with( array( Head::class, 'robots' ), 10, 1 );
 
 		Head::hook();
 	}

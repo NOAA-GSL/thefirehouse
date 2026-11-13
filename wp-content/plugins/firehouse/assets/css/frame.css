@@ -1,6 +1,7 @@
 /*
  * The frame: what the Firehouse wrapper needs inside a theme's page that the static
- * build, where the wrapper is the whole page, doesn't. Loaded after firehouse.css on
+ * build, where the wrapper is the whole page, doesn't, and what the plugin's pages need
+ * where the site's scripts aren't there to do it. Loaded after firehouse.css on
  * Firehouse pages only (includes/class-frame.php). Written by hand, not generated;
  * scripts/frame-css.test.mjs holds it to the rules below.
  *
@@ -119,9 +120,29 @@
   align-items: flex-end;
 }
 
+/* On a phone the filters run two to a row, and the button's words don't wrap, so
+   beside a select it would squeeze the other column's text to a letter or two: it
+   takes a row of its own, the full width. */
+@media (max-width: 640px) {
+  .fh-app .fh-explorer__apply {
+    grid-column: 1 / -1;
+  }
+
+  .fh-app .fh-explorer__apply .fh-btn {
+    width: 100%;
+  }
+}
+
 .fh-app a.fh-pill,
 .fh-app a.fh-search__clear {
   text-decoration: none;
+}
+
+/* A link is inline, so the button's minimum height would be lost: Clear all keeps the
+   site's 30-pixel target. */
+.fh-app a.fh-explorer__clear-all {
+  display: inline-flex;
+  align-items: center;
 }
 
 /* `hidden` hides, whatever display a Firehouse rule gives the element. */
