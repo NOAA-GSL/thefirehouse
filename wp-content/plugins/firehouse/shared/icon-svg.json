@@ -1,5 +1,5 @@
 {
-  "$comment": "What an icon file in assets/icons/ may hold. scripts/plugin-assets.mjs checks every icon against this before writing it, and tests/IconsTest.php checks the files that ship. Only Lucide's plain shapes and drawing attributes: nothing that runs, links or loads, and no text. A value may hold only the characters in `value`; `xmlns` must be `namespace`. An icon's name, which becomes its file name, must match `name`. The templates inline these files into GSL's pages (WORDPRESS-PLAN.md, Phase 3).",
+  "$comment": "What an icon in assets/icons/icons.php may hold. scripts/plugin-assets.mjs checks every icon against this before writing the file, and tests/IconsTest.php checks the file that ships. Only Lucide's plain shapes and drawing attributes: nothing that runs, links or loads, and no text. A value may hold only the characters in `value`; `xmlns` must be `namespace`. An icon's name, its key in that file, must match `name`. The templates inline these icons into GSL's pages (WORDPRESS-PLAN.md, Phase 3).",
   "elements": ["svg", "g", "path", "rect", "circle", "ellipse", "line", "polyline", "polygon"],
   "attributes": [
     "xmlns",
