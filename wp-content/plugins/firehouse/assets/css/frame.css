@@ -110,6 +110,20 @@
   max-height: none;
 }
 
+/* The explorer's filters apply when its form is sent, so the button that sends it sits
+   at the foot of the filters' grid, level with the selects. Removing a filter and
+   clearing the search are links here, where the site has buttons, so they keep the
+   buttons' look rather than a link's underline. */
+.fh-app .fh-explorer__apply {
+  display: flex;
+  align-items: flex-end;
+}
+
+.fh-app a.fh-pill,
+.fh-app a.fh-search__clear {
+  text-decoration: none;
+}
+
 /* `hidden` hides, whatever display a Firehouse rule gives the element. */
 .fh-app [hidden] {
   display: none !important;

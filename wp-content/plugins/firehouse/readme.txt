@@ -31,8 +31,9 @@ description, and link-preview tags, unless an SEO plugin is active. On FireHouse
 pages, WordPress no longer curls quotes, converts dashes, turns smileys into images or recapitalizes its own name, so researchers' text appears as
 they wrote it. The Import screen creates the landing page and the About page from the
 seed bundle; the About page's portraits are uploaded to the Media Library by an
-administrator. The project explorer comes in a later phase; until then the frame
-shows a placeholder there.
+administrator. The project explorer lists the published projects with a search,
+filters that show how many projects each choice leaves, and a sort; it works without
+JavaScript, and the same addresses as the static site's open it already filtered.
 
 The fonts in assets/fonts/, Archivo and Public Sans, are third-party, under the SIL
 Open Font License 1.1, whose text is beside them. assets/fonts/SOURCES.json records

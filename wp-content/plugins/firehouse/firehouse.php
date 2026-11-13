@@ -17,8 +17,9 @@
  * screens; keeps WordPress's `year` query variable off Firehouse pages, and keeps
  * projects a visitor may not see off the public site (Visibility); and puts every
  * Firehouse page (the landing, About, project, topic and not-found pages, and the
- * explorer's placeholder until Phase 5) in the theme's header and footer, with its own stylesheets, the Firehouse bar, and its title and link-preview
- * tags (templates/frame.php, blocks/, Head). domain/ holds the content
+ * project explorer) in the theme's header and footer, with its own stylesheets, the
+ * Firehouse bar, and its title and link-preview tags (templates/frame.php, blocks/,
+ * Head). domain/ holds the content
  * logic, plain PHP that adds no hooks; includes/ holds what does. The comment above
  * the hook calls below lists where the plugin acts beyond the Firehouse pages.
  * WORDPRESS-PLAN.md in the repository describes what this plugin becomes, phase by
@@ -71,6 +72,7 @@ require_once __DIR__ . '/includes/class-landing-page.php';
 require_once __DIR__ . '/includes/class-about-page.php';
 require_once __DIR__ . '/includes/class-project-page.php';
 require_once __DIR__ . '/includes/class-topic-page.php';
+require_once __DIR__ . '/includes/class-explorer-page.php';
 require_once __DIR__ . '/includes/class-verbatim.php';
 require_once __DIR__ . '/includes/class-subnav.php';
 require_once __DIR__ . '/includes/class-blocks.php';

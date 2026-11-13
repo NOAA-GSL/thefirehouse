@@ -70,11 +70,12 @@ final class Search {
 	 * and the first value kept when a name repeats, unlike PHP's $_GET. A name with
 	 * brackets, such as "phase[]", is just another name, not an array.
 	 *
-	 * Under WordPress, pass wp_unslash( $_SERVER['QUERY_STRING'] ?? '' ): WordPress
-	 * adds slashes to $_SERVER, which would double a backslash or a quote. Not $_GET,
-	 * which keeps the last of a repeated name and makes arrays, and not through
-	 * sanitize_text_field(), which deletes percent-escapes: this decodes the text, and
-	 * the query keeps only what parse_query() accepts.
+	 * Under WordPress, pass the query part of wp_unslash( $_SERVER['REQUEST_URI'] ), as
+	 * Explorer_Page::for_request() does: WordPress adds slashes to $_SERVER, which would
+	 * double a backslash or a quote, and a server's rewrite rules can change
+	 * QUERY_STRING. Not $_GET, which keeps the last of a repeated name and makes arrays,
+	 * and not through sanitize_text_field(), which deletes percent-escapes: this decodes
+	 * the text, and the query keeps only what parse_query() accepts.
 	 *
 	 * @param string $query The query string, unslashed.
 	 * @return array<string, string>
@@ -439,7 +440,7 @@ final class Search {
 	 * @param mixed $value The value.
 	 * @return string|int
 	 */
-	private static function key( mixed $value ): string|int {
+	public static function key( mixed $value ): string|int {
 		if ( is_float( $value ) && is_finite( $value ) && floor( $value ) === $value && abs( $value ) <= self::MAX_YEAR ) {
 			return (int) $value;
 		}

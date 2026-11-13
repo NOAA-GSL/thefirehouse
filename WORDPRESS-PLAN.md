@@ -215,9 +215,10 @@ wp-content/plugins/firehouse/
                    checks at save and import (which call domain/), the seed import
                    screen, the query, visibility and verbatim filters, the frame and
                    its head tags (Head), block registration, the markup the blocks
-                   render (the bar, the 404, the project, topic, landing and About
-                   pages, and what those two share (Page_Blocks), icons, buttons,
-                   topic tags, the synthesis note); later, the AI service client
+                   render (the bar, the 404, the explorer, the project, topic,
+                   landing and About pages, and what those two share
+                   (Page_Blocks), icons, buttons, topic tags, the synthesis note);
+                   later, the AI service client
   survey/          the survey form, self-contained (see The survey form)
   domain/          PHP versions of the vocabularies, validation (normalize), derive,
                    format and search, with the email shape, the JSON reading and
@@ -1270,7 +1271,7 @@ signed off on the frame.
   researcher's own " - " doesn't read as the separator. Titles are computed as the
   page renders, from the settings, so the About page's and the explorer's follow their
   links' labels (About's post title, set by the import, stays "About — The FireHouse"
-  for WordPress's lists), and the explorer's placeholder heading names it too.
+  for WordPress's lists).
   (13 November, Stephanie and Emily's decision, relayed by Eric: the name people read
   is "FireHouse", so titles read "… — The FireHouse – Global Systems Laboratory" and
   About's post title is "About — The FireHouse"; identifiers in the code keep
@@ -1450,6 +1451,21 @@ loaded with the map.
   once and measures a field's words once: the same address takes about 50 ms at 48
   projects. The explorer's handler should still get the Application Security
   Engineer's review when it reads the query string.*
+- *The explorer without JavaScript, 13 November: the `firehouse/explorer` block
+  (`includes/class-explorer-page.php`) renders the site's `ProjectsPage` on the
+  archive's address, with every control in one `GET` form. The selects stand where the
+  site has them, outside the form element, and join it by its ID. The sort the page
+  falls back to is sent as nothing, so a search with the sort untouched lists by best
+  match, as on the site; the address carries the empty names a form sends, until the
+  script tidies it. Removing a filter and clearing them all are links. It reads the
+  query from `REQUEST_URI`, not `QUERY_STRING`, which a server's rewrite rules can
+  change. At 34 addresses, from none to repeated, malformed and 21-word ones, its
+  main landmark matches the React explorer's, apart from what needs JavaScript: the
+  hint's "Results update as you type", the "/" shortcut, the phone's Filters and sort
+  button (the filters show unfolded), the quick look, and the button that sends the
+  form, "Update results", which only the plugin has. The explorer's CSS came in, less
+  the quick look's (about 1.4 kB compressed); `npm run plugin:compare` leaves the page
+  out until the script makes it match.*
 
 **Done when:** it reaches feature parity with the React site, every URL parameter
 behaves the same, and the accessibility snapshots match.

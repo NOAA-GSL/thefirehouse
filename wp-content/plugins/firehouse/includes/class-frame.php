@@ -270,9 +270,8 @@ final class Frame {
 
 	/**
 	 * Prints the page's content: the not-found page at a missing address, a project's or
-	 * a topic area's page at its address, a page in the Firehouse tree's own blocks, and
-	 * a placeholder on a page with nothing to show yet (the explorer until Phase 5, or an
-	 * empty page in the tree).
+	 * a topic area's page at its address, the explorer at the project archive's, a page in
+	 * the Firehouse tree's own blocks, and a placeholder on an empty page in the tree.
 	 */
 	public static function content(): void {
 		if ( is_404() ) {
@@ -285,6 +284,10 @@ final class Frame {
 		}
 		if ( is_singular( Post_Types::TOPIC ) ) {
 			echo do_blocks( '<!-- wp:firehouse/topic /-->' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- as above.
+			return;
+		}
+		if ( is_post_type_archive( Post_Types::PROJECT ) ) {
+			echo do_blocks( '<!-- wp:firehouse/explorer /-->' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- as above.
 			return;
 		}
 		// The query's post, not the queried object: a preview of a published page swaps
@@ -314,14 +317,13 @@ final class Frame {
 	}
 
 	/**
-	 * What the frame holds on a page with nothing to show yet: a heading and a line.
+	 * What the frame holds on an empty page in the tree: a heading that names the site,
+	 * and a line.
 	 */
 	public static function placeholder(): void {
-		// On the explorer, the heading names the page as its link and its title do; on an
-		// empty page in the tree, it names the site.
 		printf(
 			'<section class="fh-section"><div class="fh-container"><h1>%1$s</h1><p>%2$s</p></div></section>',
-			esc_html( is_post_type_archive( Post_Types::PROJECT ) ? (string) Settings::get()['navLabels']['projects'] : __( 'The FireHouse', 'firehouse' ) ),
+			esc_html__( 'The FireHouse', 'firehouse' ),
 			esc_html__( 'This page is being built.', 'firehouse' )
 		);
 	}

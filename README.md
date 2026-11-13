@@ -275,9 +275,9 @@ overrides are isolated so a re-sync doesn't lose them.
       data. Stephanie or Emily should own the wording.
 - [ ] **Confirm the page titles and link-preview text** with Stephanie and Emily. The
       titles are the site's: "{page} — The FireHouse", and the landing page's "The
-      FireHouse — Fire Weather Social Science Hub". The explorer's title and placeholder
-      heading follow its link label, "Explore Projects", where the React site's title
-      says "Explore projects". The description, preview text and image alt text in
+      FireHouse — Fire Weather Social Science Hub". The explorer's title follows its
+      link label, "Explore Projects", where the React site's title says "Explore
+      projects". The description, preview text and image alt text in
       `index.html` are repeated by the plugin (`includes/class-head.php`), and the alt
       text describes the hub, not the image. Record who confirmed what text, and when.
 - [ ] **Build with the right variables** for each copy (see [Hosting](#hosting)), so
@@ -364,9 +364,9 @@ nothing from the database. Each class's docblock has the detail; this is the map
     goes public), kept in `Frame::disclaimer()`, not as a setting, and held to the
     site's `settings.json` by a test. A missing address gets the `firehouse/not-found`
     block, a project's address the `firehouse/project` block, a topic's address the
-    `firehouse/topic` block, a page in the Firehouse tree its own blocks (not through
-    `the_content`), and a page with nothing to show yet (the explorer until Phase 5, or
-    an empty page in the tree) a placeholder.
+    `firehouse/topic` block, the project archive the `firehouse/explorer` block, a page
+    in the Firehouse tree its own blocks (not through `the_content`), and an empty page
+    in the tree a placeholder.
   - **Stylesheets:** it loads `fonts.css`, `firehouse.min.css` and `frame.css` after
     the theme's stylesheet, at the plugin's version and each file's modified time, and
     adds `fh-page` to the body. Under `SCRIPT_DEBUG` it loads `firehouse.css`, the same
@@ -625,13 +625,12 @@ The traps, for whoever changes this code next:
 - `Email_Shape` finds text shaped like an email address where none belongs, the
   server's backstop for rule 2, by the pattern in `shared/email-shape.json`, which the
   survey import and the seed bundle script use too.
-- `Search` is the explorer's search, filters, sort and counts. When the explorer's
-  block arrives in Phase 5, an address such as
-  `/firehouse/projects/?q=smoke&region=NWCC` will open already filtered, listing what
-  the explorer's script would, with or without JavaScript; until then the address
-  shows the frame's placeholder. `Search::params()` reads a query string as the
-  browser's `URLSearchParams` does; pass it `wp_unslash( $_SERVER['QUERY_STRING'] )`,
-  not `$_GET` and not through `sanitize_text_field()`. Only a search's first 20 words
+- `Search` is the explorer's search, filters, sort and counts. An address such as
+  `/firehouse/projects/?q=smoke&region=NWCC` opens already filtered, listing what the
+  React explorer lists. `Search::params()` reads a query string as the browser's
+  `URLSearchParams` does; the explorer passes it the query part of
+  `wp_unslash( $_SERVER['REQUEST_URI'] )`, since a server's rewrite rules can change
+  `QUERY_STRING`, and not `$_GET` or anything through `sanitize_text_field()`. Only a search's first 20 words
   count, in both languages, so one long address can't tie up the server.
 - Two things match the browser only when the server has PHP's intl extension, and the
   plugin works either way. Folding (lower-casing and dropping accents, so
@@ -660,8 +659,8 @@ inside GSL's theme without reaching the theme's header and footer (plan rule 9).
 `SCRIPT_DEBUG`; the minified copy is that one minified as the site's own build
 minifies its CSS. One stylesheet serves every
 Firehouse page; it isn't split by page. Both copies leave out what GSL's theme replaces
-(the static build's page shell, gov banner and footer), the explorer's CSS and the
-coverage map's until Phase 5, the design system's components no page renders,
+(the static build's page shell, gov banner and footer), the explorer's quick look's
+CSS and the coverage map's until Phase 5, the design system's components no page renders,
 and the fonts, which load on their own (`scripts/plugin-css-sources.mjs`); a test fails
 if the plugin's markup uses a class only those left-out files style. Don't edit either:
 `npm run plugin:css` writes both from `src/`, and CI fails if either falls behind.

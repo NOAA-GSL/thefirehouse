@@ -13,8 +13,8 @@ export const LEFT_OUT = [
   'wp-content/plugins/firehouse/assets/css/fonts.css',
 ];
 
-/** The explorer's page and the components only it uses, until Phase 5 brings the explorer. */
-export const EXPLORER = ['src/pages/ProjectsPage.css', 'src/design-system/ProjectTile.css', 'src/design-system/ProjectDetailModal.css'];
+/** The explorer's quick look, until its dialog comes in Phase 5. */
+export const EXPLORER = ['src/design-system/ProjectDetailModal.css'];
 
 /** TextField, TextArea and TopicTagRow, which the design system exports and no page renders. */
 export const UNUSED = ['src/design-system/Field.css', 'src/design-system/TopicTagRow.css'];
