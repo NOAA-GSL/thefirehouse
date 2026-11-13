@@ -1,7 +1,7 @@
-import markOnDark from '../assets/logos/firehouse-mark-on-dark.png';
-import mark from '../assets/logos/firehouse-mark.png';
-import wordmarkOnDark from '../assets/logos/firehouse-wordmark-on-dark.png';
-import wordmark from '../assets/logos/firehouse-wordmark.png';
+import markOnDark from '../assets/logos/firehouse-mark-on-dark.webp';
+import mark from '../assets/logos/firehouse-mark.webp';
+import wordmarkOnDark from '../assets/logos/firehouse-wordmark-on-dark.webp';
+import wordmark from '../assets/logos/firehouse-wordmark.webp';
 import './BrandMark.css';
 
 export interface BrandMarkProps {

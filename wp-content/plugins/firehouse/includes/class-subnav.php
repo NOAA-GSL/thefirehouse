@@ -130,6 +130,9 @@ final class Subnav {
 		/* translators: %s: the site's name, such as "The FireHouse". */
 		$home_label = sprintf( __( '%s — home', 'firehouse' ), $site );
 
+		// Both marks are lazy on purpose: the browser never fetches the one the theme's CSS
+		// hides, so a page in the light theme loads one. Keep it, though they sit in the
+		// first screen; loading them eagerly measured no faster (WORDPRESS-PLAN.md, Phase 4).
 		ob_start();
 		?>
 <div class="fh-header" data-wp-interactive="firehouse/subnav" data-wp-context='{"open":false}' data-wp-on-document--keydown="actions.closeOnEscape" data-wp-on-window--pageshow="actions.closeOnRestore" data-wp-on--focusout="actions.closeOnFocusOut">
@@ -137,8 +140,8 @@ final class Subnav {
 		<a href="<?php echo esc_url( home_url( '/' . Query::ROOT_PATH . '/' ) ); ?>" class="fh-header__lockup" aria-label="<?php echo esc_attr( $home_label ); ?>">
 			<span class="fh-header__brand">
 				<span class="fh-brand fh-brand--auto" style="height:32px">
-					<img class="fh-brand__img fh-brand__img--light" src="<?php echo esc_url( plugins_url( 'assets/logos/firehouse-mark.png', $main ) ); ?>" width="94" height="96" loading="lazy" alt="">
-					<img class="fh-brand__img fh-brand__img--dark" src="<?php echo esc_url( plugins_url( 'assets/logos/firehouse-mark-on-dark.png', $main ) ); ?>" width="94" height="96" loading="lazy" alt="">
+					<img class="fh-brand__img fh-brand__img--light" src="<?php echo esc_url( plugins_url( 'assets/logos/firehouse-mark.webp', $main ) ); ?>" width="94" height="96" loading="lazy" alt="">
+					<img class="fh-brand__img fh-brand__img--dark" src="<?php echo esc_url( plugins_url( 'assets/logos/firehouse-mark-on-dark.webp', $main ) ); ?>" width="94" height="96" loading="lazy" alt="">
 				</span>
 				<span class="fh-header__wordmark"><?php echo esc_html( $site ); ?></span>
 			</span>

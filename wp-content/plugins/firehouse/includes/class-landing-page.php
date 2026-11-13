@@ -104,7 +104,7 @@ final class Landing_Page {
 			. Page_Blocks::button( $attributes['secondaryCta'] ?? null, 'secondary', 'lg', array( 1 => 'arrow-right' ), array( 'on-dark', 'block-mobile' ) );
 		return sprintf(
 			'<section class="fh-hero"><div class="fh-hero__media" aria-hidden="true"><div class="fh-hero__smoke"></div><div class="fh-hero__scrim"></div></div><div class="fh-hero__content fh-container"><div class="fh-hero__grid"><div class="fh-hero__panel"><img class="fh-brand fh-brand--dark fh-hero__logo" src="%1$s" alt="%2$s" style="height:72px"><span class="fh-hero__eyebrow">%3$s</span><h1 class="fh-hero__heading">%4$s</h1><p class="fh-hero__body">%5$s</p><div class="fh-hero__actions">%6$s</div></div>%7$s</div></div><span class="fh-hero__horizon" aria-hidden="true"></span></section>',
-			esc_url( plugins_url( 'assets/logos/firehouse-wordmark-on-dark.png', dirname( __DIR__ ) . '/firehouse.php' ) ),
+			esc_url( plugins_url( 'assets/logos/firehouse-wordmark-on-dark.webp', dirname( __DIR__ ) . '/firehouse.php' ) ),
 			esc_attr__( 'FireHouse — Fire Weather Research Hub', 'firehouse' ),
 			Markup::text( $text( 'eyebrow' ) ),
 			Markup::text( $text( 'heading' ) ),

@@ -92,8 +92,10 @@ ${entries.join('\n')}
 `;
 }
 
-// The images BrandMark imports, read from the component so a new one comes along.
-const LOGOS = [...readFileSync(resolve(ROOT, 'src/design-system/BrandMark.tsx'), 'utf8').matchAll(/from '\.\.\/assets\/logos\/([\w.-]+\.png)'/g)].map(
+// The images BrandMark imports, read from the component so a new one comes along, in
+// whatever format it is. tests/LogosTest.php checks every logo the plugin's PHP names is
+// among them.
+const LOGOS = [...readFileSync(resolve(ROOT, 'src/design-system/BrandMark.tsx'), 'utf8').matchAll(/from '\.\.\/assets\/logos\/([\w.-]+\.\w+)'/g)].map(
   ([, name]) => name,
 );
 if (LOGOS.length === 0) throw new Error('BrandMark.tsx imports no logo, so there is nothing to copy.');

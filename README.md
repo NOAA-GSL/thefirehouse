@@ -887,8 +887,17 @@ The card (1200×630, the FireHouse wordmark on white) and the icons (`favicon.ic
 brand files in `src/assets/logos/source/`. Icons use the isolated house-and-flame mark
 on a white tile, so its slate outline still reads on a dark browser tab. The UI copies
 in `src/assets/logos/` include `-on-dark` variants with the slate recoloured light for
-the dark header and hero. There is no vector source yet — if one arrives, regenerate
-from it, then run `npm run plugin:assets` so the plugin's copies follow.
+the dark header and hero. The four FireHouse files there are WebP at the size of the
+PNGs they replaced (the wordmark 752×240, the mark 94×96, enough for a 3× screen),
+lossy at quality 90 with lossless transparency (Pillow: `quality=90,
+alpha_quality=100, method=6`), about half the size of those PNGs and the same to the
+eye; a 256-colour PNG was smaller but banded the flame's gradients. The lossless PNGs
+are in git history, for instance `git show
+69f2dbb:src/assets/logos/firehouse-wordmark-on-dark.png`; start from those, not the
+WebPs, for a new size. Keep the four names: the plugin's PHP names them, and
+`tests/LogosTest.php` fails if one it names doesn't ship. There is no vector source
+yet — if one arrives, regenerate from it, then run `npm run plugin:assets` so the
+plugin's copies follow.
 
 ## License
 
