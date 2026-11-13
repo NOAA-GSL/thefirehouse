@@ -3932,7 +3932,8 @@
  *
  * The design system loaded these fonts with an @import from Google Fonts. Some
  * federal sites restrict third-party CDN calls, so that @import is gone, the one
- * change to this ported file. The same Google files are saved beside the plugin, with
+ * change to this ported file. The same Google files, less the italic faces nothing
+ * here uses, are saved beside the plugin, with
  * their @font-face rules in wp-content/plugins/firehouse/assets/css/fonts.css
  * (scripts/fetch-fonts.mjs), which src/main.tsx imports. Everything reads the fonts
  * through --font-display, --font-display-expanded and --font-body.

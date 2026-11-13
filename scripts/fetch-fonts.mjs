@@ -5,8 +5,9 @@
  *
  *   node scripts/fetch-fonts.mjs
  *
- * It asks Google Fonts for the stylesheet the site used to `@import`, as a modern
- * browser would, and saves each font file it names, unchanged, in
+ * It asks Google Fonts for the faces in `WANTED`, as a modern browser would: the
+ * stylesheet the site used to `@import`, less its italic faces (see `WANTED`). It
+ * saves each font file Google names, unchanged, in
  * `wp-content/plugins/firehouse/assets/fonts/`, with the fonts' licence, the SIL Open
  * Font License, from a pinned commit of Google's fonts repository. It writes
  * `wp-content/plugins/firehouse/assets/css/fonts.css`, Google's `@font-face` rules
@@ -20,11 +21,19 @@
  *
  * Google serves variable fonts: one file for every weight of a style, split by script
  * into subsets, each loaded only when a page uses its range. Everything is fetched
- * and checked before the folder is replaced, so a failed run changes nothing.
+ * and checked before anything is written, so a run that stops changes nothing.
+ * SOURCES.json is written after the files it describes, so a run that fails while
+ * writing leaves the old record for the next run to check against, or a broken one
+ * the next run stops on.
+ *
+ * A file keeps its name from run to run, and fonts.css and the frame's preload
+ * (`Frame::PRELOADED_FONTS`) ask for it by that name, with no version, so a cache could
+ * go on serving its old bytes. Until the names carry each file's hash, a run that
+ * would change a saved file's bytes stops (WORDPRESS-PLAN.md, Phase 3's fonts).
  */
 
 import { createHash } from 'node:crypto';
-import { mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, sep } from 'node:path';
 
@@ -32,17 +41,25 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const FONTS = resolve(ROOT, 'wp-content/plugins/firehouse/assets/fonts');
 const CSS = resolve(ROOT, 'wp-content/plugins/firehouse/assets/css/fonts.css');
 
-// The faces the site asks for: family, style, weight. Google serves no Archivo
-// Expanded, which the stats and the wordmark name first, so it may be missing.
+// The faces the site asks for: family, style, weights. Google must return each of
+// them, and nothing else.
+//
+// No italics: nothing the site or the plugin writes is set in italic (fonts.test.mjs
+// holds them to that), so no browser ever downloaded the italic faces the design
+// system's stylesheet asked for. Text set in italic needs its face added here, or the
+// browser slants the upright one. That includes text an editor sets in italic in a
+// page of the Firehouse tree, if Phase 6 lets them.
 const WANTED = [
   ['Archivo', 'normal', [500, 600, 700, 800]],
-  ['Archivo', 'italic', [600]],
   ['Public Sans', 'normal', [400, 500, 600, 700]],
-  ['Public Sans', 'italic', [400]],
 ];
-const MAY_BE_MISSING = ['Archivo Expanded'];
+// Asked for, as the site's stylesheet did, but Google serves none: the stats and the
+// wordmark name Archivo Expanded first and fall back to Archivo. If Google starts
+// serving it, the run stops, since its faces then belong in WANTED and its licence in
+// LICENCES.
+const NOT_SERVED = ['Archivo Expanded'];
 const STYLESHEET =
-  'https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,500;0,600;0,700;0,800;1,600&family=Archivo+Expanded:wght@700;800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap';
+  'https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Archivo+Expanded:wght@700;800&family=Public+Sans:wght@400;500;600;700&display=swap';
 // Google picks file formats by browser; this asks as a modern Chromium browser does.
 const BROWSER = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
 const LICENCE_COMMIT = '86aced91de05cd4f96a06838124cca45be337b2b';
@@ -103,9 +120,13 @@ const declared = (google.match(/@font-face/g) ?? []).length;
 if (blocks.length !== declared) throw new Error(`Google returned ${declared} faces, ${blocks.length} of them labelled with a subset.`);
 const faces = blocks.map(([, subset, body]) => parseFace(subset, body));
 
-const requested = new Set([...WANTED.map(([family]) => family), ...MAY_BE_MISSING]);
-const strangers = faces.filter((face) => !requested.has(face.family));
-if (strangers.length) throw new Error(`Google returned faces not asked for: ${[...new Set(strangers.map((f) => f.family))].join(', ')}`);
+const served = NOT_SERVED.filter((family) => faces.some((face) => face.family === family));
+if (served.length) throw new Error(`Google now serves ${served.join(', ')}: add its faces to WANTED and its licence to LICENCES.`);
+const requested = new Set(WANTED.flatMap(([family, style, weights]) => weights.map((weight) => `${family} ${style} ${weight}`)));
+const strangers = faces.filter((face) => !requested.has(`${face.family} ${face.style} ${face.weight}`));
+if (strangers.length) {
+  throw new Error(`Google returned faces not asked for: ${[...new Set(strangers.map((f) => `${f.family} ${f.style} ${f.weight}`))].join(', ')}`);
+}
 for (const [family, style, weights] of WANTED) {
   for (const weight of weights) {
     if (!faces.some((f) => f.family === family && f.style === style && f.weight === weight && f.subset === 'latin')) {
@@ -113,7 +134,6 @@ for (const [family, style, weights] of WANTED) {
     }
   }
 }
-const missing = MAY_BE_MISSING.filter((family) => !faces.some((face) => face.family === family));
 
 // One file per family, style and subset: the weights of a style share a variable font.
 const files = new Map();
@@ -146,6 +166,51 @@ for (const [family, url] of Object.entries(LICENCES)) {
   saved.set(`${family}-OFL.txt`, { url, bytes: Buffer.from(text) });
 }
 
+// A saved font whose bytes would change under the same name stops the run (see the
+// top of this file). Each font file downloaded (not the licences) is compared with the
+// saved file and with the hash SOURCES.json records for it, so neither one missing lets
+// a change through. A font in neither is new, and fine, as is one no longer asked for.
+// A font or a SOURCES.json that's there but can't be read stops the run.
+const readSaved = (name) => {
+  try {
+    return readFileSync(resolve(FONTS, name));
+  } catch (error) {
+    if (error.code === 'ENOENT') return undefined;
+    throw new Error(`${resolve(FONTS, name)} can't be read (${error.code ?? error.message}).`, { cause: error });
+  }
+};
+const record = readSaved('SOURCES.json');
+let recorded = {};
+if (record !== undefined) {
+  try {
+    recorded = JSON.parse(record.toString('utf8')).fonts;
+  } catch (error) {
+    throw new Error(`${resolve(FONTS, 'SOURCES.json')} can't be read: ${error.message}`, { cause: error });
+  }
+  if (typeof recorded !== 'object' || recorded === null || Array.isArray(recorded)) {
+    throw new Error(`${resolve(FONTS, 'SOURCES.json')} has no "fonts" object.`);
+  }
+}
+const changed = [];
+for (const [name, { bytes }] of saved) {
+  if (!name.endsWith('.woff2')) continue;
+  const onDisk = readSaved(name);
+  const differsFromFile = onDisk !== undefined && !onDisk.equals(bytes);
+  const differsFromRecord = Object.hasOwn(recorded, name) && recorded[name]?.sha256 !== sha256(bytes);
+  if (differsFromFile || differsFromRecord) {
+    const from = [differsFromFile && 'the saved file', differsFromRecord && 'its hash in SOURCES.json'].filter(Boolean);
+    changed.push(`${name} (${from.join(' and ')})`);
+  }
+}
+if (changed.length) {
+  throw new Error(
+    `Downloaded fonts differ from what's saved: ${changed.join(', ')}. If a saved font or SOURCES.json was changed ` +
+      'here, restore it from git and run again. If Google now serves different bytes, give the font files names with ' +
+      'their hash first, and the preload in Frame::PRELOADED_FONTS with them, or browsers may keep the old files ' +
+      '(WORDPRESS-PLAN.md, Phase 3).',
+  );
+}
+
 const describe = (map) =>
   Object.fromEntries([...map].sort().map(([name, { url, bytes }]) => [name, { source: url, sha256: sha256(bytes), bytes: bytes.length }]));
 const sources = {
@@ -174,8 +239,8 @@ const css = `/*
  * own @font-face rules and files, saved by scripts/fetch-fonts.mjs, with where each
  * file came from in ../fonts/SOURCES.json. Both families are under the SIL Open Font
  * License, saved beside the files in ../fonts/.${
-  missing.length
-    ? `\n *\n * Google serves no ${missing.join(' or ')}, so the token that names it falls back\n * to the next family in its list, as it did when the site loaded Google's stylesheet.`
+  NOT_SERVED.length
+    ? `\n *\n * Google serves no ${NOT_SERVED.join(' or ')}, so the token that names it falls back\n * to the next family in its list, as it did when the site loaded Google's stylesheet.`
     : ''
 }
  *
@@ -189,13 +254,21 @@ const css = `/*
 ${rules}
 `;
 
-rmSync(FONTS, { recursive: true, force: true });
+// Written over the saved files, SOURCES.json last, and only then are files no longer
+// asked for removed. Every font written has passed the check above, so a run that
+// fails partway leaves SOURCES.json's old record, or a broken one the next run stops on.
+// Names are kept regardless of case: on Windows and macOS, a file written over one
+// whose name differs only in case keeps the old name, and mustn't then be removed.
 mkdirSync(FONTS, { recursive: true });
 for (const [name, { bytes }] of saved) writeFileSync(resolve(FONTS, name), bytes);
-writeFileSync(resolve(FONTS, 'SOURCES.json'), `${JSON.stringify(sources, null, 2)}\n`);
 writeFileSync(CSS, css);
+writeFileSync(resolve(FONTS, 'SOURCES.json'), `${JSON.stringify(sources, null, 2)}\n`);
+const kept = new Set([...saved.keys(), 'SOURCES.json'].map((name) => name.toLowerCase()));
+for (const name of readdirSync(FONTS)) {
+  if (!kept.has(name.toLowerCase())) rmSync(resolve(FONTS, name), { recursive: true, force: true });
+}
 
 console.log(`Saved ${files.size} font files for ${faces.length} faces, and ${saved.size - files.size} licences, in ${FONTS}`);
 console.log(`Wrote ${CSS}`);
-if (missing.length) console.log(`Google served no ${missing.join(', ')}.`);
+if (NOT_SERVED.length) console.log(`Google served no ${NOT_SERVED.join(', ')}.`);
 console.log(readdirSync(FONTS).join('\n'));

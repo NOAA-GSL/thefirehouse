@@ -1,22 +1,7 @@
 {
-  "stylesheet": "https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,500;0,600;0,700;0,800;1,600&family=Archivo+Expanded:wght@700;800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap",
-  "fetched": "2026-11-06",
+  "stylesheet": "https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Archivo+Expanded:wght@700;800&family=Public+Sans:wght@400;500;600;700&display=swap",
+  "fetched": "2026-11-13",
   "fonts": {
-    "archivo-italic-latin-ext.woff2": {
-      "source": "https://fonts.gstatic.com/s/archivo/v25/k3k8o8UDI-1M0wlSfdzyIEkpwTM29hr-8mTYIRyOSVz60_PG_HBftCdlD0_SVQ.woff2",
-      "sha256": "d511f68fc1b470bb20ff01ed80672032854eb14bff86e5500c5c9d9d7b8c050c",
-      "bytes": 13028
-    },
-    "archivo-italic-latin.woff2": {
-      "source": "https://fonts.gstatic.com/s/archivo/v25/k3k8o8UDI-1M0wlSfdzyIEkpwTM29hr-8mTYIRyOSVz60_PG_HBftCdrD08.woff2",
-      "sha256": "e4b27833506a0782e1d9123e94dc40a3770d2881aa77408d8845be06d5b55701",
-      "bytes": 15048
-    },
-    "archivo-italic-vietnamese.woff2": {
-      "source": "https://fonts.gstatic.com/s/archivo/v25/k3k8o8UDI-1M0wlSfdzyIEkpwTM29hr-8mTYIRyOSVz60_PG_HBftCdkD0_SVQ.woff2",
-      "sha256": "e91b21405c88887680ecd94a694578e8bc56354670c6b6802a845dd58e87bd9e",
-      "bytes": 5556
-    },
     "archivo-normal-latin-ext.woff2": {
       "source": "https://fonts.gstatic.com/s/archivo/v25/k3kPo8UDI-1M0wlSV9XAw6lQkqWY8Q82sLyTOxK-vA.woff2",
       "sha256": "ff4f17d21930e36d6d93baba663e624cb767afc3feebf7adaebd82242638de05",
@@ -31,21 +16,6 @@
       "source": "https://fonts.gstatic.com/s/archivo/v25/k3kPo8UDI-1M0wlSV9XAw6lQkqWY8Q82sLySOxK-vA.woff2",
       "sha256": "5a621c5598a31392555104ccdc41a46c3104f1cc22666024a8afb881ca9adaab",
       "bytes": 13240
-    },
-    "public-sans-italic-latin-ext.woff2": {
-      "source": "https://fonts.gstatic.com/s/publicsans/v21/ijwAs572Xtc6ZYQws9YVwnNDZpDyNjGolS673tpRgDckd1sdfg.woff2",
-      "sha256": "e6222552947514482967d4785b869b1612b6ef47bb35fd8647c304e1d755940b",
-      "bytes": 10920
-    },
-    "public-sans-italic-latin.woff2": {
-      "source": "https://fonts.gstatic.com/s/publicsans/v21/ijwAs572Xtc6ZYQws9YVwnNDZpDyNjGolS673tpRgDcqd1s.woff2",
-      "sha256": "e9110763c65b780c1282c9ee7c7acf152b16aec93d75ba2e6e8831f74c7233a7",
-      "bytes": 15644
-    },
-    "public-sans-italic-vietnamese.woff2": {
-      "source": "https://fonts.gstatic.com/s/publicsans/v21/ijwAs572Xtc6ZYQws9YVwnNDZpDyNjGolS673tpRgDcld1sdfg.woff2",
-      "sha256": "61d4903622aba0a9471b0a5a32d4f8d3c496a575baac0600217df10627e05d95",
-      "bytes": 4872
     },
     "public-sans-normal-latin-ext.woff2": {
       "source": "https://fonts.gstatic.com/s/publicsans/v21/ijwRs572Xtc6ZYQws9YVwnNIfJ7Cww.woff2",

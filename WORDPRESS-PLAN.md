@@ -926,7 +926,11 @@ ones.
   and the file's modified time. The font files `fonts.css` points at carry no version,
   and `fetch-fonts.mjs` names them `<family>-<style>-<subset>.woff2`, so a refreshed
   file could be served stale from a cache: before the next refresh, the script should
-  put each file's hash in its name. Preloading the latin Public Sans file moves to Phase 4.*
+  put each file's hash in its name. Preloading the latin Public Sans file moves to Phase 4.
+  (12 November: the refresh that dropped the italics saved the same bytes. The script
+  now stops rather than save new bytes under a name already saved, so the hashed
+  names are owed before the first refresh that changes a file, and the frame's
+  preload, `Frame::PRELOADED_FONTS`, takes the hashed name with them.)*
   *Icons and logos done 6 November: `npm run plugin:assets` draws every icon in the
   site's registry through its own `Icon` component into `assets/icons/<name>.svg`, and
   copies the images `BrandMark` imports into `assets/logos/`; CI checks both are
@@ -1274,7 +1278,25 @@ signed off on the frame.
   compressed, all of it render-blocking, and about a third of it comments. Minify what
   the plugin loads (the checks run on the minified file), split the project, topic
   and About sections by template in `wp_enqueue_scripts`, preload the latin Public Sans
-  file, and drop the italic faces nothing uses. Once the blocks build with
+  file, and drop the italic faces nothing uses. *Fonts done 12 November:
+  `scripts/fetch-fonts.mjs` no longer asks for italics. Nothing the site or the plugin
+  writes is set in italic, which `scripts/fonts.test.mjs` now checks, so no browser
+  ever downloaded them. Rerun without them, it saved the same upright files, byte for
+  byte, so no cached copy is stale; `fonts.css` has 24 faces, not 30. The frame
+  preloads the latin Public Sans file on Firehouse pages while `fonts.css` is
+  enqueued (`Frame::preload()`), at the address `fonts.css` names, so each font loads
+  once. Measured on the local copy, a first view over HTTP/1.1 on an emulated slow 4G
+  connection: text moved by up to 0.07 (a topic page's layout shift at desktop
+  width, 0.08 for a project page on a phone) when Public Sans swapped in about a
+  second after the first paint. With the preload the shift is under 0.002, and the
+  first paint, also the largest, 0 to 0.3 s later, as the font shares the connection
+  with the stylesheets. Preloading Archivo as well would keep the headings from
+  changing font, which moves almost nothing, for a first paint 0.15 to 0.55 s later
+  than none, so it isn't. A second view takes the fonts from the cache.*
+  *With the first release on the test site, over HTTP/2 or 3 behind Cloudflare, where
+  stylesheets can go first: measure the preloads again on a first view, and decide
+  Archivo then (at `fetchpriority="low"`, say).*
+  Once the blocks build with
   `@wordpress/scripts`, register them from its generated manifest
   (`wp_register_block_types_from_metadata_collection()`), not by reading each
   `block.json` on every request. *That function needs WordPress 6.8, and the plugin
@@ -1324,6 +1346,12 @@ behaves the same, and the accessibility snapshots match.
   editors: decide whether they get their own text controls or become core blocks in a
   locked pattern.
 - Whether an editor can reword the cleared disclaimer.
+- Which blocks a page in the Firehouse tree allows. Nothing limits them today, so an
+  editor can add a core Paragraph or Image to the landing or About page, with its
+  Italic button and caption, which GSL's theme sets in italic. The fonts have no
+  italic face (Phase 4's weight work), so the browser would slant the upright one.
+  Keep core text blocks out of the tree, or add the italic faces they use to
+  `scripts/fetch-fonts.mjs`.
 - The synthesis screen: paste, validation, the comparison against the published
   synthesis, and **Mark reviewed**. Validation includes the order: each topic area's
   needs by project count, highest first, since the About page says so (ties go by

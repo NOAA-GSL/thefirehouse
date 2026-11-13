@@ -114,12 +114,14 @@ final class HooksTest extends WordPressTestCase {
 	}
 
 	/**
-	 * The frame takes the template late, loads its stylesheets after the theme's, adds
-	 * its body class, and makes its own guess at a missing Firehouse address.
+	 * The frame takes the template late, loads its stylesheets after the theme's,
+	 * preloads its text font, adds its body class, and makes its own guess at a missing
+	 * Firehouse address.
 	 */
 	public function test_frame_hooks(): void {
 		Filters\expectAdded( 'template_include' )->once()->with( array( Frame::class, 'template' ), 99, 1 );
 		Actions\expectAdded( 'wp_enqueue_scripts' )->once()->with( array( Frame::class, 'enqueue' ), 20, 1 );
+		Filters\expectAdded( 'wp_preload_resources' )->once()->with( array( Frame::class, 'preload' ), 10, 1 );
 		Filters\expectAdded( 'body_class' )->once()->with( array( Frame::class, 'body_class' ), 10, 1 );
 		Filters\expectAdded( 'pre_redirect_guess_404_permalink' )->once()->with( array( Frame::class, 'guess_404' ), 10, 1 );
 

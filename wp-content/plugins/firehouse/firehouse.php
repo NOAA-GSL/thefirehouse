@@ -139,10 +139,10 @@ require_once __DIR__ . '/includes/class-head.php';
  *   missing address and changes WordPress's answer only under /firehouse/, where it
  *   makes the Firehouse's own guess.
  * - Frame::is_firehouse_request decides, on template_redirect, template_include,
- *   wp_enqueue_scripts and body_class, whether the request is for a Firehouse page.
- *   Only for one does the plugin replace the template, add its stylesheets and body
- *   class, and turn off WordPress's text rewrites (Verbatim). Anywhere else, these
- *   hooks change nothing.
+ *   wp_enqueue_scripts, wp_preload_resources and body_class, whether the request is
+ *   for a Firehouse page. Only for one does the plugin replace the template, add its
+ *   stylesheets, its font preload and its body class, and turn off WordPress's text
+ *   rewrites (Verbatim). Anywhere else, these hooks change nothing.
  * - Head::document_title (the `pre_get_document_title` filter) and Head::tags (on
  *   wp_head) give a Firehouse page its title, description and link-preview tags. They
  *   change nothing on any other page, nor anywhere while an SEO plugin is active or
