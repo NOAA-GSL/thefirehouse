@@ -2,9 +2,9 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
 	"name": "firehouse/not-found",
-	"title": "Firehouse not found",
+	"title": "FireHouse not found",
 	"category": "widgets",
-	"description": "What a missing Firehouse address shows: the way back, the explorer and the four topic areas.",
+	"description": "What a missing FireHouse address shows: the way back, the explorer and the four topic areas.",
 	"textdomain": "firehouse",
 	"supports": {
 		"html": false,

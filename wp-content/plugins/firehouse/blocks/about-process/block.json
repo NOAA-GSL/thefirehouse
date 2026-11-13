@@ -2,7 +2,7 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
 	"name": "firehouse/about-process",
-	"title": "Firehouse About process",
+	"title": "FireHouse About process",
 	"category": "widgets",
 	"description": "How the hub works: the section's words, the numbered steps and the links after them.",
 	"textdomain": "firehouse",

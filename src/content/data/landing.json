@@ -2,7 +2,7 @@
   "hero": {
     "eyebrow": "NOAA / Global Systems Laboratory",
     "heading": "A shared home for fire weather social science",
-    "body": "The Firehouse centralizes the needs and recommendations learned across completed fire weather research, so forecasters, researchers, and decision-makers can find what's already known — and add to it.",
+    "body": "The FireHouse centralizes the needs and recommendations learned across completed fire weather research, so forecasters, researchers, and decision-makers can find what's already known — and add to it.",
     "primaryCta": { "label": "Submit a Finding", "href": "" },
     "secondaryCta": { "label": "Explore Projects", "to": "/projects" },
     "imageAlt": ""
@@ -32,7 +32,7 @@
   "topicSection": {
     "eyebrow": "Synthesized across every project",
     "heading": "Top needs across submitted projects",
-    "body": "Forecasters, land managers, and emergency managers keep telling researchers what they need. Here, every completed fire weather social science project in The Firehouse is read together as one body of evidence, and the needs its researchers recorded are distilled into the five most pressing in each of four topic areas — in one place, ranked, with how often each one came up."
+    "body": "Forecasters, land managers, and emergency managers keep telling researchers what they need. Here, every completed fire weather social science project in The FireHouse is read together as one body of evidence, and the needs its researchers recorded are distilled into the five most pressing in each of four topic areas — in one place, ranked, with how often each one came up."
   },
   "needsPerCard": 5,
   "submitBand": {

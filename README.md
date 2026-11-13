@@ -255,8 +255,8 @@ overrides are isolated so a re-sync doesn't lose them.
       paragraphs are no longer rendered (September 2026 review) but are kept in the
       data. Stephanie or Emily should own the wording.
 - [ ] **Confirm the page titles and link-preview text** with Stephanie and Emily. The
-      titles are the site's: "{page} — The Firehouse", and the landing page's "The
-      Firehouse — Fire Weather Social Science Hub". The explorer's title and placeholder
+      titles are the site's: "{page} — The FireHouse", and the landing page's "The
+      FireHouse — Fire Weather Social Science Hub". The explorer's title and placeholder
       heading follow its link label, "Explore Projects", where the React site's title
       says "Explore projects". The description, preview text and image alt text in
       `index.html` are repeated by the plugin (`includes/class-head.php`), and the alt
@@ -405,7 +405,7 @@ nothing from the database. Each class's docblock has the detail; this is the map
   - Below 1024px its links and Submit button fold into a drawer that the menu button
     opens and closes (`blocks/subnav/view.js`). Escape closes it and returns focus to
     the menu button, and focus leaving the bar closes it. The button is named
-    "Firehouse menu" whether open or shut, since the theme's header has a menu button
+    "FireHouse menu" whether open or shut, since the theme's header has a menu button
     too; `aria-expanded` says which.
 - `Not_Found` is the Firehouse 404, the `firehouse/not-found` block: the site's
   `NotFoundPage`, with the way back, the explorer and the four topic areas. It quotes
@@ -473,7 +473,7 @@ nothing from the database. Each class's docblock has the detail; this is the map
 - `Query` drops WordPress's `year` query variable from Firehouse requests (rule 7), and
   a project or topic variable that names no post (`?fh_project[]=x`, `?fh_topic=`) from
   any request (rule 13).
-- `Capabilities` defines the Firehouse Editor role: projects, topics, the Firehouse
+- `Capabilities` defines the FireHouse Editor role: projects, topics, the Firehouse
   settings and the `firehouse` page tree, and nothing else on the site. The role
   stores `read` and Firehouse's own capabilities; WordPress's page capabilities are
   lent only while the plugin runs, so with the plugin off its users can only sign
@@ -540,10 +540,11 @@ nothing from the database. Each class's docblock has the detail; this is the map
 - `Page_Blocks` is what the two share: building their blocks from the bundle's text,
   where a stored link goes, and its button, left out when it leads nowhere.
 - `Head` gives each Firehouse page its title, the site's title for it then GSL's
-  suffix ("About — The Firehouse – Global Systems Laboratory"; decided by Eric, 12
-  November), and the description and Open Graph and Twitter tags a shared link's
-  preview is built from: the site's words from `index.html`, or on a project's page its
-  abstract as the researcher wrote it. It changes nothing on any other page, and
+  suffix ("About — The FireHouse – Global Systems Laboratory"; decided by Eric, 12
+  November, and spelled FireHouse, Eric's call of 13 November), and the description
+  and Open Graph and Twitter tags a shared link's preview is built from: the site's
+  words from `index.html`, or on a project's page its abstract as the researcher wrote
+  it. It changes nothing on any other page, and
   leaves everything to an SEO plugin if one is active, or when the `firehouse_head_tags`
   filter returns false.
 

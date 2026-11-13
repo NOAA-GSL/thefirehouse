@@ -1,5 +1,5 @@
 {
-  "siteName": "The Firehouse",
+  "siteName": "The FireHouse",
   "nav": [
     {
       "label": "Home",
@@ -23,7 +23,7 @@
       "heading": "Explore",
       "links": [
         {
-          "label": "About The Firehouse",
+          "label": "About The FireHouse",
           "to": "/about"
         },
         {

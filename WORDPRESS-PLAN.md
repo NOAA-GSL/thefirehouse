@@ -1252,7 +1252,9 @@ signed off on the frame.
   researcher's own " - " doesn't read as the separator. Titles are computed as the
   page renders, from the settings, so the About page's and the explorer's follow their
   links' labels (About's post title, set by the import, stays "About — The Firehouse"
-  for WordPress's lists), and the explorer's placeholder heading names it too. The
+  for WordPress's lists), and the explorer's placeholder heading names it too.
+  (13 November, Eric: the name people read is "FireHouse", so the titles end "— The
+  FireHouse"; code names keep `firehouse` and `Firehouse`.) The
   preview image is the site's `public/og-image.png`, which `npm run plugin:assets`
   copies into the plugin's `assets/preview/`, its address versioned so a replacement
   isn't served from a preview's cache. A published page's preview names its address.*

@@ -1,14 +1,14 @@
 {
   "hero": {
-    "eyebrow": "About The Firehouse",
+    "eyebrow": "About The FireHouse",
     "heading": "What this hub is, and who it is for",
-    "body": "The Firehouse is NOAA's Global Systems Laboratory's public hub for fire weather social science. It gathers what completed research has already established about end-user needs and recommendations, so the next project, product or conversation can start from known unmet needs instead of rediscovering the same gaps."
+    "body": "The FireHouse is NOAA's Global Systems Laboratory's public hub for fire weather social science. It gathers what completed research has already established about end-user needs and recommendations, so the next project, product or conversation can start from known unmet needs instead of rediscovering the same gaps."
   },
   "mission": {
     "heading": "Why it exists",
     "paragraphs": [
       "Fire weather social science asks what partners and the public actually need from weather information when decisions can't wait. A lot of great research exists, but its findings usually stay trapped inside individual reports.",
-      "The Firehouse pulls those completed projects into a single collection—preserving the researchers' exact words, end-user needs, and recommendations. Then, analyzed collectively, these needs are distilled into the five most pressing issues across four core areas—observations, forecasts, warnings, and governance—and ranked by frequency. Every count comes directly from published work, every synthesis is human-reviewed, and every need names the projects that backed it."
+      "The FireHouse pulls those completed projects into a single collection—preserving the researchers' exact words, end-user needs, and recommendations. Then, analyzed collectively, these needs are distilled into the five most pressing issues across four core areas—observations, forecasts, warnings, and governance—and ranked by frequency. Every count comes directly from published work, every synthesis is human-reviewed, and every need names the projects that backed it."
     ]
   },
   "audiences": {

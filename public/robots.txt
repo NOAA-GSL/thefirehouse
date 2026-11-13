@@ -1,4 +1,4 @@
-# The Firehouse — public NOAA/GSL research hub, intended to be discoverable.
+# The FireHouse — public NOAA/GSL research hub, intended to be discoverable.
 User-agent: *
 Allow: /
 

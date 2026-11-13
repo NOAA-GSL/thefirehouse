@@ -53,11 +53,11 @@ final class Not_Found {
 	<div class="fh-not-found__inner">
 		<span class="fh-eyebrow"><?php esc_html_e( 'Error 404', 'firehouse' ); ?></span>
 		<h1 class="fh-not-found__heading"><?php echo $topic ? esc_html__( 'Topic area not found', 'firehouse' ) : esc_html__( 'Page not found', 'firehouse' ); ?></h1>
-		<p class="fh-not-found__body"><?php echo $topic ? esc_html__( 'The Firehouse organizes its findings into four topic areas, and that isn’t one of them. The address may be mistyped, or the link may predate a change to the site.', 'firehouse' ) : esc_html__( 'That page doesn’t exist, or it may have moved. Everything on the hub is reachable from here.', 'firehouse' ); ?></p>
+		<p class="fh-not-found__body"><?php echo $topic ? esc_html__( 'The FireHouse organizes its findings into four topic areas, and that isn’t one of them. The address may be mistyped, or the link may predate a change to the site.', 'firehouse' ) : esc_html__( 'That page doesn’t exist, or it may have moved. Everything on the hub is reachable from here.', 'firehouse' ); ?></p>
 		<p class="fh-not-found__requested"><?php esc_html_e( 'Requested address', 'firehouse' ); ?> <code class="fh-not-found__path"><?php echo esc_html( $requested ); ?></code></p>
 		<div class="fh-not-found__actions">
 			<?php
-			echo Markup::button( __( 'Back to The Firehouse', 'firehouse' ), home_url( $root ), 'primary', 'md', array( 1 => 'arrow-right' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup escapes what it builds.
+			echo Markup::button( __( 'Back to The FireHouse', 'firehouse' ), home_url( $root ), 'primary', 'md', array( 1 => 'arrow-right' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup escapes what it builds.
 			echo Markup::button( __( 'Explore projects', 'firehouse' ), home_url( $root . 'projects/' ), 'secondary' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- as above.
 			?>
 		</div>

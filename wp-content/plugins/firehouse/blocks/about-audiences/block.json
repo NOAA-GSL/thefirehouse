@@ -2,7 +2,7 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
 	"name": "firehouse/about-audiences",
-	"title": "Firehouse About audiences",
+	"title": "FireHouse About audiences",
 	"category": "widgets",
 	"description": "Who the hub serves: the section's words and a card for each audience, with its icon.",
 	"textdomain": "firehouse",

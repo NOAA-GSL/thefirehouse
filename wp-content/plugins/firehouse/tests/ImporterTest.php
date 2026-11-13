@@ -362,7 +362,7 @@ final class ImporterTest extends WordPressTestCase {
 				'post_parent' => 0,
 				'post_status' => 'publish',
 				'post_author' => 0,
-				'post_title'  => 'The Firehouse',
+				'post_title'  => 'The FireHouse',
 			),
 			array_diff_key( $landing['post'], array( 'post_content' => true ) )
 		);
@@ -606,7 +606,7 @@ final class ImporterTest extends WordPressTestCase {
 				'post_parent' => 0,
 				'post_status' => 'publish',
 				'post_author' => 0,
-				'post_title'  => 'About — The Firehouse',
+				'post_title'  => 'About — The FireHouse',
 			),
 			array_diff_key( $about['post'], array( 'post_content' => true ) )
 		);
@@ -629,7 +629,7 @@ final class ImporterTest extends WordPressTestCase {
 		$settings['submitFormUrl']      = 'https://forms.example.org/firehouse';
 		$settings['navLabels']['about'] = 'About us';
 
-		$this->assertSame( 'About us — The Firehouse', Importer::plan( self::content(), array(), array(), $settings )['about']['post']['post_title'] );
+		$this->assertSame( 'About us — The FireHouse', Importer::plan( self::content(), array(), array(), $settings )['about']['post']['post_title'] );
 	}
 
 	/**
@@ -1045,7 +1045,7 @@ final class ImporterTest extends WordPressTestCase {
 			'post_type'    => 'page',
 			'post_name'    => 'firehouse',
 			'post_status'  => 'publish',
-			'post_title'   => 'The Firehouse',
+			'post_title'   => 'The FireHouse',
 			'post_parent'  => 0,
 			'post_content' => '<!-- wp:firehouse/hero /-->',
 		);
@@ -1102,7 +1102,7 @@ final class ImporterTest extends WordPressTestCase {
 		$result = Importer::run( self::content() );
 
 		$this->assertSame( 'It isn’t at /firehouse/about/: WordPress gave it the address /firehouse/about-2/.', $result['about']['problems'][0] );
-		$this->assertStringContainsString( 'It was deleted, so the Firehouse has no About page yet', $result['about']['problems'][1] );
+		$this->assertStringContainsString( 'It was deleted, so the FireHouse has no About page yet', $result['about']['problems'][1] );
 		$this->assertSame( 0, $result['about']['post_id'] );
 		$this->assertSame( array(), $result['landing']['problems'] );
 		$this->assertSame( array( 'firehouse' ), array_column( array_filter( $posts, static fn( array $post ): bool => 'page' === $post['post_type'] ), 'post_name' ) );

@@ -60,7 +60,7 @@ export function NotFoundPage() {
         </h1>
         <p className="fh-not-found__body">
           {isTopicUrl
-            ? 'The Firehouse organizes its findings into four topic areas, and that isn’t one of them. The address may be mistyped, or the link may predate a change to the site.'
+            ? 'The FireHouse organizes its findings into four topic areas, and that isn’t one of them. The address may be mistyped, or the link may predate a change to the site.'
             : 'That page doesn’t exist, or it may have moved. Everything on the hub is reachable from here.'}
         </p>
 
@@ -70,7 +70,7 @@ export function NotFoundPage() {
 
         <div className="fh-not-found__actions">
           <Button variant="primary" to="/" iconRight="arrow-right">
-            Back to The Firehouse
+            Back to The FireHouse
           </Button>
           <Button variant="secondary" to="/projects">
             Explore projects

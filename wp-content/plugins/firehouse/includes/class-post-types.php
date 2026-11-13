@@ -76,7 +76,7 @@ final class Post_Types {
 			'labels'              => array(
 				'name'               => __( 'Projects', 'firehouse' ),
 				'singular_name'      => __( 'Project', 'firehouse' ),
-				'menu_name'          => __( 'Firehouse', 'firehouse' ),
+				'menu_name'          => __( 'FireHouse', 'firehouse' ),
 				'all_items'          => __( 'Projects', 'firehouse' ),
 				'edit_item'          => __( 'Edit project', 'firehouse' ),
 				'view_item'          => __( 'View project', 'firehouse' ),
@@ -85,7 +85,7 @@ final class Post_Types {
 				'not_found'          => __( 'No projects found.', 'firehouse' ),
 				'not_found_in_trash' => __( 'No projects found in the trash.', 'firehouse' ),
 			),
-			'description'         => __( 'A research project submitted through the Firehouse survey.', 'firehouse' ),
+			'description'         => __( 'A research project submitted through the FireHouse survey.', 'firehouse' ),
 			'public'              => true,
 			'exclude_from_search' => true,
 			'show_in_rest'        => false,

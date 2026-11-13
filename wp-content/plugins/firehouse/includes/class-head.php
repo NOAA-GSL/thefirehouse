@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * title, a description, and the Open Graph and Twitter tags a shared link's preview is
  * built from (decided by Eric, 12 November).
  *
- * - **The title** names both: the site's title for the page, "About — The Firehouse",
+ * - **The title** names both: the site's title for the page, "About — The FireHouse",
  *   then the site's own suffix, " – Global Systems Laboratory".
  * - **The description** is the site's, from `index.html`, except on a project's page,
  *   where it's the project's abstract as the researcher wrote it, or, with none, its
@@ -40,7 +40,7 @@ final class Head {
 	/**
 	 * The site's description, for search results.
 	 */
-	public const DESCRIPTION = 'The Firehouse centralizes end-user needs and recommendations from completed NOAA/GSL fire weather social science research, and accepts new findings from outside researchers.';
+	public const DESCRIPTION = 'The FireHouse centralizes end-user needs and recommendations from completed NOAA/GSL fire weather social science research, and accepts new findings from outside researchers.';
 
 	/**
 	 * The shorter description the site gives link previews.
@@ -50,7 +50,7 @@ final class Head {
 	/**
 	 * The preview image's alternative text.
 	 */
-	public const IMAGE_ALT = 'The Firehouse — fire weather social science needs and findings, NOAA Global Systems Laboratory.';
+	public const IMAGE_ALT = 'The FireHouse — fire weather social science needs and findings, NOAA Global Systems Laboratory.';
 
 	/**
 	 * The preview image, in the plugin's assets (`npm run plugin:assets` copies it from
@@ -158,12 +158,12 @@ final class Head {
 	}
 
 	/**
-	 * The page's own title, as the site gives it: "Page not found — The Firehouse", a
-	 * project's or topic area's "{title} — The Firehouse", the landing page's "The
-	 * Firehouse — Fire Weather Social Science Hub", and the explorer's and the About
-	 * page's "Explore Projects — The Firehouse" and "About — The Firehouse", each named as
+	 * The page's own title, as the site gives it: "Page not found — The FireHouse", a
+	 * project's or topic area's "{title} — The FireHouse", the landing page's "The
+	 * FireHouse — Fire Weather Social Science Hub", and the explorer's and the About
+	 * page's "Explore Projects — The FireHouse" and "About — The FireHouse", each named as
 	 * the link to it is, so a title agrees with the link followed; and any other page in
-	 * the tree, "{its title} — The Firehouse". The site's name and the links' are the
+	 * the tree, "{its title} — The FireHouse". The site's name and the links' are the
 	 * settings'. "" for anything else, which keeps WordPress's. For Firehouse requests:
 	 * document_title() and tags() ask it only on one.
 	 */

@@ -2,9 +2,9 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
 	"name": "firehouse/subnav",
-	"title": "Firehouse bar",
+	"title": "FireHouse bar",
 	"category": "widgets",
-	"description": "The Firehouse wordmark, links and Submit a Finding button, under the site's header on every Firehouse page.",
+	"description": "The FireHouse wordmark, links and Submit a Finding button, under the site's header on every FireHouse page.",
 	"textdomain": "firehouse",
 	"supports": {
 		"html": false,

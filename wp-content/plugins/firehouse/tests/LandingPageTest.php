@@ -315,7 +315,7 @@ final class LandingPageTest extends WordPressTestCase {
 		$this->assertStringContainsString( '<a class="fh-topic-card__link" href="https://example.test/firehouse/topics/warning/">Warnings &amp; Response</a></h3><p class="fh-topic-card__empty">No needs have been published for this area yet.</p>', $html );
 		$this->assertMatchesRegularExpression( '#<div class="fh-topic-card__foot"><span class="fh-topic-card__cue" aria-hidden="true">View topic area and sources<svg[^>]*width="15"[^>]*>.*?</svg></span></div></article>#s', $html );
 
-		$this->assertStringContainsString( '<aside class="fh-source" id="needs-source" aria-labelledby="source-heading"><div class="fh-source__copy"><h3 id="source-heading" class="fh-source__heading">Where these needs come from</h3><p class="fh-source__body">Topic areas are not assigned project by project. Every project in The Firehouse is read together, with Claude. The end-user needs', $html );
+		$this->assertStringContainsString( '<aside class="fh-source" id="needs-source" aria-labelledby="source-heading"><div class="fh-source__copy"><h3 id="source-heading" class="fh-source__heading">Where these needs come from</h3><p class="fh-source__body">Topic areas are not assigned project by project. Every project in The FireHouse is read together, with Claude. The end-user needs', $html );
 		$this->assertMatchesRegularExpression( '#</p></div><a href="https://example.test/firehouse/projects/" class="fh-btn fh-btn--secondary fh-btn--md">Explore all projects<svg[^>]*>.*?</svg></a></aside></section>$#s', $html );
 	}
 

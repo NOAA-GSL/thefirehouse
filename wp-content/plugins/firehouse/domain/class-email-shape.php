@@ -122,7 +122,7 @@ final class Email_Shape {
 				static fn( mixed $field ): bool => ! is_array( $field ) || ! array_is_list( $field ) || array() !== array_filter( $field, static fn( mixed $key ): bool => ! is_string( $key ) )
 			);
 			if ( ! $valid || ! is_string( $shape['pattern'] ?? null ) || ! is_string( $shape['teamEmail'] ?? null ) ) {
-				throw new \RuntimeException( 'The Firehouse plugin could not read shared/email-shape.json.' );
+				throw new \RuntimeException( 'The FireHouse plugin could not read shared/email-shape.json.' );
 			}
 			self::$shape = $shape;
 		}

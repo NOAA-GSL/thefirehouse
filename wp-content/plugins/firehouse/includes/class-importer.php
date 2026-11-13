@@ -210,7 +210,7 @@ final class Importer {
 			return $page;
 		}
 		if ( wp_delete_post( $page['post_id'], true ) ) {
-			$page['problems'][] = sprintf( 'It was deleted, so the Firehouse has no %s yet. Fix the problem above, then import again.', $name );
+			$page['problems'][] = sprintf( 'It was deleted, so the FireHouse has no %s yet. Fix the problem above, then import again.', $name );
 			$page['post_id']    = 0;
 		} else {
 			$page['problems'][] = sprintf( 'WordPress didn’t delete it, so it is still published: delete the page with ID %d from the Pages list, then import again.', $page['post_id'] );
@@ -640,7 +640,7 @@ final class Importer {
 				'problems' => array(),
 				'notes'    => array(
 					$page instanceof \WP_Post && '' === trim( $page->post_content )
-						? 'The landing page exists but is empty, so it shows a placeholder: the import doesn’t write into an existing page. To have the import create it, first move any pages under it elsewhere (deleting it would move them out of the Firehouse), then delete it permanently and import again.'
+						? 'The landing page exists but is empty, so it shows a placeholder: the import doesn’t write into an existing page. To have the import create it, first move any pages under it elsewhere (deleting it would move them out of the FireHouse), then delete it permanently and import again.'
 						: 'The landing page already exists, so its words are left as editors have them.',
 				),
 			);
@@ -657,7 +657,7 @@ final class Importer {
 			$notes[] = 'The hero’s photograph isn’t carried over: the landing page shows its drawn background instead.';
 		}
 		$settings = is_array( $content['settings'] ?? null ) ? $content['settings'] : array();
-		$name     = is_string( $settings['siteName'] ?? null ) && '' !== $settings['siteName'] ? $settings['siteName'] : 'The Firehouse';
+		$name     = is_string( $settings['siteName'] ?? null ) && '' !== $settings['siteName'] ? $settings['siteName'] : 'The FireHouse';
 		return array(
 			'action'   => 'create',
 			'post_id'  => 0,
@@ -681,7 +681,7 @@ final class Importer {
 	 * left as it is, its words the editors'. A trashed one, or anything else under the
 	 * landing page holding the address, is a problem, as is a section with no heading.
 	 * With no landing page yet, it's created under the one the run creates. Its title
-	 * is the site's for the page, "About — The Firehouse", from the settings the run
+	 * is the site's for the page, "About — The FireHouse", from the settings the run
 	 * leaves.
 	 *
 	 * Each member's portrait is the newest Media Library image with their `photo` as its
@@ -765,7 +765,7 @@ final class Importer {
 		}
 
 		$label        = is_string( $settings['navLabels']['about'] ?? null ) && '' !== $settings['navLabels']['about'] ? $settings['navLabels']['about'] : 'About';
-		$site         = is_string( $settings['siteName'] ?? null ) && '' !== $settings['siteName'] ? $settings['siteName'] : 'The Firehouse';
+		$site         = is_string( $settings['siteName'] ?? null ) && '' !== $settings['siteName'] ? $settings['siteName'] : 'The FireHouse';
 		$bundle       = is_array( $content['settings'] ?? null ) ? $content['settings'] : array();
 		$plan['post'] = array(
 			'post_type'    => 'page',

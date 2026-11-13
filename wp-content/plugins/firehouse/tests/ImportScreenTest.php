@@ -142,7 +142,7 @@ final class ImportScreenTest extends WordPressTestCase {
 		Functions\when( 'get_transient' )->justReturn( $waiting );
 		Functions\stubTranslationFunctions();
 		Functions\stubEscapeFunctions();
-		Functions\when( 'get_admin_page_title' )->justReturn( 'Import Firehouse content' );
+		Functions\when( 'get_admin_page_title' )->justReturn( 'Import FireHouse content' );
 		Functions\when( 'admin_url' )->alias( static fn( string $path = '' ): string => 'https://example.test/wp-admin/' . $path );
 		Functions\when( 'wp_nonce_field' )->justReturn( '' );
 		Functions\when( 'submit_button' )->justReturn( '' );

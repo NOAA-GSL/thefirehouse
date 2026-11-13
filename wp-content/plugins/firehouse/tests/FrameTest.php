@@ -448,7 +448,7 @@ final class FrameTest extends WordPressTestCase {
 		Functions\when( 'get_post' )->justReturn( new \WP_Post( array( 'post_type' => 'page' ) ) );
 		ob_start();
 		Frame::content();
-		$this->assertSame( '<section class="fh-section"><div class="fh-container"><h1>The Firehouse</h1><p>This page is being built.</p></div></section>', ob_get_clean() );
+		$this->assertSame( '<section class="fh-section"><div class="fh-container"><h1>The FireHouse</h1><p>This page is being built.</p></div></section>', ob_get_clean() );
 
 		// The explorer's placeholder is named as the link to it is, as its title is.
 		Functions\when( 'is_page' )->justReturn( false );
@@ -620,7 +620,7 @@ final class FrameTest extends WordPressTestCase {
 		$html = (string) ob_get_clean();
 
 		$at = 0;
-		foreach ( array( '[theme header]', '<div class="fh-app">', '<a class="fh-skip-link" href="#fh-content">', '[bar]', '<main id="fh-content" tabindex="-1">', '<h1>The Firehouse</h1>', '<p class="fh-disclaimer__text">', '</main>', '</div>', '[theme footer]' ) as $part ) {
+		foreach ( array( '[theme header]', '<div class="fh-app">', '<a class="fh-skip-link" href="#fh-content">', '[bar]', '<main id="fh-content" tabindex="-1">', '<h1>The FireHouse</h1>', '<p class="fh-disclaimer__text">', '</main>', '</div>', '[theme footer]' ) as $part ) {
 			$found = strpos( $html, $part, $at );
 			$this->assertNotFalse( $found, $part . ' should come next in ' . $html );
 			$at = $found + strlen( $part );

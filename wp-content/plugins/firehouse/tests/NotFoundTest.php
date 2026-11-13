@@ -64,7 +64,7 @@ final class NotFoundTest extends WordPressTestCase {
 		$this->assertStringContainsString( '<h1 class="fh-not-found__heading">Page not found</h1>', $html );
 		$this->assertStringContainsString( 'That page doesn’t exist, or it may have moved.', $html );
 		$this->assertStringContainsString( 'Requested address <code class="fh-not-found__path">/firehouse/nothing-here</code>', $html );
-		$this->assertMatchesRegularExpression( '#<a href="https://example.test/firehouse/" class="fh-btn fh-btn--primary fh-btn--md">Back to The Firehouse<svg[^>]*width="16"#', $html );
+		$this->assertMatchesRegularExpression( '#<a href="https://example.test/firehouse/" class="fh-btn fh-btn--primary fh-btn--md">Back to The FireHouse<svg[^>]*width="16"#', $html );
 		$this->assertStringContainsString( '<a href="https://example.test/firehouse/projects/" class="fh-btn fh-btn--secondary fh-btn--md">Explore projects</a>', $html );
 		$this->assertStringContainsString( '<nav class="fh-not-found__topics" aria-labelledby="not-found-topics">', $html );
 		$this->assertStringContainsString( '<h2 id="not-found-topics"', $html );
@@ -82,7 +82,7 @@ final class NotFoundTest extends WordPressTestCase {
 		foreach ( array( 'firehouse/topics/fire', 'firehouse/topics' ) as $request ) {
 			$html = self::render( $request );
 			$this->assertStringContainsString( '<h1 class="fh-not-found__heading">Topic area not found</h1>', $html, $request );
-			$this->assertStringContainsString( 'The Firehouse organizes its findings into four topic areas', $html, $request );
+			$this->assertStringContainsString( 'The FireHouse organizes its findings into four topic areas', $html, $request );
 		}
 	}
 

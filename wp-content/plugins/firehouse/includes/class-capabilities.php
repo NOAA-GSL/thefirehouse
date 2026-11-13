@@ -159,7 +159,7 @@ final class Capabilities {
 	 */
 	public static function install(): void {
 		remove_role( self::EDITOR_ROLE );
-		add_role( self::EDITOR_ROLE, 'Firehouse Editor', self::editor_caps() );
+		add_role( self::EDITOR_ROLE, 'FireHouse Editor', self::editor_caps() );
 
 		$administrator = get_role( 'administrator' );
 		if ( ! $administrator ) {
@@ -341,7 +341,7 @@ final class Capabilities {
 		global $pagenow;
 		if ( in_array( $pagenow ?? '', array( 'post.php', 'edit.php' ), true ) && is_admin() && ! wp_doing_ajax() ) {
 			wp_die(
-				esc_html__( 'The Firehouse landing page wasn’t deleted: pages are under it, such as the About page, and WordPress would move them to the top of the site. Move those pages to the Trash first, or leave the landing page in the Trash.', 'firehouse' ),
+				esc_html__( 'The FireHouse landing page wasn’t deleted: pages are under it, such as the About page, and WordPress would move them to the top of the site. Move those pages to the Trash first, or leave the landing page in the Trash.', 'firehouse' ),
 				esc_html__( 'The landing page wasn’t deleted', 'firehouse' ),
 				array( 'back_link' => true )
 			);
@@ -368,7 +368,7 @@ final class Capabilities {
 			return $prepared;
 		}
 		if ( empty( $prepared->ID ) ) {
-			return new \WP_Error( 'firehouse_cannot_add_page', __( 'Firehouse editors can’t add pages.', 'firehouse' ), array( 'status' => 403 ) );
+			return new \WP_Error( 'firehouse_cannot_add_page', __( 'FireHouse editors can’t add pages.', 'firehouse' ), array( 'status' => 403 ) );
 		}
 		$stored = get_post( (int) $prepared->ID );
 		if ( ! $stored instanceof \WP_Post ) {
@@ -377,7 +377,7 @@ final class Capabilities {
 		$moved   = isset( $prepared->post_parent ) && (int) $prepared->post_parent !== $stored->post_parent;
 		$renamed = isset( $prepared->post_name ) && '' !== $stored->post_name && $prepared->post_name !== $stored->post_name;
 		if ( $moved || $renamed ) {
-			return new \WP_Error( 'firehouse_cannot_move_page', __( 'A Firehouse page’s parent and slug are its address, so Firehouse editors can’t change them.', 'firehouse' ), array( 'status' => 403 ) );
+			return new \WP_Error( 'firehouse_cannot_move_page', __( 'A FireHouse page’s parent and slug are its address, so FireHouse editors can’t change them.', 'firehouse' ), array( 'status' => 403 ) );
 		}
 		return $prepared;
 	}
@@ -392,7 +392,7 @@ final class Capabilities {
 	 */
 	public static function refuse_xmlrpc( mixed $user ): mixed {
 		if ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST && self::is_editor( $user ) ) {
-			return new \WP_Error( 'firehouse_no_xmlrpc', __( 'Firehouse editors can’t use XML-RPC.', 'firehouse' ) );
+			return new \WP_Error( 'firehouse_no_xmlrpc', __( 'FireHouse editors can’t use XML-RPC.', 'firehouse' ) );
 		}
 		return $user;
 	}
@@ -410,7 +410,7 @@ final class Capabilities {
 			return;
 		}
 		wp_die(
-			'<h1>' . esc_html__( 'Firehouse editors can’t add pages', 'firehouse' ) . '</h1><p>' . esc_html__( 'The Firehouse pages already exist, and you can edit them from the Pages list. To add a page, ask a site administrator.', 'firehouse' ) . '</p>',
+			'<h1>' . esc_html__( 'FireHouse editors can’t add pages', 'firehouse' ) . '</h1><p>' . esc_html__( 'The FireHouse pages already exist, and you can edit them from the Pages list. To add a page, ask a site administrator.', 'firehouse' ) . '</p>',
 			esc_html__( 'Can’t add pages', 'firehouse' ),
 			array(
 				'response'  => 403,
