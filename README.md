@@ -138,6 +138,8 @@ editable.
 Everything below is an addition or correction, with the reason. Nothing was dropped
 but the Google Fonts `@import` in `tokens/typography.css`: the same fonts are
 self-hosted instead (see The WordPress plugin), so no page calls a third-party CDN.
+They leave out the two italic faces the `@import` asked for, since nothing on the
+site is set in italic.
 
 **Required by the brief (§9.2), absent from the design:**
 
@@ -347,8 +349,9 @@ nothing from the database. Each class's docblock has the detail; this is the map
     `the_content`), and a page Phase 4 hasn't built yet a placeholder.
   - **Stylesheets:** it loads `fonts.css`, `firehouse.css` and `frame.css` after the
     theme's stylesheet, at the plugin's version and each file's modified time, and adds
-    `fh-page` to the body. Nothing depends on the fonts, so dequeuing `firehouse-fonts`
-    drops only them.
+    `fh-page` to the body. It preloads Public Sans's latin file, the text font, so
+    text doesn't shift when it arrives. Nothing depends on the fonts, so dequeuing
+    `firehouse-fonts` drops only them, and the preload with them.
   - **Missing addresses:** at a project's or topic's address under `/firehouse/`, the
     plugin makes its own guess at what was meant, among that type only, so a link cut
     short still finds its project. Any other missing address under `/firehouse/` gets

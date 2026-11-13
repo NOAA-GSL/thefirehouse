@@ -211,7 +211,9 @@ final class Frame {
 	 *
 	 * Only while fonts.css is enqueued, so a site that dequeues it for its own fonts
 	 * preloads nothing. WordPress prints preloads after the stylesheets are enqueued:
-	 * both run at the head's first priority, the stylesheets first.
+	 * both run at the head's first priority, the stylesheets first. A dequeue on
+	 * `wp_enqueue_scripts` is seen; one later in the head, on `wp_print_styles` say,
+	 * comes after the preload has printed, and the browser fetches a font nothing uses.
 	 *
 	 * Each address is the one fonts.css names, with no version: a preload is used only
 	 * by a request for the same address, or the browser fetches the font twice. Fonts

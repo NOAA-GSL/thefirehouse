@@ -360,7 +360,8 @@ final class FrameTest extends WordPressTestCase {
 
 		$this->assertSame( $earlier, array_shift( $resources ) );
 		$this->assertCount( 1, $resources );
-		$css      = (string) file_get_contents( $plugin . '/assets/css/fonts.css' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a local file.
+		// A checkout may turn the generated file's line endings into CRLF.
+		$css      = str_replace( "\r\n", "\n", (string) file_get_contents( $plugin . '/assets/css/fonts.css' ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a local file.
 		$families = array();
 		foreach ( Frame::PRELOADED_FONTS as $i => $file ) {
 			$this->assertFileExists( $plugin . '/assets/fonts/' . $file );
@@ -387,13 +388,16 @@ final class FrameTest extends WordPressTestCase {
 	/**
 	 * A site that dequeues fonts.css, for its own fonts, gets no font preloads; nor does
 	 * any request outside the Firehouse; and another filter's answer that isn't a list
-	 * is passed on as it was.
+	 * is passed on as it was, even where the fonts would be preloaded.
 	 */
 	public function test_no_fonts_are_preloaded_without_the_firehouse_fonts(): void {
 		self::resolve( array( 'singular' => 'fh_topic' ) );
 		Functions\when( 'plugins_url' )->returnArg();
 		Functions\when( 'wp_style_is' )->justReturn( false );
 		$this->assertSame( array(), Frame::preload( array() ) );
+
+		Functions\when( 'wp_style_is' )->justReturn( true );
+		$this->assertNotSame( array(), Frame::preload( array() ) );
 		$this->assertSame( 'other', Frame::preload( 'other' ) );
 
 		foreach ( self::other_requests() as $name => list( $query ) ) {

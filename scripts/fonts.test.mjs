@@ -113,6 +113,57 @@ describe('fonts.css', () => {
   });
 });
 
+describe('what fetch-fonts.mjs asks for', () => {
+  it('is the stylesheet SOURCES.json records', () => {
+    const script = readFileSync(new URL('./fetch-fonts.mjs', import.meta.url), 'utf8');
+    const asked = /^const STYLESHEET =\s*'([^']+)';$/m.exec(script)?.[1];
+    expect(asked).toBeTruthy();
+    expect(sources.stylesheet).toBe(asked);
+  });
+});
+
+/**
+ * fonts.css has no italic face, since nothing the site or the plugin writes is set in
+ * italic (fetch-fonts.mjs, WANTED). Text that is would be the upright face, slanted by
+ * the browser, so this holds the two together: CSS that asks for italic or oblique,
+ * and the elements a browser sets in italic by default, fail it while the faces are
+ * missing. Text an editor sets in italic is out of its reach (Phase 6).
+ */
+describe.skipIf(/^  font-style: italic;$/m.test(css))('without italic faces', () => {
+  const REPO = fileURLToPath(new URL('../', import.meta.url));
+  const PLUGIN = resolve(REPO, 'wp-content/plugins/firehouse');
+  const files = (dir, pattern) =>
+    readdirSync(dir, { recursive: true })
+      .map((name) => String(name).replace(/\\/g, '/'))
+      .filter((name) => pattern.test(name) && !/(^|\/)(tests|vendor|node_modules)\//.test(name))
+      .map((name) => resolve(dir, name));
+
+  it('no stylesheet sets text in italic', () => {
+    const sheets = [
+      ...files(resolve(REPO, 'src'), /\.css$/),
+      ...files(resolve(PLUGIN, 'assets/css'), /\.css$/).filter((file) => !file.endsWith('fonts.css')),
+    ];
+    expect(sheets.length).toBeGreaterThan(10);
+    for (const file of sheets) {
+      postcss.parse(readFileSync(file, 'utf8')).walkDecls(/^(font|font-style)$/i, (decl) => {
+        expect(decl.value, `${file}: ${decl.toString()}`).not.toMatch(/\b(italic|oblique)\b/i);
+      });
+    }
+  });
+
+  it('no markup uses an element a browser sets in italic', () => {
+    const markup = [
+      resolve(REPO, 'index.html'),
+      ...files(resolve(REPO, 'src'), /\.tsx$/),
+      ...files(PLUGIN, /\.(php|js|html)$/),
+    ];
+    expect(markup.length).toBeGreaterThan(20);
+    for (const file of markup) {
+      expect(readFileSync(file, 'utf8'), file).not.toMatch(/<(em|i|cite|dfn|var|address)[\s>/]/i);
+    }
+  });
+});
+
 describe('assets/fonts', () => {
   const listed = { ...sources.fonts, ...sources.licences };
 
