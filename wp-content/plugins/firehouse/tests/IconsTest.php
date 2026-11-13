@@ -152,7 +152,9 @@ final class IconsTest extends TestCase {
 	 * The file is its header and one array of string literals, with nothing that runs,
 	 * whatever array it returns: Icons includes it on every page that draws an icon, so
 	 * code added around the same array would run there. Read as tokens, never included.
-	 * A change to the header that scripts/plugin-assets.mjs writes changes this test too.
+	 * A string stands in as `<str>`, which no token can be, so a constant can't pass for
+	 * one. A change to the header that scripts/plugin-assets.mjs writes changes this test
+	 * too.
 	 */
 	public function test_the_file_holds_only_string_literals(): void {
 		$kept = array();
@@ -162,12 +164,12 @@ final class IconsTest extends TestCase {
 			}
 			$kept[] = match ( true ) {
 				$token->is( T_OPEN_TAG )                                                    => '<?php',
-				$token->is( T_CONSTANT_ENCAPSED_STRING ) && "'ABSPATH'" !== $token->text => 'S',
+				$token->is( T_CONSTANT_ENCAPSED_STRING ) && "'ABSPATH'" !== $token->text => '<str>',
 				default                                                                     => $token->text,
 			};
 		}
 		$this->assertMatchesRegularExpression(
-			'/\A<\?php declare \( strict_types = 1 \) ; if \( ! defined \( \'ABSPATH\' \) \) \{ exit ; \} return array \((?: S => S ,)* \) ;\z/',
+			'/\A<\?php declare \( strict_types = 1 \) ; if \( ! defined \( \'ABSPATH\' \) \) \{ exit ; \} return array \((?: <str> => <str> ,)* \) ;\z/',
 			implode( ' ', $kept )
 		);
 	}

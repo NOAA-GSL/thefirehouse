@@ -7,14 +7,15 @@
  *
  * `Blocks::register()` (includes/class-blocks.php) hands it to WordPress as the
  * blocks' metadata collection, so registering them, which runs on every request on
- * the site, reads no block.json; with opcache on, the array stays compiled
- * (WORDPRESS-PLAN.md, Phase 4's weight). The block.json files stay the source, and
- * what editors and tools read; tests/BlocksTest.php fails if the manifest differs from
- * them, and if it holds anything but its header and literals, since WordPress runs it.
+ * the site, decodes no block.json; with opcache on, the array stays compiled
+ * (WORDPRESS-PLAN.md, Phase 4's weight). The block.json files stay the source, what
+ * people edit and what code editors and tools read, and WordPress still needs each
+ * beside its block. tests/BlocksTest.php fails if the manifest differs from them, and
+ * if it holds anything but its header and literals, since WordPress runs it.
  *
  * The file is laid out as WordPress's coding standards ask, since PHPCS reads it: the
  * long array syntax, one item a line, keys aligned within each array. Strings are
- * single-quoted literals, escaped for a backslash and the quote.
+ * single-quoted literals, escaped for a backslash and the quote; numbers are whole.
  */
 
 import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
@@ -25,8 +26,29 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const BLOCKS = resolve(ROOT, 'wp-content/plugins/firehouse/blocks');
 const OUT = join(BLOCKS, 'blocks-manifest.php');
 
-/** A PHP string literal. Single-quoted, so only a backslash and the quote need escaping. */
-const phpString = (text) => `'${text.replace(/[\\']/g, '\\$&')}'`;
+/**
+ * A PHP string literal. Single-quoted, so only a backslash and the quote need escaping.
+ * Control characters are refused: a line break inside a literal would change with a
+ * checkout's line endings, and nothing in a block.json needs one.
+ */
+function phpString(text) {
+  if (/[\u0000-\u001F\u007F]/.test(text)) throw new Error(`Control characters aren't written: ${JSON.stringify(text)}`);
+  return `'${text.replace(/[\\']/g, '\\$&')}'`;
+}
+
+/**
+ * A block.json, parsed. A number must be written as a whole number: json_decode reads
+ * 1.0 or 1e2 as a float, which JavaScript can't tell from an integer once parsed, so the
+ * text is checked as written.
+ */
+function parseBlockJson(text, file) {
+  return JSON.parse(text, (key, value, context) => {
+    if (typeof value === 'number' && !/^-?(?:0|[1-9]\d*)$/.test(context?.source ?? '')) {
+      throw new Error(`${file}: only whole numbers are written, not ${context?.source ?? value}.`);
+    }
+    return value;
+  });
+}
 
 /** A JSON value as a PHP literal, at `depth` tabs, as json_decode( …, true ) reads it. */
 function php(value, depth) {
@@ -34,7 +56,6 @@ function php(value, depth) {
   if (typeof value === 'boolean') return String(value);
   if (typeof value === 'string') return phpString(value);
   if (typeof value === 'number') {
-    // json_decode reads 1.0 as a float; JavaScript can't tell it from 1, so refuse it.
     if (!Number.isSafeInteger(value)) throw new Error(`Only whole numbers are written: ${value}`);
     return String(value);
   }
@@ -58,7 +79,8 @@ const folders = readdirSync(BLOCKS)
 const manifest = {};
 for (const folder of folders) {
   if (!/^[a-z0-9-]+$/.test(folder)) throw new Error(`"${folder}" isn't a block folder name.`);
-  manifest[folder] = JSON.parse(readFileSync(join(BLOCKS, folder, 'block.json'), 'utf8'));
+  const file = join(BLOCKS, folder, 'block.json');
+  manifest[folder] = parseBlockJson(readFileSync(file, 'utf8'), file);
 }
 if (folders.length === 0) throw new Error(`${BLOCKS} holds no blocks.`);
 

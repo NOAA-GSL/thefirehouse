@@ -12,6 +12,7 @@ namespace Firehouse\Tests;
 use Brain\Monkey\Functions;
 use Firehouse\Blocks;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Depends;
 
 /**
  * Each block registers from its folder, and its block.json names the files that
@@ -61,8 +62,10 @@ final class BlocksTest extends WordPressTestCase {
 
 	/**
 	 * The manifest is every block's block.json, as WordPress would decode it, by folder:
-	 * WordPress registers the blocks from it, not from the files.
+	 * WordPress registers the blocks from it, not from the files. It runs the manifest,
+	 * so only once the manifest is shown to hold nothing that runs.
 	 */
+	#[Depends( 'test_the_manifest_holds_only_literals' )]
 	public function test_the_manifest_is_each_block_json(): void {
 		$expected = array();
 		foreach ( Blocks::NAMES as $name ) {
@@ -77,7 +80,10 @@ final class BlocksTest extends WordPressTestCase {
 	 * The manifest is its header and one array of literals, with nothing that runs:
 	 * WordPress includes it on every request, so code added around the same array would
 	 * run there. Read as tokens, never included. A parenthesis may only open an array,
-	 * since a string followed by one would call the function it names.
+	 * since a string followed by one would call the function it names. Strings and whole
+	 * numbers stand in as `<str>` and `<int>`, which no token can be, so a constant can't
+	 * pass for one. This holds the file to literals; the test above, which depends on
+	 * it, holds it to the right ones in the right shape.
 	 */
 	public function test_the_manifest_holds_only_literals(): void {
 		$kept = array();
@@ -87,13 +93,13 @@ final class BlocksTest extends WordPressTestCase {
 			}
 			$kept[] = match ( true ) {
 				$token->is( T_OPEN_TAG )                                                    => '<?php',
-				$token->is( T_CONSTANT_ENCAPSED_STRING ) && "'ABSPATH'" !== $token->text => 'S',
-				$token->is( T_LNUMBER )                                                     => 'N',
+				$token->is( T_CONSTANT_ENCAPSED_STRING ) && "'ABSPATH'" !== $token->text => '<str>',
+				$token->is( T_LNUMBER )                                                     => '<int>',
 				default                                                                     => $token->text,
 			};
 		}
 		$this->assertMatchesRegularExpression(
-			'/\A<\?php declare \( strict_types = N \) ; if \( ! defined \( \'ABSPATH\' \) \) \{ exit ; \} return array \((?: (?:array \(|\)|,|=>|S|N|true|false|null))* ;\z/',
+			'/\A<\?php declare \( strict_types = <int> \) ; if \( ! defined \( \'ABSPATH\' \) \) \{ exit ; \} return array \((?: (?:array \(|\)|,|=>|<str>|(?:- )?<int>|true|false|null))* ;\z/',
 			implode( ' ', $kept )
 		);
 	}
