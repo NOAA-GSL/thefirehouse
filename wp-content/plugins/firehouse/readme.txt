@@ -23,14 +23,16 @@ bar under the theme's header carries the FireHouse wordmark and links, and the S
 a Finding button once the settings give it an address. The theme's hero background
 and the mission section above its footer are hidden on those pages. Every FireHouse
 page ends with a disclaimer that researchers' findings are their own, not NOAA's, and
-a missing FireHouse address shows the FireHouse not-found page. Each topic area's
-page shows its top needs, the published projects behind each, and what the area
-covers. On FireHouse pages, WordPress no longer curls quotes, converts dashes, turns
+a missing FireHouse address shows the FireHouse not-found page. Each project's page
+shows the researcher's own words, and each topic area's page its top needs, the
+published projects behind each, and what the area covers. Each FireHouse page's title
+names the page and The FireHouse, and carries a description and link-preview tags,
+unless an SEO plugin is active. On FireHouse pages, WordPress no longer curls quotes, converts dashes, turns
 smileys into images or recapitalizes its own name, so researchers' text appears as
 they wrote it. The Import screen creates the landing page and the About page from the
 seed bundle; the About page's portraits are uploaded to the Media Library by an
-administrator. The remaining pages come in a later phase; until then the frame shows
-a placeholder.
+administrator. The project explorer comes in a later phase; until then the frame
+shows a placeholder there.
 
 The fonts in assets/fonts/, Archivo and Public Sans, are third-party, under the SIL
 Open Font License 1.1, whose text is beside them. assets/fonts/SOURCES.json records

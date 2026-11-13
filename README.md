@@ -20,9 +20,11 @@ npm run seed       # write seed/firehouse-seed.json for the plugin's Import scre
 npm run plugin:css # write the plugin's stylesheet from src/, scoped under .fh-app
                    # (Node 22.18+, and Edge or Chrome installed, as for npm run reference)
 npm run plugin:assets
-                   # write the plugin's icons and logos from the site's own
+                   # write the plugin's icons, logos and link-preview image from the site's own
+                   # (plugin:css:check and plugin:assets:check, which CI runs, only compare)
 npm run plugin:blocks
                    # write the plugin's block manifest from its block.json files
+                   # (plugin:blocks:check only compares)
 npm run reference  # capture the reference the plugin matches (reference/README.md)
 npm run plugin:compare
                    # compare each built page's main landmark with the reference's
@@ -60,7 +62,9 @@ src/
   content/          CMS-agnostic content layer (see below)
   pages/            Landing, Projects, Project, Topic, About and NotFound pages
   components/       Layout, ThemeProvider, SynthesisNote, Disclaimer
-  assets/           NOAA + GSL logos; hero imagery (see caveat)
+  assets/           logos (the FireHouse marks, and NOAA and GSL's for the static
+                    build), the team's portraits (people/), and a place for a hero
+                    photograph (imagery/, empty)
 
 public/             Copied as-is to the build's base path (the site root, or /firehouse/):
                     icons, the link-preview card, robots.txt, and the two host-level
@@ -74,7 +78,7 @@ wp-content/plugins/firehouse/
                     every Firehouse page sits in; blocks/, the server-rendered
                     blocks the templates and pages place (so far the Firehouse
                     bar, the not-found page, the project pages, the topic
-                    pages and the landing page); the shared
+                    pages, the landing page and the About page); the shared
                     vocabularies and test cases; and the PHP tests.
                     assets/css/firehouse.min.css and firehouse.css are generated
                     from src/, and assets/css/frame.css is written by hand;
@@ -247,7 +251,8 @@ overrides are isolated so a re-sync doesn't lose them.
       review the pages:
       - the three lines that say "how often" or "frequency": "ranked by frequency"
         (`about.json`), "with how often each one came up" (`landing.json`) and
-        "ranked by how often they come up" (written into `LandingPage.tsx`);
+        "ranked by how often they come up" (written into `LandingPage.tsx`, and into the
+        plugin's `includes/class-landing-page.php` too, which nothing ties to it);
       - whether the synthesis needs its own line saying whose it is.
 - [ ] **Bring in the team's synthesis prompt.** Their "FireHouse Prompt (Final)", which
       Stephanie describes as being in their Gemini notebook, orders needs by project
@@ -355,7 +360,8 @@ nothing from the database. Each class's docblock has the detail; this is the map
     site's `settings.json` by a test. A missing address gets the `firehouse/not-found`
     block, a project's address the `firehouse/project` block, a topic's address the
     `firehouse/topic` block, a page in the Firehouse tree its own blocks (not through
-    `the_content`), and a page Phase 4 hasn't built yet a placeholder.
+    `the_content`), and a page with nothing to show yet (the explorer until Phase 5, or
+    an empty page in the tree) a placeholder.
   - **Stylesheets:** it loads `fonts.css`, `firehouse.min.css` and `frame.css` after
     the theme's stylesheet, at the plugin's version and each file's modified time, and
     adds `fh-page` to the body. Under `SCRIPT_DEBUG` it loads `firehouse.css`, the same
@@ -363,8 +369,9 @@ nothing from the database. Each class's docblock has the detail; this is the map
     `SCRIPT_DEBUG` on (`docker-compose.yml`), so pages reviewed there use the readable
     copy; turn it off there to see the minified one. It preloads Public Sans's latin
     file, the text font, so text doesn't shift when it arrives. Nothing depends on the
-    fonts, so dequeuing `firehouse-fonts` on `wp_enqueue_scripts` drops only them, and
-    the preload with them.
+    fonts, so dequeuing `firehouse-fonts` drops only them, and the preload with them.
+    The frame enqueues at priority 20 of `wp_enqueue_scripts`, so a dequeue has to run
+    after that: at priority 21 or later of the same hook.
   - **Missing addresses:** at a project's or topic's address under `/firehouse/`, the
     plugin makes its own guess at what was meant, among that type only, so a link cut
     short still finds its project. Any other missing address under `/firehouse/` gets
@@ -756,8 +763,9 @@ backstop.
 
 `--dry` parses and reports without writing — use it first. The script is the seam
 where survey data becomes site content, and it is plain dependency-free Node so it
-can be read and re-hosted by whoever takes it over: a live integration replaces the
-CSV read with an API call and writes the same file. Nothing downstream changes.
+can be read by whoever takes it over. It retires when the plugin launches: the
+plugin's own survey form replaces it, and there is no live sync with Qualtrics or the
+Google Form (WORDPRESS-PLAN.md).
 
 Two rules it enforces that the UI cannot:
 
@@ -894,8 +902,10 @@ alpha_quality=100, method=6`), about half the size of those PNGs and the same to
 eye; a 256-colour PNG was smaller but banded the flame's gradients. The lossless PNGs
 are in git history, for instance `git show
 69f2dbb:src/assets/logos/firehouse-wordmark-on-dark.png`; start from those, not the
-WebPs, for a new size. Keep the four names: the plugin's PHP names them, and
-`tests/LogosTest.php` fails if one it names doesn't ship. There is no vector source
+WebPs, for a new size. Keep the four names: `BrandMark` imports all four, the
+plugin's PHP names three of them (the light wordmark ships with the plugin but
+nothing there prints it), and `tests/LogosTest.php` fails if one it names doesn't
+ship. There is no vector source
 yet — if one arrives, regenerate from it, then run `npm run plugin:assets` so the
 plugin's copies follow.
 

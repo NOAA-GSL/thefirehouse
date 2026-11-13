@@ -20,6 +20,7 @@
     "plugin:assets": "node scripts/plugin-assets.mjs",
     "plugin:assets:check": "node scripts/plugin-assets.mjs --check",
     "plugin:blocks": "node scripts/blocks-manifest.mjs",
+    "plugin:blocks:check": "node scripts/blocks-manifest.mjs --check",
     "plugin:compare": "node scripts/compare-plugin.mjs",
     "seed": "node scripts/seed-bundle.mjs",
     "reference": "node scripts/capture-reference.mjs"

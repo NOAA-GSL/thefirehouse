@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
- * Writes the seed bundle that the plugin's Firehouse → Import screen loads: the six
+ * Writes the seed bundle that the plugin's FireHouse → Import screen loads: the six
  * content files in `src/content/data/` (every JSON file there but
- * `gaccBoundaries.json`, which the plugin ships itself) in one JSON file.
+ * `gaccBoundaries.json`, which the plugin will ship itself with the coverage map in Phase
+ * 5) in one JSON file.
  *
  *   node scripts/seed-bundle.mjs           write seed/firehouse-seed.json
  *   node scripts/seed-bundle.mjs <file>    write it somewhere else

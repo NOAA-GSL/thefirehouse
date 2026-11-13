@@ -182,7 +182,9 @@ final class Frame {
 	/**
 	 * Loads the Firehouse stylesheets on a Firehouse request, in order. frame.css
 	 * depends on the site's CSS; nothing depends on the fonts, so a site that wants its
-	 * own can dequeue `firehouse-fonts` and lose nothing else.
+	 * own can dequeue `firehouse-fonts` and lose nothing else. This runs at priority 20
+	 * of `wp_enqueue_scripts`, so the dequeue has to come after it, at 21 or later:
+	 * WordPress forgets a dequeue of a handle not yet queued.
 	 *
 	 * The site's CSS is the minified copy, firehouse.min.css, or under SCRIPT_DEBUG the
 	 * same rules readable, firehouse.css, as WordPress chooses between its own
@@ -220,7 +222,7 @@ final class Frame {
 	 * Only while fonts.css is enqueued, so a site that dequeues it for its own fonts
 	 * preloads nothing. WordPress prints preloads after the stylesheets are enqueued:
 	 * both run at the head's first priority, the stylesheets first. A dequeue on
-	 * `wp_enqueue_scripts` is seen; one later in the head, on `wp_print_styles` say,
+	 * `wp_enqueue_scripts` after priority 20 is seen; one later in the head, on `wp_print_styles` say,
 	 * comes after the preload has printed, and the browser fetches a font nothing uses.
 	 *
 	 * Each address is the one fonts.css names, with no version: a preload is used only
@@ -269,7 +271,8 @@ final class Frame {
 	/**
 	 * Prints the page's content: the not-found page at a missing address, a project's or
 	 * a topic area's page at its address, a page in the Firehouse tree's own blocks, and
-	 * a placeholder on each page Phase 4 hasn't built yet.
+	 * a placeholder on a page with nothing to show yet (the explorer until Phase 5, or an
+	 * empty page in the tree).
 	 */
 	public static function content(): void {
 		if ( is_404() ) {
@@ -311,7 +314,7 @@ final class Frame {
 	}
 
 	/**
-	 * What the frame holds on a page Phase 4 hasn't built yet: a heading and a line.
+	 * What the frame holds on a page with nothing to show yet: a heading and a line.
 	 */
 	public static function placeholder(): void {
 		// Its heading names the page it stands in for, as the page's title does: the
