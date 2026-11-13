@@ -1332,7 +1332,17 @@ signed off on the frame.
   `block.json` on every request. *That function needs WordPress 6.8, and the plugin
   says 6.7: raise the minimum, or use 6.7's `wp_register_block_metadata_collection()`
   with the current loop. The manifest is a plain PHP file, so it needn't wait for
-  `@wordpress/scripts`: a small generator and a CI check would do.* Inline icons from a
+  `@wordpress/scripts`: a small generator and a CI check would do.* *Manifest done 13
+  November, without raising the minimum: `npm run plugin:blocks` writes every
+  block.json into `blocks/blocks-manifest.php`, and `Blocks::register()` hands it to
+  6.7's `wp_register_block_metadata_collection()` before its loop, so WordPress takes
+  each block's metadata from the array and only checks its block.json is there.
+  `tests/BlocksTest.php` is the check, run in the plugin's CI: it fails if the
+  manifest differs from the files, or holds anything but its header and literals.
+  Every page prints the same HTML. Registration runs on every request on the site:
+  timed on the local copy, the 15 blocks took about 210 µs from their files and take
+  about 120 µs from the manifest, about 90 µs saved. When the blocks build with
+  `@wordpress/scripts`, its own manifest can take this one's place.* Inline icons from a
   generated PHP array, cached by opcache, not by reading their SVG files on each
   request. *Icons done 13 November: `npm run plugin:assets` writes every icon into one
   array, `assets/icons/icons.php`, in place of the 31 SVG files, and `Icons` includes it

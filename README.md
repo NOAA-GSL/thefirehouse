@@ -21,6 +21,8 @@ npm run plugin:css # write the plugin's stylesheet from src/, scoped under .fh-a
                    # (Node 22.18+, and Edge or Chrome installed, as for npm run reference)
 npm run plugin:assets
                    # write the plugin's icons and logos from the site's own
+npm run plugin:blocks
+                   # write the plugin's block manifest from its block.json files
 npm run reference  # capture the reference the plugin matches (reference/README.md)
 npm run plugin:compare
                    # compare each built page's main landmark with the reference's
@@ -388,6 +390,10 @@ nothing from the database. Each class's docblock has the detail; this is the map
 
 - `Blocks` registers each block named in `Blocks::NAMES`, one folder each in `blocks/`,
   from its `block.json`.
+  - WordPress takes the blocks' metadata from `blocks/blocks-manifest.php`, every
+    block.json in one generated array, instead of reading each file on every request.
+    After changing a block.json, run `npm run plugin:blocks`; `tests/BlocksTest.php`
+    fails until the manifest matches, and if it holds anything but literals.
   - Each block renders on the server (`render.php`) and stays out of the inserter: the
     templates place it.
   - An interactive block has a view script module for WordPress's Interactivity API.

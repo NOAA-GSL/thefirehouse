@@ -17,6 +17,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Registers each block in blocks/ from its block.json. Each renders on the server
  * (render.php); one that is interactive has a view script module for the Interactivity
  * API (WORDPRESS-PLAN.md, Blocks).
+ *
+ * Registration runs on every request on the site, so WordPress takes the blocks'
+ * metadata from blocks/blocks-manifest.php, one generated array that opcache keeps
+ * compiled, instead of reading and decoding each block.json (Phase 4's weight). It
+ * still checks each block.json is there. Without the manifest WordPress refuses the
+ * collection, flags it as a developer error, and reads the files, as before.
  */
 final class Blocks {
 
@@ -33,11 +39,13 @@ final class Blocks {
 	}
 
 	/**
-	 * Registers the blocks.
+	 * Registers the blocks, with their metadata from the manifest.
 	 */
 	public static function register(): void {
+		$blocks = dirname( __DIR__ ) . '/blocks';
+		wp_register_block_metadata_collection( $blocks, $blocks . '/blocks-manifest.php' );
 		foreach ( self::NAMES as $name ) {
-			register_block_type( dirname( __DIR__ ) . '/blocks/' . $name );
+			register_block_type( $blocks . '/' . $name );
 		}
 	}
 }
