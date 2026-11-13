@@ -93,7 +93,7 @@ ${entries.join('\n')}
 }
 
 // The images BrandMark imports, read from the component so a new one comes along.
-const LOGOS = [...readFileSync(resolve(ROOT, 'src/design-system/BrandMark.tsx'), 'utf8').matchAll(/from '\.\.\/assets\/logos\/([\w.-]+\.png)'/g)].map(
+const LOGOS = [...readFileSync(resolve(ROOT, 'src/design-system/BrandMark.tsx'), 'utf8').matchAll(/from '\.\.\/assets\/logos\/([\w.-]+\.(?:png|webp))'/g)].map(
   ([, name]) => name,
 );
 if (LOGOS.length === 0) throw new Error('BrandMark.tsx imports no logo, so there is nothing to copy.');

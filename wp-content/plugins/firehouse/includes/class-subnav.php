@@ -137,8 +137,8 @@ final class Subnav {
 		<a href="<?php echo esc_url( home_url( '/' . Query::ROOT_PATH . '/' ) ); ?>" class="fh-header__lockup" aria-label="<?php echo esc_attr( $home_label ); ?>">
 			<span class="fh-header__brand">
 				<span class="fh-brand fh-brand--auto" style="height:32px">
-					<img class="fh-brand__img fh-brand__img--light" src="<?php echo esc_url( plugins_url( 'assets/logos/firehouse-mark.png', $main ) ); ?>" width="94" height="96" loading="lazy" alt="">
-					<img class="fh-brand__img fh-brand__img--dark" src="<?php echo esc_url( plugins_url( 'assets/logos/firehouse-mark-on-dark.png', $main ) ); ?>" width="94" height="96" loading="lazy" alt="">
+					<img class="fh-brand__img fh-brand__img--light" src="<?php echo esc_url( plugins_url( 'assets/logos/firehouse-mark.webp', $main ) ); ?>" width="94" height="96" loading="lazy" alt="">
+					<img class="fh-brand__img fh-brand__img--dark" src="<?php echo esc_url( plugins_url( 'assets/logos/firehouse-mark-on-dark.webp', $main ) ); ?>" width="94" height="96" loading="lazy" alt="">
 				</span>
 				<span class="fh-header__wordmark"><?php echo esc_html( $site ); ?></span>
 			</span>
