@@ -1102,7 +1102,7 @@ final class ImporterTest extends WordPressTestCase {
 		$result = Importer::run( self::content() );
 
 		$this->assertSame( 'It isn’t at /firehouse/about/: WordPress gave it the address /firehouse/about-2/.', $result['about']['problems'][0] );
-		$this->assertStringContainsString( 'It was deleted, so the FireHouse has no About page yet', $result['about']['problems'][1] );
+		$this->assertStringContainsString( 'It was deleted, so The FireHouse has no About page yet', $result['about']['problems'][1] );
 		$this->assertSame( 0, $result['about']['post_id'] );
 		$this->assertSame( array(), $result['landing']['problems'] );
 		$this->assertSame( array( 'firehouse' ), array_column( array_filter( $posts, static fn( array $post ): bool => 'page' === $post['post_type'] ), 'post_name' ) );

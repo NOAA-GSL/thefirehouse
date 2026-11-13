@@ -1,5 +1,5 @@
 ---
-name: The Firehouse
+name: The FireHouse
 description: NOAA/GSL fire weather social science hub — maritime navy with ember signal
 colors:
   brand-primary: "#263f78"
@@ -128,13 +128,13 @@ components:
     padding: "24px"
 ---
 
-# Design System: The Firehouse
+# Design System: The FireHouse
 
 ## Overview
 
 **Creative North Star: "The Watchtower"**
 
-The Firehouse UI is a maritime-institutional watchtower: cool paper grounds, deep navy brand structure, and ember reserved for the actions that matter. It reads as NOAA/GSL federal chrome first — gov banner, agency lockups, quiet footer — then as a research hub that is approachable through soft tint washes (topic chips, sunken CTA bands) rather than marketing spectacle.
+The FireHouse UI is a maritime-institutional watchtower: cool paper grounds, deep navy brand structure, and ember reserved for the actions that matter. It reads as NOAA/GSL federal chrome first — gov banner, agency lockups, quiet footer — then as a research hub that is approachable through soft tint washes (topic chips, sunken CTA bands) rather than marketing spectacle.
 
 Density is deliberate and readable: generous section padding (`--space-3xl` on topic blocks), a 1280px content column, and type that separates display (Archivo) from working prose (Public Sans). Depth is mostly tonal and bordered; shadows appear when something is interactive, not as ambient decoration.
 
@@ -196,7 +196,7 @@ Palette character: cool maritime neutrals with a single hot ember signal; topic 
 - **Stat** (800, 44px / 1, Expanded): Live counters; 36px below 768px.
 
 ### Named Rules
-**The Expanded Reserve Rule.** Archivo Expanded appears on stats and the Firehouse wordmark — not on body copy or buttons. (Google Fonts serves no Archivo Expanded, so today these render in Archivo; Archivo's width axis could supply it, which would change how they look.)
+**The Expanded Reserve Rule.** Archivo Expanded appears on stats and the FireHouse wordmark — not on body copy or buttons. (Google Fonts serves no Archivo Expanded, so today these render in Archivo; Archivo's width axis could supply it, which would change how they look.)
 
 **The Uppercase Label Rule.** Uppercase + `letter-spacing-label` is for metadata (eyebrows, chips, field labels), never for long sentences.
 

@@ -10,7 +10,7 @@ Public-facing hub for NOAA GSL's fire weather social science needs and findings.
 
 == Description ==
 
-The FireHouse as a section of GSL's WordPress site, at /firehouse. It is built in
+The FireHouse is a section of GSL's WordPress site, at /firehouse. It is built in
 phases; WORDPRESS-PLAN.md in https://github.com/NOAA-GSL/thefirehouse describes them.
 
 It registers the project and topic post types and their fields. Projects are at
@@ -44,8 +44,12 @@ the checked content waits briefly for the confirmation and is then cleared. The 
 stores only what the site publishes.
 
 Deactivating the plugin keeps the FireHouse Editor role, which can then only sign in.
-Deleting the plugin removes the role and the FireHouse capabilities, and users who had
+Deleting the plugin removes the role and the plugin's capabilities, and users who had
 the role are left with no role on the site. The content stays.
+
+An update that changes the role or its capabilities applies the role, and the
+administrators' FireHouse capabilities, as the plugin defines them, so a change made
+to either with a role editor doesn't last past it.
 
 == Changelog ==
 
@@ -91,15 +95,19 @@ one is.
   feed, the sitemap, embeds, oEmbed, menus, the redirects built from its ID and the
   not-found guess all leave it out. Someone who may edit it still sees it on its own
   page.
+* The name the plugin prints is FireHouse: the plugin's name, the role, the admin
+  menu, the block titles, and the pages' titles and words. A site that imported its
+  content before keeps the old spelling in its settings and in the landing and About
+  pages until they are edited.
 
 = 0.2.0 =
-* Project and topic post types at the FireHouse addresses, with their fields as post
+* Project and topic post types at the Firehouse addresses, with their fields as post
   meta, checked on every write and kept in revisions.
-* The FireHouse Editor role, limited to FireHouse content and the FireHouse pages.
-* FireHouse settings: the site name, the Submit a Finding label and address, and the
+* The Firehouse Editor role, limited to Firehouse content and the Firehouse pages.
+* Firehouse settings: the site name, the Submit a Finding label and address, and the
   navigation labels.
 * The Import screen: a dry run of a seed bundle, then the import.
-* WordPress's `year` query variable is kept off FireHouse pages.
+* WordPress's `year` query variable is kept off Firehouse pages.
 
 = 0.1.0 =
 * Empty plugin, so the local WordPress, coding standards and tests can be set up.

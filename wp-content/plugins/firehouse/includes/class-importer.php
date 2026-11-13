@@ -210,7 +210,7 @@ final class Importer {
 			return $page;
 		}
 		if ( wp_delete_post( $page['post_id'], true ) ) {
-			$page['problems'][] = sprintf( 'It was deleted, so the FireHouse has no %s yet. Fix the problem above, then import again.', $name );
+			$page['problems'][] = sprintf( 'It was deleted, so The FireHouse has no %s yet. Fix the problem above, then import again.', $name );
 			$page['post_id']    = 0;
 		} else {
 			$page['problems'][] = sprintf( 'WordPress didn’t delete it, so it is still published: delete the page with ID %d from the Pages list, then import again.', $page['post_id'] );
@@ -640,7 +640,7 @@ final class Importer {
 				'problems' => array(),
 				'notes'    => array(
 					$page instanceof \WP_Post && '' === trim( $page->post_content )
-						? 'The landing page exists but is empty, so it shows a placeholder: the import doesn’t write into an existing page. To have the import create it, first move any pages under it elsewhere (deleting it would move them out of the FireHouse), then delete it permanently and import again.'
+						? 'The landing page exists but is empty, so it shows a placeholder: the import doesn’t write into an existing page. To have the import create it, first move any pages under it elsewhere (deleting it would move them out of The FireHouse), then delete it permanently and import again.'
 						: 'The landing page already exists, so its words are left as editors have them.',
 				),
 			);

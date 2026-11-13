@@ -14,7 +14,7 @@ Content operators are NOAA/GSL staff (Stephanie and Emily): they maintain copy, 
 
 ## Product Purpose
 
-The Firehouse is NOAA/GSL’s public hub for fire weather **social science** needs and findings. It centralizes what was learned across completed DESI and testbed research so people can find what’s already known — and add to it — instead of rediscovering the same gaps in isolation.
+The FireHouse is NOAA/GSL’s public hub for fire weather **social science** needs and findings. It centralizes what was learned across completed DESI and testbed research so people can find what’s already known — and add to it — instead of rediscovering the same gaps in isolation.
 
 Success means: at AMS and afterward, a visitor can reach the right topic need quickly; submissions can arrive via the outbound form; topic summaries stay reviewable and dated; and the site can be demoed without inventing citations or shipping placeholder project records as if they were final.
 
@@ -41,7 +41,7 @@ A shared home for **synthesized fire weather social-science needs and recommenda
 
 ## Brand Commitments
 
-- Product name: **The Firehouse**; the logo wordmark reads **FireHouse — Fire Weather Research Hub** (brand files in `src/assets/logos/`)
+- Product name: **The FireHouse**; the logo wordmark reads **FireHouse — Fire Weather Research Hub** (brand files in `src/assets/logos/`)
 - Parent: NOAA Global Systems Laboratory (GSL)
 - Voice in approved landing copy: plain, institutional, useful — not marketing flourish
 - Binding assets: NOAA and GSL logos under `src/assets/logos/`; approved landing copy in `src/content/data/landing.json`

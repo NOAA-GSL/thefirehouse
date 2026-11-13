@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * is the page's banner. Below 1024px the links fold into a drawer that the Interactivity
  * API opens (blocks/subnav/view.js); without JavaScript, frame.css keeps them in the bar.
  *
- * The menu button is named "Firehouse menu", one name whether the drawer is open or
+ * The menu button is named "FireHouse menu", one name whether the drawer is open or
  * shut, where the site's header swaps "Open menu" and "Close menu": the theme's header
  * has a menu button of its own, and `aria-expanded` already says which state it's in.
  *

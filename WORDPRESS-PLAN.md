@@ -1055,7 +1055,7 @@ ones.
     - *the open drawer scrolls within the window, so its last item can be reached on a
       short screen, and closes when focus leaves the bar or the window widens past
       1024px;*
-    - *the menu button is "Firehouse menu" whether open or shut, since the theme's
+    - *the menu button is "FireHouse menu" whether open or shut, since the theme's
       header has a menu button of its own;*
     - *in forced colours the current link keeps a distinct underline.*
 
@@ -1223,7 +1223,7 @@ signed off on the frame.
   `about-cta`). It matches the reference's accessibility snapshots at both widths, and
   every section, card and portrait is the same size as the site's at both widths in
   both themes. Each portrait is the image the import found by Title and kept by its
-  ID, or the member's initials. Its title is "About — The Firehouse", as the site's
+  ID, or the member's initials. Its title is "About — The FireHouse", as the site's
   is. No one can delete the landing page for good while pages outside the trash are
   under it. After the security review's second pass (12 November): the dry run finds
   the newest image by ID, which no uploader can set, where a date can be changed; its
@@ -1251,10 +1251,11 @@ signed off on the frame.
   (WordPress makes it of "-" with wptexturize(), which is off on Firehouse pages), so a
   researcher's own " - " doesn't read as the separator. Titles are computed as the
   page renders, from the settings, so the About page's and the explorer's follow their
-  links' labels (About's post title, set by the import, stays "About — The Firehouse"
+  links' labels (About's post title, set by the import, stays "About — The FireHouse"
   for WordPress's lists), and the explorer's placeholder heading names it too.
-  (13 November, Eric: the name people read is "FireHouse", so the titles end "— The
-  FireHouse"; code names keep `firehouse` and `Firehouse`.) The
+  (13 November, Eric: the name people read is "FireHouse", so titles read "… — The
+  FireHouse – Global Systems Laboratory" and About's post title is "About — The
+  FireHouse"; identifiers in the code keep `firehouse` and `Firehouse`.) The
   preview image is the site's `public/og-image.png`, which `npm run plugin:assets`
   copies into the plugin's `assets/preview/`, its address versioned so a replacement
   isn't served from a preview's cache. A published page's preview names its address.*
