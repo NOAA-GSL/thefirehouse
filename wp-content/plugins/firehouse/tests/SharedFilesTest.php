@@ -76,7 +76,7 @@ final class SharedFilesTest extends TestCase {
 	 * @return array<string, array{string}>
 	 */
 	public static function case_files(): array {
-		$files = array( 'format.json', 'derive.json', 'search.json', 'normalize.json' );
+		$files = array( 'format.json', 'derive.json', 'search.json', 'normalize.json', 'explorer.json' );
 		return array_combine( $files, array_map( static fn( string $file ): array => array( $file ), $files ) );
 	}
 }

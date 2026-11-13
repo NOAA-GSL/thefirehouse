@@ -22,7 +22,8 @@ npm run plugin:css # write the plugin's stylesheet from src/, scoped under .fh-a
                    # (Node 22.18+, and Edge or Chrome installed, as for npm run reference;
                    # plugin:css:check only compares, and CI runs it)
 npm run plugin:assets
-                   # write the plugin's icons, logos and link-preview image from the site's own
+                   # write the plugin's icons, logos, link-preview image and search module
+                   # from the site's own
                    # (plugin:assets:check only compares; CI runs it)
 npm run plugin:blocks
                    # write the plugin's block manifest from its block.json files
@@ -486,9 +487,15 @@ nothing from the database. Each class's docblock has the detail; this is the map
   address without them, where the site has buttons. The form and the links land on
   the page's content (`#fh-content`). It lists the projects a visitor may see, and
   searches, filters, sorts and counts them with `Search` (below), scoring each
-  project once. Results that update as you type, Escape to clear, the phone's Filters
-  and sort button (the filters show unfolded) and the quick look come with its view
-  script in Phase 5.
+  project once. With JavaScript, its view script (`blocks/explorer/view.js`) takes the
+  same markup over through the Interactivity API: results as you type, Escape to
+  clear, the filters folded behind a button on a phone, and the address kept in step.
+  It searches in the browser, with the site's own `search.ts` bundled as
+  `assets/search/search.js`, over each public project's searchable fields in the
+  page's state (`Explorer_Page::state()`). The block doesn't ask WordPress to process
+  its directives, which would print words with `esc_html()` and decode a character
+  reference (rule 1); the plugin prints the page itself, with templates for the lists
+  the script redraws. The quick look comes in Phase 5.
 - `Markup` writes the design system's small components as the site renders them: a
   link styled as a `Button` (opening another site in a new tab, and saying so), a
   `TopicTag`, and the `SynthesisNote` that says the needs are synthesized and whether
@@ -727,7 +734,9 @@ one is missing.
 `src/design-system/Icon.tsx`), drawn by the site's own `Icon` component, as one PHP
 array of SVG by name. `assets/logos/` holds the images `BrandMark` imports. Don't edit
 either: `npm run plugin:assets` writes both from `src/`, and the link-preview image
-from `public/og-image.png`, and CI fails if they fall behind. An icon keeps the drawing
+from `public/og-image.png`, and CI fails if they fall behind. It also writes
+`assets/search/search.js`, the site's search (`src/content/search.ts`) bundled by esbuild
+as one ES module, which the explorer's view script imports as `@firehouse/search`. An icon keeps the drawing
 exactly as the site renders it, at Lucide's 24×24, and leaves off what belongs to one
 use (class, inline style, `aria-hidden`, `focusable`). Where the plugin inlines an icon
 it adds those and replaces the size, as `Icon` does. Every icon may hold only the plain

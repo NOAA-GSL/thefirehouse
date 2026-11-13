@@ -232,8 +232,9 @@ wp-content/plugins/firehouse/
   patterns/        landing and About layouts, locked to text-only edits (Phase 6; today
                    the Import screen creates both pages from custom blocks)
   assets/          tokens and component CSS, icons, logos, fonts, the link-preview
-                   image, the blocks' script for the block editor; GACC boundaries
-                   with the coverage map (Phase 5)
+                   image, the blocks' script for the block editor, the site's search
+                   as a module for the explorer's script; GACC boundaries with the
+                   coverage map (Phase 5)
   shared/          vocabulary.json, the project and topic schemas, the email pattern,
                    the icon allowlist and test cases, read by PHP and JS
   tests/           PHPUnit tests, run without WordPress through Brain Monkey
@@ -348,9 +349,15 @@ Every control belongs to a `GET` form, or is a link to the address it would make
 
 Links people have already shared keep working either way.
 
-- **Explorer.** Search runs in JavaScript (a port of `search.ts`) and in PHP (for the
-  first render and for no-JS). Both are tested against one shared file of queries and
-  expected results.
+- **Explorer.** Search runs in the browser, with the site's own `search.ts` bundled as a
+  module the plugin ships, and in PHP, for the first render and for no-JS. Both are
+  tested against one shared file of queries and expected results
+  (`shared/cases/search.json`), and what each works out for the page (the sort's
+  options, the applied filters, the results line) against another
+  (`shared/cases/explorer.json`). *Eric chose the browser over asking the server for
+  each change (13 November): results are instant and work on bad wifi, as the site's
+  are. The page carries each public project's searchable text for it, about 14 KB
+  compressed at eight projects and about 80 KB at 48.*
 - **Map.** Leaflet's ES module build loads in the block's view script. The region list
   is a set of real buttons in the same kind of form, and the boundary GeoJSON ships as
   a plugin asset.
@@ -1508,18 +1515,51 @@ its own (`DEFERRED`), loaded with the map.
   - *The explorer's page and tile CSS joined the one stylesheet, as Phase 4's weight
     decided (not split by page), adding about 1.4 kB compressed. The quick look's
     (`ProjectDetailModal.css`) stays on `EXPLORER` until its dialog comes.*
-  - *Left for the script slice, from the review: don't port the site's "/" shortcut as
-    written, a single-key shortcut with no way to turn it off (WCAG 2.1.4); after a
-    filter is removed, move focus to the next filter, then Clear all, then the search;
-    change only the status line's text, never its node; add the hint's second
-    sentence only once live updates work; and bind `disabled` on options to the live
-    counts.*
+  - *The review's notes for the script slice (the "/" shortcut, focus after a filter is
+    removed, the status line's node, the hint's second sentence, and `disabled` bound
+    to live counts) are done with the script, below.*
   - *Left for changes of their own: control edges below 3:1 (about 1.6:1 in light and
     2.2–2.8:1 in dark, the site's too; `--glass-control-border` would meet it); the
     tiles' h3 under the page's h1, on both sites; WordPress's own query for the
     archive, which still runs, and still answers `?s=`, `?m=` and `?paged=`; and the
     typo match's tokenizing, which an ASCII fast path would cut, worth it past about
     100 projects.*
+- *The explorer with JavaScript, 13 November: `blocks/explorer/view.js` takes the same
+  markup over through the Interactivity API.*
+  - *Results, counts and the applied filters follow the search as it's typed (after a
+    200 ms pause, as on the site) and each select as it changes, with no request, and
+    the address follows with `history.replaceState`, written as the site writes it.
+    Escape clears the search. On a phone the filters fold behind the "Filters and
+    sort" button, which the server prints hidden; "Update results" goes. Options that
+    would leave nothing are disabled, now that the counts follow every change.*
+  - *The browser searches with `search.ts` itself, bundled by esbuild as
+    `assets/search/search.js` and registered as the `@firehouse/search` script module.
+    `npm run plugin:assets` writes it and `plugin:assets:check`, which CI runs, fails
+    if it falls behind. The projects come from the page's state
+    (`Explorer_Page::state()`): each public project's fields the search reads, in the
+    shapes it expects, with its address and byline, and nothing else.*
+  - *The block doesn't ask WordPress to process its directives. That processing prints
+    text with `esc_html()`, which leaves a character reference alone, so a title
+    stored as "R&amp;D" would show as "R&D" (rule 1). The plugin prints the page
+    itself, as before; the markup carries the directives the script binds to, and
+    templates for the lists it redraws (the tiles, the applied filters, the sort's
+    options). What the server printed of a list stands in (`data-wp-each-child`)
+    until the script draws it.*
+  - *Actions that call `preventDefault()` are wrapped in `withSyncEvent()`, which
+    WordPress has from 6.8 and warns without; on 6.7, which the plugin supports, the
+    script runs them as they are.*
+  - *From the review's notes: the site's "/" shortcut isn't ported, since a one-key
+    shortcut that can't be turned off fails WCAG 2.1.4. After a filter is removed,
+    focus goes to the filter in its place, else Clear all, else the search. The
+    status line keeps its node; only its parts' text changes.*
+  - *Checked by hand, with scratch scripts that load both sites with JavaScript on: at
+    the same 34 addresses its main landmark matched the React explorer's; and after
+    each of 11 steps (typing, each filter, the sort, Escape, clearing a filter, a
+    search that finds nothing) both landmarks and both addresses matched. The only
+    difference is the quick look, which comes next: `npm run plugin:compare` finds
+    nothing else, and lists the page as not compared until then. Vitest runs the
+    script's workings against `shared/cases/explorer.json` with the shipped module,
+    and its store's getters and actions with stand-ins for WordPress.*
 
 **Done when:** it reaches feature parity with the React site, every URL parameter
 behaves the same, and the accessibility snapshots match.

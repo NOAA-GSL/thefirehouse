@@ -43,7 +43,7 @@ export const BUILT = ['about', 'home', 'not-found', 'project--', 'topic--'];
  */
 export const UNCOMPARED = {
   projects:
-    'the explorer, until its view script: without JavaScript it has links where the site has buttons, enabled options the site disables, and an Update results button the site has no need of',
+    'the explorer, until its quick look: the site has a Quick look button on each tile',
 };
 
 /**

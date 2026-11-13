@@ -1,0 +1,118 @@
+{
+  "$comment": "Cases for what the explorer works out in both languages from a query: the sort's options, the applied filters' labels, and the results line's words after the count. Explorer_Page (PHP) prints them and blocks/explorer/view.js (JavaScript) redraws them, each from the published projects in site.json and the plugin's English words. `query` is a URL's query string. Each sort option is its value as the form sends it, its label, and whether it is chosen: the option the page falls back to sends what the address had, so a search added later lists by best match.",
+  "cases": [
+    {
+      "name": "no query",
+      "query": "",
+      "sortOptions": [
+        { "value": "", "label": "Newest first", "selected": true },
+        { "value": "oldest", "label": "Oldest first", "selected": false },
+        { "value": "title", "label": "Title A–Z", "selected": false }
+      ],
+      "applied": [],
+      "countRest": "projects"
+    },
+    {
+      "name": "a search falls back to best match",
+      "query": "q=smoke",
+      "sortOptions": [
+        { "value": "", "label": "Best match", "selected": true },
+        { "value": "newest", "label": "Newest first", "selected": false },
+        { "value": "oldest", "label": "Oldest first", "selected": false },
+        { "value": "title", "label": "Title A–Z", "selected": false }
+      ],
+      "applied": [],
+      "countRest": "of 4 projects"
+    },
+    {
+      "name": "a sort chosen while searching",
+      "query": "q=smoke&sort=title",
+      "sortOptions": [
+        { "value": "relevance", "label": "Best match", "selected": false },
+        { "value": "newest", "label": "Newest first", "selected": false },
+        { "value": "oldest", "label": "Oldest first", "selected": false },
+        { "value": "title", "label": "Title A–Z", "selected": true }
+      ],
+      "applied": [],
+      "countRest": "of 4 projects"
+    },
+    {
+      "name": "best match with nothing to match shows newest and sends best match",
+      "query": "sort=relevance",
+      "sortOptions": [
+        { "value": "relevance", "label": "Newest first", "selected": true },
+        { "value": "oldest", "label": "Oldest first", "selected": false },
+        { "value": "title", "label": "Title A–Z", "selected": false }
+      ],
+      "applied": [],
+      "countRest": "projects"
+    },
+    {
+      "name": "best match chosen while searching",
+      "query": "q=fire&sort=relevance",
+      "sortOptions": [
+        { "value": "relevance", "label": "Best match", "selected": true },
+        { "value": "newest", "label": "Newest first", "selected": false },
+        { "value": "oldest", "label": "Oldest first", "selected": false },
+        { "value": "title", "label": "Title A–Z", "selected": false }
+      ],
+      "applied": [],
+      "countRest": "of 4 projects"
+    },
+    {
+      "name": "newest chosen is sent as chosen",
+      "query": "sort=newest",
+      "sortOptions": [
+        { "value": "newest", "label": "Newest first", "selected": true },
+        { "value": "oldest", "label": "Oldest first", "selected": false },
+        { "value": "title", "label": "Title A–Z", "selected": false }
+      ],
+      "applied": [],
+      "countRest": "projects"
+    },
+    {
+      "name": "every filter, in the site's order",
+      "query": "type=Testbed+Evaluation&year=2025&region=NWCC&phase=during",
+      "sortOptions": [
+        { "value": "", "label": "Newest first", "selected": true },
+        { "value": "oldest", "label": "Oldest first", "selected": false },
+        { "value": "title", "label": "Title A–Z", "selected": false }
+      ],
+      "applied": ["Phase: During", "GACC: Northwest", "Year: 2025", "Type: Testbed Evaluation"],
+      "countRest": "of 4 projects"
+    },
+    {
+      "name": "a region off the map, by its short name",
+      "query": "region=INTL",
+      "sortOptions": [
+        { "value": "", "label": "Newest first", "selected": true },
+        { "value": "oldest", "label": "Oldest first", "selected": false },
+        { "value": "title", "label": "Title A–Z", "selected": false }
+      ],
+      "applied": ["GACC: International"],
+      "countRest": "of 4 projects"
+    },
+    {
+      "name": "a type as written",
+      "query": "type=%20Research%20Study%20&year=2025.0",
+      "sortOptions": [
+        { "value": "", "label": "Newest first", "selected": true },
+        { "value": "oldest", "label": "Oldest first", "selected": false },
+        { "value": "title", "label": "Title A–Z", "selected": false }
+      ],
+      "applied": ["Year: 2025", "Type: Research Study"],
+      "countRest": "of 4 projects"
+    },
+    {
+      "name": "only spaces is no search",
+      "query": "q=++",
+      "sortOptions": [
+        { "value": "", "label": "Newest first", "selected": true },
+        { "value": "oldest", "label": "Oldest first", "selected": false },
+        { "value": "title", "label": "Title A–Z", "selected": false }
+      ],
+      "applied": [],
+      "countRest": "projects"
+    }
+  ]
+}

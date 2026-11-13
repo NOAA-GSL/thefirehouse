@@ -42,8 +42,21 @@ final class BlocksTest extends WordPressTestCase {
 			}
 		);
 
+		$modules = array();
+		Functions\when( 'plugins_url' )->alias( static fn( string $path ): string => 'https://example.test/wp-content/plugins/firehouse/' . $path );
+		Functions\when( 'wp_register_script_module' )->alias(
+			static function ( string $id, string $src, array $deps, string $version ) use ( &$modules ): void {
+				$modules[] = array( $id, $src, $deps, $version );
+			}
+		);
+
 		Blocks::register();
 
+		// The explorer's view script imports the site's search by this name.
+		$this->assertSame(
+			array( array( '@firehouse/search', 'https://example.test/wp-content/plugins/firehouse/assets/search/search.js', array(), \Firehouse\VERSION . '-' . filemtime( dirname( __DIR__ ) . '/assets/search/search.js' ) ) ),
+			$modules
+		);
 		$this->assertSame( array_map( static fn( string $name ): string => dirname( __DIR__ ) . '/blocks/' . $name, array( 'about-audiences', 'about-cta', 'about-intro', 'about-mission', 'about-process', 'about-sections', 'about-team', 'explorer', 'hero', 'not-found', 'project', 'stats', 'submit-band', 'subnav', 'top-needs', 'topic' ) ), $registered );
 		// The manifest comes first, so no block reads its block.json.
 		$this->assertSame( array( array( dirname( __DIR__ ) . '/blocks', dirname( __DIR__ ) . '/blocks/blocks-manifest.php', 0 ) ), $collections );
@@ -187,9 +200,12 @@ final class BlocksTest extends WordPressTestCase {
 
 		if ( isset( $block['viewScriptModule'] ) ) {
 			$this->assertSame( 'file:./view.js', $block['viewScriptModule'] );
-			$this->assertTrue( $block['supports']['interactivity'] );
+			// The explorer prints its own page and doesn't ask WordPress to process its
+			// directives (Explorer_Page says why); it imports the site's search too.
+			$explorer = 'explorer' === $name;
+			$this->assertSame( ! $explorer, $block['supports']['interactivity'] ?? false );
 			$asset = require $folder . 'view.asset.php';
-			$this->assertSame( array( '@wordpress/interactivity' ), $asset['dependencies'] );
+			$this->assertSame( $explorer ? array( '@wordpress/interactivity', '@firehouse/search' ) : array( '@wordpress/interactivity' ), $asset['dependencies'] );
 			$this->assertSame( (string) filemtime( $folder . 'view.js' ), $asset['version'] );
 		}
 	}

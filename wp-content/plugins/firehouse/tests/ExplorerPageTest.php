@@ -11,14 +11,18 @@ namespace Firehouse\Tests;
 
 use Brain\Monkey\Functions;
 use Firehouse\Domain\Derive;
-use PHPUnit\Framework\Attributes\DataProvider;
 use Firehouse\Domain\Search;
 use Firehouse\Explorer_Page;
 use Firehouse\Store;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * The explorer lists what the site's explorer lists for the same address, in the
- * site's markup, with every control in one form that works without JavaScript.
+ * site's markup, with every control in one form that works without JavaScript, and
+ * carries what its view script needs to take the page over.
+ *
+ * The page is read as a browser without the script shows it: through the DOM, without
+ * what's hidden or inside a template.
  */
 final class ExplorerPageTest extends WordPressTestCase {
 
@@ -49,6 +53,9 @@ final class ExplorerPageTest extends WordPressTestCase {
 			static fn( string $filename, array $options = array() ): mixed => json_decode( (string) file_get_contents( $filename ), ! empty( $options['associative'] ) )
 		);
 		Functions\when( 'home_url' )->alias( static fn( string $path = '' ): string => 'https://example.test' . $path );
+		Functions\when( 'wp_interactivity_data_wp_context' )->alias(
+			static fn( array $context ): string => "data-wp-context='" . json_encode( $context, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP ) . "'" // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- the stand-in for WordPress's.
+		);
 	}
 
 	/**
@@ -74,14 +81,93 @@ final class ExplorerPageTest extends WordPressTestCase {
 	}
 
 	/**
-	 * A select's markup, by its parameter's name.
+	 * The page as a DOM, for XPath.
 	 *
 	 * @param string $html The page.
-	 * @param string $name The parameter.
 	 */
-	private static function select( string $html, string $name ): string {
-		preg_match( '#<select id="fh-explorer-' . $name . '" name="' . $name . '" form="fh-explorer-form">.*?</select>#s', $html, $match );
-		return $match[0] ?? '';
+	private static function dom( string $html ): \DOMXPath {
+		$document = new \DOMDocument();
+		$previous = libxml_use_internal_errors( true );
+		$document->loadHTML( '<?xml encoding="UTF-8"><body>' . $html . '</body>' );
+		libxml_clear_errors();
+		libxml_use_internal_errors( $previous );
+		return new \DOMXPath( $document );
+	}
+
+	/**
+	 * The elements an XPath expression finds that a browser without the script shows:
+	 * not hidden, nor inside anything hidden or a template.
+	 *
+	 * @param \DOMXPath $xpath      The page.
+	 * @param string    $expression The expression.
+	 * @return list<\DOMElement>
+	 */
+	private static function shown( \DOMXPath $xpath, string $expression ): array {
+		$found = $xpath->query( $expression . '[not(ancestor-or-self::*[@hidden]) and not(ancestor::template)]' );
+		return false === $found ? array() : array_values( array_filter( iterator_to_array( $found ), static fn( mixed $node ): bool => $node instanceof \DOMElement ) );
+	}
+
+	/**
+	 * The one element an XPath expression finds that a browser shows; the test fails
+	 * if there isn't exactly one.
+	 *
+	 * @param \DOMXPath $xpath      The page.
+	 * @param string    $expression The expression.
+	 * @throws \RuntimeException If there isn't exactly one.
+	 */
+	private static function one( \DOMXPath $xpath, string $expression ): \DOMElement {
+		$found = self::shown( $xpath, $expression );
+		if ( 1 !== count( $found ) ) {
+			throw new \RuntimeException( count( $found ) . ' shown at ' . $expression ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- a test's message.
+		}
+		return $found[0];
+	}
+
+	/**
+	 * The text a browser shows of a node: without what's hidden or in a template, its
+	 * spaces collapsed.
+	 *
+	 * @param \DOMNode $node The node.
+	 */
+	private static function text( \DOMNode $node ): string {
+		$read = static function ( \DOMNode $node ) use ( &$read ): string {
+			if ( $node instanceof \DOMElement && ( $node->hasAttribute( 'hidden' ) || 'template' === $node->nodeName ) ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- the DOM's own name.
+				return '';
+			}
+			if ( $node instanceof \DOMText ) {
+				return $node->data;
+			}
+			$text = '';
+			foreach ( $node->childNodes as $child ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- as above.
+				$text .= $read( $child );
+			}
+			return $text;
+		};
+		return trim( (string) preg_replace( '/\s+/u', ' ', $read( $node ) ) );
+	}
+
+	/**
+	 * A select's options as a browser without the script shows them: each one's value,
+	 * label and whether it's chosen, as "value|label|*" for chosen.
+	 *
+	 * @param \DOMXPath $xpath The page.
+	 * @param string    $name  The parameter the select sets.
+	 * @return list<string>
+	 */
+	private static function options( \DOMXPath $xpath, string $name ): array {
+		return array_map(
+			static fn( \DOMElement $option ): string => $option->getAttribute( 'value' ) . '|' . self::text( $option ) . ( $option->hasAttribute( 'selected' ) ? '|*' : '' ) . ( $option->hasAttribute( 'disabled' ) ? '|disabled' : '' ),
+			self::shown( $xpath, "//select[@name='$name']//option" )
+		);
+	}
+
+	/**
+	 * The results line as a browser shows it.
+	 *
+	 * @param \DOMXPath $xpath The page.
+	 */
+	private static function results_line( \DOMXPath $xpath ): string {
+		return self::text( self::one( $xpath, '//p[@role="status"]' ) );
 	}
 
 	/**
@@ -89,44 +175,81 @@ final class ExplorerPageTest extends WordPressTestCase {
 	 * search and the five selects in one GET form and a button that sends it.
 	 */
 	public function test_the_page_with_no_query(): void {
-		$html     = self::render();
 		$projects = self::projects();
+		$xpath    = self::dom( self::render() );
 
-		$this->assertStringContainsString( '<h1 class="fh-explorer__heading">Completed research projects</h1>', $html );
-		$this->assertStringContainsString( '<search class="fh-explorer__toolbar" aria-label="Search and filter projects">', $html );
-		$this->assertStringContainsString( '<form class="fh-search" id="fh-explorer-form" method="get" action="' . self::URL . '#fh-content" autocomplete="off">', $html );
-		$this->assertStringContainsString( '<input id="fh-explorer-q" class="fh-search__input" type="search" name="q" value="" placeholder="Search projects" autocomplete="off" spellcheck="false" enterkeyhint="search" aria-describedby="fh-explorer-q-hint">', $html );
-		$this->assertStringNotContainsString( 'fh-search__clear', $html );
+		$this->assertSame( 'Completed research projects', self::text( self::one( $xpath, '//h1' ) ) );
+		$this->assertSame( 'Search and filter projects', self::one( $xpath, '//search' )->getAttribute( 'aria-label' ) );
+		$form = self::one( $xpath, '//form' );
+		$this->assertSame( array( 'fh-explorer-form', 'get', self::URL . '#fh-content', 'off' ), array( $form->getAttribute( 'id' ), $form->getAttribute( 'method' ), $form->getAttribute( 'action' ), $form->getAttribute( 'autocomplete' ) ) );
+		$input = self::one( $xpath, '//input[@name="q"]' );
+		$this->assertSame( array( 'search', '', 'Search projects', 'fh-explorer-q-hint' ), array( $input->getAttribute( 'type' ), $input->getAttribute( 'value' ), $input->getAttribute( 'placeholder' ), $input->getAttribute( 'aria-describedby' ) ) );
+		$this->assertSame( 'Searches titles, authors, abstracts, and findings.', self::text( self::one( $xpath, '//*[@id="fh-explorer-q-hint"]' ) ) );
+		$this->assertSame( array(), self::shown( $xpath, '//a[contains(@class, "fh-search__clear")]' ) );
 		foreach ( array( 'phase', 'region', 'year', 'type', 'sort' ) as $name ) {
-			$this->assertNotSame( '', self::select( $html, $name ), $name );
+			$this->assertSame( 'fh-explorer-form', self::one( $xpath, "//select[@name='$name']" )->getAttribute( 'form' ), $name );
 		}
-		$this->assertStringContainsString( '<button type="submit" form="fh-explorer-form" class="fh-btn fh-btn--secondary fh-btn--md">Update results</button>', $html );
-		$this->assertMatchesRegularExpression( '#<p class="fh-explorer__count" role="status">\s*<strong>' . count( $projects ) . '</strong> projects\s*</p>#', $html );
-		$this->assertStringNotContainsString( 'fh-explorer__applied', $html );
-		$this->assertStringNotContainsString( 'fh-filter--set', $html );
+		$button = self::one( $xpath, '//button[@type="submit"]' );
+		$this->assertSame( array( 'fh-explorer-form', 'Update results' ), array( $button->getAttribute( 'form' ), self::text( $button ) ) );
+		$this->assertSame( array(), self::shown( $xpath, '//button[contains(@class, "fh-explorer__facets-toggle")]' ) );
+		$this->assertSame( count( $projects ) . ' projects', self::results_line( $xpath ) );
+		$this->assertSame( array(), self::shown( $xpath, '//ul[contains(@class, "fh-explorer__applied")]' ) );
+		$this->assertSame( array(), self::shown( $xpath, '//*[contains(@class, "fh-filter--set")]' ) );
+		$this->assertSame( array(), self::shown( $xpath, '//*[contains(@class, "fh-explorer__empty")]' ) );
 
-		preg_match_all( '#<a class="fh-tile__link" href="([^"]*)">#', $html, $links );
-		$this->assertSame( array_column( Search::filter_projects( $projects, Search::parse_query( '' ) ), 'url' ), $links[1] );
-		$this->assertCount( count( $projects ), $links[1] );
+		$links = array_map( static fn( \DOMElement $link ): string => $link->getAttribute( 'href' ), self::shown( $xpath, '//a[@class="fh-tile__link"]' ) );
+		$this->assertSame( array_column( Search::filter_projects( $projects, Search::parse_query( '' ) ), 'url' ), $links );
+		$this->assertCount( count( $projects ), $links );
+	}
+
+	/**
+	 * The view script takes the page over: the explorer is its store's, each list it
+	 * redraws has its template, and what the server printed of each list says it stands
+	 * in for it.
+	 */
+	public function test_the_script_takes_the_page_over(): void {
+		$html  = self::render( 'q=smoke&phase=during' );
+		$xpath = self::dom( $html );
+
+		$this->assertSame( 'firehouse/explorer', self::one( $xpath, '//div[contains(@class, "fh-explorer ")]' )->getAttribute( 'data-wp-interactive' ) );
+		foreach ( array( 'state.results', 'state.applied', 'state.sortOptions' ) as $list ) {
+			$this->assertMatchesRegularExpression( '/<template data-wp-each--[a-z]+="' . preg_quote( $list, '/' ) . '" data-wp-each-key="context\.[a-z]+\.[a-z]+">/', $html, $list );
+		}
+		$tiles = $xpath->query( '//article[@class="fh-tile"][not(ancestor::template)]' );
+		$this->assertNotFalse( $tiles );
+		$this->assertGreaterThan( 0, $tiles->length );
+		foreach ( $tiles as $tile ) {
+			$this->assertInstanceOf( \DOMElement::class, $tile );
+			$this->assertSame( 'firehouse/explorer::state.results', $tile->getAttribute( 'data-wp-each-child' ) );
+		}
+		$this->assertSame( 'firehouse/explorer::state.applied', self::one( $xpath, '//li[a[@class="fh-pill"]]' )->getAttribute( 'data-wp-each-child' ) );
+		// What only the script can do is printed hidden, and the button it replaces bound to go.
+		$this->assertSame( 'state.live', self::one( $xpath, '//div[@class="fh-explorer__apply"]' )->getAttribute( 'data-wp-bind--hidden' ) );
+		$toggle = $xpath->query( '//button[contains(@class, "fh-explorer__facets-toggle")][@hidden][@aria-controls="fh-explorer-facets"]' );
+		$this->assertSame( 1, false === $toggle ? 0 : $toggle->length );
 	}
 
 	/**
 	 * Each option says how many projects it would leave; one that would leave none stays
-	 * enabled, since without JavaScript the counts don't follow a change to another select. The GACCs and the other regions are in groups, as on the site; years
-	 * run newest first and types in order.
+	 * enabled, since without JavaScript the counts don't follow a change to another
+	 * select. The GACCs and the other regions are in groups, as on the site; years run
+	 * newest first and types in order. Each option carries its value and label for the
+	 * script.
 	 */
 	public function test_the_options_and_their_counts(): void {
-		$html = self::render();
+		$xpath = self::dom( self::render() );
 
-		$this->assertStringContainsString( '<option value="">Any phase</option><option value="before">Pre-fire planning, prevention, and mitigation (1)</option>', self::select( $html, 'phase' ) );
-		$region = self::select( $html, 'region' );
-		$this->assertStringContainsString( '<option value="">Any area</option><optgroup label="Geographic Area Coordination Centers"><option value="AICC">Alaska (AICC) (1)</option>', $region );
+		$this->assertSame( array( '|Any phase|*', 'before|Pre-fire planning, prevention, and mitigation (1)', 'during|Fire detection, active suppression, and downstream impacts (2)', 'after|Postfire recovery and rehabilitation (1)', 'long-term|Planning, adaptation, and policy (1)' ), self::options( $xpath, 'phase' ) );
+		$region = self::options( $xpath, 'region' );
+		$this->assertSame( array( '|Any area|*', 'AICC|Alaska (AICC) (1)' ), array_slice( $region, 0, 2 ) );
 		// The national study counts in every GACC.
-		$this->assertStringContainsString( '<option value="GBCC">Great Basin (GBCC) (1)</option>', $region );
-		$this->assertStringContainsString( '<optgroup label="Not on the map"><option value="PACIFIC">Hawaii / Pacific (1)</option>', $region );
-		$this->assertStringContainsString( '<option value="INTL">International (0)</option>', $region );
-		$this->assertStringContainsString( '<option value="">Any year</option><option value="2025">2025 (2)</option><option value="2024">2024 (2)</option></select>', self::select( $html, 'year' ) );
-		$this->assertStringContainsString( '<option value="">Any type</option><option value="Program Evaluation">Program Evaluation (1)</option><option value="Research Study">Research Study (2)</option><option value="Testbed Evaluation">Testbed Evaluation (1)</option></select>', self::select( $html, 'type' ) );
+		$this->assertContains( 'GBCC|Great Basin (GBCC) (1)', $region );
+		$this->assertContains( 'PACIFIC|Hawaii / Pacific (1)', $region );
+		$this->assertContains( 'INTL|International (0)', $region );
+		$this->assertSame( array( '|Any year|*', '2025|2025 (2)', '2024|2024 (2)' ), self::options( $xpath, 'year' ) );
+		$this->assertSame( array( '|Any type|*', 'Program Evaluation|Program Evaluation (1)', 'Research Study|Research Study (2)', 'Testbed Evaluation|Testbed Evaluation (1)' ), self::options( $xpath, 'type' ) );
+		$this->assertSame( array( 'during', 'Fire detection, active suppression, and downstream impacts' ), array_values( (array) json_decode( self::one( $xpath, '//option[@value="during"]' )->getAttribute( 'data-wp-context' ), true ) ) );
+		$this->assertSame( 'type', json_decode( self::one( $xpath, '//div[@data-wp-context][.//select[@name="type"]]' )->getAttribute( 'data-wp-context' ), true )['facet'] );
 	}
 
 	/**
@@ -138,39 +261,48 @@ final class ExplorerPageTest extends WordPressTestCase {
 		$projects[0]['completionYear'] = (float) $projects[0]['completionYear'];
 		unset( $projects[1]['projectType'] );
 
-		$html = self::render( '', $projects );
+		$html  = self::render( '', $projects );
+		$xpath = self::dom( $html );
 
-		$this->assertStringContainsString( '<option value="2025">2025 (2)</option><option value="2024">2024 (2)</option></select>', self::select( $html, 'year' ) );
-		$this->assertStringContainsString( '<option value="Research Study">Research Study (1)</option>', self::select( $html, 'type' ) );
-		$this->assertStringContainsString( '<span class="fh-tile__byline">', $html );
+		$this->assertSame( array( '|Any year|*', '2025|2025 (2)', '2024|2024 (2)' ), self::options( $xpath, 'year' ) );
+		$this->assertContains( 'Research Study|Research Study (1)', self::options( $xpath, 'type' ) );
 		$this->assertStringNotContainsString( '2025.0', $html );
 	}
 
 	/**
-	 * The option the page falls back to sends what the address had, so it stays the
-	 * fallback: a search with the sort untouched lists by best match, as on the site. A
-	 * sort chosen is sent as itself.
+	 * The sort's options, the applied filters and the results line's words are worked
+	 * out as the view script works them out, from the shared cases (shared/cases/explorer.json).
+	 *
+	 * @param array<string, mixed> $shared_case The case.
 	 */
-	public function test_the_fallback_sort_is_sent_as_nothing(): void {
+	#[DataProvider( 'shared_cases' )]
+	public function test_shared_case( array $shared_case ): void {
+		$query     = Search::parse_query( $shared_case['query'] );
+		$xpath     = self::dom( self::render( $shared_case['query'] ) );
+		$searching = '' !== trim( $query['q'] );
+		$options   = Explorer_Page::sort_options( $query, $searching );
+		foreach ( $options as &$option ) {
+			unset( $option['key'] );
+		}
+		unset( $option );
+
+		$this->assertSame( $shared_case['sortOptions'], $options );
 		$this->assertSame(
-			'<select id="fh-explorer-sort" name="sort" form="fh-explorer-form"><option value="" selected>Newest first</option><option value="oldest">Oldest first</option><option value="title">Title A–Z</option></select>',
-			self::select( self::render(), 'sort' )
+			array_map( static fn( array $option ): string => $option['value'] . '|' . $option['label'] . ( $option['selected'] ? '|*' : '' ), $shared_case['sortOptions'] ),
+			self::options( $xpath, 'sort' )
 		);
-		$this->assertSame(
-			'<select id="fh-explorer-sort" name="sort" form="fh-explorer-form"><option value="" selected>Best match</option><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="title">Title A–Z</option></select>',
-			self::select( self::render( 'q=smoke' ), 'sort' )
-		);
-		$this->assertSame(
-			'<select id="fh-explorer-sort" name="sort" form="fh-explorer-form"><option value="relevance">Best match</option><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="title" selected>Title A–Z</option></select>',
-			self::select( self::render( 'q=smoke&sort=title' ), 'sort' )
-		);
-		// Best match without text to match shows as newest, and is sent as it came, so a
-		// search added next lists by best match.
-		$this->assertSame(
-			'<select id="fh-explorer-sort" name="sort" form="fh-explorer-form"><option value="relevance" selected>Newest first</option><option value="oldest">Oldest first</option><option value="title">Title A–Z</option></select>',
-			self::select( self::render( 'sort=relevance' ), 'sort' )
-		);
-		$this->assertStringNotContainsString( 'fh-filter--set', self::render( 'sort=title' ) );
+		$this->assertSame( $shared_case['applied'], array_values( Explorer_Page::applied( $query ) ) );
+		$this->assertSame( $shared_case['applied'], array_map( array( self::class, 'text' ), self::shown( $xpath, '//a[@class="fh-pill"]' ) ) );
+		$this->assertSame( $shared_case['countRest'], self::text( self::one( $xpath, '//span[@data-wp-text="state.countRest"]' ) ) );
+	}
+
+	/**
+	 * The shared cases.
+	 *
+	 * @return array<string, array{array<string, mixed>}>
+	 */
+	public static function shared_cases(): array {
+		return Cases::provider( 'explorer.json' );
 	}
 
 	/**
@@ -178,15 +310,16 @@ final class ExplorerPageTest extends WordPressTestCase {
 	 * which keeps the sort, as the site's does.
 	 */
 	public function test_a_search(): void {
-		$html = self::render( 'q=+smoke+&sort=title' );
+		$xpath = self::dom( self::render( 'q=+smoke+&sort=title' ) );
 
-		$this->assertMatchesRegularExpression( '#role="status">\s*Showing <strong>1</strong> of 4 projects matching <strong>“smoke”</strong>\s*</p>#', $html );
-		$this->assertStringContainsString( 'name="q" value=" smoke "', $html );
-		$this->assertStringContainsString( '<a class="fh-search__clear" href="' . self::URL . '?sort=title#fh-content" aria-label="Clear search">', $html );
-		$this->assertStringContainsString( '<ul class="fh-explorer__applied" aria-label="Applied filters">', $html );
-		$this->assertStringContainsString( '<li><a class="fh-explorer__clear-all" href="' . self::URL . '?sort=title#fh-content">Clear all</a></li>', $html );
-		$this->assertStringNotContainsString( 'fh-pill', $html );
-		$this->assertSame( 1, substr_count( $html, 'class="fh-tile__link"' ) );
+		$this->assertSame( 'Showing 1 of 4 projects matching “smoke”', self::results_line( $xpath ) );
+		$this->assertSame( ' smoke ', self::one( $xpath, '//input[@name="q"]' )->getAttribute( 'value' ) );
+		$clear = self::one( $xpath, '//a[@class="fh-search__clear"]' );
+		$this->assertSame( array( self::URL . '?sort=title#fh-content', 'Clear search' ), array( $clear->getAttribute( 'href' ), $clear->getAttribute( 'aria-label' ) ) );
+		self::one( $xpath, '//ul[@class="fh-explorer__applied"]' );
+		$this->assertSame( self::URL . '?sort=title#fh-content', self::one( $xpath, '//a[@class="fh-explorer__clear-all"]' )->getAttribute( 'href' ) );
+		$this->assertSame( array(), self::shown( $xpath, '//a[@class="fh-pill"]' ) );
+		$this->assertCount( 1, self::shown( $xpath, '//a[@class="fh-tile__link"]' ) );
 	}
 
 	/**
@@ -194,17 +327,32 @@ final class ExplorerPageTest extends WordPressTestCase {
 	 * removes, and its select shows it as set.
 	 */
 	public function test_each_filter_is_a_link_that_removes_it(): void {
-		$html = self::render( 'q=smoke&phase=during&region=NWCC&year=2025&type=Testbed+Evaluation&sort=oldest' );
+		$xpath = self::dom( self::render( 'q=smoke&phase=during&region=NWCC&year=2025&type=Testbed+Evaluation&sort=oldest' ) );
 
-		$this->assertStringContainsString( '<li><a class="fh-pill" href="' . self::URL . '?q=smoke&amp;region=NWCC&amp;year=2025&amp;type=Testbed+Evaluation&amp;sort=oldest#fh-content" aria-label="Remove filter Phase: During">Phase: During<svg', $html );
-		$this->assertStringContainsString( 'href="' . self::URL . '?q=smoke&amp;phase=during&amp;year=2025&amp;type=Testbed+Evaluation&amp;sort=oldest#fh-content" aria-label="Remove filter GACC: Northwest">GACC: Northwest<svg', $html );
-		$this->assertStringContainsString( 'aria-label="Remove filter Year: 2025">Year: 2025<svg', $html );
-		$this->assertStringContainsString( 'href="' . self::URL . '?q=smoke&amp;phase=during&amp;region=NWCC&amp;year=2025&amp;sort=oldest#fh-content" aria-label="Remove filter Type: Testbed Evaluation">', $html );
-		$this->assertSame( 4, substr_count( $html, '<div class="fh-filter fh-filter--set">' ) );
-		$this->assertStringContainsString( '<option value="during" selected>', $html );
-		$this->assertStringContainsString( '<option value="NWCC" selected>', $html );
-		$this->assertStringContainsString( '<option value="2025" selected>', $html );
-		$this->assertStringContainsString( '<option value="Testbed Evaluation" selected>', $html );
+		$pills = array_map(
+			static fn( \DOMElement $pill ): array => array( $pill->getAttribute( 'href' ), $pill->getAttribute( 'aria-label' ), self::text( $pill ) ),
+			self::shown( $xpath, '//a[@class="fh-pill"]' )
+		);
+		$this->assertSame(
+			array(
+				array( self::URL . '?q=smoke&region=NWCC&year=2025&type=Testbed+Evaluation&sort=oldest#fh-content', 'Remove filter Phase: During', 'Phase: During' ),
+				array( self::URL . '?q=smoke&phase=during&year=2025&type=Testbed+Evaluation&sort=oldest#fh-content', 'Remove filter GACC: Northwest', 'GACC: Northwest' ),
+				array( self::URL . '?q=smoke&phase=during&region=NWCC&type=Testbed+Evaluation&sort=oldest#fh-content', 'Remove filter Year: 2025', 'Year: 2025' ),
+				array( self::URL . '?q=smoke&phase=during&region=NWCC&year=2025&sort=oldest#fh-content', 'Remove filter Type: Testbed Evaluation', 'Type: Testbed Evaluation' ),
+			),
+			$pills
+		);
+		$this->assertCount( 4, self::shown( $xpath, '//div[contains(concat(" ", @class, " "), " fh-filter--set ")]' ) );
+		foreach ( array(
+			'phase'  => 'during',
+			'region' => 'NWCC',
+			'year'   => '2025',
+			'type'   => 'Testbed Evaluation',
+		) as $name => $value ) {
+			$this->assertSame( $value, self::one( $xpath, "//select[@name='$name']//option[@selected]" )->getAttribute( 'value' ), $name );
+		}
+		// The toggle's badge, which shows once the script does.
+		$this->assertSame( '4', (string) $xpath->evaluate( 'string(//span[@data-wp-text="state.facetCount"])' ) );
 	}
 
 	/**
@@ -212,47 +360,51 @@ final class ExplorerPageTest extends WordPressTestCase {
 	 * the empty state offers to clear everything.
 	 */
 	public function test_a_filter_that_leaves_nothing(): void {
-		$html = self::render( 'region=INTL' );
+		$xpath = self::dom( self::render( 'region=INTL' ) );
 
-		$this->assertStringContainsString( '<option value="INTL" selected>International (0)</option>', $html );
-		$this->assertMatchesRegularExpression( '#role="status">\s*Showing <strong>0</strong> of 4 projects\s*</p>#', $html );
-		$this->assertStringContainsString( '<p class="fh-explorer__empty-title">No projects match your search and filters.</p>', $html );
-		$this->assertStringContainsString( '<a class="fh-explorer__empty-action" href="' . self::URL . '#fh-content">Clear search and filters</a>', $html );
-		$this->assertStringNotContainsString( 'fh-explorer__grid', $html );
+		$this->assertContains( 'INTL|International (0)|*', self::options( $xpath, 'region' ) );
+		$this->assertSame( 'Showing 0 of 4 projects', self::results_line( $xpath ) );
+		$this->assertSame( 'No projects match your search and filters.', self::text( self::one( $xpath, '//p[@class="fh-explorer__empty-title"]' ) ) );
+		self::one( $xpath, '//p[@class="fh-explorer__empty-body"]' );
+		$actions = self::shown( $xpath, '//a[@class="fh-explorer__empty-action"]' );
+		$this->assertSame( array( array( self::URL . '#fh-content', 'Clear search and filters' ) ), array_map( static fn( \DOMElement $link ): array => array( $link->getAttribute( 'href' ), self::text( $link ) ), $actions ) );
+		$this->assertSame( array(), self::shown( $xpath, '//div[contains(@class, "fh-explorer__grid")]' ) );
 	}
 
 	/**
 	 * With no projects to show, the page says so and points to the topic areas.
 	 */
 	public function test_no_projects(): void {
-		$html = self::render( '', array() );
+		$xpath = self::dom( self::render( '', array() ) );
 
-		$this->assertMatchesRegularExpression( '#role="status">\s*<strong>0</strong> projects\s*</p>#', $html );
-		$this->assertStringContainsString( '<p class="fh-explorer__empty-title">No published projects are available yet.</p>', $html );
-		$this->assertStringContainsString( '<a class="fh-explorer__empty-action" href="https://example.test/firehouse/#top-needs">Browse topic areas</a>', $html );
-		$this->assertStringNotContainsString( 'fh-explorer__empty-body', $html );
+		$this->assertSame( '0 projects', self::results_line( $xpath ) );
+		$this->assertSame( 'No published projects are available yet.', self::text( self::one( $xpath, '//p[@class="fh-explorer__empty-title"]' ) ) );
+		$this->assertSame( 'https://example.test/firehouse/#top-needs', self::one( $xpath, '//a[@class="fh-explorer__empty-action"]' )->getAttribute( 'href' ) );
+		$this->assertSame( array(), self::shown( $xpath, '//p[@class="fh-explorer__empty-body"]' ) );
 	}
 
 	/**
 	 * One project is "1 project", as the site says it.
 	 */
 	public function test_one_project_is_singular(): void {
-		$this->assertMatchesRegularExpression( '#role="status">\s*<strong>1</strong> project\s*</p>#', self::render( '', array( self::projects()[0] ) ) );
-		$this->assertMatchesRegularExpression( '#Showing <strong>1</strong> of 1 project\s*</p>#', self::render( 'phase=during', array( self::projects()[0] ) ) );
+		$this->assertSame( '1 project', self::results_line( self::dom( self::render( '', array( self::projects()[0] ) ) ) ) );
+		$this->assertSame( 'Showing 1 of 1 project', self::results_line( self::dom( self::render( 'phase=during', array( self::projects()[0] ) ) ) ) );
 	}
 
 	/**
 	 * An encoded line break in the search stays in the links, as the site keeps it, so
-	 * removing a filter doesn't run two search words into one; in the search box, a
-	 * space stands for it.
+	 * removing a filter doesn't run two search words into one; in the search box, and in
+	 * the script's text, a space stands for it.
 	 */
 	public function test_links_keep_an_encoded_line_break(): void {
-		$html = self::render( 'q=smoke%0Afire&phase=during' );
+		$query = 'q=smoke%0Afire&phase=during';
+		$xpath = self::dom( self::render( $query ) );
 
-		$this->assertStringContainsString( '<a class="fh-pill" href="' . self::URL . '?q=smoke%0Afire#fh-content" aria-label="Remove filter Phase: During">', $html );
-		$this->assertStringContainsString( '<a class="fh-search__clear" href="' . self::URL . '?phase=during#fh-content" aria-label="Clear search">', $html );
+		$this->assertSame( self::URL . '?q=smoke%0Afire#fh-content', self::one( $xpath, '//a[@class="fh-pill"]' )->getAttribute( 'href' ) );
+		$this->assertSame( self::URL . '?phase=during#fh-content', self::one( $xpath, '//a[@class="fh-search__clear"]' )->getAttribute( 'href' ) );
 		// A one-line field can't hold a line break, so the field shows it as a space.
-		$this->assertStringContainsString( 'name="q" value="smoke fire"', $html );
+		$this->assertSame( 'smoke fire', self::one( $xpath, '//input[@name="q"]' )->getAttribute( 'value' ) );
+		$this->assertSame( 'smoke fire', Explorer_Page::state( self::projects(), Search::parse_query( $query ), self::URL )['text'] );
 	}
 
 	/**
@@ -264,10 +416,11 @@ final class ExplorerPageTest extends WordPressTestCase {
 		$projects[0]['firePhases']     = 'during';
 		$projects[1]['geo']['regions'] = 'NWCC';
 
-		$html = self::render( 'phase=before&region=NWCC', $projects );
-		$this->assertStringContainsString( 'role="status"', $html );
-		$html = self::render( '', $projects );
-		$this->assertSame( count( $projects ), substr_count( $html, 'class="fh-tile__link"' ) );
+		self::results_line( self::dom( self::render( 'phase=before&region=NWCC', $projects ) ) );
+		$this->assertCount( count( $projects ), self::shown( self::dom( self::render( '', $projects ) ), '//a[@class="fh-tile__link"]' ) );
+		$state = Explorer_Page::state( $projects, Search::parse_query( '' ), self::URL );
+		$this->assertSame( array(), $state['projects'][0]['firePhases'] );
+		$this->assertSame( array(), $state['projects'][1]['geo']['regions'] );
 	}
 
 	/**
@@ -285,13 +438,13 @@ final class ExplorerPageTest extends WordPressTestCase {
 		$xpath = self::dom( self::render( $address ) );
 
 		// A browser drops the line breaks from a one-line field's value before sending it.
-		$text  = str_replace( array( "\r", "\n" ), '', self::node( $xpath, '//input[@name="q"]' )->getAttribute( 'value' ) );
+		$text  = str_replace( array( "\r", "\n" ), '', self::one( $xpath, '//input[@name="q"]' )->getAttribute( 'value' ) );
 		$pairs = array( 'q=' . rawurlencode( $text ) );
 		foreach ( array( 'phase', 'region', 'year', 'type', 'sort' ) as $name ) {
-			$select  = self::node( $xpath, "//select[@name='$name']" );
-			$chosen  = $xpath->query( './/option[@selected]', $select );
-			$enabled = $xpath->query( './/option[not(@disabled)]', $select );
-			$option  = false !== $chosen && $chosen->length > 0 ? $chosen->item( 0 ) : ( false !== $enabled ? $enabled->item( 0 ) : null );
+			$options = self::shown( $xpath, "//select[@name='$name']//option" );
+			$chosen  = array_values( array_filter( $options, static fn( \DOMElement $option ): bool => $option->hasAttribute( 'selected' ) ) );
+			$enabled = array_values( array_filter( $options, static fn( \DOMElement $option ): bool => ! $option->hasAttribute( 'disabled' ) ) );
+			$option  = $chosen[0] ?? $enabled[0] ?? null;
 			$this->assertInstanceOf( \DOMElement::class, $option, $name );
 			$pairs[] = $name . '=' . rawurlencode( $option->getAttribute( 'value' ) );
 		}
@@ -305,11 +458,7 @@ final class ExplorerPageTest extends WordPressTestCase {
 			$at   = strpos( $href, '?' );
 			return Search::parse_query( false === $at ? '' : substr( $href, $at + 1 ) );
 		};
-		$removed  = array();
-		$pills    = $xpath->query( '//a[@class="fh-pill"]' );
-		foreach ( false === $pills ? array() : $pills as $pill ) {
-			$removed[] = $query_of( $pill->getAttribute( 'href' ) );
-		}
+		$removed  = array_map( static fn( \DOMElement $pill ): array => $query_of( $pill->getAttribute( 'href' ) ), self::shown( $xpath, '//a[@class="fh-pill"]' ) );
 		$expected = array();
 		foreach ( Search::FACETS as $facet ) {
 			if ( null !== $query[ $facet ] ) {
@@ -318,9 +467,8 @@ final class ExplorerPageTest extends WordPressTestCase {
 		}
 		$this->assertSame( $expected, $removed, 'the filters\' links' );
 
-		$clear = $xpath->query( '//a[@class="fh-explorer__clear-all"]' );
-		if ( false !== $clear && $clear->length > 0 ) {
-			$this->assertSame( array_merge( Search::parse_query( '' ), array( 'sort' => $query['sort'] ) ), $query_of( self::node( $xpath, '//a[@class="fh-explorer__clear-all"]' )->getAttribute( 'href' ) ), 'Clear all' );
+		foreach ( self::shown( $xpath, '//a[@class="fh-explorer__clear-all"]' ) as $clear ) {
+			$this->assertSame( array_merge( Search::parse_query( '' ), array( 'sort' => $query['sort'] ) ), $query_of( $clear->getAttribute( 'href' ) ), 'Clear all' );
 		}
 	}
 
@@ -341,39 +489,68 @@ final class ExplorerPageTest extends WordPressTestCase {
 	 * difference: such an address lists nothing, and its filter shows as removable.
 	 */
 	public function test_a_year_no_project_has_is_dropped_when_the_form_is_sent(): void {
-		$select = self::select( self::render( 'year=2030&type=Nonexistent' ), 'year' );
-		$this->assertStringNotContainsString( ' selected', $select );
-		$this->assertStringNotContainsString( '2030', $select );
+		$options = self::options( self::dom( self::render( 'year=2030&type=Nonexistent' ) ), 'year' );
+		$this->assertSame( array( '|Any year', '2025|2025 (0)', '2024|2024 (0)' ), $options );
 	}
 
 	/**
-	 * The page as a DOM, for XPath.
-	 *
-	 * @param string $html The page.
+	 * What the view script starts from: the query, the box's text, the explorer's
+	 * address, and each project as the search reads it, in the shapes search.ts expects.
+	 * Nothing but those fields is sent: no survey answer the site doesn't show, nothing
+	 * editorial but a project's summary and address.
 	 */
-	private static function dom( string $html ): \DOMXPath {
-		$document = new \DOMDocument();
-		$previous = libxml_use_internal_errors( true );
-		$document->loadHTML( '<?xml encoding="UTF-8"><body>' . $html . '</body>' );
-		libxml_clear_errors();
-		libxml_use_internal_errors( $previous );
-		return new \DOMXPath( $document );
-	}
+	public function test_the_state_the_script_starts_from(): void {
+		$projects                     = self::projects();
+		$projects[0]['contactEmail']  = 'someone@example.test';
+		$projects[0]['irbApproved']   = true;
+		$projects[0]['fullRecordUrl'] = 'https://example.test/record';
+		$projects[0]['papers']        = array( 'Smith 2024, Journal of Fire', array( 'title' => 'A paper', 'container' => 7 ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound -- one line reads more plainly here.
+		$projects[0]['needs']         = array( 'a need as text', array( 'need' => 'A need' ) );
+		$projects[0]['takeaways']     = array( 'One', null, 2 );
+		$projects[0]['authors']       = array( array( 'name' => 'A. Name' ), 'B. Plain' );
+		$state                        = Explorer_Page::state( $projects, Search::parse_query( 'q=smoke&phase=during' ), self::URL );
+		$first                        = $state['projects'][0];
 
-	/**
-	 * The first element an XPath expression finds; the test fails if there is none.
-	 *
-	 * @param \DOMXPath $xpath      The page.
-	 * @param string    $expression The expression.
-	 * @throws \RuntimeException If it finds none.
-	 */
-	private static function node( \DOMXPath $xpath, string $expression ): \DOMElement {
-		$found = $xpath->query( $expression );
-		$node  = false !== $found ? $found->item( 0 ) : null;
-		if ( ! $node instanceof \DOMElement ) {
-			throw new \RuntimeException( 'Nothing found at ' . $expression ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- a test's message.
-		}
-		return $node;
+		$this->assertSame( array( 'projects', 'query', 'text', 'url', 'landing', 'short', 'sorts', 'strings' ), array_keys( $state ) );
+		$this->assertSame( Search::parse_query( 'q=smoke&phase=during' ), $state['query'] );
+		$this->assertSame( array( 'smoke', self::URL, '#fh-content' ), array( $state['text'], $state['url'], $state['landing'] ) );
+		$this->assertSame( array( 'slug', 'url', 'title', 'projectType', 'authors', 'org', 'summary', 'abstract', 'takeaways', 'methods', 'needs', 'papers', 'geo', 'completionYear', 'firePhases', 'byline' ), array_keys( $first ) );
+		$this->assertSame(
+			array(
+				array(
+					'title'     => 'A paper',
+					'container' => null,
+				),
+			),
+			$first['papers']
+		);
+		$this->assertSame(
+			array(
+				array(
+					'need'           => 'A need',
+					'recommendation' => null,
+				),
+			),
+			$first['needs']
+		);
+		$this->assertSame( array( 'One' ), $first['takeaways'] );
+		$this->assertSame( array( array( 'name' => 'A. Name' ) ), $first['authors'] );
+		$this->assertSame( 'A. Name', $first['byline'] );
+		$this->assertSame( self::URL . $projects[0]['slug'] . '/', $first['url'] );
+		$this->assertStringNotContainsString( 'example.test/record', (string) wp_json_encode( $state ) );
+		$this->assertStringNotContainsString( 'someone@', (string) wp_json_encode( $state ) );
+		$this->assertCount( count( $projects ), $state['projects'] );
+		$this->assertSame(
+			array(
+				'before'    => 'Before',
+				'during'    => 'During',
+				'after'     => 'After',
+				'long-term' => 'Long-term',
+			),
+			$state['short']['phase']
+		);
+		$this->assertSame( 'Remove filter %s', $state['strings']['remove'] );
+		$this->assertSame( array( 'of %s project', 'of %s projects' ), $state['strings']['of'] );
 	}
 
 	/**
@@ -400,8 +577,10 @@ final class ExplorerPageTest extends WordPressTestCase {
 				'url'            => 'https://example.test/firehouse/projects/two/',
 				'title'          => 'Two',
 				'completionYear' => 2024,
-			)
+			),
+			true
 		);
+		$this->assertStringStartsWith( '<article class="fh-tile" data-wp-each-child="firehouse/explorer::state.results">', $bare );
 		$this->assertStringNotContainsString( 'fh-tile__kicker', $bare );
 		$this->assertStringNotContainsString( 'fh-tile__foot', $bare );
 		$this->assertStringContainsString( '<span class="fh-tile__byline">Unattributed · 2024</span>', $bare );
@@ -409,45 +588,58 @@ final class ExplorerPageTest extends WordPressTestCase {
 
 	/**
 	 * The words in the address and the researchers' words are printed as they are,
-	 * escaped: a character reference in a title shows as typed.
+	 * escaped: a character reference in a title shows as typed. In the page's state
+	 * they're JSON, which the script sets as text, so they show as typed there too.
 	 */
 	public function test_words_are_escaped_as_they_are(): void {
 		$projects                   = self::projects();
 		$projects[0]['title']       = 'R&amp;D <one>';
 		$projects[0]['projectType'] = 'Type "<b>"';
 		$html                       = self::render( 'q=%22%3E%3Cscript%3E&type=Type+%22%3Cb%3E%22', $projects );
+		$xpath                      = self::dom( $html );
 
+		$this->assertSame( '">', substr( self::one( $xpath, '//input[@name="q"]' )->getAttribute( 'value' ), 0, 2 ) );
 		$this->assertStringContainsString( 'name="q" value="&quot;&gt;&lt;script&gt;"', $html );
-		$this->assertStringContainsString( 'matching <strong>“&quot;&gt;&lt;script&gt;”</strong>', $html );
-		$this->assertStringContainsString( 'aria-label="Remove filter Type: Type &quot;&lt;b&gt;&quot;">Type: Type &quot;&lt;b&gt;&quot;<svg', $html );
-		$this->assertStringContainsString( '<option value="Type &quot;&lt;b&gt;&quot;" selected>Type &quot;&lt;b&gt;&quot; (0)</option>', $html );
-		$this->assertStringContainsString( 'aria-label="Remove filter Type: R&amp;amp;D">Type: R&amp;amp;D<svg', self::render( 'type=R%26amp%3BD', $projects ) );
+		$this->assertStringContainsString( 'matching <strong data-wp-text="state.quoted">“&quot;&gt;&lt;script&gt;”</strong>', $html );
+		$this->assertStringContainsString( 'aria-label="Remove filter Type: Type &quot;&lt;b&gt;&quot;"><span>Type: Type &quot;&lt;b&gt;&quot;</span><svg', $html );
+		$this->assertContains( 'Type "<b>"|Type "<b>" (0)|*', self::options( $xpath, 'type' ) );
+		$this->assertStringContainsString( 'aria-label="Remove filter Type: R&amp;amp;D"><span>Type: R&amp;amp;D</span><svg', self::render( 'type=R%26amp%3BD', $projects ) );
 		$html = self::render( '', $projects );
 		$this->assertStringContainsString( '>R&amp;amp;D &lt;one&gt;</a></h3>', $html );
 		$this->assertStringNotContainsString( '<script>', $html );
+		$this->assertSame( 'R&amp;D <one>', Explorer_Page::state( $projects, Search::parse_query( '' ), self::URL )['projects'][0]['title'] );
 	}
 
 	/**
 	 * The query is read from the address as the browser sent it, unslashed, and not
-	 * from QUERY_STRING, which a server's rewrite rules can change.
+	 * from QUERY_STRING, which a server's rewrite rules can change; the script starts
+	 * from the same query.
 	 */
 	public function test_the_query_comes_from_the_address(): void {
 		$server = $_SERVER;
 		try {
 			$_SERVER['REQUEST_URI']  = "/firehouse/projects/?q=O\\'Brien&q=second&phase=after";
 			$_SERVER['QUERY_STRING'] = 'q=/firehouse/projects/&q=O%27Brien';
+			$states                  = array();
 			Functions\when( 'wp_unslash' )->alias( 'stripslashes' );
 			Functions\when( 'get_posts' )->justReturn( array() );
 			Functions\when( 'get_post_type_archive_link' )->justReturn( self::URL );
+			Functions\when( 'wp_interactivity_state' )->alias(
+				static function ( string $store, array $state ) use ( &$states ): array {
+					$states[ $store ] = $state;
+					return $state;
+				}
+			);
 
-			$html = Explorer_Page::for_request();
+			$xpath = self::dom( Explorer_Page::for_request() );
 
-			$this->assertStringContainsString( 'name="q" value="O&#039;Brien"', $html );
-			$this->assertStringContainsString( '<option value="after" selected>', $html );
-			$this->assertStringContainsString( '<form class="fh-search" id="fh-explorer-form" method="get" action="' . self::URL . '#fh-content" autocomplete="off">', $html );
+			$this->assertSame( "O'Brien", self::one( $xpath, '//input[@name="q"]' )->getAttribute( 'value' ) );
+			$this->assertSame( 'after', self::one( $xpath, '//select[@name="phase"]//option[@selected]' )->getAttribute( 'value' ) );
+			$this->assertSame( self::URL . '#fh-content', self::one( $xpath, '//form' )->getAttribute( 'action' ) );
+			$this->assertSame( Search::parse_query( "q=O'Brien&phase=after" ), $states['firehouse/explorer']['query'] );
 
 			$_SERVER['REQUEST_URI'] = '/firehouse/projects/';
-			$this->assertStringContainsString( 'name="q" value=""', Explorer_Page::for_request() );
+			$this->assertSame( '', self::one( self::dom( Explorer_Page::for_request() ), '//input[@name="q"]' )->getAttribute( 'value' ) );
 		} finally {
 			$_SERVER = $server; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- puts back what the test changed.
 		}
@@ -520,8 +712,8 @@ final class ExplorerPageTest extends WordPressTestCase {
 	/**
 	 * A published project post without a password.
 	 *
-	 * @param int    $id   Its ID.
-	 * @param string $slug Its slug, or null for one made from the ID.
+	 * @param int         $id   Its ID.
+	 * @param string|null $slug Its slug, or null for one made from the ID.
 	 */
 	private static function post( int $id, ?string $slug = null ): \WP_Post {
 		return new \WP_Post(
