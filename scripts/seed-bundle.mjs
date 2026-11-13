@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
- * Writes the seed bundle that the plugin's Firehouse → Import screen loads: the six
+ * Writes the seed bundle that the plugin's FireHouse → Import screen loads: the six
  * content files in `src/content/data/` (every JSON file there but
- * `gaccBoundaries.json`, which the plugin ships itself) in one JSON file.
+ * `gaccBoundaries.json`, which the plugin will ship itself with the coverage map, in
+ * Phase 5) in one JSON file.
  *
  *   node scripts/seed-bundle.mjs           write seed/firehouse-seed.json
  *   node scripts/seed-bundle.mjs <file>    write it somewhere else
@@ -12,8 +13,8 @@
  * (WORDPRESS-PLAN.md rule 2), and this script stops, writing nothing, if any field
  * holds something shaped like an email address, other than a team work address in
  * the About page's team mailbox field (scripts/email-shape.mjs). The Import
- * screen checks the same again. The About portraits aren't in it: they reach
- * WordPress through the Media Library when the About page is built (Phase 4).
+ * screen checks the same again. The About portraits aren't in it: an administrator
+ * uploads them to the Media Library before importing (README.md).
  *
  * `firehouseSeed` marks the file's format, so the Import screen refuses any other JSON
  * file before checking its content.

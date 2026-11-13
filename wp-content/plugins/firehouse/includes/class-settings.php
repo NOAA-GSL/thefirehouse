@@ -137,11 +137,11 @@ final class Settings {
 		);
 
 		add_settings_section( 'firehouse_site', __( 'Site', 'firehouse' ), '__return_null', self::PAGE );
-		self::add_field( 'firehouse_site', array( 'siteName' ), __( 'Site name', 'firehouse' ), __( 'The name in the FireHouse bar at the top of every FireHouse page.', 'firehouse' ) );
+		self::add_field( 'firehouse_site', array( 'siteName' ), __( 'Site name', 'firehouse' ), __( 'The name in the FireHouse bar at the top of every FireHouse page, and in each page’s browser-tab title and link preview. It doesn’t change the words on the pages, or the landing and About pages’ titles in Pages.', 'firehouse' ) );
 
 		add_settings_section( 'firehouse_submit', __( 'Submit a Finding', 'firehouse' ), '__return_null', self::PAGE );
-		self::add_field( 'firehouse_submit', array( 'submitLabel' ), __( 'Button label', 'firehouse' ), __( 'The words on every button and link that asks researchers to submit.', 'firehouse' ) );
-		self::add_field( 'firehouse_submit', array( 'submitFormUrl' ), __( 'Survey address', 'firehouse' ), __( 'Where those buttons and links go: the survey form. It must start with https://.', 'firehouse' ), 'url' );
+		self::add_field( 'firehouse_submit', array( 'submitLabel' ), __( 'Button label', 'firehouse' ), __( 'The words on the Submit a Finding button in the FireHouse bar and on the topic pages. The buttons on the landing and About pages keep the words stored with those pages.', 'firehouse' ) );
+		self::add_field( 'firehouse_submit', array( 'submitFormUrl' ), __( 'Survey address', 'firehouse' ), __( 'Where every Submit a Finding button goes: the survey form. It must start with https://.', 'firehouse' ), 'url' );
 
 		add_settings_section( 'firehouse_nav', __( 'Navigation', 'firehouse' ), array( self::class, 'nav_section' ), self::PAGE );
 		self::add_field( 'firehouse_nav', array( 'navLabels', 'home' ), __( 'Home link', 'firehouse' ), __( 'Goes to the FireHouse landing page.', 'firehouse' ) );

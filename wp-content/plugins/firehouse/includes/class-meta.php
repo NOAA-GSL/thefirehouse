@@ -186,8 +186,8 @@ final class Meta {
 	 *
 	 * A topic's needs point to their projects by post ID, where types.ts and the seed
 	 * bundle name them by slug, so renaming a project can't strip a need of its
-	 * sources (rule 5). Pages will turn the ID back into a slug when they're drawn
-	 * (Phase 4).
+	 * sources (rule 5). The topic pages turn the ID back into a slug when they're
+	 * drawn.
 	 *
 	 * A schema file that can't be read is a broken release, and read() throws.
 	 *

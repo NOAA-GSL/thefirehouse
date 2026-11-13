@@ -622,8 +622,8 @@ final class Importer {
 	 * Plans the landing page: created from the bundle's landing content if there's no
 	 * `firehouse` page in any status but the trash; otherwise left as it is, its words
 	 * the editors'. A trashed one, or anything else holding the address, is a problem.
-	 * Its title is the bundle's site name, which WordPress's lists and the page's
-	 * `<title>` show.
+	 * Its title is the bundle's site name, which WordPress's lists show; the page's
+	 * `<title>` comes from the settings (Head::title()).
 	 *
 	 * @param array<string, mixed> $content Normalized content.
 	 * @param int                  $root    The `firehouse` page's ID, or 0 for none.

@@ -3,7 +3,10 @@
  * Writes the plugin's block manifest, `wp-content/plugins/firehouse/blocks/blocks-manifest.php`:
  * every block's block.json, by its folder in blocks/, as one PHP array.
  *
- *   node scripts/blocks-manifest.mjs
+ *   node scripts/blocks-manifest.mjs           write it
+ *   node scripts/blocks-manifest.mjs --check   fail if the copy on disk is out of date
+ *
+ * Any other argument stops it, so a mistyped flag never rewrites the file.
  *
  * `Blocks::register()` (includes/class-blocks.php) hands it to WordPress as the
  * blocks' metadata collection, so registering them, which runs on every request on
@@ -21,6 +24,10 @@
 import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
+
+const unknown = process.argv.slice(2).filter((arg) => arg !== '--check');
+if (unknown.length) throw new Error(`Unknown arguments: ${unknown.join(' ')}. The only one is --check.`);
+const CHECK = process.argv.includes('--check');
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const BLOCKS = resolve(ROOT, 'wp-content/plugins/firehouse/blocks');
@@ -84,9 +91,7 @@ for (const folder of folders) {
 }
 if (folders.length === 0) throw new Error(`${BLOCKS} holds no blocks.`);
 
-writeFileSync(
-  OUT,
-  `<?php
+const contents = `<?php
 /**
  * Every block's block.json, by its folder in blocks/: the metadata collection
  * Blocks::register() hands WordPress, so registering the blocks reads no block.json.
@@ -104,6 +109,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 return ${php(manifest, 0)};
-`,
-);
-console.log(`Wrote ${OUT}: ${folders.length} blocks.`);
+`;
+
+if (CHECK) {
+  let committed = '';
+  try {
+    committed = readFileSync(OUT, 'utf8').replace(/\r\n/g, '\n');
+  } catch {
+    // Missing counts as out of date.
+  }
+  if (committed !== contents) {
+    console.error(`${OUT} is out of date with the block.json files. Run: npm run plugin:blocks`);
+    process.exit(1);
+  }
+  console.log(`The block manifest is up to date: ${folders.length} blocks.`);
+} else {
+  writeFileSync(OUT, contents);
+  console.log(`Wrote ${OUT}: ${folders.length} blocks.`);
+}

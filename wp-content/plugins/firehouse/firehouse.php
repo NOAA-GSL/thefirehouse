@@ -13,10 +13,12 @@
  * Text Domain:       firehouse
  *
  * Registers the project and topic post types and their fields at the Firehouse
- * addresses, the Firehouse Editor role, and the Firehouse settings and Import
- * screens, keeps WordPress's `year` query variable off Firehouse pages, and puts
- * every Firehouse page in the theme's header and footer with its own stylesheets and
- * the Firehouse bar (templates/frame.php, blocks/subnav/). domain/ holds the content
+ * addresses, the FireHouse Editor role, and the Firehouse settings and Import
+ * screens; keeps WordPress's `year` query variable off Firehouse pages, and keeps
+ * projects a visitor may not see off the public site (Visibility); and puts every
+ * Firehouse page (the landing, About, project, topic and not-found pages, and the
+ * explorer's placeholder until Phase 5) in the theme's header and footer, with its own stylesheets, the Firehouse bar, and its title and link-preview
+ * tags (templates/frame.php, blocks/, Head). domain/ holds the content
  * logic, plain PHP that adds no hooks; includes/ holds what does. The comment above
  * the hook calls below lists where the plugin acts beyond the Firehouse pages.
  * WORDPRESS-PLAN.md in the repository describes what this plugin becomes, phase by
@@ -93,11 +95,10 @@ require_once __DIR__ . '/includes/class-head.php';
  * - Blocks::register registers the Firehouse blocks. They're kept out of the block
  *   inserter and declare no stylesheet. Typed into content outside the Firehouse, they
  *   print nothing, though the Firehouse bar's and the project page's script modules
- *   still load there.
- * - Blocks::enqueue_editor loads assets/js/block-editor.js in every block editor on
- *   the site, for any post or page, the site editor and the widgets: it gives the
- *   FireHouse blocks a read-only view there and their save, makes no requests, and
- *   adds nothing to the inserter.
+ *   still load there. Their metadata comes from blocks/blocks-manifest.php, a
+ *   generated PHP file WordPress includes; if it's damaged, this throws, and every
+ *   request on the site fails. A missing one is harmless: WordPress then reads each
+ *   block's block.json.
  * - Installer::maybe_upgrade compares the stored revision with Installer::REVISION.
  *   When they differ, on whichever request comes first, it replaces the Firehouse
  *   Editor role, adds and removes Firehouse capabilities on the administrator role (no
@@ -153,10 +154,17 @@ require_once __DIR__ . '/includes/class-head.php';
  *   change nothing on any other page, nor anywhere while an SEO plugin is active or
  *   the `firehouse_head_tags` filter says no.
  *
+ * In every block editor on the site (for any post or page, the site editor and the
+ * widgets), on enqueue_block_editor_assets:
+ *
+ * - Blocks::enqueue_editor loads assets/js/block-editor.js: it gives the Firehouse
+ *   blocks a read-only view there and their save, makes no requests, and adds nothing
+ *   to the inserter.
+ *
  * From the permission and field filters (Capabilities, Meta), which run on every
  * capability check, save, sign-in and query:
  *
- * - Anyone holding firehouse_edit_pages (the Firehouse Editor role holds it) is lent
+ * - Anyone holding firehouse_edit_pages (the FireHouse Editor role holds it) is lent
  *   four of WordPress's page capabilities: edit_pages, edit_others_pages,
  *   edit_published_pages and publish_pages. WordPress's checks on a single page are
  *   narrowed to the Firehouse pages, but code that checks those four capabilities
@@ -171,7 +179,7 @@ require_once __DIR__ . '/includes/class-head.php';
  *   or update_post_meta, meta_input included. WordPress's by-ID route for custom
  *   fields isn't checked; the fields' edit_post_meta check refuses it to everyone but
  *   a multisite super admin. Deletes aren't checked. Other meta is left alone.
- * - Every sign-in is checked, to refuse XML-RPC to anyone with the Firehouse Editor
+ * - Every sign-in is checked, to refuse XML-RPC to anyone with the FireHouse Editor
  *   role. Every query is checked too, but only the admin Pages list of a user whose
  *   page capabilities are lent is narrowed.
  *
