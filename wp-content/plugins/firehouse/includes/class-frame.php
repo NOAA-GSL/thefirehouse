@@ -222,8 +222,8 @@ final class Frame {
 	 * Only while fonts.css is enqueued, so a site that dequeues it for its own fonts
 	 * preloads nothing. WordPress prints preloads after the stylesheets are enqueued:
 	 * both run at the head's first priority, the stylesheets first. A dequeue on
-	 * `wp_enqueue_scripts` after priority 20 is seen; one later in the head, on `wp_print_styles` say,
-	 * comes after the preload has printed, and the browser fetches a font nothing uses.
+	 * `wp_enqueue_scripts` after priority 20 is seen; one later in the head, on
+	 * `wp_print_styles` say, comes after the preload has printed, and the browser fetches a font nothing uses.
 	 *
 	 * Each address is the one fonts.css names, with no version: a preload is used only
 	 * by a request for the same address, or the browser fetches the font twice. Fonts
@@ -317,8 +317,8 @@ final class Frame {
 	 * What the frame holds on a page with nothing to show yet: a heading and a line.
 	 */
 	public static function placeholder(): void {
-		// Its heading names the page it stands in for, as the page's title does: the
-		// explorer is named as the link to it is.
+		// On the explorer, the heading names the page as its link and its title do; on an
+		// empty page in the tree, it names the site.
 		printf(
 			'<section class="fh-section"><div class="fh-container"><h1>%1$s</h1><p>%2$s</p></div></section>',
 			esc_html( is_post_type_archive( Post_Types::PROJECT ) ? (string) Settings::get()['navLabels']['projects'] : __( 'The FireHouse', 'firehouse' ) ),

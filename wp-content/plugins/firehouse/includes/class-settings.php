@@ -137,7 +137,7 @@ final class Settings {
 		);
 
 		add_settings_section( 'firehouse_site', __( 'Site', 'firehouse' ), '__return_null', self::PAGE );
-		self::add_field( 'firehouse_site', array( 'siteName' ), __( 'Site name', 'firehouse' ), __( 'The name in the FireHouse bar at the top of every FireHouse page, and in each page’s title and link preview.', 'firehouse' ) );
+		self::add_field( 'firehouse_site', array( 'siteName' ), __( 'Site name', 'firehouse' ), __( 'The name in the FireHouse bar at the top of every FireHouse page, and in each page’s browser-tab title and link preview. It doesn’t change the words on the pages, or the landing and About pages’ titles in Pages.', 'firehouse' ) );
 
 		add_settings_section( 'firehouse_submit', __( 'Submit a Finding', 'firehouse' ), '__return_null', self::PAGE );
 		self::add_field( 'firehouse_submit', array( 'submitLabel' ), __( 'Button label', 'firehouse' ), __( 'The words on the Submit a Finding button in the FireHouse bar and on the topic pages. The buttons on the landing and About pages keep the words stored with those pages.', 'firehouse' ) );

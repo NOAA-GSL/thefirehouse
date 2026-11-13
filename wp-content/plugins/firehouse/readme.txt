@@ -25,10 +25,10 @@ and the mission section above its footer are hidden on those pages. Every FireHo
 page ends with a disclaimer that researchers' findings are their own, not NOAA's, and
 a missing FireHouse address shows the FireHouse not-found page. Each project's page
 shows the researcher's own words, and each topic area's page its top needs, the
-published projects behind each, and what the area covers. Each FireHouse page's title
-names the page and The FireHouse, and carries a description and link-preview tags,
-unless an SEO plugin is active. On FireHouse pages, WordPress no longer curls quotes, converts dashes, turns
-smileys into images or recapitalizes its own name, so researchers' text appears as
+published projects behind each, and what the area covers. Each FireHouse page has a
+title that names the page, The FireHouse and then the site's own name, a
+description, and link-preview tags, unless an SEO plugin is active. On FireHouse
+pages, WordPress no longer curls quotes, converts dashes, turns smileys into images or recapitalizes its own name, so researchers' text appears as
 they wrote it. The Import screen creates the landing page and the About page from the
 seed bundle; the About page's portraits are uploaded to the Media Library by an
 administrator. The project explorer comes in a later phase; until then the frame

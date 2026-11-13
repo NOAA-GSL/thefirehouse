@@ -2,7 +2,8 @@
 
 > **Status: the plan being built, last updated 13 November 2026.** Phases 0–4 are built
 > on the local copy of GSL's WordPress, and the frame is signed off; Phase 4's "Done
-> when" waits on Stephanie and Emily's review there, and Phase 5 has started. This
+> when" waits on Stephanie and Emily's review on that local copy (see Where each phase
+> is reviewed), and Phase 5 has started. This
 > document is the current plan: the decisions made so far, the architecture
 > they lead to, and a phased plan from the current `main` branch to a plugin running on
 > gsl.noaa.gov. It changes through pull requests, so earlier versions are in its git
@@ -21,7 +22,7 @@ that produced it).
   cutover.
 - **Where.** A section of GSL's existing WordPress sites at `/firehouse`, inside GSL's
   own header and footer. The GSL test site first, then gsl.noaa.gov.
-- **Who edits.** Stephanie and Emily, in wp-admin, through a Firehouse Editor role
+- **Who edits.** Stephanie and Emily, in wp-admin, through a FireHouse Editor role
   that can change Firehouse content and nothing else on the site. Content changes need
   no developer, no terminal and no deploy.
 - **What's under one roof.** The whole workflow: the survey form, the AI synthesis,
@@ -149,7 +150,7 @@ The alternatives, and why not:
 | `scripts/notebooklm-source.mjs` | Rewritten in PHP as **Download NotebookLM source**, for the paste-in fallback |
 | The Google Form (outside this repository) | The plugin's survey form (see [The survey form](#the-survey-form)) |
 | The NotebookLM notebook | Analyze results and an approved AI service (see [The AI service](#the-ai-service)); paste-in stays as the fallback |
-| Vite, `public/.htaccess`, `public/_redirects` | Retired. View scripts are plain ES modules, and the blocks' editor script (`assets/js/block-editor.js`) is plain JavaScript, with no build step; `@wordpress/scripts` comes in when Phase 6's editing controls need one. |
+| Vite, `public/.htaccess`, `public/_redirects` | Retired. View scripts are plain ES modules, and the blocks' editor script (`assets/js/block-editor.js`) is plain JavaScript, with no build step; `@wordpress/scripts` comes in if Phase 6's editing controls need one. |
 
 The rewrite is smaller than the line counts suggest. The design system is already in
 plain CSS files with `fh-` class names, not inline React styles. The PHP templates emit
@@ -215,8 +216,8 @@ wp-content/plugins/firehouse/
                    screen, the query, visibility and verbatim filters, the frame and
                    its head tags (Head), block registration, the markup the blocks
                    render (the bar, the 404, the project, topic, landing and About
-                   pages, their shared blocks (Page_Blocks), icons, buttons, topic
-                   tags, the synthesis note); later, the AI service client
+                   pages, and what those two share (Page_Blocks), icons, buttons,
+                   topic tags, the synthesis note); later, the AI service client
   survey/          the survey form, self-contained (see The survey form)
   domain/          PHP versions of the vocabularies, validation (normalize), derive,
                    format and search, with the email shape, the JSON reading and
@@ -270,7 +271,7 @@ bridge resolves unchanged under the plugin. The Submit page is new.
   by **post ID**; the ID is turned back into a slug when the page renders.
 - **Landing and About.** Ordinary WordPress pages built from blocks. Their layouts are
   to be locked to text-only editing (`contentOnly`), with a short allowed-blocks list
-  and no Custom HTML block; nothing locks them yet (Phase 6). *Their sections are
+  and no Custom HTML block; nothing locks the pages' layout yet (Phase 6). *Their sections are
   custom blocks whose attributes hold the words
   (Blocks, below), which `contentOnly` doesn't show to editors; how they're edited is
   decided in Phase 6.*
@@ -282,12 +283,12 @@ bridge resolves unchanged under the plugin. The Submit page is new.
   kept, the templates render it inside the theme's `main`, after the content, never
   from `wp_footer` or a footer widget, which land after GSL's footer.
 - **Settings.** A FireHouse → Settings screen holds the site name, the submit label, the
-  submit address, the navigation labels, the survey's question wording, the AI prompt
-  and who is emailed about new submissions.
+  submit address and the navigation labels; later, the survey's question wording
+  (Phase 7a), the AI prompt (Phase 7b) and who is emailed about new submissions.
 - **Navigation.** The three nav items (Home, Explore Projects, About) and the Submit
   button are fixed in code, because the routes are structural; only their labels are
   editable. GSL's menus are edited under Appearance → Menus, which needs a capability
-  that opens every menu on the site, so the Firehouse Editor role doesn't get it.
+  that opens every menu on the site, so the FireHouse Editor role doesn't get it.
 
 ### Blocks
 
@@ -447,7 +448,7 @@ in a rewrite.
     Google Form until the plugin's form opens, still open in a new tab. Security
     scanners flag pages that lack it, so the plugin writes it itself rather than rely
     on any site-wide filter.
-12. **The Firehouse Editor role has no `unfiltered_html`,** so anything pasted into a
+12. **The FireHouse Editor role has no `unfiltered_html`,** so anything pasted into a
     paragraph block is sanitized. Biographies are still rendered as written, because
     `wptexturize` is off on these pages (rule 1).
 13. **A malformed query string is ignored, never an error.** `parseProjectQuery`
@@ -720,8 +721,9 @@ adds a rule that bypasses the cache for that path.
 - **The plugin adds** the description and the Open Graph and Twitter tags, on Firehouse
   pages only. A shared project link then previews with the project's own title and
   abstract. This closes the gap noted in `PLAN.md` §2.2.
-- **If GSL installs an SEO plugin later,** the Firehouse plugin detects it and steps
-  aside: it prints none of its own tags, so there are no duplicates, and the SEO
+- **If GSL installs an SEO plugin later,** the Firehouse plugin detects it (a fixed list;
+  the `firehouse_head_tags` filter covers any other) and steps aside: it sets no title
+  and prints none of its tags, so there are no duplicates, and the SEO
   plugin's own settings decide what a shared FireHouse link previews with. Handing
   it the project's abstract would need that plugin's filters; nothing does yet.
 - **Cloudflare may block the preview bots.** Scripted requests to both sites currently
@@ -885,7 +887,7 @@ empty plugin passes PHPCS and Plugin Check.
 - Meta registered from the schemas, with revisions enabled.
 - The URL map and rewrites.
 - The fix for the `year` query variable.
-- The Firehouse Editor role, with the permission filter that limits page editing to
+- The FireHouse Editor role, with the permission filter that limits page editing to
   the `firehouse` page tree.
 - The settings screen.
 - The Import screen with the seed bundle and dry run.
@@ -1048,7 +1050,7 @@ ones.
     `main`. The bar is a `div` too, since the theme's header is the page's banner.*
   - *Its view script is plain JavaScript with no build step: WordPress maps its
     `@wordpress/interactivity` import, which `view.asset.php` declares.
-    `@wordpress/scripts` comes in when Phase 6's editing controls need a build (the
+    `@wordpress/scripts` comes in if Phase 6's editing controls need a build (the
     read-only editor boxes of 13 November didn't).*
   - *Without JavaScript, below 1024px the links stay in the bar on a row of their own,
     with the Submit button after them (`@media (scripting: none)`), so the menu never
@@ -1134,10 +1136,10 @@ signed off on the frame.
     can come back short, and `?paged=2` still pages both. The explorer (Phase 5) should
     ask for public projects itself, as the topic pages do.*
   - *It lands before the survey form or any screen that can publish a project. Today
-    nothing in the plugin publishes one: the import drops a project without approval.
-    A project's edit screen has no form for its fields yet, but it is WordPress's own
-    screen, with the Publish box, so an editor could publish a draft there; the import
-    never makes an unapproved one. Whether publishing a project without approval
+    nothing in the plugin can publish a project without approval: the import drops
+    one, so every draft it leaves is approved. A project's edit screen has no form for
+    its fields yet, but it is WordPress's own screen, with the Publish box, so an
+    editor can publish one of those drafts there. Whether publishing a project without approval
     should be refused outright, as the plugin refuses a topic's status change, is open
     (rule 6 would put the check where the editor is).*
 - *Project pages done 10 November, as the `firehouse/project` block: the eight match
@@ -1225,7 +1227,7 @@ signed off on the frame.
     About page's audiences, steps and team, and the other pages' lists of the same
     kind, lose their count there. Add `role="list"` to them, which leaves the
     reference snapshots as they are, and confirm in the screen-reader audit.*
-  - *For Phase 6: a Firehouse Editor has no `unfiltered_html`, so saving the page in
+  - *For Phase 6: a FireHouse Editor has no `unfiltered_html`, so saving the page in
     the block editor runs every attribute string through kses, which turns a `&` into
     `&amp;` (then shown as written) and can alter a `<`. Today's landing and About
     words have neither; the editing screens need to keep editors' text as typed.*
@@ -1389,7 +1391,8 @@ signed off on the frame.
   theme a page loads both, since GSL's theme switches after the page starts, so 22 to
   11 KB. The marks are lazy-loaded, which is what keeps the hidden one from loading;
   loading them eagerly measured no faster (on an emulated phone on slow 4G, the
-  landing page's largest paint at 1,924 ms against 1,960 ms, within noise). A
+  landing page's largest paint at 1,924 ms eager against 1,960 ms lazy, within
+  noise). A
   256-colour PNG was smaller but banded the flame's gradients. The portraits
   are 336 by 420, 57 KB for the two. The local copy, imported before this, keeps the
   640 by 800 portraits: its About page holds them by ID, and importing again leaves an
@@ -1596,15 +1599,16 @@ Phases 6–7.
 - `sitemap.xml`.
 - Canonical URLs without `VITE_SITE_URL`.
 - The question of which SPA fallback GSL's host needs.
-- The About portraits come from the Media Library. (The hero's photograph doesn't
-  carry over: the plugin's hero draws only its smoke and shade, so a photograph
-  arriving before cutover would show on the static site alone.)
+- The About portraits come from the Media Library.
 - Revision history on projects and topic syntheses.
 - Unpublished records no longer shipping to browsers.
 - The federal chrome items in the README (gov banner, footer, privacy and
   accessibility links) come from GSL's theme.
 
 **Given up:**
+
+- The hero's photograph, for now: the plugin's hero draws only its smoke and shade,
+  so a photograph arriving before cutover would show on the static site alone.
 
 - A static site with essentially no attack surface. The plugin adds logins, and a
   public form that stores personal data.

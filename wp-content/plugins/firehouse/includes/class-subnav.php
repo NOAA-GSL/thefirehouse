@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * has a menu button of its own, and `aria-expanded` already says which state it's in.
  *
  * The logo is two images, one per theme, as the site's `BrandMark` draws it. Each
- * carries its size, so the mark doesn't shift when it arrives, and loads lazily, so
+ * carries its size, so the name beside it doesn't shift when it arrives, and loads lazily, so
  * the one the theme hides waits until someone switches.
  */
 final class Subnav {

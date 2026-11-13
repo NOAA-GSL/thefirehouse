@@ -4,7 +4,7 @@
  * every block's block.json, by its folder in blocks/, as one PHP array.
  *
  *   node scripts/blocks-manifest.mjs           write it
- *   node scripts/blocks-manifest.mjs --check   fail if the committed copy is out of date
+ *   node scripts/blocks-manifest.mjs --check   fail if the copy on disk is out of date
  *
  * Any other argument stops it, so a mistyped flag never rewrites the file.
  *

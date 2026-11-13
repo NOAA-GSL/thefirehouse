@@ -24,8 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * (projects, topics, syntheses and settings, and the landing and About pages' words,
  * among them the team's names, biographies and mailbox) wait for at most thirty
  * minutes in a transient keyed to the uploader's user ID, with a fingerprint of the
- * plan they saw.
- * The confirmation plans again against WordPress as it is then: if anything would
+ * plan they saw. The confirmation plans again against WordPress as it is then: if anything would
  * differ from what was shown, it shows the new dry run instead of importing. Opening
  * the screen afresh, or importing, clears the transient. Only administrators can open
  * the screen.
@@ -172,7 +171,15 @@ final class Import_Screen {
 				echo '<a class="button" href="' . esc_url( self::url() ) . '">' . esc_html__( 'Import another bundle', 'firehouse' ) . '</a></p>';
 				break;
 			default:
-				echo '<p>' . esc_html__( 'Loads the site’s content from a seed bundle: its projects, topics, syntheses and settings, and the FireHouse landing and About pages, which it creates as public pages at /firehouse/ and /firehouse/about/ when they don’t exist. You see what it would change before anything is written. An import adds what is missing and refreshes each project’s survey answers; topics, settings, pages and each project’s editorial fields that already exist in WordPress are kept.', 'firehouse' ) . '</p>';
+				$landing = '/' . Query::ROOT_PATH . '/';
+				echo '<p>' . esc_html(
+					sprintf(
+						/* translators: 1: the landing page's address, 2: the About page's address. */
+						__( 'Loads the site’s content from a seed bundle: its projects, topics, syntheses and settings, and the FireHouse landing and About pages. If those two pages don’t exist yet, the import creates and publishes them at %1$s and %2$s. You see what it would change before anything is written. An import adds what is missing and refreshes each project’s survey answers. Topics, settings, pages and each project’s editorial fields that already exist in WordPress are kept.', 'firehouse' ),
+						$landing,
+						$landing . About_Page::SLUG . '/'
+					)
+				) . '</p>';
 				self::upload_form();
 		}
 		echo '</div>';

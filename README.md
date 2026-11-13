@@ -16,12 +16,14 @@ npm run preview    # serve the production build
 npm test           # the shared test cases, and the CSS, font and script tests
                    # (some read stylesheets in Edge or Chrome, as plugin:css does)
 npm run schema     # regenerate shared/*.schema.json from types.ts
+                   # (schema:check only compares; CI runs it, and typecheck too)
 npm run seed       # write seed/firehouse-seed.json for the plugin's Import screen
 npm run plugin:css # write the plugin's stylesheet from src/, scoped under .fh-app
-                   # (Node 22.18+, and Edge or Chrome installed, as for npm run reference)
+                   # (Node 22.18+, and Edge or Chrome installed, as for npm run reference;
+                   # plugin:css:check only compares, and CI runs it)
 npm run plugin:assets
                    # write the plugin's icons, logos and link-preview image from the site's own
-                   # (plugin:css:check and plugin:assets:check, which CI runs, only compare)
+                   # (plugin:assets:check only compares; CI runs it)
 npm run plugin:blocks
                    # write the plugin's block manifest from its block.json files
                    # (plugin:blocks:check only compares)
@@ -62,9 +64,10 @@ src/
   content/          CMS-agnostic content layer (see below)
   pages/            Landing, Projects, Project, Topic, About and NotFound pages
   components/       Layout, ThemeProvider, SynthesisNote, Disclaimer
-  assets/           logos (the FireHouse marks, and NOAA and GSL's for the static
-                    build), the team's portraits (people/), and a place for a hero
-                    photograph (imagery/, empty)
+  assets/           logos (the FireHouse marks, NOAA and GSL's for the static build,
+                    and the brand originals in logos/source/), the team's portraits
+                    (people/), and a place for a hero photograph (imagery/, only its
+                    README so far)
 
 public/             Copied as-is to the build's base path (the site root, or /firehouse/):
                     icons, the link-preview card, robots.txt, and the two host-level
@@ -251,8 +254,10 @@ overrides are isolated so a re-sync doesn't lose them.
       review the pages:
       - the three lines that say "how often" or "frequency": "ranked by frequency"
         (`about.json`), "with how often each one came up" (`landing.json`) and
-        "ranked by how often they come up" (written into `LandingPage.tsx`, and into the
-        plugin's `includes/class-landing-page.php` too, which nothing ties to it);
+        "ranked by how often they come up" (written into `LandingPage.tsx`, and separately
+        into the plugin's `includes/class-landing-page.php`: change both, since no test
+        keeps them the same). The first two also live in each imported site's landing
+        and About pages, which a later import leaves as they are;
       - whether the synthesis needs its own line saying whose it is.
 - [ ] **Bring in the team's synthesis prompt.** Their "FireHouse Prompt (Final)", which
       Stephanie describes as being in their Gemini notebook, orders needs by project
@@ -904,9 +909,8 @@ are in git history, for instance `git show
 69f2dbb:src/assets/logos/firehouse-wordmark-on-dark.png`; start from those, not the
 WebPs, for a new size. Keep the four names: `BrandMark` imports all four, the
 plugin's PHP names three of them (the light wordmark ships with the plugin but
-nothing there prints it), and `tests/LogosTest.php` fails if one it names doesn't
-ship. There is no vector source
-yet — if one arrives, regenerate from it, then run `npm run plugin:assets` so the
+nothing there prints it), and `tests/LogosTest.php` fails if a logo the PHP names
+isn't in the plugin's `assets/logos/`. There is no vector source yet — if one arrives, regenerate from it, then run `npm run plugin:assets` so the
 plugin's copies follow.
 
 ## License
