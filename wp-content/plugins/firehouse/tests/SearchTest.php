@@ -9,6 +9,7 @@ declare( strict_types = 1 );
 
 namespace Firehouse\Tests;
 
+use Firehouse\Domain\Derive;
 use Firehouse\Domain\Js;
 use Firehouse\Domain\Search;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -51,12 +52,11 @@ final class SearchTest extends DomainTestCase {
 	}
 
 	/**
-	 * A query string's parameters are read as URLSearchParams reads them.
+	 * The query string's own reading, beyond what the shared cases see through
+	 * parse_query(): a leading "?", empty pairs, and names kept as written.
 	 */
-	public function test_a_query_string_is_read_as_the_browser_reads_it(): void {
+	public function test_a_query_string_is_split_as_the_browser_splits_it(): void {
 		$this->assertSame( array( 'q' => 'smoke alerts' ), Search::params( '?q=smoke+alerts' ) );
-		$this->assertSame( array( 'q' => 'a+b c' ), Search::params( 'q=a%2Bb%20c' ) );
-		$this->assertSame( array( 'phase' => 'during' ), Search::params( 'phase=during&phase=before' ) );
 		$this->assertSame(
 			array(
 				'q'       => '',
@@ -64,50 +64,86 @@ final class SearchTest extends DomainTestCase {
 			),
 			Search::params( '&&q&phase%5B%5D=during' )
 		);
-		$this->assertSame( array( 'q' => "a\u{FFFD}b" ), Search::params( 'q=a%FFb' ) );
-		$this->assertSame( array( 'q' => '100%' ), Search::params( 'q=100%' ) );
-		$this->assertNull( Search::parse_query( 'phase[]=during' )['phase'] );
 	}
 
 	/**
-	 * A year is read as JavaScript's Number() reads it, then kept only when it's a
-	 * positive whole number.
+	 * Js::number() as JavaScript's Number() reads what a year's cases don't reach.
 	 */
-	public function test_a_year_is_read_as_javascripts_number_reads_it(): void {
-		$years = array(
-			array( '2025', 2025 ),
-			array( ' 2025 ', 2025 ),
-			array( '2025.0', 2025 ),
-			array( '2.025e3', 2025 ),
-			array( sprintf( '0x%X', 2025 ), 2025 ),
-			array( '+2025', 2025 ),
-			array( "\u{A0}2025", 2025 ),
-			array( '2025.5', null ),
-			array( '-2024', null ),
-			array( '0', null ),
-			array( '', null ),
-			array( '2025px', null ),
-			array( '1_000', null ),
-			array( 'Infinity', null ),
-			array( '+' . sprintf( '0x%X', 2025 ), null ),
-		);
-		foreach ( $years as list( $text, $year ) ) {
-			$this->assertSame( $year, Search::parse_query( 'year=' . rawurlencode( $text ) )['year'], $text );
-		}
+	public function test_numbers_read_as_javascript_reads_them(): void {
 		$this->assertSame( 0.0, Js::number( null ) );
+		$this->assertSame( 0.0, Js::number( ' ' ) );
 		$this->assertTrue( is_nan( Js::number( '0b12' ) ) );
 		$this->assertSame( 5.0, Js::number( '0b101' ) );
 		$this->assertSame( 8.0, Js::number( '0o10' ) );
 		$this->assertSame( -INF, Js::number( '-Infinity' ) );
 		$this->assertSame( INF, Js::number( '1e400' ) );
+		$this->assertSame( 0.5, Js::number( '.5' ) );
 	}
 
 	/**
-	 * A query string is written as URLSearchParams writes one.
+	 * A word's length and its typos count UTF-16 code units, as JavaScript's strings do:
+	 * a letter beyond the Basic Multilingual Plane is two. (Values checked in Node.)
 	 */
-	public function test_a_query_string_is_written_as_the_browser_writes_it(): void {
-		$query = Search::parse_query( '' );
-		$this->assertSame( 'q=a*b+%26+%C3%A9%7E', Search::serialize_query( array( 'q' => 'a*b & é~' ) + $query ) );
+	public function test_typos_count_utf16_code_units(): void {
+		$this->assertFalse( Search::within_one_edit( "abc\u{20000}", 'abcd' ) );
+		$this->assertTrue( Search::within_one_edit( "\u{20000}\u{20000}", "\u{20000}\u{20001}" ) );
+		$project = array(
+			'title' => "\u{20000}\u{20000} smoke",
+			'slug'  => 'x',
+		);
+		// Two such letters are four units long, so a typo of them counts at half weight.
+		$this->assertSame( 3.0, Search::score_project( $project, "\u{20000}\u{20001}" ) );
+	}
+
+	/**
+	 * An entry in the wrong shape, such as a paper stored as plain text, gives nothing to
+	 * search rather than an error on every search, as in the TypeScript.
+	 */
+	public function test_entries_in_the_wrong_shape_are_passed_over(): void {
+		$project            = Cases::site()['projects'][0];
+		$project['papers']  = array( 'Smith 2024, Journal of Fire', null, 7 );
+		$project['authors'] = array( 'A. Name', array( 'name' => null ) );
+		$project['needs']   = array( 'a need as text' );
+		$project['geo']     = 'not an object';
+
+		$this->assertGreaterThan( 0.0, Search::score_project( $project, $project['title'] ) );
+		$this->assertSame( 0.0, Search::score_project( $project, 'Journal' ) );
+	}
+
+	/**
+	 * A year stored as 2025.0 is the year 2025, in the filter and the counts alike, as one
+	 * number in JavaScript; a fractional one is a value of its own.
+	 */
+	public function test_a_whole_float_year_is_that_year(): void {
+		$projects                      = Derive::published_projects( Cases::site() );
+		$projects[0]['completionYear'] = (float) $projects[0]['completionYear'];
+		$year                          = (int) $projects[0]['completionYear'];
+		$query                         = array( 'year' => $year ) + Search::parse_query( '' );
+
+		$this->assertContains( $projects[0]['slug'], array_column( Search::filter_projects( $projects, $query ), 'slug' ) );
+		$counts = Search::facet_counts( $projects, Search::parse_query( '' ), 'year', static fn( array $project ): array => Search::facet_values( $project, 'year' ) );
+		$this->assertArrayHasKey( $year, $counts );
+		$this->assertSame( array_sum( $counts ), count( $projects ) );
+
+		$projects[1]['completionYear'] = 2025.5;
+		$counts                        = Search::facet_counts( $projects, Search::parse_query( '' ), 'year', static fn( array $project ): array => Search::facet_values( $project, 'year' ) );
+		$this->assertSame( 1, $counts['2025.5'] );
+	}
+
+	/**
+	 * A long query of misspelt words, which once took seconds a request, stays quick:
+	 * only the first 20 words count, a repeated word is scored once, and a field's
+	 * words are measured once.
+	 */
+	public function test_a_long_misspelt_query_stays_quick(): void {
+		$projects = Derive::published_projects( Cases::site() );
+		$query    = Search::parse_query( 'q=' . str_repeat( 'fyre+wiht+dtaa+', 600 ) );
+		$started  = hrtime( true );
+		Search::filter_projects( $projects, $query );
+		foreach ( Search::FACETS as $facet ) {
+			Search::facet_counts( $projects, $query, $facet, static fn( array $project ): array => Search::facet_values( $project, $facet ) );
+		}
+		$this->assertLessThan( 1.0, ( hrtime( true ) - $started ) / 1e9 );
 	}
 
 	/**

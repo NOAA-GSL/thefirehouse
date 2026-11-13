@@ -18,7 +18,7 @@ const constant = (name) => {
 };
 const ACCENTED = constant('ACCENTED');
 const UNACCENTED = constant('UNACCENTED');
-const strip = (letter) => letter.normalize('NFD').replace(/[̀-ͯ]/g, '');
+const strip = (letter) => letter.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
 describe('the PHP search’s accent table', () => {
   it('pairs each accented letter with one letter', () => {

@@ -898,8 +898,8 @@ PHP versions of derive (counts, region expansion for national studies, synthesis
 info), format, validation and search/filter. *Derive, format and validation are in
 `domain/` and pass their shared cases (started before Phase 1, on 1 November, while
 Phase 0's security answers were pending). Where the TypeScript would crash on a
-missing or malformed block, the PHP refuses it with a clear error. Search waits on
-open question 11.*
+missing or malformed block, the PHP refuses it with a clear error. Search followed on
+13 November, once open question 11 was answered (see Phase 5).*
 
 **Done when:** the PHP versions pass the same shared test cases as the TypeScript
 ones.
@@ -1415,14 +1415,25 @@ check the order first. The coverage map's CSS is a chunk of its own (`DEFERRED`)
 loaded with the map.
 
 - *Search done 13 November: `domain/class-search.php` ports `search.ts` and passes
-  every case in `shared/cases/search.json`. It reads a query string as
-  `URLSearchParams` does (the first value wins, `+` is a space, `phase[]` is a name of
-  its own), and a year as JavaScript's `Number()` does (`Js::number()`). Folding
-  accents takes intl's Normalizer; without it, a table of Latin letters does it, held
-  to JavaScript's own folding by `scripts/search-fold.test.mjs`, and other scripts'
-  accents stay. Word lengths and typo distances count UTF-16 code units, as JavaScript
-  does. Titles sort by `Derive::compare_titles()`, which has the same intl
-  limitation.*
+  every case in `shared/cases/search.json`, which now also hold the query string and
+  the year to the browser's own reading. It reads a query string as `URLSearchParams`
+  does, not as PHP's `$_GET` does: the first of a repeated name wins, and `phase[]` is
+  just another name, not an array. It reads a year as JavaScript's `Number()` does
+  (`Js::number()`), keeping safe whole numbers only. Folding accents takes PHP's intl
+  extension (its Normalizer); without it, a table of Latin letters does it, held to
+  JavaScript's own folding by `scripts/search-fold.test.mjs`, and letters of other
+  alphabets, such as Greek ά or Cyrillic й, keep theirs. Word lengths and typo
+  distances count UTF-16 code units, as JavaScript does. Titles sort, and every sort
+  breaks ties, by `Derive::compare_titles()`, which also takes intl; without it,
+  titles with punctuation, digits or accented letters can sort differently. The
+  TypeScript now compares titles in `en-US` too, whatever the browser's language, so
+  the script never reorders a list the server drew.*
+- *The code review found that one long address of misspelt words cost seconds of
+  server time (about 45 at 48 projects). Both languages now count only a search's
+  first 20 words (`MAX_TERMS`, a shared case), and the PHP scores a repeated word
+  once and measures a field's words once: the same address takes about 50 ms at 48
+  projects. The explorer's handler should still get the Application Security
+  Engineer's review when it reads the query string.*
 
 **Done when:** it reaches feature parity with the React site, every URL parameter
 behaves the same, and the accessibility snapshots match.

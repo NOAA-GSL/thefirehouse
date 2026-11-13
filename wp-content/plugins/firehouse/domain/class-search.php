@@ -38,11 +38,24 @@ final class Search {
 	public const FACETS = array( 'phase', 'region', 'year', 'type' );
 
 	/**
+	 * The most words a search counts, as MAX_TERMS in search.ts; any after them are
+	 * ignored. No real search comes near it, and it bounds the work one long query
+	 * string can ask of the server.
+	 */
+	public const MAX_TERMS = 20;
+
+	/**
+	 * The largest year a query keeps, JavaScript's Number.MAX_SAFE_INTEGER: past it a
+	 * number isn't exact in JavaScript, and wouldn't be written back the same.
+	 */
+	private const MAX_YEAR = 9007199254740991;
+
+	/**
 	 * Latin letters with accents, one for one with UNACCENTED: what fold_without_intl()
 	 * strips on a server without the intl extension. Each pair is a letter and what
 	 * Unicode's decomposition (NFD) leaves of it once the combining marks U+0300 to
 	 * U+036F are dropped, for every letter from U+00C0 to U+024F and U+1E00 to U+1EFF
-	 * that has any.
+	 * whose fold changes it.
 	 */
 	private const ACCENTED = 'ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖÙÚÛÜÝàáâãäåçèéêëìíîïñòóôõöùúûüýÿĀāĂăĄąĆćĈĉĊċČčĎďĒēĔĕĖėĘęĚěĜĝĞğĠġĢģĤĥĨĩĪīĬĭĮįİĴĵĶķĹĺĻļĽľŃńŅņŇňŌōŎŏŐőŔŕŖŗŘřŚśŜŝŞşŠšŢţŤťŨũŪūŬŭŮůŰűŲųŴŵŶŷŸŹźŻżŽžƠơƯưǍǎǏǐǑǒǓǔǕǖǗǘǙǚǛǜǞǟǠǡǢǣǦǧǨǩǪǫǬǭǮǯǰǴǵǸǹǺǻǼǽǾǿȀȁȂȃȄȅȆȇȈȉȊȋȌȍȎȏȐȑȒȓȔȕȖȗȘșȚțȞȟȦȧȨȩȪȫȬȭȮȯȰȱȲȳḀḁḂḃḄḅḆḇḈḉḊḋḌḍḎḏḐḑḒḓḔḕḖḗḘḙḚḛḜḝḞḟḠḡḢḣḤḥḦḧḨḩḪḫḬḭḮḯḰḱḲḳḴḵḶḷḸḹḺḻḼḽḾḿṀṁṂṃṄṅṆṇṈṉṊṋṌṍṎṏṐṑṒṓṔṕṖṗṘṙṚṛṜṝṞṟṠṡṢṣṤṥṦṧṨṩṪṫṬṭṮṯṰṱṲṳṴṵṶṷṸṹṺṻṼṽṾṿẀẁẂẃẄẅẆẇẈẉẊẋẌẍẎẏẐẑẒẓẔẕẖẗẘẙẛẠạẢảẤấẦầẨẩẪẫẬậẮắẰằẲẳẴẵẶặẸẹẺẻẼẽẾếỀềỂểỄễỆệỈỉỊịỌọỎỏỐốỒồỔổỖỗỘộỚớỜờỞởỠỡỢợỤụỦủỨứỪừỬửỮữỰựỲỳỴỵỶỷỸỹ';
 
@@ -54,10 +67,16 @@ final class Search {
 	/**
 	 * The parameters of a query string as URLSearchParams reads them: a leading "?"
 	 * dropped, "+" as a space, percent-escapes decoded, bytes that aren't UTF-8 replaced,
-	 * and the first value kept when a name repeats. A name with brackets, such as
-	 * "phase[]", is a name of its own, so PHP's arrays never reach a query.
+	 * and the first value kept when a name repeats, unlike PHP's $_GET. A name with
+	 * brackets, such as "phase[]", is just another name, not an array.
 	 *
-	 * @param string $query The query string, as $_SERVER['QUERY_STRING'] has it.
+	 * Under WordPress, pass wp_unslash( $_SERVER['QUERY_STRING'] ?? '' ): WordPress
+	 * adds slashes to $_SERVER, which would double a backslash or a quote. Not $_GET,
+	 * which keeps the last of a repeated name and makes arrays, and not through
+	 * sanitize_text_field(), which deletes percent-escapes: this decodes the text, and
+	 * the query keeps only what parse_query() accepts.
+	 *
+	 * @param string $query The query string, unslashed.
 	 * @return array<string, string>
 	 */
 	public static function params( string $query ): array {
@@ -101,7 +120,7 @@ final class Search {
 	 * as parseProjectQuery() reads it.
 	 *
 	 * @param string $query The query string.
-	 * @return array{q: string, phase: string|null, region: string|null, year: int|float|null, type: string|null, sort: string|null}
+	 * @return array{q: string, phase: string|null, region: string|null, year: int|null, type: string|null, sort: string|null}
 	 */
 	public static function parse_query( string $query ): array {
 		$params = self::params( $query );
@@ -113,7 +132,7 @@ final class Search {
 			'q'      => $params['q'] ?? '',
 			'phase'  => Vocabulary::is_one_of( $params['phase'] ?? null, Vocabulary::fire_phases() ) ? $params['phase'] : null,
 			'region' => Vocabulary::is_one_of( $params['region'] ?? null, Vocabulary::regions() ) ? $params['region'] : null,
-			'year'   => is_finite( $year ) && floor( $year ) === $year && $year > 0 ? ( $year <= PHP_INT_MAX ? (int) $year : $year ) : null,
+			'year'   => is_finite( $year ) && floor( $year ) === $year && $year > 0 && $year <= self::MAX_YEAR ? (int) $year : null,
 			'type'   => '' === $type ? null : $type,
 			'sort'   => in_array( $sort, self::SORTS, true ) ? $sort : null,
 		);
@@ -122,7 +141,7 @@ final class Search {
 	/**
 	 * A query as a query string, leaving out what's unset so addresses stay short, in a
 	 * fixed order, encoded as URLSearchParams encodes it: a space as "+", and every byte
-	 * but letters, digits and "*-._" escaped.
+	 * but ASCII letters, digits and "*-._" escaped.
 	 *
 	 * @param array<string, mixed> $query The query.
 	 */
@@ -156,7 +175,9 @@ final class Search {
 	 * Text lower-cased and with its accents dropped, as fold() in search.ts has it, so
 	 * "Évacuation" matches "evacuation". That takes the intl extension's Normalizer to
 	 * decompose every letter as JavaScript does; on a server without it,
-	 * fold_without_intl() is used instead.
+	 * fold_without_intl() is used instead. Before PHP 8.3, mb_strtolower() lower-cases a
+	 * final Greek sigma as σ where JavaScript writes ς, so a Greek word ending in it
+	 * can score differently there.
 	 *
 	 * @param string $text The text.
 	 */
@@ -169,9 +190,10 @@ final class Search {
 	}
 
 	/**
-	 * The folding without intl: Latin letters lose their accents as with it, from the
-	 * ACCENTED table, and marks already written apart are dropped. Accents on other
-	 * scripts' letters, such as Greek's, stay, where JavaScript would drop them.
+	 * The folding without intl: Latin letters lose their accents as they would with
+	 * intl, from the ACCENTED table, and combining marks stored as separate characters
+	 * are dropped. Accented letters of other alphabets, such as Greek ά or Cyrillic й,
+	 * keep their accents, where JavaScript would drop them.
 	 *
 	 * @param string $text The text.
 	 */
@@ -197,7 +219,7 @@ final class Search {
 	 * @return list<string>
 	 */
 	private static function terms( string $q ): array {
-		return self::words( (array) preg_split( '/[' . Js::SPACE . ']+/u', self::fold( $q ) ) );
+		return array_slice( self::words( (array) preg_split( '/[' . Js::SPACE . ']+/u', self::fold( $q ) ) ), 0, self::MAX_TERMS );
 	}
 
 	/**
@@ -218,20 +240,33 @@ final class Search {
 	 * @return list<array{string, int}>
 	 */
 	private static function fields( array $project ): array {
-		$join = static fn( array $items, callable $text ): string => implode( ' ', array_map( $text, $items ) );
+		// An entry that isn't the shape the TypeScript expects (a paper stored as plain
+		// text, say) gives nothing, as it does there, rather than an error on every search.
+		$join = static fn( mixed $items, callable $text ): string => implode( ' ', array_map( $text, is_array( $items ) ? $items : array() ) );
+		$of   = static fn( mixed $item, string $key ): string => is_array( $item ) ? self::text( $item[ $key ] ?? null ) : '';
 		return array(
-			array( (string) ( $project['title'] ?? '' ), 6 ),
-			array( (string) ( $project['projectType'] ?? '' ), 4 ),
-			array( $join( $project['authors'] ?? array(), static fn( array $author ): string => (string) ( $author['name'] ?? '' ) ), 4 ),
-			array( (string) ( $project['org'] ?? '' ), 3 ),
-			array( (string) ( $project['summary'] ?? '' ), 3 ),
-			array( (string) ( $project['abstract'] ?? '' ), 2 ),
-			array( implode( ' ', $project['takeaways'] ?? array() ), 1 ),
-			array( implode( ' ', $project['methods'] ?? array() ), 2 ),
-			array( $join( $project['needs'] ?? array(), static fn( array $need ): string => ( $need['need'] ?? '' ) . ' ' . ( $need['recommendation'] ?? '' ) ), 1 ),
-			array( $join( $project['papers'] ?? array(), static fn( array $paper ): string => ( $paper['title'] ?? '' ) . ' ' . ( $paper['container'] ?? '' ) ), 1 ),
-			array( (string) ( $project['geo']['note'] ?? '' ), 1 ),
+			array( self::text( $project['title'] ?? null ), 6 ),
+			array( self::text( $project['projectType'] ?? null ), 4 ),
+			array( $join( $project['authors'] ?? null, static fn( mixed $author ): string => $of( $author, 'name' ) ), 4 ),
+			array( self::text( $project['org'] ?? null ), 3 ),
+			array( self::text( $project['summary'] ?? null ), 3 ),
+			array( self::text( $project['abstract'] ?? null ), 2 ),
+			array( $join( $project['takeaways'] ?? null, array( self::class, 'text' ) ), 1 ),
+			array( $join( $project['methods'] ?? null, array( self::class, 'text' ) ), 2 ),
+			array( $join( $project['needs'] ?? null, static fn( mixed $need ): string => $of( $need, 'need' ) . ' ' . $of( $need, 'recommendation' ) ), 1 ),
+			array( $join( $project['papers'] ?? null, static fn( mixed $paper ): string => $of( $paper, 'title' ) . ' ' . $of( $paper, 'container' ) ), 1 ),
+			array( self::text( is_array( $project['geo'] ?? null ) ? ( $project['geo']['note'] ?? null ) : null ), 1 ),
 		);
+	}
+
+	/**
+	 * A stored value as searchable text: a string as it is, a number or true as its
+	 * digits or "1", and anything else, null and lists included, as nothing.
+	 *
+	 * @param mixed $value The value.
+	 */
+	public static function text( mixed $value ): string {
+		return is_scalar( $value ) ? (string) $value : '';
 	}
 
 	/**
@@ -242,8 +277,16 @@ final class Search {
 	 * @param string $b Another.
 	 */
 	public static function within_one_edit( string $a, string $b ): bool {
-		$a      = self::units( $a );
-		$b      = self::units( $b );
+		return self::units_within_one_edit( self::units( $a ), self::units( $b ) );
+	}
+
+	/**
+	 * The same test as within_one_edit(), on words already split into UTF-16 code units.
+	 *
+	 * @param string[] $a One word's units.
+	 * @param string[] $b Another's.
+	 */
+	private static function units_within_one_edit( array $a, array $b ): bool {
 		$length = array( count( $a ), count( $b ) );
 		if ( abs( $length[0] - $length[1] ) > 1 ) {
 			return false;
@@ -305,36 +348,53 @@ final class Search {
 			$fields[] = array(
 				'text'   => $folded,
 				'weight' => $weight,
-				'tokens' => self::words( (array) preg_split( '/[^\p{L}\p{N}]+/u', $folded ) ),
+				'tokens' => null,
 			);
 		}
 
 		$score = 0.0;
+		$found = array();
 		foreach ( $words as $word ) {
-			$starts_word = '/(^|[^\p{L}\p{N}])' . preg_quote( $word, '/' ) . '/u';
-			$long        = count( self::units( $word ) ) >= 4;
-			$best        = 0.0;
-			foreach ( $fields as $field ) {
-				if ( str_contains( $field['text'], $word ) ) {
-					$best = max( $best, $field['weight'] * ( 1 === preg_match( $starts_word, $field['text'] ) ? 2.0 : 1.0 ) );
-					continue;
-				}
-				if ( ! $long ) {
-					continue;
-				}
-				foreach ( $field['tokens'] as $token ) {
-					if ( self::within_one_edit( $word, $token ) ) {
-						$best = max( $best, $field['weight'] * 0.5 );
-						break;
-					}
-				}
-			}
-			if ( 0.0 === $best ) {
+			// A word repeated in the search scores as it did the first time.
+			$found[ $word ] ??= self::best_hit( $word, $fields );
+			if ( 0.0 === $found[ $word ] ) {
 				return 0.0;
 			}
-			$score += $best;
+			$score += $found[ $word ];
 		}
 		return $score;
+	}
+
+	/**
+	 * One search word's best hit across a project's folded fields, or 0. A field's tokens,
+	 * in UTF-16 code units, are worked out only when a word needs a typo match, and then
+	 * once.
+	 *
+	 * @param string                     $word   The folded word.
+	 * @param list<array<string, mixed>> $fields The fields: `text`, `weight` and `tokens`.
+	 */
+	private static function best_hit( string $word, array &$fields ): float {
+		$starts_word = '/(^|[^\p{L}\p{N}])' . preg_quote( $word, '/' ) . '/u';
+		$units       = self::units( $word );
+		$best        = 0.0;
+		foreach ( $fields as &$field ) {
+			if ( str_contains( $field['text'], $word ) ) {
+				$best = max( $best, $field['weight'] * ( 1 === preg_match( $starts_word, $field['text'] ) ? 2.0 : 1.0 ) );
+				continue;
+			}
+			if ( count( $units ) < 4 || $field['weight'] * 0.5 <= $best ) {
+				continue;
+			}
+			$field['tokens'] ??= array_map( array( self::class, 'units' ), self::words( (array) preg_split( '/[^\p{L}\p{N}]+/u', $field['text'] ) ) );
+			foreach ( $field['tokens'] as $token ) {
+				if ( abs( count( $token ) - count( $units ) ) <= 1 && self::units_within_one_edit( $units, $token ) ) {
+					$best = max( $best, $field['weight'] * 0.5 );
+					break;
+				}
+			}
+		}
+		unset( $field );
+		return $best;
 	}
 
 	/**
@@ -349,11 +409,41 @@ final class Search {
 			if ( $facet === $skip || ! Js::truthy( $query[ $facet ] ?? null ) ) {
 				continue;
 			}
-			if ( ! in_array( $query[ $facet ], self::facet_values( $project, $facet ), true ) ) {
+			$wanted = $query[ $facet ];
+			$found  = array_filter( self::facet_values( $project, $facet ), static fn( mixed $value ): bool => self::same( $value, $wanted ) );
+			if ( array() === $found ) {
 				return false;
 			}
 		}
 		return true;
+	}
+
+	/**
+	 * Whether two values are equal as JavaScript's includes() and Map keys compare them:
+	 * numbers by value, so 2025 and 2025.0 are one year, and anything else strictly.
+	 *
+	 * @param mixed $a One value.
+	 * @param mixed $b Another.
+	 */
+	private static function same( mixed $a, mixed $b ): bool {
+		if ( ( is_int( $a ) || is_float( $a ) ) && ( is_int( $b ) || is_float( $b ) ) ) {
+			return (float) $a === (float) $b;
+		}
+		return $a === $b;
+	}
+
+	/**
+	 * A facet value as a key of the counts: a whole number as an integer, as 2025.0 is
+	 * the year 2025 in JavaScript, another number as its text, and a string as it is.
+	 *
+	 * @param mixed $value The value.
+	 * @return string|int
+	 */
+	private static function key( mixed $value ): string|int {
+		if ( is_float( $value ) && is_finite( $value ) && floor( $value ) === $value && abs( $value ) <= self::MAX_YEAR ) {
+			return (int) $value;
+		}
+		return is_int( $value ) ? $value : self::text( $value );
 	}
 
 	/**
@@ -444,7 +534,8 @@ final class Search {
 				continue;
 			}
 			foreach ( $values_of( $project ) as $value ) {
-				$counts[ $value ] = ( $counts[ $value ] ?? 0 ) + 1;
+				$key            = self::key( $value );
+				$counts[ $key ] = ( $counts[ $key ] ?? 0 ) + 1;
 			}
 		}
 		return $counts;
