@@ -112,6 +112,48 @@ final class SearchTest extends DomainTestCase {
 	}
 
 	/**
+	 * Phases or regions stored as anything but a list give none, and a region that isn't
+	 * text is passed over: one such record can't stop the explorer (rule 6).
+	 */
+	public function test_phases_and_regions_in_the_wrong_shape_give_none(): void {
+		$projects                      = Derive::published_projects( Cases::site() );
+		$projects[0]['firePhases']     = 'during';
+		$projects[1]['geo']            = array( 'regions' => 'NATIONAL' );
+		$projects[2]['geo']            = 'not an object';
+		$projects[3]['geo']['regions'] = array( 'NWCC', array( 'NATIONAL' ), null );
+		$query                         = array(
+			'phase'  => 'during',
+			'region' => 'NWCC',
+		) + Search::parse_query( '' );
+		$values                        = static fn( string $facet ): \Closure => static fn( array $project ): array => Search::facet_values( $project, $facet );
+
+		$this->assertSame( array(), Search::facet_values( $projects[0], 'phase' ) );
+		$this->assertSame( array(), Search::facet_values( $projects[1], 'region' ) );
+		$this->assertSame( array(), Search::facet_values( $projects[2], 'region' ) );
+		$this->assertSame( array( 'NWCC' ), Search::facet_values( $projects[3], 'region' ) );
+		$this->assertNotContains( $projects[0]['slug'], array_column( Search::filter_projects( $projects, $query ), 'slug' ) );
+		$this->assertArrayNotHasKey( 'NATIONAL', Search::facet_counts( $projects, Search::parse_query( '' ), 'region', $values( 'region' ) ) );
+	}
+
+	/**
+	 * Scores worked out once and passed in give what scoring each time gives, for every
+	 * sort, filter and count.
+	 */
+	public function test_scores_passed_in_give_the_same_results(): void {
+		$projects = Derive::published_projects( Cases::site() );
+		foreach ( array( '', 'q=smoke', 'q=smoke+fire&sort=title', 'q=forcast&phase=during', 'q=zzzz', 'phase=before&sort=oldest', 'q=evac&region=NWCC' ) as $string ) {
+			$query  = Search::parse_query( $string );
+			$scores = Search::scores( $projects, $query['q'] );
+			$this->assertSame( array_map( static fn( array $project ): float => Search::score_project( $project, $query['q'] ), $projects ), $scores, $string );
+			$this->assertSame( Search::filter_projects( $projects, $query ), Search::filter_projects( $projects, $query, $scores ), $string );
+			foreach ( Search::FACETS as $facet ) {
+				$values = static fn( array $project ): array => Search::facet_values( $project, $facet );
+				$this->assertSame( Search::facet_counts( $projects, $query, $facet, $values ), Search::facet_counts( $projects, $query, $facet, $values, $scores ), "$string $facet" );
+			}
+		}
+	}
+
+	/**
 	 * A year stored as 2025.0 is the year 2025, in the filter and the counts alike, as one
 	 * number in JavaScript; a fractional one is a value of its own.
 	 */

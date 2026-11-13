@@ -29,6 +29,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Each runs on every public page and changes nothing outside the Firehouse. If an SEO
  * plugin is active, or the `firehouse_head_tags` filter says no, the Firehouse leaves
  * titles and tags to it.
+ *
+ * Apart from those, the explorer at an address with a query asks search engines not to
+ * index it (robots()).
  */
 final class Head {
 
@@ -76,6 +79,30 @@ final class Head {
 	public static function hook(): void {
 		add_filter( 'pre_get_document_title', array( self::class, 'document_title' ) );
 		add_action( 'wp_head', array( self::class, 'tags' ), 5 );
+		add_filter( 'wp_robots', array( self::class, 'robots' ) );
+	}
+
+	/**
+	 * On the explorer at an address with a query (a search, a filter, or anything
+	 * else), asks search engines not to index the page but to follow its links. Such a
+	 * page prints words from its address, a search's or a filter's, which anyone can
+	 * write into a link, and it lists only what the explorer without a query lists. It
+	 * holds whether or not an SEO plugin is active, since it's about what the page
+	 * prints; one that prints its own robots tag in place of WordPress's decides there.
+	 *
+	 * The filter runs on every page, and an earlier one may return anything: what isn't
+	 * WordPress's array of directives is passed on as it was.
+	 *
+	 * @param mixed $robots The directives so far, by name.
+	 * @return mixed The directives, or what was given.
+	 */
+	public static function robots( mixed $robots ): mixed {
+		if ( ! is_array( $robots ) || ! is_post_type_archive( Post_Types::PROJECT ) || ! Frame::is_firehouse_request() || '' === Explorer_Page::query_string() ) {
+			return $robots;
+		}
+		$robots['noindex'] = true;
+		$robots['follow']  = true;
+		return $robots;
 	}
 
 	/**

@@ -430,6 +430,40 @@ final class HeadTest extends WordPressTestCase {
 	}
 
 	/**
+	 * The explorer at an address with a query asks not to be indexed, and its links to be
+	 * followed; without a query, and on every other page, the directives are left as
+	 * they were, and so is anything an earlier filter gave that isn't directives.
+	 */
+	public function test_the_explorer_with_a_query_isnt_indexed(): void {
+		$server = $_SERVER;
+		try {
+			Functions\when( 'wp_unslash' )->alias( 'stripslashes' );
+			$given = array( 'max-image-preview' => 'large' );
+
+			$this->visit( 'explorer' );
+			$_SERVER['REQUEST_URI'] = '/firehouse/projects/?type=Anything+at+all';
+			$this->assertSame(
+				array(
+					'max-image-preview' => 'large',
+					'noindex'           => true,
+					'follow'            => true,
+				),
+				Head::robots( $given )
+			);
+			$this->assertSame( 'not directives', Head::robots( 'not directives' ) );
+
+			$_SERVER['REQUEST_URI'] = '/firehouse/projects/';
+			$this->assertSame( $given, Head::robots( $given ) );
+
+			$this->visit_project();
+			$_SERVER['REQUEST_URI'] = '/firehouse/projects/smoke-alerts/?q=smoke';
+			$this->assertSame( $given, Head::robots( $given ) );
+		} finally {
+			$_SERVER = $server; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- puts back what the test changed.
+		}
+	}
+
+	/**
 	 * With the filter saying no, as it would for a theme or plugin that prints its own,
 	 * the Firehouse prints nothing and keeps WordPress's titles.
 	 */

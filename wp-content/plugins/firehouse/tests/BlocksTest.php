@@ -44,7 +44,7 @@ final class BlocksTest extends WordPressTestCase {
 
 		Blocks::register();
 
-		$this->assertSame( array_map( static fn( string $name ): string => dirname( __DIR__ ) . '/blocks/' . $name, array( 'about-audiences', 'about-cta', 'about-intro', 'about-mission', 'about-process', 'about-sections', 'about-team', 'hero', 'not-found', 'project', 'stats', 'submit-band', 'subnav', 'top-needs', 'topic' ) ), $registered );
+		$this->assertSame( array_map( static fn( string $name ): string => dirname( __DIR__ ) . '/blocks/' . $name, array( 'about-audiences', 'about-cta', 'about-intro', 'about-mission', 'about-process', 'about-sections', 'about-team', 'explorer', 'hero', 'not-found', 'project', 'stats', 'submit-band', 'subnav', 'top-needs', 'topic' ) ), $registered );
 		// The manifest comes first, so no block reads its block.json.
 		$this->assertSame( array( array( dirname( __DIR__ ) . '/blocks', dirname( __DIR__ ) . '/blocks/blocks-manifest.php', 0 ) ), $collections );
 	}

@@ -70,11 +70,12 @@ final class Search {
 	 * and the first value kept when a name repeats, unlike PHP's $_GET. A name with
 	 * brackets, such as "phase[]", is just another name, not an array.
 	 *
-	 * Under WordPress, pass wp_unslash( $_SERVER['QUERY_STRING'] ?? '' ): WordPress
-	 * adds slashes to $_SERVER, which would double a backslash or a quote. Not $_GET,
-	 * which keeps the last of a repeated name and makes arrays, and not through
-	 * sanitize_text_field(), which deletes percent-escapes: this decodes the text, and
-	 * the query keeps only what parse_query() accepts.
+	 * Under WordPress, pass the query part of wp_unslash( $_SERVER['REQUEST_URI'] ), as
+	 * Explorer_Page::for_request() does: WordPress adds slashes to $_SERVER, which would
+	 * double a backslash or a quote, and a server's rewrite rules can change
+	 * QUERY_STRING. Not $_GET, which keeps the last of a repeated name and makes arrays,
+	 * and not through sanitize_text_field(), which deletes percent-escapes: this decodes
+	 * the text, and the query keeps only what parse_query() accepts.
 	 *
 	 * @param string $query The query string, unslashed.
 	 * @return array<string, string>
@@ -439,7 +440,7 @@ final class Search {
 	 * @param mixed $value The value.
 	 * @return string|int
 	 */
-	private static function key( mixed $value ): string|int {
+	public static function key( mixed $value ): string|int {
 		if ( is_float( $value ) && is_finite( $value ) && floor( $value ) === $value && abs( $value ) <= self::MAX_YEAR ) {
 			return (int) $value;
 		}
@@ -449,7 +450,9 @@ final class Search {
 	/**
 	 * A project's values for one facet, as the explorer counts and filters them: its
 	 * fire phases, its effective regions (a national study counts in every GACC), its
-	 * completion year, or its project type.
+	 * completion year, or its project type. Phases or regions stored as anything but a
+	 * list give none, and a region that isn't text is passed over, so one record stored
+	 * around Meta's checks can't stop the explorer (rule 6).
 	 *
 	 * @param array<string, mixed> $project The project.
 	 * @param string               $facet   phase, region, year or type.
@@ -457,8 +460,8 @@ final class Search {
 	 */
 	public static function facet_values( array $project, string $facet ): array {
 		return match ( $facet ) {
-			'phase'  => array_values( $project['firePhases'] ?? array() ),
-			'region' => Derive::effective_regions( $project['geo']['regions'] ?? array() ),
+			'phase'  => is_array( $project['firePhases'] ?? null ) ? array_values( $project['firePhases'] ) : array(),
+			'region' => Derive::effective_regions( is_array( $project['geo']['regions'] ?? null ) ? array_values( array_filter( $project['geo']['regions'], 'is_string' ) ) : array() ),
 			'year'   => array( $project['completionYear'] ?? null ),
 			'type'   => Js::truthy( $project['projectType'] ?? null ) ? array( $project['projectType'] ) : array(),
 			default  => array(),
@@ -481,19 +484,34 @@ final class Search {
 	}
 
 	/**
+	 * Each project's relevance to the search text, by its key in $projects: what
+	 * score_project() gives each. A page that both filters and counts scores once and
+	 * passes these to filter_projects() and facet_counts(), which would otherwise each
+	 * score every project again, five passes for the explorer.
+	 *
+	 * @param array<array<string, mixed>> $projects The projects.
+	 * @param string                      $q        The search text.
+	 * @return array<float>
+	 */
+	public static function scores( array $projects, string $q ): array {
+		return array_map( static fn( array $project ): float => self::score_project( $project, $q ), $projects );
+	}
+
+	/**
 	 * The projects that match the query, in its sort.
 	 *
 	 * @param list<array<string, mixed>> $projects The projects.
 	 * @param array<string, mixed>       $query    The query.
+	 * @param array<float>|null          $scores   The projects' scores for the query's text, from scores(), by the same keys; null to score them here.
 	 * @return list<array<string, mixed>>
 	 */
-	public static function filter_projects( array $projects, array $query ): array {
+	public static function filter_projects( array $projects, array $query, ?array $scores = null ): array {
 		$scored = array();
-		foreach ( $projects as $project ) {
+		foreach ( $projects as $index => $project ) {
 			if ( ! self::matches_facets( $project, $query ) ) {
 				continue;
 			}
-			$score = self::score_project( $project, (string) ( $query['q'] ?? '' ) );
+			$score = $scores[ $index ] ?? self::score_project( $project, (string) ( $query['q'] ?? '' ) );
 			if ( $score > 0 ) {
 				$scored[] = array( $project, $score );
 			}
@@ -525,12 +543,13 @@ final class Search {
 	 * @param array<string, mixed>       $query     The query.
 	 * @param string                     $facet     The facet.
 	 * @param callable                   $values_of A project's values for it.
+	 * @param array<float>|null          $scores    The projects' scores for the query's text, from scores(), by the same keys; null to score them here.
 	 * @return array<string|int, int>
 	 */
-	public static function facet_counts( array $projects, array $query, string $facet, callable $values_of ): array {
+	public static function facet_counts( array $projects, array $query, string $facet, callable $values_of, ?array $scores = null ): array {
 		$counts = array();
-		foreach ( $projects as $project ) {
-			if ( ! self::matches_facets( $project, $query, $facet ) || 0.0 === self::score_project( $project, (string) ( $query['q'] ?? '' ) ) ) {
+		foreach ( $projects as $index => $project ) {
+			if ( ! self::matches_facets( $project, $query, $facet ) || 0.0 === ( $scores[ $index ] ?? self::score_project( $project, (string) ( $query['q'] ?? '' ) ) ) ) {
 				continue;
 			}
 			foreach ( $values_of( $project ) as $value ) {

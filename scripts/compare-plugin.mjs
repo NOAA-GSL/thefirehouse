@@ -11,7 +11,7 @@
  * docker-compose stack, set up with `bin/wp-init` (README, The WordPress plugin). So
  * it isn't part of CI. A page the plugin hasn't built yet shows the frame's placeholder,
  * or answers 404 where WordPress has no page there yet; it is listed as not built, not
- * compared.
+ * compared. A page built but not yet comparable (UNCOMPARED) is listed with why.
  *
  * The two sites' addresses differ only by the plugin's /firehouse/ prefix and
  * WordPress's trailing slash, so both come off the plugin's links and its quoted
@@ -38,9 +38,18 @@ const PLACEHOLDER = 'This page is being built.';
 export const BUILT = ['about', 'home', 'not-found', 'project--', 'topic--'];
 
 /**
+ * Pages the plugin has built that can't match the reference yet, with why: listed, not
+ * compared. Each comes off when it can match.
+ */
+export const UNCOMPARED = {
+  projects:
+    'the explorer, until its view script: without JavaScript it has links where the site has buttons, enabled options the site disables, and an Update results button the site has no need of',
+};
+
+/**
  * Parts of a built page that come in a later phase, by the region's name in the
  * reference: they're left out of the reference before comparing, and listed. The
- * landing page's coverage map comes with the explorer in Phase 5.
+ * landing page's coverage map comes in Phase 5.
  */
 export const LATER = { home: ['Where the research comes from'] };
 
@@ -158,7 +167,7 @@ async function main() {
     .filter((file) => file.endsWith('.yml'))
     .map((file) => file.slice(0, -'.yml'.length));
   const browser = await chromium.launch({ channel: process.env.REFERENCE_BROWSER ?? 'msedge' });
-  const notBuilt = new Set(names.filter((name) => !isBuilt(name)));
+  const notBuilt = new Set(names.filter((name) => !isBuilt(name) && !(name in UNCOMPARED)));
   let compared = 0;
   let failed = 0;
   const fail = (message) => {
@@ -203,6 +212,7 @@ async function main() {
     await browser.close();
   }
 
+  for (const [name, why] of Object.entries(UNCOMPARED)) console.log(`\nBuilt, not compared yet: ${name}, ${why}.`);
   if (notBuilt.size > 0) console.log(`\nNot built yet: ${[...notBuilt].join(', ')}`);
   console.log(`\n${compared - failed} of ${compared} comparisons match.`);
   if (failed > 0 || compared === 0) process.exitCode = 1;
