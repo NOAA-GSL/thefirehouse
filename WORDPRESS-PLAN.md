@@ -1274,7 +1274,18 @@ signed off on the frame.
   compressed, all of it render-blocking, and about a third of it comments. Minify what
   the plugin loads (the checks run on the minified file), split the project, topic
   and About sections by template in `wp_enqueue_scripts`, preload the latin Public Sans
-  file, and drop the italic faces nothing uses. Once the blocks build with
+  file, and drop the italic faces nothing uses. *Fonts done 12 November:
+  `scripts/fetch-fonts.mjs` no longer asks for italics, which no page sets, so no
+  browser ever downloaded them. Rerun without them, it saved the same upright files,
+  byte for byte, so no cached copy is stale; `fonts.css` has 24 faces, not 30. The
+  frame preloads the latin Public Sans file on Firehouse pages while `fonts.css` is
+  enqueued (`Frame::preload()`), at the address `fonts.css` names, so each font loads
+  once. On the local copy, on an emulated slow 4G connection, text moved by up to
+  0.07 (a topic page's layout shift) when Public Sans swapped in about a second after
+  the first paint; with the preload the shift is under 0.002, and the first paint
+  about 0.1 s later, as the font shares the connection with the stylesheets.
+  Preloading Archivo as well would keep the headings from changing font, which moves
+  almost nothing, for a first paint about 0.25 s later than none, so it isn't.* Once the blocks build with
   `@wordpress/scripts`, register them from its generated manifest
   (`wp_register_block_types_from_metadata_collection()`), not by reading each
   `block.json` on every request. *That function needs WordPress 6.8, and the plugin

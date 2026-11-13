@@ -337,6 +337,73 @@ final class FrameTest extends WordPressTestCase {
 	}
 
 	/**
+	 * The preloaded font is Public Sans's latin file, which fonts.css names, unversioned,
+	 * as an upright latin face: a preload for any other address would go unused, and
+	 * the font would download twice. Preloads asked for earlier stay, first.
+	 */
+	public function test_the_text_font_is_preloaded_as_fonts_css_names_it(): void {
+		self::resolve( array( 'singular' => 'fh_project' ) );
+		$plugin = dirname( __DIR__ );
+		Functions\when( 'plugins_url' )->alias(
+			function ( string $path, string $file ) use ( $plugin ): string {
+				$this->assertSame( $plugin . '/firehouse.php', $file );
+				return 'https://example.test/wp-content/plugins/firehouse/' . $path;
+			}
+		);
+		Functions\expect( 'wp_style_is' )->atLeast()->once()->with( Frame::FONTS, 'enqueued' )->andReturn( true );
+		$earlier = array(
+			'href' => 'https://example.test/hero.webp',
+			'as'   => 'image',
+		);
+
+		$resources = Frame::preload( array( $earlier ) );
+
+		$this->assertSame( $earlier, array_shift( $resources ) );
+		$this->assertCount( 1, $resources );
+		$css      = (string) file_get_contents( $plugin . '/assets/css/fonts.css' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a local file.
+		$families = array();
+		foreach ( Frame::PRELOADED_FONTS as $i => $file ) {
+			$this->assertFileExists( $plugin . '/assets/fonts/' . $file );
+			$this->assertSame(
+				array(
+					'href'        => 'https://example.test/wp-content/plugins/firehouse/assets/fonts/' . $file,
+					'as'          => 'font',
+					'type'        => 'font/woff2',
+					'crossorigin' => 'anonymous',
+				),
+				$resources[ $i ]
+			);
+			$this->assertSame(
+				1,
+				preg_match( "~/\\* ([a-z-]+) \\*/\n@font-face \\{\n  font-family: '([A-Za-z ]+)';\n  font-style: ([a-z]+);\n(?:  [a-z-]+: [^\n]*;\n)*?  src: url\\('\\.\\./fonts/" . preg_quote( $file, '~' ) . "'\\)~", $css, $face ),
+				$file . ' is a face in fonts.css'
+			);
+			$this->assertSame( array( 'latin', 'normal' ), array( $face[1], $face[3] ), $file );
+			$families[] = $face[2];
+		}
+		$this->assertSame( array( 'Public Sans' ), $families );
+	}
+
+	/**
+	 * A site that dequeues fonts.css, for its own fonts, gets no font preloads; nor does
+	 * any request outside the Firehouse; and another filter's answer that isn't a list
+	 * is passed on as it was.
+	 */
+	public function test_no_fonts_are_preloaded_without_the_firehouse_fonts(): void {
+		self::resolve( array( 'singular' => 'fh_topic' ) );
+		Functions\when( 'plugins_url' )->returnArg();
+		Functions\when( 'wp_style_is' )->justReturn( false );
+		$this->assertSame( array(), Frame::preload( array() ) );
+		$this->assertSame( 'other', Frame::preload( 'other' ) );
+
+		foreach ( self::other_requests() as $name => list( $query ) ) {
+			self::resolve( $query );
+			Functions\when( 'wp_style_is' )->justReturn( true );
+			$this->assertSame( array(), Frame::preload( array() ), $name );
+		}
+	}
+
+	/**
 	 * A missing address gets the not-found block, a project's or topic's address its
 	 * block, and any other page, until its own is built, the placeholder.
 	 */

@@ -34,15 +34,17 @@ const CSS = resolve(ROOT, 'wp-content/plugins/firehouse/assets/css/fonts.css');
 
 // The faces the site asks for: family, style, weight. Google serves no Archivo
 // Expanded, which the stats and the wordmark name first, so it may be missing.
+//
+// No italics: nothing on either site is set in italic, so a browser never downloaded
+// the italic faces the design system's stylesheet asked for. Text set in italic later
+// needs its face added here, or the browser slants the upright one.
 const WANTED = [
   ['Archivo', 'normal', [500, 600, 700, 800]],
-  ['Archivo', 'italic', [600]],
   ['Public Sans', 'normal', [400, 500, 600, 700]],
-  ['Public Sans', 'italic', [400]],
 ];
 const MAY_BE_MISSING = ['Archivo Expanded'];
 const STYLESHEET =
-  'https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,500;0,600;0,700;0,800;1,600&family=Archivo+Expanded:wght@700;800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap';
+  'https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Archivo+Expanded:wght@700;800&family=Public+Sans:wght@400;500;600;700&display=swap';
 // Google picks file formats by browser; this asks as a modern Chromium browser does.
 const BROWSER = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
 const LICENCE_COMMIT = '86aced91de05cd4f96a06838124cca45be337b2b';
@@ -103,9 +105,11 @@ const declared = (google.match(/@font-face/g) ?? []).length;
 if (blocks.length !== declared) throw new Error(`Google returned ${declared} faces, ${blocks.length} of them labelled with a subset.`);
 const faces = blocks.map(([, subset, body]) => parseFace(subset, body));
 
-const requested = new Set([...WANTED.map(([family]) => family), ...MAY_BE_MISSING]);
-const strangers = faces.filter((face) => !requested.has(face.family));
-if (strangers.length) throw new Error(`Google returned faces not asked for: ${[...new Set(strangers.map((f) => f.family))].join(', ')}`);
+const requested = new Set(WANTED.map(([family, style]) => `${family} ${style}`));
+const strangers = faces.filter((face) => !MAY_BE_MISSING.includes(face.family) && !requested.has(`${face.family} ${face.style}`));
+if (strangers.length) {
+  throw new Error(`Google returned faces not asked for: ${[...new Set(strangers.map((f) => `${f.family} ${f.style}`))].join(', ')}`);
+}
 for (const [family, style, weights] of WANTED) {
   for (const weight of weights) {
     if (!faces.some((f) => f.family === family && f.style === style && f.weight === weight && f.subset === 'latin')) {

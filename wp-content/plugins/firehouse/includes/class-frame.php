@@ -43,13 +43,30 @@ final class Frame {
 	public const BODY_CLASS = 'fh-page';
 
 	/**
-	 * Hooks the template, the stylesheets, the body class and the not-found redirect.
-	 * The stylesheets enqueue at priority 20, after a theme's at the default 10, so
-	 * they print after it.
+	 * The font files in assets/fonts/ that are preloaded: the latin subset of Public
+	 * Sans, which sets the Firehouse bar's links and each page's text. Other subsets
+	 * load as before, if a page uses their characters.
+	 *
+	 * Measured on the local copy on an emulated slow 4G connection (12 November).
+	 * Without a preload, both fonts arrived about a second after the first paint, and
+	 * the text moved as Public Sans swapped in: a layout shift of up to 0.07, on a
+	 * topic page. Preloading Public Sans took the shift under 0.002 and put the first
+	 * paint about 0.1 s later, since the font shares the connection with the
+	 * stylesheets. Preloading Archivo too, for the headings and the bar's name, also
+	 * took away their visible change of font, which moves almost nothing, but put the
+	 * first paint about 0.25 s later than none. So the headings still swap in.
+	 */
+	public const PRELOADED_FONTS = array( 'public-sans-normal-latin.woff2' );
+
+	/**
+	 * Hooks the template, the stylesheets, the font preloads, the body class and the
+	 * not-found redirect. The stylesheets enqueue at priority 20, after a theme's at
+	 * the default 10, so they print after it.
 	 */
 	public static function hook(): void {
 		add_filter( 'template_include', array( self::class, 'template' ), 99 );
 		add_action( 'wp_enqueue_scripts', array( self::class, 'enqueue' ), 20 );
+		add_filter( 'wp_preload_resources', array( self::class, 'preload' ) );
 		add_filter( 'body_class', array( self::class, 'body_class' ) );
 		add_filter( 'pre_redirect_guess_404_permalink', array( self::class, 'guess_404' ) );
 	}
@@ -185,6 +202,39 @@ final class Frame {
 		$root = dirname( __DIR__ );
 		$path = $root . '/assets/css/' . $file;
 		wp_enqueue_style( $handle, plugins_url( 'assets/css/' . $file, $root . '/firehouse.php' ), $deps, VERSION . '-' . (int) filemtime( $path ) );
+	}
+
+	/**
+	 * Has the browser fetch the fonts in PRELOADED_FONTS as it reads the page's head.
+	 * Otherwise it asks for a font only once the stylesheets have arrived and it has
+	 * found text that uses it, and the text shows in a fallback font until then.
+	 *
+	 * Only while fonts.css is enqueued, so a site that dequeues it for its own fonts
+	 * preloads nothing. WordPress prints preloads after the stylesheets are enqueued:
+	 * both run at the head's first priority, the stylesheets first.
+	 *
+	 * Each address is the one fonts.css names, with no version: a preload is used only
+	 * by a request for the same address, or the browser fetches the font twice. Fonts
+	 * are fetched in CORS mode, so the preload is too (`crossorigin`), even from the
+	 * same site, or the browser doesn't match the two.
+	 *
+	 * @param mixed $resources The preloads other filters have asked for.
+	 * @return mixed
+	 */
+	public static function preload( mixed $resources ): mixed {
+		if ( ! is_array( $resources ) || ! self::is_firehouse_request() || ! wp_style_is( self::FONTS, 'enqueued' ) ) {
+			return $resources;
+		}
+		$root = dirname( __DIR__ );
+		foreach ( self::PRELOADED_FONTS as $file ) {
+			$resources[] = array(
+				'href'        => plugins_url( 'assets/fonts/' . $file, $root . '/firehouse.php' ),
+				'as'          => 'font',
+				'type'        => 'font/woff2',
+				'crossorigin' => 'anonymous',
+			);
+		}
+		return $resources;
 	}
 
 	/**
