@@ -602,8 +602,8 @@ The traps, for whoever changes this code next:
 - `uninstall.php` removes the role, so users who had it are left with no role on the
   site, and the capabilities; the content stays.
 
-`domain/` holds the PHP versions of `src/content/derive.ts`, `format.ts` and
-`normalize.ts`:
+`domain/` holds the PHP versions of `src/content/derive.ts`, `format.ts`,
+`normalize.ts` and `search.ts`:
 
 - `Normalize::site_content()` checks the raw content files and returns them in the
   JSON shape of `src/content/types.ts`. When it refuses content, it throws a
@@ -613,20 +613,24 @@ The traps, for whoever changes this code next:
 - `Email_Shape` finds text shaped like an email address where none belongs, the
   server's backstop for rule 2, by the pattern in `shared/email-shape.json`, which the
   survey import and the seed bundle script use too.
+- `Search` is the explorer's search, filters, sort and counts, so the page PHP renders
+  for an address such as `/firehouse/projects/?q=smoke&region=NWCC` lists what the
+  explorer's script would, with or without JavaScript. It reads the query string as
+  the browser's `URLSearchParams` does. Folding accents (so "Évacuation" matches
+  "evacuation") takes PHP's intl extension; without it, `Search::fold_without_intl()`
+  folds Latin letters from a table that `scripts/search-fold.test.mjs` holds to
+  JavaScript's own folding, and leaves other scripts' accents.
 - `Vocabulary` reads the keys and icon names from `shared/vocabulary.json`, and `Js`
-  holds the few JavaScript rules PHP doesn't share, such as what counts as true or as
-  whitespace.
+  holds the few JavaScript rules PHP doesn't share, such as what counts as true, as
+  whitespace, or as a number.
 - `Json::decode()` reads JSON as the TypeScript sees it: an empty or numbered object
   (`{}`, `{"0": …}`) stays an object, a `Json_Object`, instead of passing for a list.
   `Normalize` turns every one back into an array on the way out, so pages and post meta
   only see arrays. The tests read the shared cases through it, and the Import screen
   reads the seed bundle through it.
 
-They pass the cases in `shared/cases/derive.json`, `format.json`, `normalize.json` and
-`email-shape.json`,
-the same ones `npm test` runs. Search isn't ported yet: whether the explorer needs a
-PHP version depends on whether the site must work without JavaScript (plan open
-question 11).
+They pass the cases in `shared/cases/derive.json`, `format.json`, `normalize.json`,
+`email-shape.json` and `search.json`, the same ones `npm test` runs.
 
 `assets/css/firehouse.min.css` is the site's CSS, scoped under `.fh-app` so it can sit
 inside GSL's theme without reaching the theme's header and footer (plan rule 9).

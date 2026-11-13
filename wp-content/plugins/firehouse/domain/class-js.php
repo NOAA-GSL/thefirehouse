@@ -53,4 +53,43 @@ final class Js {
 		// modifier refuses.
 		return preg_replace( '/^[' . self::SPACE . ']+|[' . self::SPACE . ']+$/uD', '', $text ) ?? $text;
 	}
+
+	/**
+	 * A string as JavaScript's Number() reads it: trimmed, empty as 0, a decimal with
+	 * an optional sign, point and exponent, Infinity, or an unsigned 0x, 0o or 0b
+	 * integer; NAN for anything else, such as "12px", "1_000" or non-ASCII digits. Null
+	 * is 0, as Number(null) is.
+	 *
+	 * @param string|null $text The text.
+	 */
+	public static function number( ?string $text ): float {
+		$text = null === $text ? '' : self::trim( $text );
+		if ( '' === $text ) {
+			return 0.0;
+		}
+		if ( 1 === preg_match( '/^([+-]?)Infinity$/D', $text, $sign ) ) {
+			return '-' === $sign[1] ? -INF : INF;
+		}
+		if ( 1 === preg_match( '/^[+-]?(?:[0-9]+\.?[0-9]*|\.[0-9]+)(?:[eE][+-]?[0-9]+)?$/D', $text ) ) {
+			return (float) $text;
+		}
+		if ( 1 === preg_match( '/^0([xXoObB])([0-9a-fA-F]+)$/D', $text, $parts ) ) {
+			$bases  = array(
+				'x' => 16,
+				'o' => 8,
+				'b' => 2,
+			);
+			$base   = $bases[ strtolower( $parts[1] ) ];
+			$digits = strtolower( $parts[2] );
+			if ( strspn( $digits, substr( '0123456789abcdef', 0, $base ) ) !== strlen( $digits ) ) {
+				return NAN;
+			}
+			$value = 0.0;
+			foreach ( str_split( $digits ) as $digit ) {
+				$value = $value * $base + hexdec( $digit );
+			}
+			return $value;
+		}
+		return NAN;
+	}
 }

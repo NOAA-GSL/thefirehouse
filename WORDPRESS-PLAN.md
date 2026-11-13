@@ -349,7 +349,8 @@ Links people have already shared keep working either way.
   a plugin asset.
 
 If working without JavaScript turns out not to be required, the PHP search can be
-dropped. That saves about a week and removes the only logic that exists twice.
+dropped. That saves about a week and removes the only logic that exists twice. *It is
+required (open question 11, Eric, 13 November).*
 
 ---
 
@@ -1413,6 +1414,16 @@ ties it loses today (`.fh-explorer` sits on the same element as `.fh-container`)
 check the order first. The coverage map's CSS is a chunk of its own (`DEFERRED`),
 loaded with the map.
 
+- *Search done 13 November: `domain/class-search.php` ports `search.ts` and passes
+  every case in `shared/cases/search.json`. It reads a query string as
+  `URLSearchParams` does (the first value wins, `+` is a space, `phase[]` is a name of
+  its own), and a year as JavaScript's `Number()` does (`Js::number()`). Folding
+  accents takes intl's Normalizer; without it, a table of Latin letters does it, held
+  to JavaScript's own folding by `scripts/search-fold.test.mjs`, and other scripts'
+  accents stay. Word lengths and typo distances count UTF-16 code units, as JavaScript
+  does. Titles sort by `Derive::compare_titles()`, which has the same intl
+  limitation.*
+
 **Done when:** it reaches feature parity with the React site, every URL parameter
 behaves the same, and the accessibility snapshots match.
 
@@ -1642,8 +1653,10 @@ Phases 6–7.
     Montserrat for headings)?~~ *Keep them for now (Eric, 3 November), and keep a
     switch to GSL's fonts easy.* GSL's pages already load Nunito Sans and Montserrat,
     so switching would add nothing to self-host.
-11. Is working without JavaScript a requirement? If not, the PHP search is dropped (see
-    [Interactivity](#interactivity)).
+11. ~~Is working without JavaScript a requirement? If not, the PHP search is dropped
+    (see [Interactivity](#interactivity)).~~ *Yes (Eric, 13 November): a shared
+    explorer address opens filtered from the server, with or without JavaScript, so
+    the search is ported to PHP (`domain/class-search.php`, Phase 5).*
 12. *(With NOAA's PRA clearance officer)* Does the survey count as a NOAA information
     collection under the Paperwork Reduction Act? It asks non-federal researchers the
     same questions on NOAA's behalf. The answer depends on what is collected and for
