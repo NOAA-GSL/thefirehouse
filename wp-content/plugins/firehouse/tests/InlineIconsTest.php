@@ -10,6 +10,7 @@ declare( strict_types = 1 );
 namespace Firehouse\Tests;
 
 use Brain\Monkey\Functions;
+use Firehouse\Domain\Vocabulary;
 use Firehouse\Icons;
 
 /**
@@ -30,10 +31,10 @@ final class InlineIconsTest extends WordPressTestCase {
 	}
 
 	/**
-	 * The icon is the file's drawing at the size asked for, hidden from assistive
-	 * technology and kept out of the tab order.
+	 * The icon is its drawing at the size asked for, hidden from assistive technology
+	 * and kept out of the tab order.
 	 */
-	public function test_an_icon_is_its_file_at_its_size(): void {
+	public function test_an_icon_is_its_drawing_at_its_size(): void {
 		$svg = Icons::svg( 'plus', 14 );
 
 		$this->assertStringStartsWith( '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" aria-hidden="true" focusable="false" style="display:inline-flex;flex-shrink:0" viewBox="0 0 24 24"', $svg );
@@ -43,10 +44,10 @@ final class InlineIconsTest extends WordPressTestCase {
 	}
 
 	/**
-	 * A stroke width replaces the file's 2, once, as a topic tag draws its icon; none
+	 * A stroke width replaces the icon's 2, once, as a topic tag draws its icon; none
 	 * or a non-positive one leaves it.
 	 */
-	public function test_a_stroke_width_replaces_the_files(): void {
+	public function test_a_stroke_width_replaces_the_icons(): void {
 		$this->assertStringContainsString( ' stroke-width="2.25" ', Icons::svg( 'radar', 12, array(), 2.25 ) );
 		$this->assertSame( 1, substr_count( Icons::svg( 'radar', 12, array(), 2.25 ), 'stroke-width=' ) );
 		$this->assertStringContainsString( ' stroke-width="2" ', Icons::svg( 'radar', 12 ) );
@@ -54,10 +55,20 @@ final class InlineIconsTest extends WordPressTestCase {
 	}
 
 	/**
-	 * A name outside the vocabulary reads nothing, a path included.
+	 * Every icon the vocabulary names opens as Icons expects, so none prints nothing.
+	 */
+	public function test_every_vocabulary_icon_inlines(): void {
+		$this->assertNotEmpty( Vocabulary::icons() );
+		foreach ( Vocabulary::icons() as $name ) {
+			$this->assertStringStartsWith( '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" aria-hidden="true" focusable="false"', Icons::svg( $name, 16 ), $name );
+		}
+	}
+
+	/**
+	 * A name outside the vocabulary gives nothing, a path included.
 	 */
 	public function test_a_name_outside_the_vocabulary_gives_nothing(): void {
-		foreach ( array( 'nope', '../icons/plus', 'plus.svg', 'LICENSE', '' ) as $name ) {
+		foreach ( array( 'nope', '../icons/plus', 'plus.svg', 'LICENSE', '', "plus\n" ) as $name ) {
 			$this->assertSame( '', Icons::svg( $name, 16 ), $name );
 		}
 	}
@@ -80,6 +91,7 @@ final class InlineIconsTest extends WordPressTestCase {
 				'1st'       => 'y',
 				'data-wp-a' => '!context.open',
 				'style'     => 'color:red',
+				"style\n"   => 'color:blue',
 				'width'     => '99',
 				'stroke'    => 'red',
 			)
@@ -88,7 +100,7 @@ final class InlineIconsTest extends WordPressTestCase {
 		$this->assertStringContainsString( ' class="a&quot;&gt;&lt;script&gt;b"', $svg );
 		$this->assertStringContainsString( ' hidden ', $svg );
 		$this->assertStringContainsString( ' data-wp-a="!context.open"', $svg );
-		foreach ( array( 'onload', ' on=', 'data x', 'Upper', '1st', '<script>', 'color:red', '99', '"red"' ) as $absent ) {
+		foreach ( array( 'onload', ' on=', 'data x', 'Upper', '1st', '<script>', 'color:red', 'color:blue', '99', '"red"' ) as $absent ) {
 			$this->assertStringNotContainsString( $absent, $svg );
 		}
 		$this->assertSame( 1, substr_count( $svg, ' style="' ) );

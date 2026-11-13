@@ -19,8 +19,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Inlines an icon from assets/icons/icons.php as the site's `Icon` component draws it
  * (WORDPRESS-PLAN.md, Phase 3, icons and logos).
  *
- * The icons are one generated array of SVG by name, which opcache keeps compiled, so a
- * request reads no file for them (Phase 4's weight). Only a name in Vocabulary::icons()
+ * The icons are one generated array of SVG by name, included the first time a request
+ * asks for an icon: with opcache on, it stays compiled and the request reads no file
+ * for them (Phase 4's weight). Only a name in Vocabulary::icons()
  * is looked up, never one built from content, and each icon holds only what
  * shared/icon-svg.json allows (tests/IconsTest.php). Everything added goes in where
  * each icon's `<svg` opens: the size in place of its 24×24, `aria-hidden` and
@@ -57,7 +58,7 @@ final class Icons {
 	 *                                               that isn't a plain attribute name, is
 	 *                                               an event handler's, or is one this
 	 *                                               sets itself, is left out.
-	 * @param float|null                 $stroke     A stroke width in place of the file's 2,
+	 * @param float|null                 $stroke     A stroke width in place of the icon's 2,
 	 *                                               as a topic tag draws its icon (2.25).
 	 */
 	public static function svg( string $name, int $size, array $attributes = array(), ?float $stroke = null ): string {
@@ -76,7 +77,7 @@ final class Icons {
 
 		$added = sprintf( ' width="%1$d" height="%1$d" aria-hidden="true" focusable="false"', $size );
 		foreach ( $attributes as $attribute => $value ) {
-			if ( 1 !== preg_match( '/^[a-z][a-z0-9-]*$/', $attribute ) || str_starts_with( $attribute, 'on' ) || in_array( $attribute, self::OWN, true ) ) {
+			if ( 1 !== preg_match( '/^[a-z][a-z0-9-]*$/D', $attribute ) || str_starts_with( $attribute, 'on' ) || in_array( $attribute, self::OWN, true ) ) {
 				continue;
 			}
 			$added .= true === $value ? ' ' . $attribute : sprintf( ' %s="%s"', $attribute, esc_attr( $value ) );

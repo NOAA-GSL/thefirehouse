@@ -59,9 +59,10 @@ final class IconsTest extends TestCase {
 	/**
 	 * What in one icon falls outside the list: an element, attribute or value it
 	 * doesn't allow, or anything that isn't a tag. The same reading as
-	 * iconProblems() in scripts/plugin-assets.mjs.
+	 * iconProblems() in scripts/plugin-assets.mjs: its patterns end at `$` as
+	 * JavaScript's do, not before a final newline (`D`).
 	 *
-	 * @param string $svg The file's text.
+	 * @param string $svg One icon's SVG.
 	 * @return list<string>
 	 */
 	private static function problems( string $svg ): array {
@@ -77,7 +78,7 @@ final class IconsTest extends TestCase {
 				foreach ( $attributes as $attribute ) {
 					$valid = 'xmlns' === $attribute[1]
 						? $rules['namespace'] === $attribute[2]
-						: 1 === preg_match( '/' . $rules['value'] . '/', $attribute[2] );
+						: 1 === preg_match( '/' . $rules['value'] . '/D', $attribute[2] );
 					if ( ! in_array( $attribute[1], $rules['attributes'], true ) || ! $valid ) {
 						$problems[] = $tag[1] . ' ' . $attribute[1] . '="' . $attribute[2] . '"';
 					}
@@ -119,6 +120,7 @@ final class IconsTest extends TestCase {
 			'<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0" style="fill:url(#a)"></path></svg>',
 			'<svg xmlns="http://www.w3.org/1999/xhtml"></svg>',
 			'<svg xmlns="http://www.w3.org/2000/svg"><!-- note --></svg>',
+			'<svg xmlns="http://www.w3.org/2000/svg" width="24' . "\n" . '"></svg>',
 		);
 		foreach ( $bad as $svg ) {
 			$this->assertNotSame( array(), self::problems( $svg ), $svg );
@@ -139,10 +141,34 @@ final class IconsTest extends TestCase {
 
 		$this->assertSame( $wanted, $names );
 		foreach ( $names as $name ) {
-			$this->assertMatchesRegularExpression( '/' . $rules['name'] . '/', $name );
+			$this->assertMatchesRegularExpression( '/' . $rules['name'] . '/D', $name );
 		}
 		$files = array_values( array_diff( (array) scandir( self::ICONS ), array( '.', '..' ) ) );
 		sort( $files );
 		$this->assertSame( array( 'LICENSE.txt', 'icons.php' ), $files );
+	}
+
+	/**
+	 * The file is its header and one array of string literals, with nothing that runs,
+	 * whatever array it returns: Icons includes it on every page that draws an icon, so
+	 * code added around the same array would run there. Read as tokens, never included.
+	 * A change to the header that scripts/plugin-assets.mjs writes changes this test too.
+	 */
+	public function test_the_file_holds_only_string_literals(): void {
+		$kept = array();
+		foreach ( \PhpToken::tokenize( (string) file_get_contents( self::ICONS . 'icons.php' ) ) as $token ) {
+			if ( $token->is( array( T_WHITESPACE, T_COMMENT, T_DOC_COMMENT ) ) ) {
+				continue;
+			}
+			$kept[] = match ( true ) {
+				$token->is( T_OPEN_TAG )                                                    => '<?php',
+				$token->is( T_CONSTANT_ENCAPSED_STRING ) && "'ABSPATH'" !== $token->text => 'S',
+				default                                                                     => $token->text,
+			};
+		}
+		$this->assertMatchesRegularExpression(
+			'/\A<\?php declare \( strict_types = 1 \) ; if \( ! defined \( \'ABSPATH\' \) \) \{ exit ; \} return array \((?: S => S ,)* \) ;\z/',
+			implode( ' ', $kept )
+		);
 	}
 }

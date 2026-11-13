@@ -8,14 +8,15 @@
  * - `wp-content/plugins/firehouse/assets/icons/icons.php`: every icon in the site's
  *   registry (`ICON_NAMES` in src/design-system/Icon.tsx), drawn by the site's own
  *   `Icon` component through Vite, as one PHP array of SVG by name. The plugin inlines
- *   them from it (includes/class-icons.php), and opcache keeps the array compiled, so a
- *   request reads no file for its icons (WORDPRESS-PLAN.md, Phase 4's weight). The
- *   drawing inside is exactly what the site renders; only the outer <svg> changes. It
- *   drops what belongs to one use of an icon (class, style, `aria-hidden`, `focusable`)
- *   and keeps Lucide's 24×24 size, which the plugin replaces with each use's size where
- *   it inlines the icon, as `Icon` does. Each icon must hold only what
- *   shared/icon-svg.json allows, which tests/IconsTest.php checks again on the file
- *   that ships. Lucide's licence goes beside it as LICENSE.txt.
+ *   them from it (includes/class-icons.php); with opcache on, the array stays compiled
+ *   and a request reads no file for its icons (WORDPRESS-PLAN.md, Phase 4's weight).
+ *   The drawing inside is exactly what the site renders; only the outer <svg> changes.
+ *   It drops what belongs to one use of an icon (class, style, `aria-hidden`,
+ *   `focusable`) and keeps Lucide's 24×24 size, which the plugin replaces with each
+ *   use's size where it inlines the icon, as `Icon` does. Each icon must hold only what
+ *   shared/icon-svg.json allows. tests/IconsTest.php checks that again on the file that
+ *   ships, and that the file holds nothing but its header and string literals, since
+ *   the plugin runs it. Lucide's licence goes beside it as LICENSE.txt.
  * - `wp-content/plugins/firehouse/assets/logos/`: the images `BrandMark` imports,
  *   read from the component and copied unchanged. The NOAA and GSL logos stay with the
  *   static build; GSL's header carries its own.
@@ -23,7 +24,8 @@
  *   image (`public/og-image.png`), copied unchanged, which Firehouse pages name in their
  *   Open Graph tags (includes/class-head.php).
  *
- * Each folder holds exactly these files, so an icon dropped from the registry goes too.
+ * Each folder holds exactly these files, so a file the script stops writing goes too
+ * (a logo `BrandMark` drops, or an icon file from before the array).
  */
 
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';

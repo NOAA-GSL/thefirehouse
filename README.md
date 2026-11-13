@@ -440,9 +440,10 @@ nothing from the database. Each class's docblock has the detail; this is the map
   theme's header and footer included, and stops WordPress recapitalizing its own name
   in titles, the `<title>` and content.
 - `Icons` inlines an icon from `assets/icons/icons.php` by a name in the vocabulary,
-  never by a path. That file is one generated array, which opcache keeps compiled, so a
-  request reads no file for its icons. It replaces the icon's 24×24 size and marks it
-  decorative. An unknown name gives an empty string, not an error.
+  never by a path. That file is one generated array, so a request reads at most one
+  file for its icons, and none once opcache has compiled it. It replaces the icon's
+  24×24 size and marks it decorative. An unknown name gives an empty string, not an
+  error.
 - `Post_Types` registers `fh_project` and `fh_topic` at the React site's addresses:
   `/firehouse/projects/`, `/firehouse/projects/{slug}/` and `/firehouse/topics/{key}/`
   (no topic archive). Neither is in the REST API, and their edit screens have no form
@@ -638,17 +639,18 @@ one is missing.
   back to system fonts.
 
 `assets/icons/icons.php` holds every icon in the site's registry (`ICON_NAMES` in
-`src/design-system/Icon.tsx`) as SVG in a PHP array, drawn by the site's own `Icon`
-component, and `assets/logos/` the images `BrandMark` imports. Don't edit either: `npm
-run plugin:assets` writes both from `src/`, and the link-preview image from
-`public/og-image.png`, and CI fails if they fall behind. An icon
-keeps the drawing exactly as the site renders it, at Lucide's 24×24, and leaves off what
-belongs to one use (class, inline style, `aria-hidden`, `focusable`). Where the plugin
-inlines an icon it adds those and replaces the size, as `Icon` does. Every icon may hold
-only the plain shapes and drawing attributes `shared/icon-svg.json` lists: the script
-refuses anything else, and `tests/IconsTest.php` checks the file that ships. Lucide's
-licence sits beside it as `LICENSE.txt`. The NOAA and GSL logos stay with the static
-build, since GSL's header carries its own.
+`src/design-system/Icon.tsx`), drawn by the site's own `Icon` component, as one PHP
+array of SVG by name. `assets/logos/` holds the images `BrandMark` imports. Don't edit
+either: `npm run plugin:assets` writes both from `src/`, and the link-preview image
+from `public/og-image.png`, and CI fails if they fall behind. An icon keeps the drawing
+exactly as the site renders it, at Lucide's 24×24, and leaves off what belongs to one
+use (class, inline style, `aria-hidden`, `focusable`). Where the plugin inlines an icon
+it adds those and replaces the size, as `Icon` does. Every icon may hold only the plain
+shapes and drawing attributes `shared/icon-svg.json` lists: the script refuses anything
+else, and `tests/IconsTest.php` checks the file that ships, which may hold nothing but
+its header and string literals, since the plugin runs it. Lucide's licence sits beside
+it as `LICENSE.txt`. The NOAA and GSL logos stay with the static build, since GSL's
+header carries its own.
 
 The local WordPress runs in Docker and borrows GSL's theme, WordPress images and
 database from a checkout of GSL's internal gsl-wordpress repository beside this one
