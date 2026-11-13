@@ -21,7 +21,10 @@
  *
  * Google serves variable fonts: one file for every weight of a style, split by script
  * into subsets, each loaded only when a page uses its range. Everything is fetched
- * and checked before the folder is replaced, so a failed run changes nothing.
+ * and checked before anything is written, so a run that stops changes nothing.
+ * SOURCES.json is written after the files it describes, so a run that fails while
+ * writing leaves the old record for the next run to check against, or a broken one
+ * the next run stops on.
  *
  * A file keeps its name from run to run, and fonts.css and the frame's preload
  * (`Frame::PRELOADED_FONTS`) ask for it by that name, with no version, so a cache could
@@ -164,20 +167,47 @@ for (const [family, url] of Object.entries(LICENCES)) {
 }
 
 // A saved font whose bytes would change under the same name stops the run (see the
-// top of this file). A file that's new, or no longer asked for, is fine.
-let before = {};
-try {
-  before = JSON.parse(readFileSync(resolve(FONTS, 'SOURCES.json'), 'utf8')).fonts ?? {};
-} catch {
-  // Nothing saved yet.
+// top of this file). Each font file downloaded (not the licences) is compared with the
+// saved file and with the hash SOURCES.json records for it, so neither one missing lets
+// a change through. A font in neither is new, and fine, as is one no longer asked for.
+// A font or a SOURCES.json that's there but can't be read stops the run.
+const readSaved = (name) => {
+  try {
+    return readFileSync(resolve(FONTS, name));
+  } catch (error) {
+    if (error.code === 'ENOENT') return undefined;
+    throw new Error(`${resolve(FONTS, name)} can't be read (${error.code ?? error.message}).`, { cause: error });
+  }
+};
+const record = readSaved('SOURCES.json');
+let recorded = {};
+if (record !== undefined) {
+  try {
+    recorded = JSON.parse(record.toString('utf8')).fonts;
+  } catch (error) {
+    throw new Error(`${resolve(FONTS, 'SOURCES.json')} can't be read: ${error.message}`, { cause: error });
+  }
+  if (typeof recorded !== 'object' || recorded === null || Array.isArray(recorded)) {
+    throw new Error(`${resolve(FONTS, 'SOURCES.json')} has no "fonts" object.`);
+  }
 }
-const changed = [...saved]
-  .filter(([name, { bytes }]) => name.endsWith('.woff2') && before[name] && before[name].sha256 !== sha256(bytes))
-  .map(([name]) => name);
+const changed = [];
+for (const [name, { bytes }] of saved) {
+  if (!name.endsWith('.woff2')) continue;
+  const onDisk = readSaved(name);
+  const differsFromFile = onDisk !== undefined && !onDisk.equals(bytes);
+  const differsFromRecord = Object.hasOwn(recorded, name) && recorded[name]?.sha256 !== sha256(bytes);
+  if (differsFromFile || differsFromRecord) {
+    const from = [differsFromFile && 'the saved file', differsFromRecord && 'its hash in SOURCES.json'].filter(Boolean);
+    changed.push(`${name} (${from.join(' and ')})`);
+  }
+}
 if (changed.length) {
   throw new Error(
-    `Google now serves different bytes for ${changed.join(', ')}. Give the font files names with their hash first, ` +
-      'and the preload in Frame::PRELOADED_FONTS with them, or browsers may keep the old files (WORDPRESS-PLAN.md, Phase 3).',
+    `Downloaded fonts differ from what's saved: ${changed.join(', ')}. If a saved font or SOURCES.json was changed ` +
+      'here, restore it from git and run again. If Google now serves different bytes, give the font files names with ' +
+      'their hash first, and the preload in Frame::PRELOADED_FONTS with them, or browsers may keep the old files ' +
+      '(WORDPRESS-PLAN.md, Phase 3).',
   );
 }
 
@@ -224,11 +254,19 @@ const css = `/*
 ${rules}
 `;
 
-rmSync(FONTS, { recursive: true, force: true });
+// Written over the saved files, SOURCES.json last, and only then are files no longer
+// asked for removed. Every font written has passed the check above, so a run that
+// fails partway leaves SOURCES.json's old record, or a broken one the next run stops on.
+// Names are kept regardless of case: on Windows and macOS, a file written over one
+// whose name differs only in case keeps the old name, and mustn't then be removed.
 mkdirSync(FONTS, { recursive: true });
 for (const [name, { bytes }] of saved) writeFileSync(resolve(FONTS, name), bytes);
-writeFileSync(resolve(FONTS, 'SOURCES.json'), `${JSON.stringify(sources, null, 2)}\n`);
 writeFileSync(CSS, css);
+writeFileSync(resolve(FONTS, 'SOURCES.json'), `${JSON.stringify(sources, null, 2)}\n`);
+const kept = new Set([...saved.keys(), 'SOURCES.json'].map((name) => name.toLowerCase()));
+for (const name of readdirSync(FONTS)) {
+  if (!kept.has(name.toLowerCase())) rmSync(resolve(FONTS, name), { recursive: true, force: true });
+}
 
 console.log(`Saved ${files.size} font files for ${faces.length} faces, and ${saved.size - files.size} licences, in ${FONTS}`);
 console.log(`Wrote ${CSS}`);
