@@ -50,6 +50,10 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.1'
+          # intl, so the tests reach what a server with it does: the explorer search's
+          # accent folding and the title order. Without it, the plugin falls back, and
+          # the fallbacks have tests of their own.
+          extensions: intl, mbstring
           tools: composer:v2
           coverage: none
 
