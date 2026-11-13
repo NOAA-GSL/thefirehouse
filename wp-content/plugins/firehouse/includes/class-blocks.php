@@ -48,11 +48,13 @@ final class Blocks {
 	}
 
 	/**
-	 * Loads assets/js/block-editor.js in the block editor, with the blocks' names. It
-	 * shows each block read-only, with the words the page stores in it, until Phase 6
-	 * lets editors change them (WORDPRESS-PLAN.md). Plain JavaScript with no build
-	 * step: its dependencies are WordPress's own packages, and it is versioned by the
-	 * plugin's version and the file's modified time, as the stylesheets are.
+	 * Loads assets/js/block-editor.js in every block editor on the site, with each
+	 * block's name and the attributes its block.json declares, from the manifest. It
+	 * shows each block read-only, listing what the page stores in it, until Phase 6 lets
+	 * editors change that (WORDPRESS-PLAN.md), and adds nothing to the inserter. Plain
+	 * JavaScript with no build step: its dependencies are WordPress's own packages, and
+	 * it is versioned by the plugin's version and the file's modified time, as the
+	 * stylesheets are.
 	 */
 	public static function enqueue_editor(): void {
 		$root = dirname( __DIR__ );
@@ -63,8 +65,13 @@ final class Blocks {
 			VERSION . '-' . (int) filemtime( $root . '/assets/js/block-editor.js' ),
 			false
 		);
-		$names = array_map( static fn( string $name ): string => 'firehouse/' . $name, self::NAMES );
-		wp_add_inline_script( self::EDITOR_SCRIPT, 'window.firehouseBlocks = ' . wp_json_encode( $names ) . ';', 'before' );
+		$manifest = include $root . '/blocks/blocks-manifest.php';
+		$blocks   = array();
+		foreach ( self::NAMES as $name ) {
+			$attributes                     = is_array( $manifest ) ? ( $manifest[ $name ]['attributes'] ?? array() ) : array();
+			$blocks[ 'firehouse/' . $name ] = array_keys( is_array( $attributes ) ? $attributes : array() );
+		}
+		wp_add_inline_script( self::EDITOR_SCRIPT, 'window.firehouseBlocks = ' . wp_json_encode( $blocks ) . ';', 'before' );
 		wp_set_script_translations( self::EDITOR_SCRIPT, 'firehouse' );
 	}
 

@@ -51,8 +51,8 @@ final class BlocksTest extends WordPressTestCase {
 
 	/**
 	 * The block editor loads the blocks' editor script, on WordPress's own packages,
-	 * versioned by the plugin and the file, with every block's name before it and the
-	 * plugin's translations.
+	 * versioned by the plugin and the file, with every block's name and the attributes
+	 * its block.json declares before it, and the plugin's translations.
 	 */
 	public function test_the_editor_script_loads_with_every_block_name(): void {
 		$enqueued     = array();
@@ -92,8 +92,14 @@ final class BlocksTest extends WordPressTestCase {
 			),
 			$enqueued
 		);
-		$names = array_map( static fn( string $name ): string => 'firehouse/' . $name, Blocks::NAMES );
-		$this->assertSame( array( array( Blocks::EDITOR_SCRIPT, 'window.firehouseBlocks = ' . json_encode( $names ) . ';', 'before' ) ), $inline );
+		$blocks = array();
+		foreach ( Blocks::NAMES as $name ) {
+			$block                          = json_decode( (string) file_get_contents( self::BLOCKS . $name . '/block.json' ), true );
+			$blocks[ 'firehouse/' . $name ] = array_keys( $block['attributes'] ?? array() );
+		}
+		$this->assertSame( array( 'eyebrow', 'heading', 'body', 'primaryCta', 'secondaryCta' ), $blocks['firehouse/hero'] );
+		$this->assertSame( array(), $blocks['firehouse/subnav'] );
+		$this->assertSame( array( array( Blocks::EDITOR_SCRIPT, 'window.firehouseBlocks = ' . json_encode( $blocks ) . ';', 'before' ) ), $inline );
 		$this->assertSame( array( array( Blocks::EDITOR_SCRIPT, 'firehouse' ) ), $translations );
 	}
 
