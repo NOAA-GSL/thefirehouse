@@ -932,14 +932,15 @@ ones.
   names are owed before the first refresh that changes a file, and the frame's
   preload, `Frame::PRELOADED_FONTS`, takes the hashed name with them.)*
   *Icons and logos done 6 November: `npm run plugin:assets` draws every icon in the
-  site's registry through its own `Icon` component into `assets/icons/<name>.svg`, and
+  site's registry through its own `Icon` component into `assets/icons/<name>.svg`
+  (since 13 November, one PHP array, `assets/icons/icons.php`: Phase 4's weight), and
   copies the images `BrandMark` imports into `assets/logos/`; CI checks both are
   current. The templates and Phase 4's pages place them as the site does:*
   - *An icon is inlined only by a name in `Vocabulary::icons()` (`shared/vocabulary.json`,
     which the tests hold to the registry and the files), never a path built from a
     block attribute or content: the About cards name their icons. What it adds (size,
-    class) is escaped with `esc_attr()` and goes in at the `<svg ` the files start
-    with. `tests/IconsTest.php` holds every file to `shared/icon-svg.json`.*
+    class) is escaped with `esc_attr()` and goes in at the `<svg ` the icons start
+    with. `tests/IconsTest.php` holds every icon to `shared/icon-svg.json`.*
   - *An icon is inlined, never an `<img>`, so its `currentColor` stroke follows the
     text colour, forced colours included. It gets what `Icon` adds: its size in place of
     the file's 24×24, `aria-hidden="true"`, `focusable="false"`, its class and
@@ -1329,8 +1330,14 @@ signed off on the frame.
   with the current loop. The manifest is a plain PHP file, so it needn't wait for
   `@wordpress/scripts`: a small generator and a CI check would do.* Inline icons from a
   generated PHP array, cached by opcache, not by reading their SVG files on each
-  request. *The hero's wordmark file is about 2.8 times the size a 2× screen needs (752
-  by 240 for 226 by 72 CSS pixels); a smaller one belongs in the design system's
+  request. *Icons done 13 November: `npm run plugin:assets` writes every icon into one
+  array, `assets/icons/icons.php`, in place of the 31 SVG files, and `Icons` includes it
+  once per request; a missing file still costs the icons, not the page. Every page
+  prints the same HTML as before. It saves little: a project page inlines 17 different
+  icons, which took about 48 µs to read as files and take about 0.3 µs from the array
+  opcache keeps (timed on the local copy).* *The hero's wordmark file is about 2.8
+  times the size a 2× screen needs (752 by 240 for 226 by 72 CSS pixels); a smaller one
+  belongs in the design system's
   `src/assets`, for both sites. Likewise the team portraits: a 2× screen takes the
   640 by 800 originals (186 KB for the two) for a 168 by 210 box; exported at 336 by
   420 they'd be about 55 KB, in `src/assets/people/` and the Media Library both.*
