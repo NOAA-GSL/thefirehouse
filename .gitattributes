@@ -2,5 +2,6 @@
 bin/* text eol=lf
 # The plugin's icons are generated with LF line endings; keep them so on every checkout.
 wp-content/plugins/firehouse/assets/icons/icons.php text eol=lf
+wp-content/plugins/firehouse/blocks/blocks-manifest.php text eol=lf
 # The plugin release is built with git archive; the tests stay out of it.
 wp-content/plugins/firehouse/tests export-ignore

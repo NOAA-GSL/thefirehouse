@@ -221,6 +221,8 @@ wp-content/plugins/firehouse/
   blocks/<name>/   block.json · render.php · view.js and view.asset.php when it is
                    interactive (Interactivity API) · an editor preview once editors
                    place it
+  blocks/blocks-manifest.php
+                   every block.json in one array, generated (npm run plugin:blocks)
   templates/       frame.php, the one template every Firehouse page uses
   patterns/        landing and About layouts, locked to text-only edits (Phase 6; today
                    the Import screen creates both pages from custom blocks)
@@ -1332,7 +1334,23 @@ signed off on the frame.
   `block.json` on every request. *That function needs WordPress 6.8, and the plugin
   says 6.7: raise the minimum, or use 6.7's `wp_register_block_metadata_collection()`
   with the current loop. The manifest is a plain PHP file, so it needn't wait for
-  `@wordpress/scripts`: a small generator and a CI check would do.* Inline icons from a
+  `@wordpress/scripts`: a small generator and a CI check would do.* *Manifest done 13
+  November, without raising the minimum: `npm run plugin:blocks` writes every
+  `block.json` into `blocks/blocks-manifest.php`, and `Blocks::register()` hands it to
+  6.7's `wp_register_block_metadata_collection()` before its loop. WordPress takes each
+  block's metadata from the array instead of decoding its `block.json`, but still
+  checks the folder and the `block.json` are there and resolves their paths, and needs
+  the `block.json` to find `render.php` and to translate the title. A missing manifest
+  costs only the saving; a damaged one stops every request, like any damaged PHP file
+  in the plugin. `tests/BlocksTest.php` is the check, run in the plugin's CI: it fails
+  if the manifest differs from the files, or holds anything but its header and
+  literals. Every page prints the same HTML as before. It saves little, on every
+  request on the site: with opcache on, in WordPress requests on the local copy,
+  registering the 15 blocks took about 410 µs from their files and takes about 280 µs
+  from the manifest. Without opcache, as from the command line, compiling the manifest
+  cancels the saving. 6.8's `wp_register_block_types_from_metadata_collection()` would
+  add little more. When the blocks build with `@wordpress/scripts`, its own manifest
+  can take this one's place.* Inline icons from a
   generated PHP array, cached by opcache, not by reading their SVG files on each
   request. *Icons done 13 November: `npm run plugin:assets` writes every icon into one
   array, `assets/icons/icons.php`, in place of the 31 SVG files, and `Icons` includes it

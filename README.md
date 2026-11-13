@@ -21,6 +21,8 @@ npm run plugin:css # write the plugin's stylesheet from src/, scoped under .fh-a
                    # (Node 22.18+, and Edge or Chrome installed, as for npm run reference)
 npm run plugin:assets
                    # write the plugin's icons and logos from the site's own
+npm run plugin:blocks
+                   # write the plugin's block manifest from its block.json files
 npm run reference  # capture the reference the plugin matches (reference/README.md)
 npm run plugin:compare
                    # compare each built page's main landmark with the reference's
@@ -78,7 +80,8 @@ wp-content/plugins/firehouse/
                     from src/, and assets/css/frame.css is written by hand;
                     assets/fonts/ and assets/css/fonts.css hold the fonts;
                     assets/icons/, assets/logos/ and assets/preview/ are generated
-                    from src/ and public/.
+                    from src/ and public/; blocks/blocks-manifest.php is generated
+                    from the blocks' block.json files.
 ```
 
 ### The design system
@@ -387,14 +390,21 @@ nothing from the database. Each class's docblock has the detail; this is the map
   `scripts/frame-css.test.mjs` holds it to that.
 
 - `Blocks` registers each block named in `Blocks::NAMES`, one folder each in `blocks/`,
-  from its `block.json`.
+  described by its `block.json`.
+  - WordPress takes the blocks' metadata from `blocks/blocks-manifest.php`, every
+    `block.json` in one generated array, instead of reading each file on every
+    request. Don't edit the manifest. After you add, remove or change a block's
+    `block.json`, run `npm run plugin:blocks`: until you do, WordPress keeps the old
+    metadata. `composer test` (`tests/BlocksTest.php`) fails while the manifest
+    differs from the files, or if it holds anything but its header and literals.
+    `render.php` and `view.js` need no rerun.
   - Each block renders on the server (`render.php`) and stays out of the inserter: the
     templates place it.
   - An interactive block has a view script module for WordPress's Interactivity API.
     It's plain JavaScript with no build step: WordPress maps its
     `@wordpress/interactivity` import, which `view.asset.php` declares.
   - `tests/BlocksTest.php` holds each folder to that shape, and fails on a folder
-    missing from the list.
+    missing from the list, or on any file in `blocks/` but the manifest.
 - `Subnav` is the Firehouse bar, `firehouse/subnav`: the site's `SiteHeader` without
   the NOAA and GSL logos and the theme toggle, which the theme's header already has.
   - It has the wordmark, the Settings screen's link labels, and the Submit a Finding
