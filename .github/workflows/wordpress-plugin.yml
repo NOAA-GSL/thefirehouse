@@ -43,15 +43,30 @@ jobs:
   lint-and-test:
     runs-on: ubuntu-latest
     steps:
+      # No step pushes, so the job's token isn't left in .git/config for later steps.
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
+      # Pinned to the commit behind 2.40.0 rather than the movable v2 tag, as Plugin
+      # Check is below: a third-party action runs with this job's token.
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: '8.1'
+          # intl, so the tests reach what a server with it does: the title order, and
+          # the explorer search's accent folding where the PHP search is. Without it,
+          # the plugin falls back, and the fallbacks have tests of their own.
+          extensions: intl, mbstring
           tools: composer:v2
           coverage: none
+
+      # setup-php only warns when an extension fails to install, which would leave the
+      # tests passing on the fallbacks alone.
+      - name: intl and mbstring are loaded
+        run: |
+          php -r 'exit(extension_loaded("intl") && extension_loaded("mbstring") ? 0 : 1);'
 
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist
@@ -67,6 +82,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       # Pinned to the commit behind v1.1.9 rather than the movable tag, as the action
       # pins its own dependencies: a third-party action runs with this job's token.

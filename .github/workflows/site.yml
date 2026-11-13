@@ -1,17 +1,18 @@
 name: Site
 
-# Type check and tests for the React site, the shared test cases and vocabulary in
-# wp-content/plugins/firehouse/shared, and checks that the project and topic schemas
-# and the plugin's stylesheet (assets/css/firehouse.css), icons, logos and link-preview
-# image are current.
+# Type check, tests and the production build for the React site, the shared test cases
+# and vocabulary in wp-content/plugins/firehouse/shared, and checks that the project and
+# topic schemas and the plugin's stylesheet (assets/css/firehouse.css), icons, logos and
+# link-preview image are current. It runs on any change to the plugin too: some of its
+# tests read the plugin's PHP, blocks and scripts (scripts/plugin-css.test.mjs,
+# fonts.test.mjs, block-editor.test.mjs).
 
 on:
   push:
     paths:
       - 'src/**'
       - 'scripts/**'
-      - 'wp-content/plugins/firehouse/shared/**'
-      - 'wp-content/plugins/firehouse/assets/**'
+      - 'wp-content/plugins/firehouse/**'
       - 'index.html'
       - 'public/**'
       - 'package.json'
@@ -23,8 +24,7 @@ on:
     paths:
       - 'src/**'
       - 'scripts/**'
-      - 'wp-content/plugins/firehouse/shared/**'
-      - 'wp-content/plugins/firehouse/assets/**'
+      - 'wp-content/plugins/firehouse/**'
       - 'index.html'
       - 'public/**'
       - 'package.json'
@@ -41,8 +41,11 @@ jobs:
   typecheck-and-test:
     runs-on: ubuntu-latest
     steps:
+      # No step pushes, so the job's token isn't left in .git/config for later steps.
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -67,3 +70,6 @@ jobs:
 
       - name: Plugin icons and logos are current
         run: npm run plugin:assets:check
+
+      - name: Production build
+        run: npm run build
