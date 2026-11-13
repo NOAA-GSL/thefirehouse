@@ -351,7 +351,8 @@ nothing from the database. Each class's docblock has the detail; this is the map
     theme's stylesheet, at the plugin's version and each file's modified time, and adds
     `fh-page` to the body. It preloads Public Sans's latin file, the text font, so
     text doesn't shift when it arrives. Nothing depends on the fonts, so dequeuing
-    `firehouse-fonts` drops only them, and the preload with them.
+    `firehouse-fonts` on `wp_enqueue_scripts` drops only them, and the preload with
+    them.
   - **Missing addresses:** at a project's or topic's address under `/firehouse/`, the
     plugin makes its own guess at what was meant, among that type only, so a link cut
     short still finds its project. Any other missing address under `/firehouse/` gets

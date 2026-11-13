@@ -1282,15 +1282,20 @@ signed off on the frame.
   `scripts/fetch-fonts.mjs` no longer asks for italics. Nothing the site or the plugin
   writes is set in italic, which `scripts/fonts.test.mjs` now checks, so no browser
   ever downloaded them. Rerun without them, it saved the same upright files, byte for
-  byte, so no cached copy is stale; `fonts.css` has 24 faces, not 30. The
-  frame preloads the latin Public Sans file on Firehouse pages while `fonts.css` is
+  byte, so no cached copy is stale; `fonts.css` has 24 faces, not 30. The frame
+  preloads the latin Public Sans file on Firehouse pages while `fonts.css` is
   enqueued (`Frame::preload()`), at the address `fonts.css` names, so each font loads
-  once. On the local copy, on an emulated slow 4G connection, text moved by up to
-  0.07 (a topic page's layout shift) when Public Sans swapped in about a second after
-  the first paint; with the preload the shift is under 0.002, and the first paint
-  about 0.1 s later, as the font shares the connection with the stylesheets.
-  Preloading Archivo as well would keep the headings from changing font, which moves
-  almost nothing, for a first paint about 0.25 s later than none, so it isn't.*
+  once. Measured on the local copy, a first view over HTTP/1.1 on an emulated slow 4G
+  connection: text moved by up to 0.07 (a topic page's layout shift at desktop
+  width, 0.08 for a project page on a phone) when Public Sans swapped in about a
+  second after the first paint. With the preload the shift is under 0.002, and the
+  first paint, also the largest, 0 to 0.3 s later, as the font shares the connection
+  with the stylesheets. Preloading Archivo as well would keep the headings from
+  changing font, which moves almost nothing, for a first paint 0.15 to 0.55 s later
+  than none, so it isn't. A second view takes the fonts from the cache.*
+  *With the first release on the test site, over HTTP/2 or 3 behind Cloudflare, where
+  stylesheets can go first: measure the preloads again on a first view, and decide
+  Archivo then (at `fetchpriority="low"`, say).*
   Once the blocks build with
   `@wordpress/scripts`, register them from its generated manifest
   (`wp_register_block_types_from_metadata_collection()`), not by reading each

@@ -47,14 +47,18 @@ final class Frame {
 	 * Sans, which sets the Firehouse bar's links and each page's text. Other subsets
 	 * load as before, if a page uses their characters.
 	 *
-	 * Measured on the local copy on an emulated slow 4G connection (12 November).
-	 * Without a preload, both fonts arrived about a second after the first paint, and
-	 * the text moved as Public Sans swapped in: a layout shift of up to 0.07, on a
-	 * topic page. Preloading Public Sans took the shift under 0.002 and put the first
-	 * paint about 0.1 s later, since the font shares the connection with the
-	 * stylesheets. Preloading Archivo too, for the headings and the bar's name, also
-	 * took away their visible change of font, which moves almost nothing, but put the
-	 * first paint about 0.25 s later than none. So the headings still swap in.
+	 * Measured on the local copy (12 November): a first view, over HTTP/1.1, on an
+	 * emulated slow 4G connection. Without a preload, both fonts arrived about a
+	 * second after the first paint, and the text moved as Public Sans swapped in: a
+	 * layout shift of up to 0.07 on a topic page at desktop width, and 0.08 on a
+	 * project page on a phone. Preloading Public Sans took the shift under 0.002, and
+	 * put the first paint, which was also the largest, 0 to 0.3 s later, since the
+	 * font shares the connection with the stylesheets. Preloading Archivo too, for the
+	 * headings and the bar's name, also took away their change of font, which moves
+	 * almost nothing, for a first paint 0.15 to 0.55 s later than none. So the
+	 * headings still swap in. A second view takes the fonts from the cache. Where
+	 * stylesheets can go first, over HTTP/2 or 3, a preload may cost less, so the
+	 * plan has Archivo measured again on the test site.
 	 */
 	public const PRELOADED_FONTS = array( 'public-sans-normal-latin.woff2' );
 
@@ -218,13 +222,19 @@ final class Frame {
 	 * Each address is the one fonts.css names, with no version: a preload is used only
 	 * by a request for the same address, or the browser fetches the font twice. Fonts
 	 * are fetched in CORS mode, so the preload is too (`crossorigin`), even from the
-	 * same site, or the browser doesn't match the two.
+	 * same site, or the browser doesn't match the two. The address is built as the
+	 * stylesheet's is, from plugins_url(), but not passed through `style_loader_src`:
+	 * a plugin that moves stylesheets to another host with that filter, or combines
+	 * them, leaves the preload unused. Such a site can remove this filter.
+	 *
+	 * The enqueue check comes first, since it's the cheaper, and fonts.css is enqueued
+	 * only on a Firehouse request.
 	 *
 	 * @param mixed $resources The preloads other filters have asked for.
 	 * @return mixed
 	 */
 	public static function preload( mixed $resources ): mixed {
-		if ( ! is_array( $resources ) || ! self::is_firehouse_request() || ! wp_style_is( self::FONTS, 'enqueued' ) ) {
+		if ( ! is_array( $resources ) || ! wp_style_is( self::FONTS, 'enqueued' ) || ! self::is_firehouse_request() ) {
 			return $resources;
 		}
 		$root = dirname( __DIR__ );
