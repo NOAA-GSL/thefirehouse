@@ -243,13 +243,16 @@ final class ExplorerPageTest extends WordPressTestCase {
 
 	/**
 	 * An encoded line break in the search stays in the links, as the site keeps it, so
-	 * removing a filter doesn't run two search words into one.
+	 * removing a filter doesn't run two search words into one; in the search box, a
+	 * space stands for it.
 	 */
 	public function test_links_keep_an_encoded_line_break(): void {
 		$html = self::render( 'q=smoke%0Afire&phase=during' );
 
 		$this->assertStringContainsString( '<a class="fh-pill" href="' . self::URL . '?q=smoke%0Afire#fh-content" aria-label="Remove filter Phase: During">', $html );
 		$this->assertStringContainsString( '<a class="fh-search__clear" href="' . self::URL . '?phase=during#fh-content" aria-label="Clear search">', $html );
+		// A one-line field can't hold a line break, so the field shows it as a space.
+		$this->assertStringContainsString( 'name="q" value="smoke fire"', $html );
 	}
 
 	/**
@@ -281,7 +284,9 @@ final class ExplorerPageTest extends WordPressTestCase {
 		$query = Search::parse_query( $address );
 		$xpath = self::dom( self::render( $address ) );
 
-		$pairs = array( 'q=' . rawurlencode( self::node( $xpath, '//input[@name="q"]' )->getAttribute( 'value' ) ) );
+		// A browser drops the line breaks from a one-line field's value before sending it.
+		$text  = str_replace( array( "\r", "\n" ), '', self::node( $xpath, '//input[@name="q"]' )->getAttribute( 'value' ) );
+		$pairs = array( 'q=' . rawurlencode( $text ) );
 		foreach ( array( 'phase', 'region', 'year', 'type', 'sort' ) as $name ) {
 			$select  = self::node( $xpath, "//select[@name='$name']" );
 			$chosen  = $xpath->query( './/option[@selected]', $select );
@@ -290,7 +295,8 @@ final class ExplorerPageTest extends WordPressTestCase {
 			$this->assertInstanceOf( \DOMElement::class, $option, $name );
 			$pairs[] = $name . '=' . rawurlencode( $option->getAttribute( 'value' ) );
 		}
-		$this->assertSame( $query, Search::parse_query( implode( '&', $pairs ) ), 'the form' );
+		// The text comes back with each line break a space: the same words.
+		$this->assertSame( array( 'q' => strtr( $query['q'], "\r\n", '  ' ) ) + $query, Search::parse_query( implode( '&', $pairs ) ), 'the form' );
 
 		// A link's query: after its "?", before the fragment it lands on.
 		$query_of = function ( string $href ): array {
@@ -325,7 +331,7 @@ final class ExplorerPageTest extends WordPressTestCase {
 	 * @return array<string, array{string}>
 	 */
 	public static function addresses(): array {
-		$addresses = array( '', 'q=smoke', 'q=smke', 'q=Example&sort=title', 'phase=after', 'phase=during&region=NWCC', 'year=2025', 'year=2025.0', 'year=abc', 'year=0x7E9', 'type=Research+Study', 'type=%20Testbed%20Evaluation%20', 'sort=oldest', 'sort=relevance', 'sort=bogus', 'q=fire&sort=relevance', 'q=fire&sort=newest', 'region=NATIONAL', 'region=PACIFIC', 'region=INTL', 'region=nwcc', 'q=zzzz', 'q=zzzz&sort=title', 'phase=before&phase=after', 'phase%5B%5D=after', 'q=%C3%89VACUATION', 'q=smoke&year=2025&type=Testbed+Evaluation&sort=title', 'q=%E2%80%9Csmoke%E2%80%9D', 'q=+', 'q=%3Cb%3Efire%3C%2Fb%3E', 'q=fire&phase=bogus', 'q=fire+%26+smoke', 'q=caf%C3%A9+%25+50%2B', 'year=2024&phase=after', 'q=smoke%0Afire&phase=during', 'q=a&q=b', 'q=' . str_repeat( 'fyre+', 25 ) );
+		$addresses = array( '', 'q=smoke', 'q=smke', 'q=Example&sort=title', 'phase=after', 'phase=during&region=NWCC', 'year=2025', 'year=2025.0', 'year=abc', 'year=0x7E9', 'type=Research+Study', 'type=%20Testbed%20Evaluation%20', 'sort=oldest', 'sort=relevance', 'sort=bogus', 'q=fire&sort=relevance', 'q=fire&sort=newest', 'region=NATIONAL', 'region=PACIFIC', 'region=INTL', 'region=nwcc', 'q=zzzz', 'q=zzzz&sort=title', 'phase=before&phase=after', 'phase%5B%5D=after', 'q=%C3%89VACUATION', 'q=smoke&year=2025&type=Testbed+Evaluation&sort=title', 'q=%E2%80%9Csmoke%E2%80%9D', 'q=+', 'q=%3Cb%3Efire%3C%2Fb%3E', 'q=fire&phase=bogus', 'q=fire+%26+smoke', 'q=caf%C3%A9+%25+50%2B', 'year=2024&phase=after', 'q=smoke%0Afire&phase=during', 'q=smoke%0D%0Afire', 'q=%0A', 'q=a&q=b', 'q=' . str_repeat( 'fyre+', 25 ) );
 		return array_combine( array_map( static fn( string $address ): string => '?' . $address, $addresses ), array_map( static fn( string $address ): array => array( $address ), $addresses ) );
 	}
 

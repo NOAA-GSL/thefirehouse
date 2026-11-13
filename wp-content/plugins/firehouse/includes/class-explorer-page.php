@@ -134,7 +134,8 @@ final class Explorer_Page {
 		<form class="fh-search" id="<?php echo esc_attr( self::FORM ); ?>" method="get" action="<?php echo esc_url( $url . self::LANDING ); ?>" autocomplete="off">
 			<label class="fh-visually-hidden" for="fh-explorer-q"><?php esc_html_e( 'Search projects', 'firehouse' ); ?></label>
 			<?php echo Icons::svg( 'search', 18 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- one of the plugin's checked icons. ?>
-			<input id="fh-explorer-q" class="fh-search__input" type="search" name="q" value="<?php echo Markup::text( (string) $query['q'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup::text() escapes it, quotes included. ?>" placeholder="<?php esc_attr_e( 'Search projects', 'firehouse' ); ?>" autocomplete="off" spellcheck="false" enterkeyhint="search" aria-describedby="fh-explorer-q-hint">
+			<?php // A one-line field drops a line break, which would send "smoke⏎fire" back as "smokefire": a space keeps the words apart, and searches the same. ?>
+			<input id="fh-explorer-q" class="fh-search__input" type="search" name="q" value="<?php echo Markup::text( strtr( (string) $query['q'], "\r\n", '  ' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup::text() escapes it, quotes included. ?>" placeholder="<?php esc_attr_e( 'Search projects', 'firehouse' ); ?>" autocomplete="off" spellcheck="false" enterkeyhint="search" aria-describedby="fh-explorer-q-hint">
 			<?php if ( '' !== $query['q'] ) : ?>
 			<a class="fh-search__clear" href="<?php echo self::href( $url, array( 'q' => '' ) + $query ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- href() escapes it. ?>" aria-label="<?php esc_attr_e( 'Clear search', 'firehouse' ); ?>"><?php echo Icons::svg( 'x', 16 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- as above. ?></a>
 			<?php endif; ?>
