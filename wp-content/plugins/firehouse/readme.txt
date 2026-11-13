@@ -95,6 +95,9 @@ one is.
   feed, the sitemap, embeds, oEmbed, menus, the redirects built from its ID and the
   not-found guess all leave it out. Someone who may edit it still sees it on its own
   page.
+* In the block editor, each FireHouse block shows, read-only, the words the page
+  stores in it, so they can be told from what the plugin prints. Changing them comes
+  later. Saving from the editor keeps the page as stored.
 * The name the plugin prints is FireHouse: the plugin's name, the role, the admin
   menu, the block titles, and the pages' titles and words. A site that imported its
   content before keeps the old spelling in its settings and in the landing and About

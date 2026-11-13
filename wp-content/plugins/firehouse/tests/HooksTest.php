@@ -159,10 +159,11 @@ final class HooksTest extends WordPressTestCase {
 	}
 
 	/**
-	 * The blocks register on init.
+	 * The blocks register on init, and their editor script loads with the block editor.
 	 */
 	public function test_blocks_register_on_init(): void {
 		Actions\expectAdded( 'init' )->once()->with( array( Blocks::class, 'register' ), 10, 1 );
+		Actions\expectAdded( 'enqueue_block_editor_assets' )->once()->with( array( Blocks::class, 'enqueue_editor' ), 10, 1 );
 
 		Blocks::hook();
 	}

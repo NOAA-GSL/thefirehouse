@@ -226,7 +226,8 @@ wp-content/plugins/firehouse/
   templates/       frame.php, the one template every Firehouse page uses
   patterns/        landing and About layouts, locked to text-only edits (Phase 6; today
                    the Import screen creates both pages from custom blocks)
-  assets/          tokens and component CSS, icons, logos, fonts, GACC boundaries
+  assets/          tokens and component CSS, icons, logos, fonts, GACC boundaries,
+                   the blocks' script for the block editor
   shared/          vocabulary.json, the project and topic schemas, the email pattern,
                    the icon allowlist and test cases, read by PHP and JS
   tests/           PHPUnit tests, run without WordPress through Brain Monkey
@@ -1406,7 +1407,10 @@ behaves the same, and the accessibility snapshots match.
 - Landing and About layouts locked to text-only edits. Their sections are custom
   blocks whose words are attributes, which `contentOnly` locking doesn't show to
   editors: decide whether they get their own text controls or become core blocks in a
-  locked pattern.
+  locked pattern. *Until then (13 November, at Eric's request, to tell the page's words
+  from the plugin's): `assets/js/block-editor.js` shows each block in the editor as a
+  read-only box of the words it stores, and saving from the editor keeps the page as
+  stored. Text controls would replace the boxes.*
 - Whether an editor can reword the cleared disclaimer.
 - Which blocks a page in the Firehouse tree allows. Nothing limits them today, so an
   editor can add a core Paragraph or Image to the landing or About page, with its

@@ -79,6 +79,8 @@ wp-content/plugins/firehouse/
                     assets/css/firehouse.min.css and firehouse.css are generated
                     from src/, and assets/css/frame.css is written by hand;
                     assets/fonts/ and assets/css/fonts.css hold the fonts;
+                    assets/js/block-editor.js, the blocks in the block editor,
+                    is written by hand;
                     assets/icons/, assets/logos/ and assets/preview/ are generated
                     from src/ and public/; blocks/blocks-manifest.php is generated
                     from the blocks' block.json files.
@@ -403,6 +405,13 @@ nothing from the database. Each class's docblock has the detail; this is the map
   - An interactive block has a view script module for WordPress's Interactivity API.
     It's plain JavaScript with no build step: WordPress maps its
     `@wordpress/interactivity` import, which `view.asset.php` declares.
+  - In the block editor, each block is a read-only box with its title and the words
+    the page stores in it (`assets/js/block-editor.js`, also plain JavaScript): those
+    are the page's words, and everything else on the page is the plugin's. A block
+    that stores none says the plugin prints it. Changing the words comes with Phase 6.
+    Saving from the editor keeps the page as stored: a block that holds others (the
+    hero's counts, the About page's sections) saves only them, and the rest save
+    nothing. `scripts/block-editor.test.mjs` holds the script to that.
   - `tests/BlocksTest.php` holds each folder to that shape, and fails on a folder
     missing from the list, or on any file in `blocks/` but the manifest.
 - `Subnav` is the Firehouse bar, `firehouse/subnav`: the site's `SiteHeader` without
