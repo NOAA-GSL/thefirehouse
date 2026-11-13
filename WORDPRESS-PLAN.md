@@ -226,7 +226,8 @@ wp-content/plugins/firehouse/
   templates/       frame.php, the one template every Firehouse page uses
   patterns/        landing and About layouts, locked to text-only edits (Phase 6; today
                    the Import screen creates both pages from custom blocks)
-  assets/          tokens and component CSS, icons, logos, fonts, GACC boundaries
+  assets/          tokens and component CSS, icons, logos, fonts, GACC boundaries,
+                   the blocks' script for the block editor
   shared/          vocabulary.json, the project and topic schemas, the email pattern,
                    the icon allowlist and test cases, read by PHP and JS
   tests/           PHPUnit tests, run without WordPress through Brain Monkey
@@ -325,7 +326,9 @@ each. Whether these blocks stay, edited through their own controls, or give way 
 core blocks in a locked pattern is decided in Phase 6.*
 
 **Editor previews** are rendered on the server, so each block's markup is written once,
-in PHP.
+in PHP. *Until Phase 6 (13 November): the editor shows each block as a read-only box of
+what the page stores in it, not a preview, since a preview would blur the page's own
+words with what FireHouse adds (Phase 6's landing and About item).*
 
 ### Interactivity
 
@@ -1406,7 +1409,14 @@ behaves the same, and the accessibility snapshots match.
 - Landing and About layouts locked to text-only edits. Their sections are custom
   blocks whose words are attributes, which `contentOnly` locking doesn't show to
   editors: decide whether they get their own text controls or become core blocks in a
-  locked pattern.
+  locked pattern. *Until then (13 November, at Eric's request, to tell the page's words
+  from what FireHouse adds): `assets/js/block-editor.js` shows each block in the editor
+  as a read-only box of what the page stores in it. Every block saves its inner blocks,
+  so a save keeps the page's blocks; a save that rebuilds the page leaves out values
+  equal to a block's default, which render the same, and a FireHouse Editor's save
+  still runs the words through kses (Phase 4's About page note). The Code editor can
+  still change anything stored, so the boxes aren't a control. Either choice replaces
+  the boxes.*
 - Whether an editor can reword the cleared disclaimer.
 - Which blocks a page in the Firehouse tree allows. Nothing limits them today, so an
   editor can add a core Paragraph or Image to the landing or About page, with its

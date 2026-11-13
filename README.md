@@ -79,6 +79,8 @@ wp-content/plugins/firehouse/
                     assets/css/firehouse.min.css and firehouse.css are generated
                     from src/, and assets/css/frame.css is written by hand;
                     assets/fonts/ and assets/css/fonts.css hold the fonts;
+                    assets/js/block-editor.js, which shows the blocks in the
+                    block editor, is written by hand;
                     assets/icons/, assets/logos/ and assets/preview/ are generated
                     from src/ and public/; blocks/blocks-manifest.php is generated
                     from the blocks' block.json files.
@@ -399,10 +401,23 @@ nothing from the database. Each class's docblock has the detail; this is the map
     differs from the files, or if it holds anything but its header and literals.
     `render.php` and `view.js` need no rerun.
   - Each block renders on the server (`render.php`) and stays out of the inserter: the
-    templates place it.
+    templates or the Import screen place it.
   - An interactive block has a view script module for WordPress's Interactivity API.
     It's plain JavaScript with no build step: WordPress maps its
     `@wordpress/interactivity` import, which `view.asset.php` declares.
+  - In the block editor, each block is a read-only box with its title and what the
+    page stores in it (`assets/js/block-editor.js`, also plain JavaScript): its words,
+    and the links, icons, portraits and counts' settings that go with them. That lets
+    an editor tell the page's own words from what FireHouse adds in each block from its
+    settings, projects and topic areas. A block that stores nothing and holds no
+    others says FireHouse adds it. Changing what's stored comes with Phase 6.
+  - Every block saves its inner blocks and nothing else, so saving from the editor
+    keeps the page's blocks: the hero keeps the live counts it holds, and the About
+    sections block the four sections it holds. `scripts/block-editor.test.mjs` holds
+    each block's save to that. A save that rebuilds the page respaces the block
+    comments and leaves out values equal to a block's default, which render the same,
+    and a FireHouse Editor's save runs the words through WordPress's HTML filter
+    (WORDPRESS-PLAN.md, Phase 6).
   - `tests/BlocksTest.php` holds each folder to that shape, and fails on a folder
     missing from the list, or on any file in `blocks/` but the manifest.
 - `Subnav` is the Firehouse bar, `firehouse/subnav`: the site's `SiteHeader` without
@@ -506,8 +521,9 @@ nothing from the database. Each class's docblock has the detail; this is the map
   shows a dry run of every change and problem, writes nothing while there is a
   problem, and imports once confirmed. A site imported before 13 November keeps "The
   Firehouse" in its saved settings and its landing and About pages, since the import
-  writes neither again: set the name under FireHouse → Settings and edit those
-  pages, or import onto a clean site.
+  writes neither again: set the name under FireHouse → Settings, and import onto a
+  clean site or, until Phase 6 lets editors change those pages' words, have a
+  developer change them with WP-CLI.
   - Projects are matched by response ID, so importing again updates the same posts.
     Survey fields come from the bundle; editorial fields (`Importer::EDITORIAL`, and
     the geography note and states) keep WordPress's (rule 4). Projects the bundle

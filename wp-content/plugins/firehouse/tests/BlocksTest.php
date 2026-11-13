@@ -50,6 +50,60 @@ final class BlocksTest extends WordPressTestCase {
 	}
 
 	/**
+	 * The block editor loads the blocks' editor script, on WordPress's own packages,
+	 * versioned by the plugin and the file, with every block's name and the attributes
+	 * its block.json declares before it, and the plugin's translations.
+	 */
+	public function test_the_editor_script_loads_with_every_block_name(): void {
+		$enqueued     = array();
+		$inline       = array();
+		$translations = array();
+		Functions\when( 'plugins_url' )->alias( static fn( string $path ): string => 'https://example.test/wp-content/plugins/firehouse/' . $path );
+		Functions\when( 'wp_json_encode' )->alias( static fn( mixed $data ): string => (string) json_encode( $data ) );
+		Functions\when( 'wp_enqueue_script' )->alias(
+			static function ( ...$args ) use ( &$enqueued ): void {
+				$enqueued[] = $args;
+			}
+		);
+		Functions\when( 'wp_add_inline_script' )->alias(
+			static function ( ...$args ) use ( &$inline ): void {
+				$inline[] = $args;
+			}
+		);
+		Functions\when( 'wp_set_script_translations' )->alias(
+			static function ( ...$args ) use ( &$translations ): void {
+				$translations[] = $args;
+			}
+		);
+
+		Blocks::enqueue_editor();
+
+		$file = dirname( __DIR__ ) . '/assets/js/block-editor.js';
+		$this->assertFileExists( $file );
+		$this->assertSame(
+			array(
+				array(
+					Blocks::EDITOR_SCRIPT,
+					'https://example.test/wp-content/plugins/firehouse/assets/js/block-editor.js',
+					array( 'wp-blocks', 'wp-block-editor', 'wp-components', 'wp-element', 'wp-i18n' ),
+					\Firehouse\VERSION . '-' . filemtime( $file ),
+					false,
+				),
+			),
+			$enqueued
+		);
+		$blocks = array();
+		foreach ( Blocks::NAMES as $name ) {
+			$block                          = json_decode( (string) file_get_contents( self::BLOCKS . $name . '/block.json' ), true );
+			$blocks[ 'firehouse/' . $name ] = array_keys( $block['attributes'] ?? array() );
+		}
+		$this->assertSame( array( 'eyebrow', 'heading', 'body', 'primaryCta', 'secondaryCta' ), $blocks['firehouse/hero'] );
+		$this->assertSame( array(), $blocks['firehouse/subnav'] );
+		$this->assertSame( array( array( Blocks::EDITOR_SCRIPT, 'window.firehouseBlocks = ' . json_encode( $blocks ) . ';', 'before' ) ), $inline );
+		$this->assertSame( array( array( Blocks::EDITOR_SCRIPT, 'firehouse' ) ), $translations );
+	}
+
+	/**
 	 * The folders in blocks/ are the blocks Blocks registers, so none is left out, and
 	 * beside them is only the manifest.
 	 */

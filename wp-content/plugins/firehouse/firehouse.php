@@ -93,6 +93,10 @@ require_once __DIR__ . '/includes/class-head.php';
  *   inserter and declare no stylesheet. Typed into content outside the Firehouse, they
  *   print nothing, though the Firehouse bar's and the project page's script modules
  *   still load there.
+ * - Blocks::enqueue_editor loads assets/js/block-editor.js in every block editor on
+ *   the site, for any post or page, the site editor and the widgets: it gives the
+ *   FireHouse blocks a read-only view there and their save, makes no requests, and
+ *   adds nothing to the inserter.
  * - Installer::maybe_upgrade compares the stored revision with Installer::REVISION.
  *   When they differ, on whichever request comes first, it replaces the Firehouse
  *   Editor role, adds and removes Firehouse capabilities on the administrator role (no

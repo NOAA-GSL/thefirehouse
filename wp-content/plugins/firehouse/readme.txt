@@ -95,10 +95,13 @@ one is.
   feed, the sitemap, embeds, oEmbed, menus, the redirects built from its ID and the
   not-found guess all leave it out. Someone who may edit it still sees it on its own
   page.
+* In the block editor, each FireHouse block shows, read-only, what the page stores in
+  it, so that can be told from what FireHouse adds. Changing it comes later. Opening
+  and saving a page keeps its FireHouse blocks, the ones they hold included.
 * The name the plugin prints is FireHouse: the plugin's name, the role, the admin
   menu, the block titles, and the pages' titles and words. A site that imported its
   content before keeps the old spelling in its settings and in the landing and About
-  pages until they are edited.
+  pages until they are changed.
 
 = 0.2.0 =
 * Project and topic post types at the Firehouse addresses, with their fields as post
