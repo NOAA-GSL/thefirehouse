@@ -1253,9 +1253,10 @@ signed off on the frame.
   page renders, from the settings, so the About page's and the explorer's follow their
   links' labels (About's post title, set by the import, stays "About — The FireHouse"
   for WordPress's lists), and the explorer's placeholder heading names it too.
-  (13 November, Eric: the name people read is "FireHouse", so titles read "… — The
-  FireHouse – Global Systems Laboratory" and About's post title is "About — The
-  FireHouse"; identifiers in the code keep `firehouse` and `Firehouse`.) The
+  (13 November, Stephanie and Emily's decision, relayed by Eric: the name people read
+  is "FireHouse", so titles read "… — The FireHouse – Global Systems Laboratory" and
+  About's post title is "About — The FireHouse"; identifiers in the code keep
+  `firehouse` and `Firehouse`.) The
   preview image is the site's `public/og-image.png`, which `npm run plugin:assets`
   copies into the plugin's `assets/preview/`, its address versioned so a replacement
   isn't served from a preview's cache. A published page's preview names its address.*

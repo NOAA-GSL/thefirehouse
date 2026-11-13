@@ -4,9 +4,9 @@ Public-facing hub for NOAA/GSL fire weather social science needs and findings.
 React + TypeScript + Vite, built against the Firehouse design system and the
 July 2026 creative brief.
 
-The site and the plugin print the name as **FireHouse** (decided by Eric, 13
-November); the code says `firehouse` and `Firehouse`, and so do these docs, except
-where they quote what a page or screen shows.
+The site and the plugin print the name as **FireHouse** (Stephanie and Emily's
+decision, relayed by Eric, 13 November); the code says `firehouse` and `Firehouse`,
+and so do these docs, except where they quote what a page or screen shows.
 
 ```bash
 npm install
@@ -548,7 +548,7 @@ nothing from the database. Each class's docblock has the detail; this is the map
   where a stored link goes, and its button, left out when it leads nowhere.
 - `Head` gives each Firehouse page its title, the site's title for it then GSL's
   suffix ("About — The FireHouse – Global Systems Laboratory"; decided by Eric, 12
-  November, and the spelling on 13 November), and the description and Open Graph and
+  November, with Stephanie and Emily's spelling), and the description and Open Graph and
   Twitter tags a shared link's preview is built from: the site's words from
   `index.html`, or on a project's page its abstract as the researcher wrote it. It
   changes nothing on any other page, and leaves everything to an SEO plugin if one is
