@@ -18,8 +18,10 @@ missing the card falls back to an initials monogram rather than a broken image.
 From the originals supplied by Stephanie and Emily: centre-cropped from ~3:4 to the
 frame's 4:5 (about 3% off the top and bottom, nothing meaningful in either
 composition), resized to 640 × 800, and encoded as WebP at quality 82. On 13 November
-they were resized again, to 336 × 420 at the same quality, the size a 2× screen shows
-the 168 × 210 frame at: 57 KB for the two instead of 186 KB. Camera metadata was
+those 640 × 800 files were resized again, to 336 × 420 at the same quality, the size a
+2× screen shows the 168 × 210 frame at: 57 KB for the two instead of 186 KB. For a
+replacement, start from the originals rather than these, which have been encoded
+twice. Camera metadata was
 dropped in the process — both files carry a single `VP8` chunk and no EXIF, XMP, ICC
 or GPS. **Keep it that way for any replacement**: these came off a phone, and phone
 EXIF can carry the location a photo was taken.
@@ -35,10 +37,10 @@ EXIF can carry the location a photo was taken.
   particular photo crops badly, adjust `object-position` on `.fh-person__photo` in
   `AboutPage.css` rather than re-cropping the source.
 - Export at 336 × 420. The frame renders at 168 CSS pixels, so that covers a 2×
-  display; a 3× phone shows it a little softer, which at this size is hard to see.
-  Anything larger is bytes most visitors don't need. The WordPress plugin offers a
-  smaller size from the Media Library too (240 wide), so upload these files as they
-  are.
+  display; a 3× phone or browser zoom shows it a little softer, which at this size is
+  hard to see. Anything larger is bytes most visitors don't need. On WordPress, upload
+  these files as they are: WordPress makes its own smaller copy (its medium size, 240
+  wide at the default settings), and the page offers the browser both.
 - The photos are decorative in the accessibility sense: the name is rendered
   immediately beside each one, so `about.json` leaves `photoAlt` unset and the page
   emits `alt=""`. Set `photoAlt` only if a portrait starts carrying information the

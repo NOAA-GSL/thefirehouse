@@ -1369,15 +1369,20 @@ signed off on the frame.
   the team portraits: a 2× screen takes the 640 by 800 originals (186 KB for the two)
   for a 168 by 210 box; exported at 336 by 420 they'd be about 55 KB, in
   `src/assets/people/` and the Media Library both.* *Images done 13 November, in
-  `src/assets/` for both sites, which `npm run plugin:assets` copies into the plugin.
-  The wordmark keeps its size, since a 3× phone (most phones) shows the 226 by 72 box
-  at 678 by 216, so a 2× file would look soft there. It and the bar's mark are now
-  WebP, lossy at quality 90 with lossless transparency: the hero's wordmark goes from
-  86 to 42 KB, and the bar's two marks, which every page loads, from 22 to 11 KB. A
-  256-colour PNG was smaller but banded the flame's gradients. The portraits are 336
-  by 420, 57 KB for the two. On a site already imported, the Media Library still
-  holds the 640 by 800 files until an administrator replaces them; the README's
-  upload step takes the new ones from `src/assets/people/`.*
+  `src/assets/` for both sites; `npm run plugin:assets` copies the logos into the
+  plugin, and the portraits reach WordPress through the Media Library. The wordmark
+  keeps its size, since a 3× phone shows the 226 by 72 box at 678 by 216, and a 2× file
+  would look soft there: lettering and hard edges show it, where a photograph hides
+  it. All four logo files, the wordmark and the bar's mark in each colour, are now
+  WebP, lossy at quality 90 with lossless transparency. The hero's wordmark goes from
+  86 to 42 KB. The bar's mark goes from 11 to 5.6 KB in the light theme; in the dark
+  theme a page loads both, since GSL's theme switches after the page starts, so 22 to
+  11 KB. A 256-colour PNG was smaller but banded the flame's gradients. The portraits
+  are 336 by 420, 57 KB for the two. The local copy, imported before this, keeps the
+  640 by 800 portraits: its About page holds them by ID, and importing again leaves an
+  existing About page alone, so they change there when Phase 6 lets an editor choose a
+  portrait, or when a developer swaps the files in place with WP-CLI. Sites not yet
+  imported take the new files from the README's upload step.*
 - Rerun the frame's style and focus checks on the real pages. *Done 12 November, on the
   local copy against the site's build: every element in the main content of the
   landing, About, project, topic and not-found pages has the site's computed styles, at

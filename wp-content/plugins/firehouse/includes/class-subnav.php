@@ -130,6 +130,9 @@ final class Subnav {
 		/* translators: %s: the site's name, such as "The FireHouse". */
 		$home_label = sprintf( __( '%s — home', 'firehouse' ), $site );
 
+		// Both marks are lazy on purpose: the browser never fetches the one the theme's CSS
+		// hides, so a page in the light theme loads one. Keep it, though they sit in the
+		// first screen; loading them eagerly measured no faster (WORDPRESS-PLAN.md, Phase 4).
 		ob_start();
 		?>
 <div class="fh-header" data-wp-interactive="firehouse/subnav" data-wp-context='{"open":false}' data-wp-on-document--keydown="actions.closeOnEscape" data-wp-on-window--pageshow="actions.closeOnRestore" data-wp-on--focusout="actions.closeOnFocusOut">
