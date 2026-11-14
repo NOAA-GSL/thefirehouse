@@ -17,6 +17,11 @@
  * - On a phone the filters fold behind a "Filters and sort" button, which the server
  *   prints hidden, for a page without the script; the "Update results" button, which a
  *   page without the script needs, goes.
+ * - Each tile's "Quick look" button opens the quick look, a native dialog previewing
+ *   the project (quickLook()): the page behind is inert, Escape closes it, and focus
+ *   goes back to the button that opened it. Its project comes from the page's state,
+ *   not the results, so it stays open, and right, if a pending search drops that
+ *   project from the list behind it; the site's closes then.
  *
  * The region becomes interactive only here, when this script has loaded: the server
  * marks it `data-fh-interactive`, and this sets `data-wp-interactive`, before
@@ -162,6 +167,62 @@ export function sortOptions( lib, data, query ) {
 		.map( ( [ key, label ] ) => ( { key, value: key === sort ? sent : key, label, selected: key === sort } ) );
 }
 
+/** One of a word's two forms, picked by a count as English picks it, the count filled in. */
+const counted = ( forms, n ) => fill( forms[ n === 1 ? 0 : 1 ], n );
+
+/** The quick look with no project in it: what it binds to while closed. */
+export const NO_LOOK = Object.freeze( {
+	slug: '',
+	title: '',
+	kicker: '',
+	byline: '',
+	phases: Object.freeze( [] ),
+	status: '',
+	hasMeta: false,
+	abstract: '',
+	needs: Object.freeze( [] ),
+	more: '',
+	rest: '',
+	url: '',
+} );
+
+/**
+ * A project as the quick look shows it, as the site's `ProjectDetailModal` does: its
+ * type, title, every author, organization and year; its phases and publication status;
+ * its abstract and first three end-user needs, as written; and counts of what else its
+ * page holds, rather than the things themselves, so the page is worth opening. Its
+ * papers are counted as its page lists them (`paperCount`), without any whose link the
+ * page refuses.
+ */
+export function quickLook( data, project ) {
+	const look = data.strings.look;
+	const needs = project.needs.map( ( entry ) => entry.need ).filter( Boolean );
+	const recommendations = project.needs.filter( ( entry ) => entry.recommendation ).length;
+	const rest = [
+		project.takeaways.length > 0 && counted( look.takeaways, project.takeaways.length ),
+		recommendations > 0 && counted( look.recommendations, recommendations ),
+		project.paperCount > 0 && counted( look.papers, project.paperCount ),
+	].filter( Boolean );
+	const status = Object.hasOwn( data.short.status, project.publicationStatus ?? '' ) ? data.short.status[ project.publicationStatus ] : '';
+	const phases = project.firePhases
+		.filter( ( phase ) => Object.hasOwn( data.short.phase, phase ) )
+		.map( ( phase, index ) => ( { key: `${ index }-${ phase }`, label: data.short.phase[ phase ] } ) );
+	return {
+		slug: project.slug,
+		title: project.title,
+		kicker: project.projectType || '',
+		byline: `${ project.fullByline }${ project.org ? `, ${ project.org }` : '' } · ${ project.completionYear }`,
+		phases,
+		status,
+		hasMeta: phases.length > 0 || status !== '',
+		abstract: project.abstract || '',
+		needs: needs.slice( 0, 3 ).map( ( text, index ) => ( { key: String( index ), text } ) ),
+		more: needs.length > 3 ? fill( look.more, needs.length - 3 ) : '',
+		rest: rest.length > 0 ? fill( look.rest, rest.join( ', ' ) ) : '',
+		url: project.url,
+	};
+}
+
 /**
  * The results line's words after the count: "of 8 projects", or "projects". Two forms,
  * picked as English picks them; a language with other plural rules would need more.
@@ -244,11 +305,19 @@ export function refocusTarget( element, active, body, fallback ) {
 	return active === element ? null : element;
 }
 
-/** Forgets the worked-out query and the tiles, for tests that change the projects. */
+/**
+ * Forgets the worked-out query, the tiles and the quick look's opening, for tests that
+ * change the projects or the page.
+ */
 export function forget() {
 	memo = { key: null };
 	scoredFor = { q: null };
 	tiles = new Map();
+	clearTimeout( opening );
+	opening = null;
+	opener = null;
+	overflow = null;
+	pressed = false;
 }
 
 /** The pending write of the typed text into the query. */
@@ -259,6 +328,20 @@ const plain = ( event ) => ! ( event.button || event.metaKey || event.ctrlKey ||
 
 /** The search box, for focus. */
 const searchBox = () => document.getElementById( 'fh-explorer-q' );
+
+/** The quick look's dialog. */
+const dialog = () => document.getElementById( 'fh-quick-look' );
+
+/**
+ * The button that opened the quick look, which focus goes back to; its opening, while
+ * it waits to open; the page's overflow before it opened, or null while the page isn't
+ * held still; and whether the click under way was pressed and released on the page
+ * around it.
+ */
+let opener = null;
+let opening = null;
+let overflow = null;
+let pressed = false;
 
 const browser = typeof document !== 'undefined';
 const region = browser ? document.querySelector( `[data-fh-interactive="${ STORE }"]` ) : null;
@@ -348,6 +431,12 @@ const { state, actions } = store( STORE, {
 		get optionDisabled() {
 			return state.optionCount === 0 && ! state.optionSelected;
 		},
+		peekSlug: null,
+		/** The project in the quick look, as it shows it, or NO_LOOK while it's closed. */
+		get peek() {
+			const project = state.peekSlug === null ? null : state.projects.find( ( candidate ) => candidate.slug === state.peekSlug );
+			return project ? quickLook( state, project ) : NO_LOOK;
+		},
 	},
 	actions: {
 		/** The query, changed, with the typed text in it, and the address with it. */
@@ -431,6 +520,87 @@ const { state, actions } = store( STORE, {
 		} ),
 		toggleFilters() {
 			state.filtersOpen = ! state.filtersOpen;
+		},
+		/**
+		 * Opens the quick look for a tile's project. It opens a moment later, once its
+		 * words are the project's, so the name it's announced by is the right one; then
+		 * the page behind stops scrolling, as the site's does. A second press before it
+		 * opens (a double click) opens it once: the page's own overflow is saved once,
+		 * and put back once.
+		 */
+		peek() {
+			opener = getElement().ref;
+			state.peekSlug = getContext().project.slug;
+			clearTimeout( opening );
+			opening = setTimeout( () => {
+				opening = null;
+				const quickLook = dialog();
+				if ( ! quickLook || quickLook.open ) {
+					return;
+				}
+				quickLook.showModal();
+				if ( overflow === null ) {
+					overflow = document.body.style.overflow;
+					document.body.style.overflow = 'hidden';
+				}
+			} );
+		},
+		/** Its close button; not on the second click of a double click that opened it. */
+		closePeek( event ) {
+			if ( event?.detail > 1 ) {
+				return;
+			}
+			dialog()?.close();
+		},
+		/** Where a click on the quick look was pressed, which peekBackdrop() reads. */
+		peekPress( event ) {
+			pressed = event.target === getElement().ref;
+		},
+		/**
+		 * And where it was released: what lies under that point. A touchscreen holds the
+		 * pointer to what it pressed, so its release goes there wherever it lands; and a
+		 * screen reader that activates the dialog itself presses and releases it at its
+		 * centre, which the panel covers.
+		 */
+		peekRelease( event ) {
+			pressed = pressed && document.elementFromPoint( event.clientX, event.clientY ) === getElement().ref;
+		},
+		/**
+		 * A click on the dimmed page around the quick look closes it: pressed and released
+		 * there, so a drag that selects its text, into it or out of it, doesn't (the
+		 * browser gives such a click to the dialog), and not the second click of a double
+		 * click, which would close what the first just opened. A press on its scrollbar
+		 * fires no click.
+		 */
+		peekBackdrop( event ) {
+			const { ref } = getElement();
+			if ( pressed && event.target === ref && event.detail < 2 ) {
+				ref.close();
+			}
+			pressed = false;
+		},
+		/**
+		 * However the quick look closed (its button, Escape, the page around it). Focus
+		 * goes back to the button that opened it, or, if a search took its tile away, to
+		 * the search box. The close event comes a moment after the close, so it can come
+		 * after another look was asked for: it puts the page's overflow back, if that look
+		 * hasn't opened yet, and leaves that look be.
+		 */
+		peekClosed() {
+			if ( dialog()?.open ) {
+				return;
+			}
+			if ( overflow !== null ) {
+				document.body.style.overflow = overflow;
+				overflow = null;
+			}
+			// Another look is about to open, or this close is an earlier look's, handled.
+			if ( opening !== null || opener === null ) {
+				return;
+			}
+			state.peekSlug = null;
+			( opener.isConnected ? opener : searchBox() )?.focus();
+			opener = null;
 		},
 	},
 	callbacks: {

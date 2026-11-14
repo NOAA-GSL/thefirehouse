@@ -107,8 +107,8 @@ one is.
   such as /firehouse/projects/?q=smoke&region=NWCC opens it already filtered. Search
   engines are asked not to index an address with a query. With JavaScript, results
   follow the search as you type and each filter as it changes, with no request, and
-  the address follows; on a phone the filters fold behind a button. The quick look
-  comes later.
+  the address follows; on a phone the filters fold behind a button; and each tile's
+  Quick look button opens a preview of the project in a dialog.
 * In the block editor, each FireHouse block shows, read-only, what the page stores in
   it, so that can be told from what FireHouse adds. Changing it comes later. Opening
   and saving a page keeps its FireHouse blocks, the ones they hold included.

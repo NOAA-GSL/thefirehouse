@@ -6,9 +6,9 @@
  *
  * Every rule is scoped under .fh-app (WORDPRESS-PLAN.md rule 9), in the order the
  * site loads them. Left out: the static build's page shell, gov banner and footer,
- * which GSL's theme replaces; the explorer's quick look and the coverage map, which
- * arrive in Phase 5; the design system's components no page renders; and the fonts,
- * which the plugin loads on its own from fonts.css.
+ * which GSL's theme replaces; the coverage map, which arrives in Phase 5; the design
+ * system's components no page renders; and the fonts, which the plugin loads on its
+ * own from fonts.css.
  */
 
 /* Design system Button.
@@ -714,6 +714,256 @@
   flex-wrap: nowrap;
   overflow: hidden;
   min-height: 22px;
+}
+.fh-app .fh-modal__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(10, 16, 32, 0.55);
+  /* Blurring the page behind the dialog is the one place the effect is doing more
+     than decoration: it pushes the inert content out of focus, which matches what
+     `aria-modal` already tells assistive technology. */
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--space-lg);
+  overflow-y: auto;
+}
+
+.fh-app .fh-modal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  width: 640px;
+  max-width: 100%;
+  margin: auto;
+  /* The dialog itself stays opaque. Long-form reading is the one thing translucency
+     is genuinely bad at — the panel holds an abstract and three bulleted lists, and
+     text over moving colour is harder to read even when it passes a contrast check. */
+  background: var(--color-bg-surface-raised);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--glass-shadow-lift);
+  padding: var(--space-2xl);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Heat filament along the top edge, tying the dialog to the rest of the surface
+   language without tinting anything behind the text. */
+.fh-app .fh-modal::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--heat-gradient);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .fh-app .fh-modal__overlay {
+    background: rgba(10, 16, 32, 0.85);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Metadata row: fire cycle phase and publication status. */
+.fh-app .fh-modal__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.fh-app .fh-modal__meta-item {
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-sunken);
+  color: var(--color-text-secondary);
+  font: var(--text-caption);
+  letter-spacing: var(--letter-spacing-caption);
+}
+
+.fh-app .fh-modal__meta-item--status {
+  border-color: var(--color-accent-border);
+  background: var(--color-accent-tint);
+}
+
+.fh-app .fh-modal__prose {
+  margin: 0;
+  font: var(--text-body);
+  color: var(--color-text-secondary);
+}
+
+/* DOI on its own line under the paper title: it is an identifier to copy, not part
+   of the sentence, and running it inline makes the title hard to scan. */
+.fh-app .fh-modal__doi {
+  display: block;
+  margin-top: 2px;
+  font: var(--text-caption);
+  font-family: var(--font-mono);
+  color: var(--color-text-tertiary);
+}
+
+.fh-app .fh-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.fh-app .fh-modal__identity {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fh-app .fh-modal__title {
+  margin: 0;
+  font: var(--text-h1);
+  color: var(--color-text-primary);
+}
+
+.fh-app .fh-modal__byline {
+  font: var(--text-body-sm);
+  color: var(--color-text-secondary);
+}
+
+.fh-app .fh-modal__close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+.fh-app .fh-modal__close:hover {
+  background: var(--color-bg-sunken);
+  color: var(--color-text-primary);
+}
+
+.fh-app .fh-modal__section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fh-app .fh-modal__section-title {
+  margin: 0;
+  font: var(--text-label);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.fh-app .fh-modal__list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font: var(--text-body);
+  color: var(--color-text-primary);
+}
+
+.fh-app .fh-modal__papers {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.fh-app .fh-modal__paper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: var(--text-body-sm);
+  color: var(--color-link);
+  text-decoration: none;
+}
+
+.fh-app .fh-modal__paper--static {
+  color: var(--color-text-secondary);
+  cursor: default;
+}
+
+.fh-app .fh-modal__paper span {
+  text-decoration: underline;
+}
+
+.fh-app .fh-modal__paper--static span {
+  text-decoration: none;
+}
+
+.fh-app .fh-modal__footer {
+  display: flex;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border);
+}
+
+@media (max-width: 640px) {
+  .fh-app .fh-modal {
+    padding: var(--space-lg);
+  }
+  .fh-app .fh-modal__title {
+    font: var(--text-h2);
+  }
+  .fh-app .fh-modal__overlay {
+    padding: 0;
+  }
+}
+
+/* ---- Preview-specific ----
+   The dialog is a quick look now, not the full record. */
+
+/* An abstract can run several hundred words; the preview shows the opening of it
+   and the page carries the rest. Clamped by lines rather than characters so the
+   dialog keeps a predictable height whatever the content length. */
+.fh-app .fh-modal__prose--clamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.fh-app .fh-modal__more {
+  margin: var(--space-xs) 0 0;
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.fh-app .fh-modal__rest {
+  margin: 0;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-lg);
+  border: var(--border-width) solid var(--color-border);
+  background: var(--color-bg-sunken);
+  font: var(--text-body-sm);
+  color: var(--color-text-secondary);
+}
+
+.fh-app .fh-modal__footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.fh-app .fh-modal__footer-note {
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
 }
 /* The page's last line before the footer: quiet, small body text in the secondary
    text colour, but not a caption. */

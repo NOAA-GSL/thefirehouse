@@ -16,7 +16,23 @@
     "count": [
       "project",
       "projects"
-    ]
+    ],
+    "look": {
+      "more": "and %s more on the project page",
+      "rest": "Also on the full page: %s.",
+      "takeaways": [
+        "%s takeaway",
+        "%s takeaways"
+      ],
+      "recommendations": [
+        "%s recommendation",
+        "%s recommendations"
+      ],
+      "papers": [
+        "%s related paper",
+        "%s related papers"
+      ]
+    }
   },
   "sorts": {
     "relevance": "Best match",

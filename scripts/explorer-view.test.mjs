@@ -44,12 +44,12 @@ function serverState(query = '') {
   return {
     projects: site()
       .projects.filter((project) => project.published)
-      .map((project) => ({ ...project, url: `${ARCHIVE}${project.slug}/`, byline: formatByline(project.authors) })),
+      .map((project) => ({ ...project, url: `${ARCHIVE}${project.slug}/`, byline: formatByline(project.authors), fullByline: formatByline(project.authors, 0), publicationStatus: project.publicationStatus ?? null, paperCount: (project.papers ?? []).length })),
     query: parsed,
     text: parsed.q.replace(/[\r\n]/g, ' '),
     url: ARCHIVE,
     landing: '#fh-content',
-    short: { phase: shortOf(vocabulary.firePhases), region: shortOf(vocabulary.regions) },
+    short: { phase: shortOf(vocabulary.firePhases), region: shortOf(vocabulary.regions), status: Object.fromEntries(vocabulary.publicationStatuses.map((item) => [item.key, item.label])) },
     sorts: shared.sorts,
     strings: shared.strings,
   };
@@ -165,6 +165,55 @@ describe('the explorer view script', () => {
   });
 });
 
+describe('the quick look', () => {
+  const project = (more = {}) => ({ ...serverState().projects[0], ...more });
+
+  it('shows a project as the site\'s ProjectDetailModal does', () => {
+    const data = serverState();
+    const one = project({
+      projectType: 'Research Study',
+      title: 'R&amp;D <one>',
+      fullByline: 'A. Name, B. Name and C. Name',
+      org: 'An Org',
+      completionYear: 2025,
+      firePhases: ['before', 'not-a-phase', 'during'],
+      publicationStatus: 'in-review',
+      abstract: 'An abstract.',
+      takeaways: ['One', 'Two'],
+      needs: [{ need: 'N1', recommendation: 'R1' }, { need: 'N2' }, { need: null, recommendation: 'R3' }, { need: 'N4' }, { need: 'N5' }],
+      // Two papers searched, one listed: the page refuses the other's link.
+      papers: [{ title: 'A paper' }, { title: 'A paper without a link' }],
+      paperCount: 1,
+    });
+    expect(view.quickLook(data, one)).toEqual({
+      slug: one.slug,
+      title: 'R&amp;D <one>',
+      kicker: 'Research Study',
+      byline: 'A. Name, B. Name and C. Name, An Org · 2025',
+      phases: [{ key: '0-before', label: 'Before' }, { key: '1-during', label: 'During' }],
+      status: 'In review',
+      hasMeta: true,
+      abstract: 'An abstract.',
+      needs: [{ key: '0', text: 'N1' }, { key: '1', text: 'N2' }, { key: '2', text: 'N4' }],
+      more: 'and 1 more on the project page',
+      rest: 'Also on the full page: 2 takeaways, 2 recommendations, 1 related paper.',
+      url: one.url,
+    });
+  });
+
+  it('leaves out what a project lacks', () => {
+    const look = view.quickLook(serverState(), project({ projectType: null, org: null, firePhases: [], publicationStatus: 'constructor', abstract: null, takeaways: [], needs: [], papers: [{ title: 'Refused' }], paperCount: 0 }));
+    expect([look.kicker, look.status, look.hasMeta, look.abstract, look.needs, look.more, look.rest]).toEqual(['', '', false, '', [], '', '']);
+    expect(look.byline).not.toContain(', null');
+    expect(view.quickLook(serverState(), project({ takeaways: ['One'], needs: [{ recommendation: 'R' }], papers: [], paperCount: 0 })).rest).toBe('Also on the full page: 1 takeaway, 1 recommendation.');
+  });
+
+  it('binds to nothing while closed', () => {
+    expect(Object.keys(view.NO_LOOK).sort()).toEqual(Object.keys(view.quickLook(serverState(), project())).sort());
+    expect([view.NO_LOOK, view.NO_LOOK.phases, view.NO_LOOK.needs].every(Object.isFrozen)).toBe(true);
+  });
+});
+
 describe('the explorer\'s markup and its store', () => {
   const php = readFileSync(plugin('includes/class-explorer-page.php'), 'utf8');
   const paths = (pattern) => [...new Set([...php.matchAll(pattern)].map((match) => match[1]))];
@@ -176,7 +225,9 @@ describe('the explorer\'s markup and its store', () => {
     const known = (path) => {
       const [first, ...rest] = path.split('.');
       if (rest.length === 0) return first in definition.state || first in server;
-      return rest.reduce((value, key) => value?.[key], server[first]) !== undefined;
+      // The quick look binds into what it shows, which has NO_LOOK's shape.
+      const root = first === 'peek' ? view.NO_LOOK : server[first];
+      return rest.reduce((value, key) => value?.[key], root) !== undefined;
     };
     const found = paths(/"!?state\.([\w.]+)"/g).concat(paths(/::state\.([\w.]+)/g));
     expect(found.length).toBeGreaterThan(20);
@@ -190,6 +241,7 @@ describe('the explorer\'s markup and its store', () => {
       filter: view.applied(lib, data, data.query)[0],
       option: view.sortOptions(lib, data, data.query)[0],
       phase: view.results(lib, data, data.query)[0].phases[0],
+      need: view.quickLook(data, data.projects[0]).needs[0],
     };
     const found = paths(/"!?context\.(\w+\.[\w.]+)"/g);
     expect(found.length).toBeGreaterThan(10);
@@ -218,7 +270,7 @@ describe('the explorer store', () => {
     focused = [];
     vi.stubGlobal('window', { history: { state: null, replaceState: (_state, _title, url) => replaced.push(url) }, location: { pathname: PATH } });
     vi.stubGlobal('document', { getElementById: (id) => ({ focus: () => focused.push(id) }) });
-    Object.assign(definition.state, serverState(), { filtersOpen: false });
+    Object.assign(definition.state, serverState(), { filtersOpen: false, peekSlug: null });
   });
   afterEach(() => {
     vi.useRealTimers();
@@ -233,7 +285,7 @@ describe('the explorer store', () => {
 
   it('runs each action that prevents the event\'s default as the event happens', () => {
     for (const name of ['keydown', 'submit', 'clearSearch', 'removeFilter', 'clearAll']) expect(definition.actions[name].sync, name).toBe(true);
-    for (const name of ['type', 'choose', 'chooseSort', 'toggleFilters']) expect(definition.actions[name].sync, name).toBeUndefined();
+    for (const name of ['type', 'choose', 'chooseSort', 'toggleFilters', 'peek', 'closePeek', 'peekPress', 'peekRelease', 'peekBackdrop', 'peekClosed']) expect(definition.actions[name].sync, name).toBeUndefined();
   });
 
   it('shows what the script adds, and folds the filters until asked', () => {
@@ -334,6 +386,179 @@ describe('the explorer store', () => {
     }
     actions.clearAll(click({ button: 1 }));
     expect([state.query.phase, replaced]).toEqual(['during', []]);
+  });
+
+  /** A page with the quick look's dialog in it, which records what happens. */
+  const withQuickLook = () => {
+    const calls = [];
+    const quickLook = {
+      open: false,
+      showModal() {
+        if (this.open) throw new Error('already open');
+        this.open = true;
+        calls.push(`opened ${state.peek.title}`);
+      },
+      close() {
+        this.open = false;
+        calls.push('closed');
+      },
+    };
+    const body = { style: { overflow: 'auto' } };
+    const box = { focus: () => calls.push('search box focused') };
+    vi.stubGlobal('document', { body, getElementById: (id) => ({ 'fh-quick-look': quickLook, 'fh-explorer-q': box })[id] });
+    const opener = { isConnected: true, focus: () => calls.push('opener focused') };
+    const open = (project) => {
+      element = { ref: opener };
+      context = { project: { slug: project.slug } };
+      actions.peek();
+    };
+    return { calls, quickLook, body, opener, open };
+  };
+
+  it('opens the quick look for a tile\'s project, and puts everything back when it closes', () => {
+    const { calls, body, open } = withQuickLook();
+    const project = state.projects[1];
+
+    open(project);
+    // Its words are the project's before it opens, so it's announced by the right name.
+    expect([state.peekSlug, state.peek.title, body.style.overflow, calls]).toEqual([project.slug, project.title, 'auto', []]);
+    vi.advanceTimersByTime(0);
+    expect([body.style.overflow, calls]).toEqual(['hidden', [`opened ${project.title}`]]);
+
+    actions.closePeek();
+    actions.peekClosed();
+    expect([state.peekSlug, state.peek, body.style.overflow, calls]).toEqual([null, view.NO_LOOK, 'auto', [`opened ${project.title}`, 'closed', 'opener focused']]);
+  });
+
+  it('opens once for a double click, and lets the page scroll again when it closes', () => {
+    const { calls, body, open } = withQuickLook();
+    const project = state.projects[1];
+    open(project);
+    open(project);
+    vi.advanceTimersByTime(0);
+    expect([body.style.overflow, calls]).toEqual(['hidden', [`opened ${project.title}`]]);
+    actions.closePeek();
+    actions.peekClosed();
+    expect(body.style.overflow).toBe('auto');
+  });
+
+  it('passes over a close that belongs to a look since reopened, and puts the overflow back once', () => {
+    const { calls, body, open } = withQuickLook();
+    const [first, second] = state.projects;
+    open(first);
+    vi.advanceTimersByTime(0);
+    actions.closePeek();
+    open(second);
+    vi.advanceTimersByTime(0);
+    // The first look's close event arrives late, with the second open.
+    actions.peekClosed();
+    expect([state.peekSlug, body.style.overflow]).toEqual([second.slug, 'hidden']);
+    actions.closePeek();
+    actions.peekClosed();
+    expect([state.peekSlug, body.style.overflow, calls.at(-1)]).toEqual([null, 'auto', 'opener focused']);
+  });
+
+  it('opens a look asked for before the last one\'s close event came, and leaves it be', () => {
+    const { calls, body, open } = withQuickLook();
+    const [first, second] = state.projects;
+    open(first);
+    vi.advanceTimersByTime(0);
+    actions.closePeek();
+    open(second);
+    // The first look's close event comes before the second opens.
+    actions.peekClosed();
+    expect([state.peekSlug, body.style.overflow, calls.at(-1)]).toEqual([second.slug, 'auto', 'closed']);
+    vi.advanceTimersByTime(0);
+    expect([body.style.overflow, calls.at(-1)]).toEqual(['hidden', `opened ${second.title}`]);
+    actions.closePeek();
+    actions.peekClosed();
+    expect([state.peekSlug, body.style.overflow, calls.at(-1)]).toEqual([null, 'auto', 'opener focused']);
+  });
+
+  it('puts focus back once when two looks\' close events both come late', () => {
+    const { calls, body, open } = withQuickLook();
+    const [first, second] = state.projects;
+    open(first);
+    vi.advanceTimersByTime(0);
+    actions.closePeek();
+    open(second);
+    vi.advanceTimersByTime(0);
+    actions.closePeek();
+    actions.peekClosed();
+    actions.peekClosed();
+    expect([calls.filter((call) => call.endsWith('focused')), state.peekSlug, body.style.overflow]).toEqual([['opener focused'], null, 'auto']);
+  });
+
+  it('leaves the page as it was if there is no dialog to open, or it can\'t open', () => {
+    const { quickLook, body, open } = withQuickLook();
+    quickLook.showModal = () => {
+      throw new Error('no showModal');
+    };
+    open(state.projects[1]);
+    expect(() => vi.advanceTimersByTime(0)).toThrow('no showModal');
+    expect(body.style.overflow).toBe('auto');
+    vi.stubGlobal('document', { body, getElementById: () => undefined });
+    open(state.projects[1]);
+    expect(() => vi.advanceTimersByTime(0)).not.toThrow();
+    expect(body.style.overflow).toBe('auto');
+  });
+
+  it('stays open on the second click of a double click that lands on its close button', () => {
+    const { quickLook, open } = withQuickLook();
+    open(state.projects[1]);
+    vi.advanceTimersByTime(0);
+    actions.closePeek({ detail: 2 });
+    expect(quickLook.open).toBe(true);
+    actions.closePeek({ detail: 1 });
+    expect(quickLook.open).toBe(false);
+  });
+
+  it('puts focus in the search box if a search took the opening tile away', () => {
+    const { calls, opener, open } = withQuickLook();
+    open(state.projects[1]);
+    vi.advanceTimersByTime(0);
+    opener.isConnected = false;
+    actions.closePeek();
+    actions.peekClosed();
+    expect(calls.at(-1)).toBe('search box focused');
+  });
+
+  it('closes the quick look on a click pressed and released around it, not a drag into it or out of it', () => {
+    const closed = [];
+    const quickLook = { close: () => closed.push(true) };
+    const inside = { tagName: 'P' };
+    element = { ref: quickLook };
+    // What lies under each point on the line y 7: x 1 is the panel, 2 the page around it,
+    // 3 off the window. Any other y hits nothing.
+    const at = [undefined, inside, quickLook, null];
+    vi.stubGlobal('document', { elementFromPoint: (x, y) => (y === 7 ? at[x] : undefined) });
+    // As a browser clicks: on what was pressed and released, or, if they differ, on what
+    // holds both. A captured pointer (a touchscreen's) releases on what it pressed.
+    const clickOn = (down, up, detail = 1, captured = false) => {
+      actions.peekPress({ target: down });
+      actions.peekRelease({ target: captured ? down : up, clientX: at.indexOf(up), clientY: 7 });
+      actions.peekBackdrop({ target: down === up || captured ? down : quickLook, detail });
+    };
+    clickOn(inside, inside);
+    // A drag that selects its text and ends on the page around it, and one that begins there.
+    clickOn(inside, quickLook);
+    clickOn(quickLook, inside);
+    // The same with the pointer captured, and one released off the window. The first is
+    // also a screen reader's activation of the dialog itself, which Edge presses and
+    // releases at its centre, over the panel.
+    clickOn(quickLook, inside, 1, true);
+    clickOn(quickLook, null, 1, true);
+    // The second click of a double click on a tile's button, landing around it.
+    clickOn(quickLook, quickLook, 2);
+    expect(closed).toEqual([]);
+    clickOn(quickLook, quickLook, 1, true);
+    expect(closed).toEqual([true]);
+    closed.length = 0;
+    clickOn(quickLook, quickLook);
+    expect(closed).toEqual([true]);
+    // Each click spends its press: a click with no press of its own closes nothing.
+    actions.peekBackdrop({ target: quickLook, detail: 1 });
+    expect(closed).toEqual([true]);
   });
 
   it('moves focus before removing a filter: to the filter after it, else Clear all, else the search', () => {

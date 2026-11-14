@@ -138,7 +138,7 @@ final class Project_Page {
 		$authors   = array_values( array_filter( is_array( $project['authors'] ?? null ) ? $project['authors'] : array(), static fn( mixed $author ): bool => is_array( $author ) && is_string( $author['name'] ?? null ) ) );
 		$takeaways = self::strings( $project['takeaways'] ?? null );
 		$needs     = array_values( array_filter( array_map( array( self::class, 'need_card' ), is_array( $project['needs'] ?? null ) ? $project['needs'] : array() ) ) );
-		$papers    = array_values( array_filter( array_map( array( self::class, 'paper' ), is_array( $project['papers'] ?? null ) ? $project['papers'] : array() ) ) );
+		$papers    = self::papers( $project['papers'] ?? null );
 
 		ob_start();
 		?>
@@ -292,6 +292,17 @@ final class Project_Page {
 				Markup::text( $rec )
 			)
 		);
+	}
+
+	/**
+	 * The papers a project's page lists, each as paper() writes it: those with a link a
+	 * browser could follow. The explorer's quick look counts them (Explorer_Page).
+	 *
+	 * @param mixed $stored The stored papers.
+	 * @return list<string>
+	 */
+	public static function papers( mixed $stored ): array {
+		return array_values( array_filter( array_map( array( self::class, 'paper' ), is_array( $stored ) ? $stored : array() ) ) );
 	}
 
 	/**
