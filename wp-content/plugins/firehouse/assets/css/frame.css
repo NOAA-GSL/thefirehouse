@@ -145,6 +145,28 @@
   align-items: center;
 }
 
+/* The quick look is a native <dialog> where the site has an overlay <div>, so the
+   browser's own dialog box comes off: the overlay's rules fill the window and dim the
+   page, and its ::backdrop stays clear so the page isn't dimmed twice. The overlay's
+   display:flex would show a closed dialog, so a closed one stays hidden. */
+.fh-app dialog.fh-modal__overlay {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  color: inherit;
+}
+
+.fh-app dialog.fh-modal__overlay:not([open]) {
+  display: none;
+}
+
+.fh-app dialog.fh-modal__overlay::backdrop {
+  background: transparent;
+}
+
 /* `hidden` hides, whatever display a Firehouse rule gives the element. */
 .fh-app [hidden] {
   display: none !important;

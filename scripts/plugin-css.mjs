@@ -22,8 +22,7 @@
  * Left out (`LEFT_OUT`): the static build's page shell, gov banner and footer,
  * because GSL's theme does their job under the plugin, and the fonts' stylesheet,
  * which the plugin loads on its own, so switching to GSL's fonts never touches this
- * file. Left out until a page the plugin renders needs them: the explorer's quick look
- * (`EXPLORER`, until its dialog comes in Phase 5), and the design system's
+ * file. Left out until a page the plugin renders needs them: the design system's
  * components no page renders (`UNUSED`); `scripts/plugin-css.test.mjs` fails if the
  * plugin's markup uses a class only those style. All of these are found among the JS
  * imports, so each has to stay imported from a module, not by a CSS `@import`. All but
@@ -50,7 +49,7 @@ import { build, loadConfigFromFile, transformWithEsbuild } from 'vite';
 // `.ts` extension has to appear anywhere TypeScript checks.
 import { outputProblems } from './scope-css.ts';
 import { browserProblems, openBrowser } from './css-browser-check.mjs';
-import { DEFERRED, EXPLORER, LEFT_OUT, MAY_GO, UNUSED } from './plugin-css-sources.mjs';
+import { DEFERRED, LEFT_OUT, MAY_GO, UNUSED } from './plugin-css-sources.mjs';
 
 // Vite reports module ids with the drive letter as the file system has it, whatever
 // case the shell started in.
@@ -59,7 +58,7 @@ const DIR = resolve(ROOT, 'wp-content/plugins/firehouse/assets/css');
 const CONFIG = resolve(ROOT, 'vite.config.ts');
 
 const posix = (path) => path.replace(/\\/g, '/');
-const leftOut = new Set([...LEFT_OUT, ...EXPLORER, ...UNUSED].map((file) => posix(resolve(ROOT, file))));
+const leftOut = new Set([...LEFT_OUT, ...UNUSED].map((file) => posix(resolve(ROOT, file))));
 const mayGo = new Set(MAY_GO.map((file) => posix(resolve(ROOT, file))));
 
 /** Loads each left-out stylesheet as empty, so the rest keep their places. */
@@ -174,9 +173,9 @@ const readable = `/*
  *
  * Every rule is scoped under .fh-app (WORDPRESS-PLAN.md rule 9), in the order the
  * site loads them. Left out: the static build's page shell, gov banner and footer,
- * which GSL's theme replaces; the explorer's quick look and the coverage map, which
- * arrive in Phase 5; the design system's components no page renders; and the fonts,
- * which the plugin loads on its own from fonts.css.
+ * which GSL's theme replaces; the coverage map, which arrives in Phase 5; the design
+ * system's components no page renders; and the fonts, which the plugin loads on its
+ * own from fonts.css.
  */
 
 ${site.css}
