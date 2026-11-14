@@ -133,6 +133,7 @@ export function RegionMap({
    */
   const viewRef = useRef<L.LatLngBoundsExpression>(HOME_VIEW);
   const onSelectRef = useRef(onSelect);
+  const allRef = useRef<HTMLButtonElement>(null);
   const [tilesFailed, setTilesFailed] = useState(false);
   const [showCodes, setShowCodes] = useState(true);
   const listId = useId();
@@ -155,6 +156,30 @@ export function RegionMap({
     () => (selected ? projects.filter((p) => p.regions.includes(selected)) : []),
     [projects, selected],
   );
+
+  /**
+   * What the status line says: how many projects the region just chosen holds, and
+   * nothing else. A live region around the results read the whole list out on every
+   * change. It stays empty until the selection changes, since what the page opened
+   * with isn't news, and empties again when none is selected: focus is then on "All
+   * submissions", which says so itself.
+   */
+  const [announced, setAnnounced] = useState({ selected, text: '' });
+  if (announced.selected !== selected) {
+    setAnnounced({
+      selected,
+      text: selected
+        ? `${shown.length} ${shown.length === 1 ? 'project' : 'projects'} in ${REGIONS[selected].short}`
+        : '',
+    });
+  }
+
+  /* Clear goes as the selection does, so focus moves to "All submissions", now the
+     pressed one, rather than falling back to the top of the page. */
+  const clear = () => {
+    allRef.current?.focus();
+    onSelect(null);
+  };
 
   /* ---- Create the map once ---- */
   useEffect(() => {
@@ -392,6 +417,7 @@ export function RegionMap({
         <ul className="fh-map__list" aria-labelledby={listId}>
           <li>
             <button
+              ref={allRef}
               type="button"
               className={`fh-map__region${selected === null ? ' fh-map__region--on' : ''}`}
               aria-pressed={selected === null}
@@ -454,18 +480,22 @@ export function RegionMap({
         </div>
       </div>
 
-      {/* ---- Projects in the selected region ---- */}
-      <div className="fh-map__results" role="region" aria-live="polite">
+      {/* ---- Projects in the selected region ----
+          A heading to find them by, and no live region around them: the status line
+          at the end announces what changed. */}
+      <div className="fh-map__results">
         {selected ? (
           <>
-            <p className="fh-map__results-head">
+            <div className="fh-map__results-head">
               <Icon name="map-pin" size={14} />
-              {shown.length} {shown.length === 1 ? 'project' : 'projects'} in{' '}
-              <strong>{label(selected).short}</strong>
-              <button type="button" className="fh-map__clear" onClick={() => onSelect(null)}>
+              <h3 className="fh-map__results-title">
+                {shown.length} {shown.length === 1 ? 'project' : 'projects'} in{' '}
+                <strong>{label(selected).short}</strong>
+              </h3>
+              <button type="button" className="fh-map__clear" onClick={clear}>
                 Clear
               </button>
-            </p>
+            </div>
             {shown.length > 0 ? (
               <ul className="fh-map__projects">
                 {shown.map((project) => (
@@ -492,6 +522,9 @@ export function RegionMap({
             Select a GACC on the map or in the list to see the research filed there.
           </p>
         )}
+        <p className="fh-visually-hidden" role="status">
+          {announced.text}
+        </p>
       </div>
     </div>
   );

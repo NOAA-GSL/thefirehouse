@@ -843,7 +843,11 @@ Accessibility: the region list beside the map is not a fallback. It is the opera
 surface — real buttons, real counts, driving the same state the polygons do — and
 the Leaflet canvas is `aria-hidden` so assistive technology is sent there rather
 than into unlabelled SVG paths. Colour is never the only channel; every region
-carries its count as a number.
+carries its count as a number. The selected region's projects sit under a heading
+that counts them, and aren't a live region, which would read the whole list out on
+each change: a status line after them says only "4 projects in Great Basin" when a
+choice changes them, and nothing for the region the page opened with. Clear moves
+focus to "All submissions" rather than losing it with the button.
 
 ## Survey import
 

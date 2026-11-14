@@ -1066,6 +1066,13 @@
   color: var(--color-text-secondary);
 }
 
+/* A heading to find the results by, set as the line it sits in. */
+.fh-app .fh-map__results-title {
+  margin: 0;
+  font: inherit;
+  color: inherit;
+}
+
 .fh-app .fh-map__clear {
   margin-left: auto;
   padding: 3px 10px;
