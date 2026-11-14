@@ -23,7 +23,7 @@ vi.mock('@wordpress/interactivity', () => ({
 vi.mock('@firehouse/search', async () => await import('../wp-content/plugins/firehouse/assets/search/search.js'));
 
 // The page as the script finds it: the region the server printed, "smo" typed before
-// the script arrived, and focus on the phase select, in the filters.
+// the script arrived, and focus in the search box, outside the filters.
 const listeners = [];
 const facets = { id: 'fh-explorer-facets' };
 const box = { value: 'smo', defaultValue: '', isConnected: true, focus: vi.fn(), closest: () => null };
@@ -44,12 +44,12 @@ const body = {};
 const replaced = [];
 const page = {
   body,
-  activeElement: phase,
+  activeElement: box,
   querySelector: (selector) => (selector === '[data-fh-interactive="firehouse/explorer"]' ? region : selector.includes('name="phase"') ? phase : null),
   getElementById: () => box,
 };
 vi.stubGlobal('document', page);
-vi.stubGlobal('window', { scrollY: 0, history: { state: null, replaceState: (_s, _t, url) => replaced.push(url) }, location: { pathname: '/firehouse/projects/' } });
+vi.stubGlobal('window', { scrollY: 0, requestAnimationFrame: (callback) => callback(), history: { state: null, replaceState: (_s, _t, url) => replaced.push(url) }, location: { pathname: '/firehouse/projects/' } });
 
 await import('../wp-content/plugins/firehouse/blocks/explorer/view.js');
 afterAll(() => vi.unstubAllGlobals());
@@ -70,7 +70,9 @@ describe('the explorer view script, as WordPress 6.7 runs it, in a page', () => 
     expect(attributes).toEqual({ 'data-wp-interactive': 'firehouse/explorer' });
   });
 
-  it('keeps the filters open while the visitor is in them', () => {
+  it("folds the filters for a visitor who isn't in them, and keeps them open once they go in", () => {
+    expect(definition.state.filtersOpen).toBe(false);
+    fire('focusin', phase);
     expect(definition.state.filtersOpen).toBe(true);
   });
 

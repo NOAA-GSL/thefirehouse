@@ -114,14 +114,20 @@ describe('the explorer view script', () => {
     expect(view.addressOf(lib, ARCHIVE, parseProjectQuery(new URLSearchParams('')))).toBe(ARCHIVE);
   });
 
-  it('puts focus back only where the takeover dropped it to the page', () => {
+  it('puts focus back only where the takeover dropped it to the page, or in the search if the script hid it', () => {
     const body = {};
-    const there = { isConnected: true };
-    expect(view.refocuses(there, body, body)).toBe(true);
-    expect(view.refocuses(there, null, body)).toBe(true);
-    expect(view.refocuses(there, { id: 'a header link' }, body)).toBe(false);
-    expect(view.refocuses({ isConnected: false }, body, body)).toBe(false);
-    expect(view.refocuses(null, body, body)).toBe(false);
+    const search = { id: 'search' };
+    const there = { isConnected: true, closest: () => null };
+    const hidden = { isConnected: true, closest: (selector) => (selector === '[hidden]' ? {} : null) };
+    expect(view.refocusTarget(there, body, body, search)).toBe(there);
+    expect(view.refocusTarget(there, null, body, search)).toBe(there);
+    expect(view.refocusTarget(hidden, body, body, search)).toBe(search);
+    // Focus still on an element just hidden is as good as dropped; on one still shown, it stays.
+    expect(view.refocusTarget(hidden, hidden, body, search)).toBe(search);
+    expect(view.refocusTarget(there, there, body, search)).toBeNull();
+    expect(view.refocusTarget(there, { id: 'a header link' }, body, search)).toBeNull();
+    expect(view.refocusTarget({ isConnected: false }, body, body, search)).toBeNull();
+    expect(view.refocusTarget(null, body, body, search)).toBeNull();
   });
 
   it('reads an option as the query holds it', () => {

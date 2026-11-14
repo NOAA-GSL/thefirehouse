@@ -227,11 +227,22 @@ function counts( data, facet ) {
 }
 
 /**
- * Whether focus goes back to where it was before the takeover: only if the takeover
+ * Where focus goes back to after the takeover, or null to leave it: only if the takeover
  * dropped it to the page, and the element is still there. Focus the visitor has moved
- * on with stays where they put it.
+ * on with stays where they put it. An element the script hides ("Update results")
+ * can't take focus, so the fallback (the search) does.
  */
-export const refocuses = ( element, active, body ) => Boolean( element?.isConnected ) && ( ! active || active === body );
+export function refocusTarget( element, active, body, fallback ) {
+	if ( ! element?.isConnected || ( active && active !== body && active !== element ) ) {
+		return null;
+	}
+	// Still on an element the script has just hidden counts as dropped: the browser
+	// moves focus off it to the page only later.
+	if ( element.closest?.( '[hidden]' ) ) {
+		return fallback;
+	}
+	return active === element ? null : element;
+}
 
 /** Forgets the worked-out query and the tiles, for tests that change the projects. */
 export function forget() {
@@ -262,6 +273,11 @@ const follow = () => {
 };
 const track = ( event ) => {
 	focusedBefore = event.target;
+	// On a phone, the filters stay open for a visitor who has gone into them, from the
+	// first time the script draws the page.
+	if ( event.target.closest?.( '#fh-explorer-facets' ) ) {
+		state.filtersOpen = true;
+	}
 };
 region?.addEventListener( 'input', follow, true );
 region?.addEventListener( 'change', follow, true );
@@ -432,12 +448,10 @@ const { state, actions } = store( STORE, {
 			if ( before.text !== undefined || Object.keys( before.patch ).length > 0 ) {
 				actions.update( before.patch );
 			}
-			if ( refocuses( focusedBefore, document.activeElement, document.body ) ) {
-				focusedBefore.focus();
-			}
-			if ( focusedBefore?.closest?.( '#fh-explorer-facets' ) ) {
-				state.filtersOpen = true;
-			}
+			// A frame later, once WordPress has applied what the script binds: hiding
+			// "Update results", say, drops a focus that's on it only then.
+			const element = focusedBefore;
+			window.requestAnimationFrame( () => refocusTarget( element, document.activeElement, document.body, searchBox() )?.focus() );
 			before = { patch: {} };
 			focusedBefore = null;
 		},
