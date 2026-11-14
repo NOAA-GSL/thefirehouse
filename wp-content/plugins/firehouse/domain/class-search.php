@@ -487,7 +487,8 @@ final class Search {
 	 * Each project's relevance to the search text, by its key in $projects: what
 	 * score_project() gives each. A page that both filters and counts scores once and
 	 * passes these to filter_projects() and facet_counts(), which would otherwise each
-	 * score every project again, five passes for the explorer.
+	 * score every project again, five passes for the explorer. A score is held to its
+	 * project by its key in the list, so pass them with the same projects.
 	 *
 	 * @param array<array<string, mixed>> $projects The projects.
 	 * @param string                      $q        The search text.
@@ -502,10 +503,11 @@ final class Search {
 	 *
 	 * @param list<array<string, mixed>> $projects The projects.
 	 * @param array<string, mixed>       $query    The query.
-	 * @param array<float>|null          $scores   The projects' scores for the query's text, from scores(), by the same keys; null to score them here.
+	 * @param array<float>|null          $scores   The projects' scores for the query's text, from scores(), by the same keys; null, or scores for a list of another length, to score them here.
 	 * @return list<array<string, mixed>>
 	 */
 	public static function filter_projects( array $projects, array $query, ?array $scores = null ): array {
+		$scores = null !== $scores && count( $scores ) === count( $projects ) ? $scores : null;
 		$scored = array();
 		foreach ( $projects as $index => $project ) {
 			if ( ! self::matches_facets( $project, $query ) ) {
@@ -543,10 +545,11 @@ final class Search {
 	 * @param array<string, mixed>       $query     The query.
 	 * @param string                     $facet     The facet.
 	 * @param callable                   $values_of A project's values for it.
-	 * @param array<float>|null          $scores    The projects' scores for the query's text, from scores(), by the same keys; null to score them here.
+	 * @param array<float>|null          $scores    The projects' scores for the query's text, from scores(), by the same keys; null, or scores for a list of another length, to score them here.
 	 * @return array<string|int, int>
 	 */
 	public static function facet_counts( array $projects, array $query, string $facet, callable $values_of, ?array $scores = null ): array {
+		$scores = null !== $scores && count( $scores ) === count( $projects ) ? $scores : null;
 		$counts = array();
 		foreach ( $projects as $index => $project ) {
 			if ( ! self::matches_facets( $project, $query, $facet ) || 0.0 === ( $scores[ $index ] ?? self::score_project( $project, (string) ( $query['q'] ?? '' ) ) ) ) {

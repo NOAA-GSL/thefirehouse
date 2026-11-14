@@ -150,7 +150,7 @@ The alternatives, and why not:
 | `scripts/notebooklm-source.mjs` | Rewritten in PHP as **Download NotebookLM source**, for the paste-in fallback |
 | The Google Form (outside this repository) | The plugin's survey form (see [The survey form](#the-survey-form)) |
 | The NotebookLM notebook | Analyze results and an approved AI service (see [The AI service](#the-ai-service)); paste-in stays as the fallback |
-| Vite, `public/.htaccess`, `public/_redirects` | Retired. View scripts are plain ES modules, and the blocks' editor script (`assets/js/block-editor.js`) is plain JavaScript, with no build step; `@wordpress/scripts` comes in if Phase 6's editing controls need one. |
+| Vite, `public/.htaccess`, `public/_redirects` | Retired. View scripts are plain ES modules, and the blocks' editor script (`assets/js/block-editor.js`) is plain JavaScript, with no build step; `@wordpress/scripts` comes in if Phase 6's editing controls need one. The one generated script is the explorer's search module (`assets/search/search.js`), which `npm run plugin:assets` bundles from `search.ts` with esbuild. |
 
 The rewrite is smaller than the line counts suggest. The design system is already in
 plain CSS files with `fh-` class names, not inline React styles. The PHP templates emit
@@ -232,8 +232,9 @@ wp-content/plugins/firehouse/
   patterns/        landing and About layouts, locked to text-only edits (Phase 6; today
                    the Import screen creates both pages from custom blocks)
   assets/          tokens and component CSS, icons, logos, fonts, the link-preview
-                   image, the blocks' script for the block editor; GACC boundaries
-                   with the coverage map (Phase 5)
+                   image, the blocks' script for the block editor, the site's search
+                   as a module for the explorer's script; GACC boundaries with the
+                   coverage map (Phase 5)
   shared/          vocabulary.json, the project and topic schemas, the email pattern,
                    the icon allowlist and test cases, read by PHP and JS
   tests/           PHPUnit tests, run without WordPress through Brain Monkey
@@ -348,9 +349,16 @@ Every control belongs to a `GET` form, or is a link to the address it would make
 
 Links people have already shared keep working either way.
 
-- **Explorer.** Search runs in JavaScript (a port of `search.ts`) and in PHP (for the
-  first render and for no-JS). Both are tested against one shared file of queries and
-  expected results.
+- **Explorer.** Search runs in the browser, with the site's own `search.ts` bundled as a
+  module the plugin ships, and in PHP, for the first render and for no-JS. Both are
+  tested against one shared file of queries and expected results
+  (`shared/cases/search.json`), and what each works out for the page (the sort's
+  options, the applied filters' labels, and the words after the results count)
+  against another (`shared/cases/explorer.json`). *Eric chose the browser over asking
+  the server for each change (13 November): results are instant and work on bad
+  wifi, as the site's are. The page carries each public project's searchable text for
+  it, about 14 KB gzipped at eight projects, and about six times as much at 48; the
+  view script and the search module add about 5 KB and 4 KB gzipped.*
 - **Map.** Leaflet's ES module build loads in the block's view script. The region list
   is a set of real buttons in the same kind of form, and the boundary GeoJSON ships as
   a plugin asset.
@@ -705,8 +713,11 @@ The explorer's HTML depends on its address's query string (`?q=`, the filters, t
 sort) and on nothing else, not the visitor. If HTML caching comes, the cache key must
 hold the whole query string as sent: a rule that ignores it would serve one search's
 results at every address. Each address is its own entry, so a purge has to reach all
-of them (everything, or by prefix), or a hidden project stays listed under every
-search that found it.
+of them (everything, or by prefix). Every explorer address, whatever its query, carries
+each public project's searchable text in its state, so a hidden project's text would
+stay in every cached entry, not only those whose search found it. Copies others keep
+(an archive's snapshot of the explorer) hold it too, so a request to remove a
+withdrawn project names the explorer's address as well as the project's.
 
 Whatever Cloudflare does with other pages, **the Submit page is never cached.** A cached copy would carry an expired
 nonce, and real submissions would start failing within a day. The page is sent with
@@ -1476,8 +1487,8 @@ its own (`DEFERRED`), loaded with the map.
     sends what the address had: nothing, or `relevance` with no text yet. Sent as
     `sort=newest`, it would pin the order, and a search added later wouldn't list by
     best match, as the site does. A sent form's address carries every name, empty
-    ones included (`?q=smoke&phase=&region=&year=&type=&sort=`), until the script
-    tidies it.*
+    ones included (`?q=smoke&phase=&region=&year=&type=&sort=`), until a change made
+    with the script rewrites it.*
   - *Accepted differences without a script: an option that would leave no results
     says "(0)" but stays enabled, since the counts don't follow a change to another
     select until the form is sent; and a year or type no project has can't be chosen
@@ -1508,18 +1519,79 @@ its own (`DEFERRED`), loaded with the map.
   - *The explorer's page and tile CSS joined the one stylesheet, as Phase 4's weight
     decided (not split by page), adding about 1.4 kB compressed. The quick look's
     (`ProjectDetailModal.css`) stays on `EXPLORER` until its dialog comes.*
-  - *Left for the script slice, from the review: don't port the site's "/" shortcut as
-    written, a single-key shortcut with no way to turn it off (WCAG 2.1.4); after a
-    filter is removed, move focus to the next filter, then Clear all, then the search;
-    change only the status line's text, never its node; add the hint's second
-    sentence only once live updates work; and bind `disabled` on options to the live
-    counts.*
+  - *The review's notes for the script slice (the "/" shortcut, focus after a filter is
+    removed, the status line's node, the hint's second sentence, and `disabled` bound
+    to live counts) are done with the script, below.*
   - *Left for changes of their own: control edges below 3:1 (about 1.6:1 in light and
     2.2–2.8:1 in dark, the site's too; `--glass-control-border` would meet it); the
     tiles' h3 under the page's h1, on both sites; WordPress's own query for the
     archive, which still runs, and still answers `?s=`, `?m=` and `?paged=`; and the
     typo match's tokenizing, which an ASCII fast path would cut, worth it past about
     100 projects.*
+- *The explorer with JavaScript, 13 November: `blocks/explorer/view.js` takes the same
+  markup over through the Interactivity API and searches in the browser, as Eric chose
+  (Interactivity, Explorer).*
+  - *What it does. Results, counts and the applied filters follow each select as it
+    changes, and the search after a 200 ms pause in typing, as on the site, with no
+    request. The address follows with `history.replaceState`, written as the site
+    writes it, relative to the page. Escape clears the search, and the hint gains the
+    site's "Results update as you type. Press Escape to clear." On a phone the filters
+    fold behind the "Filters and sort" button, which the server prints hidden, unless
+    the visitor is already in them or has scrolled; "Update results" goes. Options that
+    would leave nothing are disabled, now that the counts follow every change.
+    Clearing the search, removing a filter and Clear all stay links, as planned, and
+    the script follows a plain click in place; a click with a modifier key opens the
+    link, as a link's would. On the site they're buttons.*
+  - *The search. `search.ts` itself, bundled by esbuild (a pinned dev dependency) as
+    `assets/search/search.js` and registered as the `@firehouse/search` script
+    module. `npm run plugin:assets` writes it, and `plugin:assets:check`, which CI
+    runs, fails if it falls behind. The projects come from the page's state
+    (`Explorer_Page::state()`): each public project's fields the search reads, in the
+    shapes it expects, with its address and byline, and nothing else. Each project is
+    scored once per search, for the list and the four counts (`scores()`, as
+    `Search::scores()` does in PHP), and its fields folded once: at 48 projects on a
+    phone at a quarter of a desktop's speed, an update takes about 70 ms, from about
+    420.*
+  - *Why the plugin prints the page. WordPress's processing of the directives prints
+    text with `esc_html()`, which leaves a character reference as it is, so a title
+    stored as "R&amp;D" would show as "R&D" (rule 1). So the block doesn't ask for it:
+    the plugin prints the page as before, and the markup carries the directives the
+    script binds to and templates for the lists it redraws (the tiles, the applied
+    filters, the sort's options). What the server printed of a list stands in
+    (`data-wp-each-child`), with its template after it so the items keep their nodes,
+    and focus, as the script takes over.*
+  - *Only once its script is there. The server marks the region `data-fh-interactive`,
+    and the script sets `data-wp-interactive` when it loads. If it or the search fails
+    to load, WordPress's runtime, which other blocks load, leaves the region alone and
+    the page works as it does without JavaScript; drawn from an empty store, it would
+    have shown no projects. What the visitor types or chooses until WordPress takes
+    the page over is kept, and focus the takeover drops to the page is put back.*
+  - *WordPress 6.7 and 6.8. Actions that call `preventDefault()` are wrapped in
+    `withSyncEvent()`. WordPress added it in 6.8, warns (with `SCRIPT_DEBUG` on)
+    about an action that needs it and lacks it, and plans to run such actions after the
+    event, too late to prevent it. 6.7, which the plugin supports, has none and runs
+    every action during the event, so there the script passes its actions through.*
+  - *The review's notes. The site's "/" shortcut isn't ported, since a one-key shortcut
+    that can't be turned off fails WCAG 2.1.4. Before a filter is removed, focus moves
+    to the filter after it, else Clear all, else the search. The status line keeps its
+    node; only its parts change: their text, and whether "Showing" and "matching …"
+    show. Left for a screen-reader test: the status line speaks after each pause in
+    typing, and on Windows after each arrow key in a closed select, as the site's does;
+    settling it after a second would be a change to both sites. Folding the filters on
+    a phone still moves the results up once, at load, when the visitor hasn't started;
+    folding them before the first paint is Eric's call.*
+  - *Checked by hand, with scratch scripts (not in the repository) that load both sites
+    with JavaScript on: at the same 34 addresses, and after each of 11 steps (typing a
+    search; choosing a phase; the sort; clearing the box; typing another; choosing a
+    GACC, a year and a type; Escape; choosing any phase; a search that finds nothing),
+    the main landmarks and the addresses matched, except for the quick look, which
+    comes next, and the links above, which are buttons on the site. With the search
+    module or the script blocked, the page works as it does without JavaScript.
+    `npm run plugin:compare` lists the page as not compared until the quick look
+    comes. Vitest runs the script's workings against `shared/cases/explorer.json`
+    with the shipped module, its store's getters and actions with stand-ins for
+    WordPress 6.8 and for 6.7, and checks every directive path the PHP prints
+    against the store. PHPUnit holds the templates to the markup the server prints.*
 
 **Done when:** it reaches feature parity with the React site, every URL parameter
 behaves the same, and the accessibility snapshots match.

@@ -94,10 +94,11 @@ require_once __DIR__ . '/includes/class-head.php';
  *   are read from shared/*.schema.json; if one is missing or malformed, this throws,
  *   and every request on the site fails until the plugin's files are fixed or its
  *   folder renamed.
- * - Blocks::register registers the Firehouse blocks. They're kept out of the block
- *   inserter and declare no stylesheet. Typed into content outside the Firehouse, they
- *   print nothing, though the Firehouse bar's and the project page's script modules
- *   still load there. Their metadata comes from blocks/blocks-manifest.php, a
+ * - Blocks::register registers the Firehouse blocks, and the site's search as the
+ *   script module the explorer's script imports. The blocks are kept out of the block
+ *   inserter and declare no stylesheet. Typed into content outside the Firehouse,
+ *   they print nothing, though the Firehouse bar's, the project page's and the
+ *   explorer's script modules (the explorer's with the search) still load there. Their metadata comes from blocks/blocks-manifest.php, a
  *   generated PHP file WordPress includes; if it's damaged, this throws, and every
  *   request on the site fails. A missing one is harmless: WordPress then reads each
  *   block's block.json.

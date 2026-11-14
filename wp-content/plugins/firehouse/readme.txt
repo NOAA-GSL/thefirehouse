@@ -33,8 +33,9 @@ they wrote it. The Import screen creates the landing page and the About page fro
 seed bundle; the About page's portraits are uploaded to the Media Library by an
 administrator. The project explorer, at /firehouse/projects/, lists the projects a
 visitor may see with a search, filters that show how many projects each choice
-leaves, and a sort. It works without JavaScript, and an address with the static
-site's parameters, such as /firehouse/projects/?q=smoke&region=NWCC, opens it already
+leaves, and a sort. With JavaScript, results update as you type and as each filter
+changes; without it, the filters apply when the form is sent. Either way, an address
+with the static site's parameters, such as /firehouse/projects/?q=smoke&region=NWCC, opens it already
 filtered.
 
 The fonts in assets/fonts/, Archivo and Public Sans, are third-party, under the SIL
@@ -104,8 +105,10 @@ one is.
   projects each choice leaves, a sort, and a tile for each project a visitor may see.
   It works without JavaScript: the filters apply when the form is sent, and an address
   such as /firehouse/projects/?q=smoke&region=NWCC opens it already filtered. Search
-  engines are asked not to index an address with a query. Results that update as you
-  type, and the quick look, come later.
+  engines are asked not to index an address with a query. With JavaScript, results
+  follow the search as you type and each filter as it changes, with no request, and
+  the address follows; on a phone the filters fold behind a button. The quick look
+  comes later.
 * In the block editor, each FireHouse block shows, read-only, what the page stores in
   it, so that can be told from what FireHouse adds. Changing it comes later. Opening
   and saving a page keeps its FireHouse blocks, the ones they hold included.

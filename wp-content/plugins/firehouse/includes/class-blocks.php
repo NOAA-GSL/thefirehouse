@@ -76,10 +76,20 @@ final class Blocks {
 	}
 
 	/**
-	 * Registers the blocks, with their metadata from the manifest.
+	 * Registers the blocks, with their metadata from the manifest, and the site's search
+	 * as a script module, which the explorer's view script imports by name
+	 * (blocks/explorer/view.asset.php). WordPress loads the module only on a page whose
+	 * script imports it.
 	 */
 	public static function register(): void {
-		$blocks = dirname( __DIR__ ) . '/blocks';
+		$root   = dirname( __DIR__ );
+		$blocks = $root . '/blocks';
+		wp_register_script_module(
+			Explorer_Page::SEARCH_MODULE,
+			plugins_url( 'assets/search/search.js', $root . '/firehouse.php' ),
+			array(),
+			VERSION . '-' . (int) filemtime( $root . '/assets/search/search.js' )
+		);
 		wp_register_block_metadata_collection( $blocks, $blocks . '/blocks-manifest.php' );
 		foreach ( self::NAMES as $name ) {
 			register_block_type( $blocks . '/' . $name );
