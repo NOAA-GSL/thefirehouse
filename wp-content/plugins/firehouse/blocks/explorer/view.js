@@ -556,9 +556,14 @@ const { state, actions } = store( STORE, {
 		peekPress( event ) {
 			pressed = event.target === getElement().ref;
 		},
-		/** And where it was released. */
+		/**
+		 * And where it was released: what lies under that point. A touchscreen holds the
+		 * pointer to what it pressed, so its release goes there wherever it lands; and a
+		 * screen reader that activates the dialog itself presses and releases it at its
+		 * centre, which the panel covers.
+		 */
 		peekRelease( event ) {
-			pressed = pressed && event.target === getElement().ref;
+			pressed = pressed && document.elementFromPoint( event.clientX, event.clientY ) === getElement().ref;
 		},
 		/**
 		 * A click on the dimmed page around the quick look closes it: pressed and released

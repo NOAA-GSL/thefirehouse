@@ -1611,17 +1611,21 @@ its own (`DEFERRED`), loaded with the map.
     browser's own dialog box off, so the site's overlay styles hold.*
   - *Where it differs from the site's. A click closes it only when pressed and
     released on the page around it, so a drag that selects its text, into the panel
-    or out of it, leaves it open; and neither the page around it nor its close button
-    takes the second click of a double click. The site's closes on the press, so a
-    drag that begins outside the panel, or a press on the overlay's scrollbar, closes
-    it, and a double click on a tile's button opens it and closes it again. The
-    dialog takes no tab stop of its own (`tabindex="-1"`); when the panel is taller
-    than the window it scrolls, and the browser would stop on it with its focus ring
-    off the screen (the Section 508 review, 14 November). Tab moves from its last
-    control to the browser's, as a native dialog's does, where the site's loops back
-    to its close button. Its project comes from the page's state, not the results, so
-    it stays open if a pending search drops that project from the list; the site's
-    closes.*
+    or out of it, leaves it open, as does a tap that slides into it. The release is
+    read from where it lands, since a touchscreen sends it to what was pressed
+    (Copilot's review of the pull request, 14 November). So a screen reader's or
+    voice control's activation of the dialog itself, which Edge presses and releases
+    at its centre, over the panel, leaves it open too (the Section 508 review, 14
+    November). Neither the page around it nor its close button takes the second click
+    of a double click. The site's closes on the press, so a drag that begins outside
+    the panel, or a press on the overlay's scrollbar, closes it, and a double click on
+    a tile's button opens it and closes it again. The dialog takes no tab stop of its
+    own (`tabindex="-1"`); when the panel is taller than the window it scrolls, and
+    the browser would stop on it with its focus ring off the screen (the Section 508
+    review, 14 November). Tab moves from its last control to the browser's, as a
+    native dialog's does, where the site's loops back to its close button. Its project
+    comes from the page's state, not the results, so it stays open if a pending search
+    drops that project from the list; the site's closes.*
   - *Without JavaScript, the tiles' buttons are hidden and the dialog never opens; a
     tile without phases hides its footer.*
   - *Checked by hand, with the same scratch scripts: each of the eight projects'

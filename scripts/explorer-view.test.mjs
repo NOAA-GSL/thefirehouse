@@ -528,19 +528,32 @@ describe('the explorer store', () => {
     const quickLook = { close: () => closed.push(true) };
     const inside = { tagName: 'P' };
     element = { ref: quickLook };
-    // As a browser clicks: on what was pressed and released, or, if they differ, on what holds both.
-    const clickOn = (down, up, detail = 1) => {
+    // What lies under each point on the line y 7: x 1 is the panel, 2 the page around it,
+    // 3 off the window. Any other y hits nothing.
+    const at = [undefined, inside, quickLook, null];
+    vi.stubGlobal('document', { elementFromPoint: (x, y) => (y === 7 ? at[x] : undefined) });
+    // As a browser clicks: on what was pressed and released, or, if they differ, on what
+    // holds both. A captured pointer (a touchscreen's) releases on what it pressed.
+    const clickOn = (down, up, detail = 1, captured = false) => {
       actions.peekPress({ target: down });
-      actions.peekRelease({ target: up });
-      actions.peekBackdrop({ target: down === up ? down : quickLook, detail });
+      actions.peekRelease({ target: captured ? down : up, clientX: at.indexOf(up), clientY: 7 });
+      actions.peekBackdrop({ target: down === up || captured ? down : quickLook, detail });
     };
     clickOn(inside, inside);
     // A drag that selects its text and ends on the page around it, and one that begins there.
     clickOn(inside, quickLook);
     clickOn(quickLook, inside);
+    // The same with the pointer captured, and one released off the window. The first is
+    // also a screen reader's activation of the dialog itself, which Edge presses and
+    // releases at its centre, over the panel.
+    clickOn(quickLook, inside, 1, true);
+    clickOn(quickLook, null, 1, true);
     // The second click of a double click on a tile's button, landing around it.
     clickOn(quickLook, quickLook, 2);
     expect(closed).toEqual([]);
+    clickOn(quickLook, quickLook, 1, true);
+    expect(closed).toEqual([true]);
+    closed.length = 0;
     clickOn(quickLook, quickLook);
     expect(closed).toEqual([true]);
     // Each click spends its press: a click with no press of its own closes nothing.
