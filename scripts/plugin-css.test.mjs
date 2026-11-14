@@ -7,8 +7,8 @@ import { UNUSED } from './plugin-css-sources.mjs';
  * The plugin's stylesheet leaves some of the site's stylesheets out until a page the
  * plugin renders needs them (scripts/plugin-css-sources.mjs): those of the design
  * system's components no page renders. A class only those style would render unstyled
- * in the plugin, focus rings included, so the
- * plugin's markup mustn't use one until its file is taken off the list.
+ * in the plugin, focus rings included, so the plugin's markup mustn't use one until its
+ * file is taken off the list.
  */
 const root = (path) => fileURLToPath(new URL(`../${path}`, import.meta.url));
 const PLUGIN = 'wp-content/plugins/firehouse/';

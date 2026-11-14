@@ -1513,8 +1513,8 @@ its own (`DEFERRED`), loaded with the map.
     there is no phone Filters and sort button and no quick look; the links above are
     buttons on the site; options aren't disabled; and "Update results" is the
     plugin's own. `tests/ExplorerPageTest.php` reads back what the form and each link
-    would send, at 37 addresses. `npm run plugin:compare` lists the page as built but
-    not compared until the script makes it match.*
+    would send, at 37 addresses. `npm run plugin:compare` listed the page as built but
+    not compared, until the script and the quick look made it match (below).*
   - *The explorer's page and tile CSS joined the one stylesheet, as Phase 4's weight
     decided (not split by page), adding about 1.4 kB compressed. The quick look's
     (`ProjectDetailModal.css`) came with its dialog, about 0.5 kB more.*
@@ -1546,7 +1546,8 @@ its own (`DEFERRED`), loaded with the map.
     module. `npm run plugin:assets` writes it, and `plugin:assets:check`, which CI
     runs, fails if it falls behind. The projects come from the page's state
     (`Explorer_Page::state()`): each public project's fields the search reads, in the
-    shapes it expects, with its address and byline, and nothing else. Each project is
+    shapes it expects, with its address and byline, and nothing else (the quick look
+    added three fields, below). Each project is
     scored once per search, for the list and the four counts (`scores()`, as
     `Search::scores()` does in PHP), and its fields folded once: at 48 projects on a
     phone at a quarter of a desktop's speed, an update takes about 70 ms, from about
@@ -1584,7 +1585,7 @@ its own (`DEFERRED`), loaded with the map.
     search; choosing a phase; the sort; clearing the box; typing another; choosing a
     GACC, a year and a type; Escape; choosing any phase; a search that finds nothing),
     the main landmarks and the addresses matched, except for the quick look, which
-    comes next, and the links above, which are buttons on the site. With the search
+    came next (below), and the links above, which are buttons on the site. With the search
     module or the script blocked, the page works as it does without JavaScript.
     Vitest runs the script's workings against `shared/cases/explorer.json`
     with the shipped module, its store's getters and actions with stand-ins for
@@ -1597,20 +1598,40 @@ its own (`DEFERRED`), loaded with the map.
     phases and publication status, its abstract and first three end-user needs as the
     researcher wrote them, and counts of what else its page holds, with a link to it.
     Its words are bound to the project being looked at (`quickLook()` in the view
-    script); the page's state gains each project's full byline and publication status,
-    both already on its page.*
-  - *As a dialog. The browser makes the page behind inert, closes it on Escape and
-    puts focus on its close button; the script puts focus back on the button that
-    opened it, closes it on a click on the page around it, and stops the page
-    scrolling behind it, as the site's does. It opens a moment after the click, once
-    its words are the project's, so it's announced by the right name. `frame.css`
-    takes the browser's own dialog box off, so the site's overlay styles hold.*
+    script); the page's state gains each project's byline naming every author, its
+    publication status's key (none for a key the vocabulary lacks, which its page
+    doesn't print either), and how many papers its page lists, leaving out any whose
+    link the page refuses. All three are on its page already.*
+  - *As a dialog. The browser makes the page behind inert and closes it on Escape;
+    focus goes to its close button (`autofocus`), as on the site. The script puts focus
+    back on the button that opened it (on the search box, if a search took that tile
+    away), closes it on a click on the page around it, and stops the page scrolling
+    behind it, as the site's does. It opens a moment after the click, once its words
+    are the project's, so it's announced by the right name. `frame.css` takes the
+    browser's own dialog box off, so the site's overlay styles hold.*
+  - *Where it differs from the site's. A click closes it only when pressed and
+    released on the page around it, and not as the second click of a double click:
+    the site's closes on the press, so a drag that selects its text and ends outside
+    it doesn't close it there either, but a press on the overlay's scrollbar does,
+    and a double click on a tile's button opens it and closes it again. The dialog takes no
+    tab stop of its own (`tabindex="-1"`); when the panel is taller than the window
+    it scrolls, and the browser would stop on it with its focus ring off the screen
+    (the Section 508 review, 14 November). Tab moves from its last control to the
+    browser's, as a native dialog's does, where the site's loops back to its close
+    button. Its project comes from the page's state, not the results, so it stays
+    open if a pending search drops that project from the list; the site's closes.*
   - *Without JavaScript, the tiles' buttons are hidden and the dialog never opens; a
     tile without phases hides its footer.*
-  - *Checked by hand: each of the eight projects' quick look matched the site's, its
-    focus included, and the explorer's main landmark now matches the site's at the
-    same 34 addresses and after the same 11 steps with nothing left out. `npm run
-    plugin:compare` compares the explorer: 32 of 32 match.*
+  - *Checked by hand, with the same scratch scripts: each of the eight projects'
+    quick look matched the site's, its focus included; and the explorer's main
+    landmark matched the site's at the same 34 addresses and after the same 11 steps,
+    with the links above read as the site's buttons, and nothing else left out. `npm
+    run plugin:compare` now compares the explorer too, at both widths: all 32
+    comparisons (16 pages, desktop and phone) match.*
+  - *Left for Stephanie and Emily: the phase and status pills in the quick look, as on
+    its tiles and on the site, have no label a screen reader hears ("Before During
+    Published"); a visually hidden "Fire phases:" and "Status:" would need their
+    wording, on both sites.*
 
 **Done when:** it reaches feature parity with the React site, every URL parameter
 behaves the same, and the accessibility snapshots match.

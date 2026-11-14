@@ -495,20 +495,20 @@ nothing from the database. Each class's docblock has the detail; this is the map
   searches, filters, sorts and counts them with `Search` (below), scoring each
   project once. With JavaScript, its view script (`blocks/explorer/view.js`) takes the
   same markup over through the Interactivity API: results as you type, Escape to
-  clear, the filters folded behind a button on a phone, and the address kept in step.
-  It searches in the browser, with the site's own `search.ts` bundled as
-  `assets/search/search.js`, over each public project's searchable fields in the
-  page's state (`Explorer_Page::state()`). The block doesn't ask WordPress to process
+  clear, the filters folded behind a button on a phone, the address kept in step,
+  and the quick look: each tile's "Quick look" button opens a native `<dialog>`
+  previewing the project, as the site's `ProjectDetailModal` does (without
+  JavaScript the buttons are hidden). It searches in the browser, with the site's own
+  `search.ts` bundled as `assets/search/search.js`, over each public project's fields
+  in the page's state (`Explorer_Page::state()`): those the search reads, and what the
+  tiles and the quick look show. The block doesn't ask WordPress to process
   its directives: that processing prints text with `esc_html()`, which leaves a
   character reference as it is, so a title stored as "R&amp;D" would show as "R&D"
   (rule 1). The plugin prints the page itself, with templates for the lists the
   script redraws, and marks the region `data-fh-interactive`; the script makes it
   WordPress's only once it has loaded, so a script that fails to load leaves the page
   working as without JavaScript. `tests/ExplorerPageTest.php` and
-  `scripts/explorer-view.test.mjs` both pass `shared/cases/explorer.json`. Each tile's
-  "Quick look" button opens the quick look, a native `<dialog>` previewing the
-  project, as the site's `ProjectDetailModal` does; without JavaScript the buttons are
-  hidden.
+  `scripts/explorer-view.test.mjs` both pass `shared/cases/explorer.json`.
 - `Markup` writes the design system's small components as the site renders them: a
   link styled as a `Button` (opening another site in a new tab, and saying so), a
   `TopicTag`, and the `SynthesisNote` that says the needs are synthesized and whether
@@ -704,11 +704,12 @@ They pass the cases in `shared/cases/derive.json`, `format.json`, `normalize.jso
 inside GSL's theme without reaching the theme's header and footer (plan rule 9).
 `firehouse.css` beside it holds the same rules, readable, for review and for
 `SCRIPT_DEBUG`; the minified copy is that one minified as the site's own build
-minifies its CSS. One stylesheet serves every
-Firehouse page; it isn't split by page. Both copies leave out what GSL's theme replaces
-(the static build's page shell, gov banner and footer), the coverage map's CSS until
-Phase 5, the design system's components no page renders, and the fonts, which load on their own (`scripts/plugin-css-sources.mjs`); a test fails
-if the plugin's markup uses a class only those left-out files style. Don't edit either:
+minifies its CSS. One stylesheet serves every Firehouse page; it isn't split by page.
+Both copies leave out what GSL's theme replaces (the static build's page shell, gov
+banner and footer), the coverage map's CSS, which loads with the map (`DEFERRED`), the
+design system's components no page renders, and the fonts, which load on their own
+(`scripts/plugin-css-sources.mjs`); a test fails if the plugin's markup uses a class
+only the unused components' stylesheets style. Don't edit either:
 `npm run plugin:css` writes both from `src/`, and CI fails if either falls behind.
 The site's own build scopes every stylesheet the same way (`scripts/scope-css.ts`), with
 `#root` as the wrapper, so the static site runs on the same CSS the plugin gets, and

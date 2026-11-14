@@ -33,7 +33,7 @@ const PLACEHOLDER = 'This page is being built.';
 /**
  * The reference pages the plugin has built: a name, or a prefix ending in `--` for a
  * kind of page (`topic--`). Each one must be there and match; the rest are listed as
- * not built yet. Each Phase 4 page adds itself here.
+ * not built yet. Each page adds itself here once it is built.
  */
 export const BUILT = ['about', 'home', 'not-found', 'project--', 'projects', 'topic--'];
 

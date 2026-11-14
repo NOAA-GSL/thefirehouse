@@ -19,7 +19,9 @@
  *   page without the script needs, goes.
  * - Each tile's "Quick look" button opens the quick look, a native dialog previewing
  *   the project (quickLook()): the page behind is inert, Escape closes it, and focus
- *   goes back to the button that opened it.
+ *   goes back to the button that opened it. Its project comes from the page's state,
+ *   not the results, so it stays open, and right, if a pending search drops that
+ *   project from the list behind it; the site's closes then.
  *
  * The region becomes interactive only here, when this script has loaded: the server
  * marks it `data-fh-interactive`, and this sets `data-wp-interactive`, before
@@ -174,11 +176,11 @@ export const NO_LOOK = Object.freeze( {
 	title: '',
 	kicker: '',
 	byline: '',
-	phases: [],
+	phases: Object.freeze( [] ),
 	status: '',
 	hasMeta: false,
 	abstract: '',
-	needs: [],
+	needs: Object.freeze( [] ),
 	more: '',
 	rest: '',
 	url: '',
@@ -188,7 +190,9 @@ export const NO_LOOK = Object.freeze( {
  * A project as the quick look shows it, as the site's `ProjectDetailModal` does: its
  * type, title, every author, organization and year; its phases and publication status;
  * its abstract and first three end-user needs, as written; and counts of what else its
- * page holds, rather than the things themselves, so the page is worth opening.
+ * page holds, rather than the things themselves, so the page is worth opening. Its
+ * papers are counted as its page lists them (`paperCount`), without any whose link the
+ * page refuses.
  */
 export function quickLook( data, project ) {
 	const look = data.strings.look;
@@ -197,7 +201,7 @@ export function quickLook( data, project ) {
 	const rest = [
 		project.takeaways.length > 0 && counted( look.takeaways, project.takeaways.length ),
 		recommendations > 0 && counted( look.recommendations, recommendations ),
-		project.papers.length > 0 && counted( look.papers, project.papers.length ),
+		project.paperCount > 0 && counted( look.papers, project.paperCount ),
 	].filter( Boolean );
 	const status = Object.hasOwn( data.short.status, project.publicationStatus ?? '' ) ? data.short.status[ project.publicationStatus ] : '';
 	const phases = project.firePhases
@@ -320,9 +324,14 @@ const searchBox = () => document.getElementById( 'fh-explorer-q' );
 /** The quick look's dialog. */
 const dialog = () => document.getElementById( 'fh-quick-look' );
 
-/** The button that opened the quick look, which focus goes back to, and the page's overflow before. */
+/**
+ * The button that opened the quick look, which focus goes back to; the page's overflow
+ * before it opened, or null while the page isn't held still; and whether the press of
+ * the click under way was on the page around it.
+ */
 let opener = null;
-let overflow = '';
+let overflow = null;
+let pressed = false;
 
 const browser = typeof document !== 'undefined';
 const region = browser ? document.querySelector( `[data-fh-interactive="${ STORE }"]` ) : null;
@@ -504,31 +513,61 @@ const { state, actions } = store( STORE, {
 		},
 		/**
 		 * Opens the quick look for a tile's project. It opens a moment later, once its
-		 * words are the project's, so the name it's announced by is the right one; the
-		 * page behind stops scrolling, as the site's does.
+		 * words are the project's, so the name it's announced by is the right one; then
+		 * the page behind stops scrolling, as the site's does. A second press before it
+		 * opens (a double click) changes nothing: the page's own overflow is saved once,
+		 * and put back once.
 		 */
 		peek() {
 			opener = getElement().ref;
 			state.peekSlug = getContext().project.slug;
-			overflow = document.body.style.overflow;
-			document.body.style.overflow = 'hidden';
-			setTimeout( () => dialog()?.showModal() );
+			setTimeout( () => {
+				const quickLook = dialog();
+				if ( ! quickLook || quickLook.open || state.peekSlug === null ) {
+					return;
+				}
+				quickLook.showModal();
+				if ( overflow === null ) {
+					overflow = document.body.style.overflow;
+					document.body.style.overflow = 'hidden';
+				}
+			} );
 		},
 		closePeek() {
 			dialog()?.close();
 		},
-		/** A click on the dimmed page around the quick look, not in it, closes it. */
+		/** Where a click on the quick look began, which peekBackdrop() reads. */
+		peekPress( event ) {
+			pressed = event.target === getElement().ref;
+		},
+		/**
+		 * A click on the dimmed page around the quick look closes it: pressed and released
+		 * there, so a drag that selects its text and ends outside it doesn't, and not the
+		 * second click of a double click, which would close what the first just opened.
+		 * A press on its scrollbar fires no click.
+		 */
 		peekBackdrop( event ) {
 			const { ref } = getElement();
-			if ( event.target === ref ) {
+			if ( pressed && event.target === ref && event.detail < 2 ) {
 				ref.close();
 			}
+			pressed = false;
 		},
-		/** However the quick look closed (its button, Escape, the page around it). */
+		/**
+		 * However the quick look closed (its button, Escape, the page around it). Focus
+		 * goes back to the button that opened it, or, if a search took its tile away, to
+		 * the search box. A close event for a look that has since reopened is passed over.
+		 */
 		peekClosed() {
-			document.body.style.overflow = overflow;
+			if ( dialog()?.open ) {
+				return;
+			}
+			if ( overflow !== null ) {
+				document.body.style.overflow = overflow;
+				overflow = null;
+			}
 			state.peekSlug = null;
-			opener?.focus();
+			( opener?.isConnected ? opener : searchBox() )?.focus();
 			opener = null;
 		},
 	},

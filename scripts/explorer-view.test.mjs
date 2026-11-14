@@ -44,7 +44,7 @@ function serverState(query = '') {
   return {
     projects: site()
       .projects.filter((project) => project.published)
-      .map((project) => ({ ...project, url: `${ARCHIVE}${project.slug}/`, byline: formatByline(project.authors), fullByline: formatByline(project.authors, 0), publicationStatus: project.publicationStatus ?? null })),
+      .map((project) => ({ ...project, url: `${ARCHIVE}${project.slug}/`, byline: formatByline(project.authors), fullByline: formatByline(project.authors, 0), publicationStatus: project.publicationStatus ?? null, paperCount: (project.papers ?? []).length })),
     query: parsed,
     text: parsed.q.replace(/[\r\n]/g, ' '),
     url: ARCHIVE,
@@ -181,7 +181,9 @@ describe('the quick look', () => {
       abstract: 'An abstract.',
       takeaways: ['One', 'Two'],
       needs: [{ need: 'N1', recommendation: 'R1' }, { need: 'N2' }, { need: null, recommendation: 'R3' }, { need: 'N4' }, { need: 'N5' }],
-      papers: [{ title: 'A paper' }],
+      // Two papers searched, one listed: the page refuses the other's link.
+      papers: [{ title: 'A paper' }, { title: 'A paper without a link' }],
+      paperCount: 1,
     });
     expect(view.quickLook(data, one)).toEqual({
       slug: one.slug,
@@ -200,15 +202,15 @@ describe('the quick look', () => {
   });
 
   it('leaves out what a project lacks', () => {
-    const look = view.quickLook(serverState(), project({ projectType: null, org: null, firePhases: [], publicationStatus: 'constructor', abstract: null, takeaways: [], needs: [], papers: [] }));
+    const look = view.quickLook(serverState(), project({ projectType: null, org: null, firePhases: [], publicationStatus: 'constructor', abstract: null, takeaways: [], needs: [], papers: [{ title: 'Refused' }], paperCount: 0 }));
     expect([look.kicker, look.status, look.hasMeta, look.abstract, look.needs, look.more, look.rest]).toEqual(['', '', false, '', [], '', '']);
     expect(look.byline).not.toContain(', null');
-    expect(view.quickLook(serverState(), project({ takeaways: ['One'], needs: [{ recommendation: 'R' }], papers: [] })).rest).toBe('Also on the full page: 1 takeaway, 1 recommendation.');
+    expect(view.quickLook(serverState(), project({ takeaways: ['One'], needs: [{ recommendation: 'R' }], papers: [], paperCount: 0 })).rest).toBe('Also on the full page: 1 takeaway, 1 recommendation.');
   });
 
   it('binds to nothing while closed', () => {
     expect(Object.keys(view.NO_LOOK).sort()).toEqual(Object.keys(view.quickLook(serverState(), project())).sort());
-    expect(Object.isFrozen(view.NO_LOOK)).toBe(true);
+    expect([view.NO_LOOK, view.NO_LOOK.phases, view.NO_LOOK.needs].every(Object.isFrozen)).toBe(true);
   });
 });
 
@@ -283,7 +285,7 @@ describe('the explorer store', () => {
 
   it('runs each action that prevents the event\'s default as the event happens', () => {
     for (const name of ['keydown', 'submit', 'clearSearch', 'removeFilter', 'clearAll']) expect(definition.actions[name].sync, name).toBe(true);
-    for (const name of ['type', 'choose', 'chooseSort', 'toggleFilters']) expect(definition.actions[name].sync, name).toBeUndefined();
+    for (const name of ['type', 'choose', 'chooseSort', 'toggleFilters', 'peek', 'closePeek', 'peekPress', 'peekBackdrop', 'peekClosed']) expect(definition.actions[name].sync, name).toBeUndefined();
   });
 
   it('shows what the script adds, and folds the filters until asked', () => {
@@ -386,33 +388,113 @@ describe('the explorer store', () => {
     expect([state.query.phase, replaced]).toEqual(['during', []]);
   });
 
-  it('opens the quick look for a tile\'s project, and puts everything back when it closes', () => {
+  /** A page with the quick look's dialog in it, which records what happens. */
+  const withQuickLook = () => {
     const calls = [];
-    const opener = { focus: () => calls.push('opener focused') };
-    const quickLook = { showModal: () => calls.push('opened'), close: () => calls.push('closed') };
+    const quickLook = {
+      open: false,
+      showModal() {
+        if (this.open) throw new Error('already open');
+        this.open = true;
+        calls.push(`opened ${state.peek.title}`);
+      },
+      close() {
+        this.open = false;
+        calls.push('closed');
+      },
+    };
     const body = { style: { overflow: 'auto' } };
-    vi.stubGlobal('document', { body, getElementById: (id) => (id === 'fh-quick-look' ? quickLook : { focus: () => {} }) });
-    const project = state.projects[1];
-    element = { ref: opener };
-    context = { project: { slug: project.slug } };
+    const box = { focus: () => calls.push('search box focused') };
+    vi.stubGlobal('document', { body, getElementById: (id) => ({ 'fh-quick-look': quickLook, 'fh-explorer-q': box })[id] });
+    const opener = { isConnected: true, focus: () => calls.push('opener focused') };
+    const open = (project) => {
+      element = { ref: opener };
+      context = { project: { slug: project.slug } };
+      actions.peek();
+    };
+    return { calls, quickLook, body, opener, open };
+  };
 
-    actions.peek();
-    expect([state.peekSlug, state.peek.title, body.style.overflow, calls]).toEqual([project.slug, project.title, 'hidden', []]);
+  it('opens the quick look for a tile\'s project, and puts everything back when it closes', () => {
+    const { calls, body, open } = withQuickLook();
+    const project = state.projects[1];
+
+    open(project);
+    // Its words are the project's before it opens, so it's announced by the right name.
+    expect([state.peekSlug, state.peek.title, body.style.overflow, calls]).toEqual([project.slug, project.title, 'auto', []]);
     vi.advanceTimersByTime(0);
-    expect(calls).toEqual(['opened']);
+    expect([body.style.overflow, calls]).toEqual(['hidden', [`opened ${project.title}`]]);
 
     actions.closePeek();
     actions.peekClosed();
-    expect([state.peekSlug, state.peek, body.style.overflow, calls]).toEqual([null, view.NO_LOOK, 'auto', ['opened', 'closed', 'opener focused']]);
+    expect([state.peekSlug, state.peek, body.style.overflow, calls]).toEqual([null, view.NO_LOOK, 'auto', [`opened ${project.title}`, 'closed', 'opener focused']]);
   });
 
-  it('closes the quick look on a click around it, not in it', () => {
+  it('opens once for a double click, and lets the page scroll again when it closes', () => {
+    const { calls, body, open } = withQuickLook();
+    const project = state.projects[1];
+    open(project);
+    open(project);
+    vi.advanceTimersByTime(0);
+    expect([body.style.overflow, calls]).toEqual(['hidden', [`opened ${project.title}`]]);
+    actions.closePeek();
+    actions.peekClosed();
+    expect(body.style.overflow).toBe('auto');
+  });
+
+  it('passes over a close that belongs to a look since reopened, and puts the overflow back once', () => {
+    const { calls, body, open } = withQuickLook();
+    const [first, second] = state.projects;
+    open(first);
+    vi.advanceTimersByTime(0);
+    actions.closePeek();
+    open(second);
+    vi.advanceTimersByTime(0);
+    // The first look's close event arrives late, with the second open.
+    actions.peekClosed();
+    expect([state.peekSlug, body.style.overflow]).toEqual([second.slug, 'hidden']);
+    actions.closePeek();
+    actions.peekClosed();
+    expect([state.peekSlug, body.style.overflow, calls.at(-1)]).toEqual([null, 'auto', 'opener focused']);
+  });
+
+  it('opens nothing for a look closed before it opened', () => {
+    const { calls, body, open } = withQuickLook();
+    open(state.projects[1]);
+    actions.peekClosed();
+    vi.advanceTimersByTime(0);
+    expect([calls.filter((call) => call.startsWith('opened')), body.style.overflow]).toEqual([[], 'auto']);
+  });
+
+  it('puts focus in the search box if a search took the opening tile away', () => {
+    const { calls, opener, open } = withQuickLook();
+    open(state.projects[1]);
+    vi.advanceTimersByTime(0);
+    opener.isConnected = false;
+    actions.closePeek();
+    actions.peekClosed();
+    expect(calls.at(-1)).toBe('search box focused');
+  });
+
+  it('closes the quick look on a click pressed and released around it, not one begun in it', () => {
     const closed = [];
     const quickLook = { close: () => closed.push(true) };
+    const inside = { tagName: 'P' };
     element = { ref: quickLook };
-    actions.peekBackdrop({ target: { tagName: 'P' } });
+    const clickOn = (down, up, detail = 1) => {
+      actions.peekPress({ target: down });
+      actions.peekBackdrop({ target: up, detail });
+    };
+    clickOn(inside, inside);
+    // A drag that selects its text and ends on the page around it: the click lands on the dialog.
+    clickOn(inside, quickLook);
+    // The second click of a double click on a tile's button, landing around it.
+    clickOn(quickLook, quickLook, 2);
     expect(closed).toEqual([]);
-    actions.peekBackdrop({ target: quickLook });
+    clickOn(quickLook, quickLook);
+    expect(closed).toEqual([true]);
+    // Each click spends its press: a click with no press of its own closes nothing.
+    actions.peekBackdrop({ target: quickLook, detail: 1 });
     expect(closed).toEqual([true]);
   });
 

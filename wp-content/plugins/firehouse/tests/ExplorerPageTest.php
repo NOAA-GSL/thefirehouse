@@ -33,7 +33,9 @@ final class ExplorerPageTest extends WordPressTestCase {
 	 * Stands in for WordPress's addresses, escaping and shared JSON. esc_html() and
 	 * esc_attr() leave a character reference alone, as WordPress's do, where Brain
 	 * Monkey's would escape it again; esc_url() drops an encoded line break and writes
-	 * an & as &#038;, as WordPress's does.
+	 * an & as &#038;, as WordPress's does; and esc_url_raw() refuses an address that
+	 * isn't http or https, as WordPress's does for a paper's link, where Brain Monkey's
+	 * would make one of it.
 	 */
 	protected function setUp(): void {
 		parent::setUp();
@@ -50,6 +52,7 @@ final class ExplorerPageTest extends WordPressTestCase {
 				return str_replace( array( '&', "'" ), array( '&#038;', '&#039;' ), $url );
 			}
 		);
+		Functions\when( 'esc_url_raw' )->alias( static fn( string $url ): string => 1 === preg_match( '#^https?://#i', $url ) ? $url : '' );
 		Functions\when( 'wp_json_file_decode' )->alias(
 			static fn( string $filename, array $options = array() ): mixed => json_decode( (string) file_get_contents( $filename ), ! empty( $options['associative'] ) )
 		);
@@ -239,7 +242,8 @@ final class ExplorerPageTest extends WordPressTestCase {
 
 	/**
 	 * The quick look is one native dialog at the end of the explorer, closed, named by its
-	 * title, with its words bound to the project it shows: nothing in it until then. Each
+	 * title, with its words bound to the project it shows: none of a project's words in it
+	 * until then. It takes no tab stop of its own, and focus goes to its close button. Each
 	 * tile's button opens it, and is hidden without the script.
 	 */
 	public function test_the_quick_look(): void {
@@ -247,8 +251,10 @@ final class ExplorerPageTest extends WordPressTestCase {
 		$xpath = self::dom( $html );
 
 		$dialog = self::one( $xpath, '//dialog' );
-		$this->assertSame( array( 'fh-quick-look', 'fh-modal__overlay', 'fh-quick-look-title', '' ), array( $dialog->getAttribute( 'id' ), $dialog->getAttribute( 'class' ), $dialog->getAttribute( 'aria-labelledby' ), $dialog->getAttribute( 'open' ) ) );
-		$this->assertSame( array( 'actions.peekBackdrop', 'actions.peekClosed' ), array( $dialog->getAttribute( 'data-wp-on--click' ), $dialog->getAttribute( 'data-wp-on--close' ) ) );
+		$this->assertSame( array( 'fh-quick-look', 'fh-modal__overlay', 'fh-quick-look-title', '-1' ), array( $dialog->getAttribute( 'id' ), $dialog->getAttribute( 'class' ), $dialog->getAttribute( 'aria-labelledby' ), $dialog->getAttribute( 'tabindex' ) ) );
+		$this->assertFalse( $dialog->hasAttribute( 'open' ) );
+		$this->assertSame( array( 'actions.peekPress', 'actions.peekBackdrop', 'actions.peekClosed' ), array( $dialog->getAttribute( 'data-wp-on--pointerdown' ), $dialog->getAttribute( 'data-wp-on--click' ), $dialog->getAttribute( 'data-wp-on--close' ) ) );
+		$this->assertSame( self::one( $xpath, '//button[@class="fh-modal__close"]' ), self::one( $xpath, '//dialog//*[@autofocus]' ) );
 		$this->assertSame( 'state.peek.title', self::one( $xpath, '//*[@id="fh-quick-look-title"]' )->getAttribute( 'data-wp-text' ) );
 		$this->assertSame( '', self::text( $dialog->getElementsByTagName( 'h2' )->item( 0 ) ?? $dialog ) );
 		$this->assertSame( 'Close project details', self::text( self::one( $xpath, '//button[@class="fh-modal__close"]' ) ) );
@@ -528,7 +534,7 @@ final class ExplorerPageTest extends WordPressTestCase {
 	 * What the view script starts from: the query, the box's text, the explorer's
 	 * address, and each project as the search reads it, in the shapes search.ts expects.
 	 * Nothing but those fields is sent: no survey answer the site doesn't show, nothing
-	 * editorial but a project's summary, address and geography note.
+	 * editorial but a project's summary, publication status, address and geography note.
 	 */
 	public function test_the_state_the_script_starts_from(): void {
 		$projects                     = self::projects();
@@ -545,7 +551,7 @@ final class ExplorerPageTest extends WordPressTestCase {
 		$this->assertSame( array( 'projects', 'query', 'text', 'url', 'landing', 'short', 'sorts', 'strings' ), array_keys( $state ) );
 		$this->assertSame( Search::parse_query( 'q=smoke&phase=during' ), $state['query'] );
 		$this->assertSame( array( 'smoke', self::URL, '#fh-content' ), array( $state['text'], $state['url'], $state['landing'] ) );
-		$this->assertSame( array( 'slug', 'url', 'title', 'projectType', 'authors', 'org', 'summary', 'abstract', 'takeaways', 'methods', 'needs', 'papers', 'geo', 'completionYear', 'firePhases', 'byline', 'fullByline', 'publicationStatus' ), array_keys( $first ) );
+		$this->assertSame( array( 'slug', 'url', 'title', 'projectType', 'authors', 'org', 'summary', 'abstract', 'takeaways', 'methods', 'needs', 'papers', 'geo', 'completionYear', 'firePhases', 'byline', 'fullByline', 'publicationStatus', 'paperCount' ), array_keys( $first ) );
 		$this->assertSame(
 			array(
 				array(
@@ -568,7 +574,25 @@ final class ExplorerPageTest extends WordPressTestCase {
 		$this->assertSame( array( array( 'name' => 'A. Name' ) ), $first['authors'] );
 		$this->assertSame( 'A. Name', $first['byline'] );
 		// The quick look's byline names every author, as the project's page does.
-		$this->assertSame( Explorer_Page::searchable( array( 'authors' => array_fill( 0, 5, array( 'name' => 'N.' ) ) ) + $projects[1] )['fullByline'], 'N., N., N., N. and N.' );
+		$this->assertSame( 'A. Name', $first['fullByline'] );
+		$this->assertSame( 'N., N., N., N. and N.', Explorer_Page::searchable( array( 'authors' => array_fill( 0, 5, array( 'name' => 'N.' ) ) ) + $projects[1] )['fullByline'] );
+		// A publication status the vocabulary lacks, which the project's page doesn't print, isn't sent.
+		$this->assertSame( 'published', $first['publicationStatus'] );
+		$this->assertNull( Explorer_Page::searchable( array( 'publicationStatus' => 'forthcoming' ) + $projects[1] )['publicationStatus'] );
+		// Its papers are counted as its page lists them, without one whose link the page refuses.
+		$this->assertSame( 0, $first['paperCount'] );
+		$papers = array(
+			array(
+				'title' => 'Linked',
+				'doi'   => '10.1000/one',
+			),
+			array(
+				'title' => 'Refused',
+				'url'   => 'javascript:alert(1)',
+			),
+			array( 'title' => 'No link' ),
+		);
+		$this->assertSame( 1, Explorer_Page::searchable( array( 'papers' => $papers ) + $projects[1] )['paperCount'] );
 		$this->assertSame( self::URL . $projects[0]['slug'] . '/', $first['url'] );
 		$this->assertStringNotContainsString( 'example.test/record', (string) wp_json_encode( $state ) );
 		$this->assertStringNotContainsString( 'someone@', (string) wp_json_encode( $state ) );
@@ -581,6 +605,16 @@ final class ExplorerPageTest extends WordPressTestCase {
 				'long-term' => 'Long-term',
 			),
 			$state['short']['phase']
+		);
+		$this->assertSame( array( 'phase', 'region', 'status' ), array_keys( $state['short'] ) );
+		$this->assertSame(
+			array(
+				'published'      => 'Published',
+				'in-review'      => 'In review',
+				'in-preparation' => 'In preparation',
+				'unpublished'    => 'Unpublished',
+			),
+			$state['short']['status']
 		);
 		$this->assertSame( 'Remove filter %s', $state['strings']['remove'] );
 		// The words are the shared cases' own, which the script's tests build from too.
