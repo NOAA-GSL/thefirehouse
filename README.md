@@ -23,8 +23,7 @@ npm run plugin:css # write the plugin's stylesheet from src/, scoped under .fh-a
                    # plugin:css:check only compares, and CI runs it)
 npm run plugin:assets
                    # write the plugin's icons, logos, link-preview image and search module
-                   # from the site's own
-                   # (plugin:assets:check only compares; CI runs it)
+                   # from the site's own (plugin:assets:check only compares; CI runs it)
 npm run plugin:blocks
                    # write the plugin's block manifest from its block.json files
                    # (plugin:blocks:check only compares)
@@ -429,8 +428,12 @@ nothing from the database. Each class's docblock has the detail; this is the map
   - Each block renders on the server (`render.php`) and stays out of the inserter: the
     templates or the Import screen place it.
   - An interactive block has a view script module for WordPress's Interactivity API.
-    It's plain JavaScript with no build step: WordPress maps its
-    `@wordpress/interactivity` import, which `view.asset.php` declares.
+    It's plain JavaScript with no build step: WordPress maps its imports, which
+    `view.asset.php` declares (`@wordpress/interactivity`, and for the explorer
+    `@firehouse/search`), and `tests/BlocksTest.php` holds the two to each other. The
+    bar and the project block declare `supports.interactivity`, so WordPress
+    processes their directives on the server; the explorer doesn't (`Explorer_Page`
+    says why).
   - In the block editor, each block is a read-only box with its title and what the
     page stores in it (`assets/js/block-editor.js`, also plain JavaScript): its words,
     and the links, icons, portraits and counts' settings that go with them. That lets
@@ -480,7 +483,7 @@ nothing from the database. Each class's docblock has the detail; this is the map
   three areas. A need that names a project a visitor may not see leaves it out and
   counts only the projects that remain, as the site's normalize step does.
 - `Explorer_Page` is the project explorer, the `firehouse/explorer` block: the site's
-  `ProjectsPage` without what needs JavaScript. Every control belongs to one `GET`
+  `ProjectsPage`, drawn on the server so it works without JavaScript. Every control belongs to one `GET`
   form; the selects stand where the site has them, outside the form element, and join
   it by its ID, and an "Update results" button, which only the plugin has, sends it.
   Clearing the search, removing a filter and clearing them all are links to the
@@ -493,9 +496,14 @@ nothing from the database. Each class's docblock has the detail; this is the map
   It searches in the browser, with the site's own `search.ts` bundled as
   `assets/search/search.js`, over each public project's searchable fields in the
   page's state (`Explorer_Page::state()`). The block doesn't ask WordPress to process
-  its directives, which would print words with `esc_html()` and decode a character
-  reference (rule 1); the plugin prints the page itself, with templates for the lists
-  the script redraws. The quick look comes in Phase 5.
+  its directives: that processing prints text with `esc_html()`, which leaves a
+  character reference as it is, so a title stored as "R&amp;D" would show as "R&D"
+  (rule 1). The plugin prints the page itself, with templates for the lists the
+  script redraws, and marks the region `data-fh-interactive`; the script makes it
+  WordPress's only once it has loaded, so a script that fails to load leaves the page
+  working as without JavaScript. `tests/ExplorerPageTest.php` and
+  `scripts/explorer-view.test.mjs` both pass `shared/cases/explorer.json`. The quick
+  look comes in Phase 5.
 - `Markup` writes the design system's small components as the site renders them: a
   link styled as a `Button` (opening another site in a new tab, and saying so), a
   `TopicTag`, and the `SynthesisNote` that says the needs are synthesized and whether
@@ -734,9 +742,7 @@ one is missing.
 `src/design-system/Icon.tsx`), drawn by the site's own `Icon` component, as one PHP
 array of SVG by name. `assets/logos/` holds the images `BrandMark` imports. Don't edit
 either: `npm run plugin:assets` writes both from `src/`, and the link-preview image
-from `public/og-image.png`, and CI fails if they fall behind. It also writes
-`assets/search/search.js`, the site's search (`src/content/search.ts`) bundled by esbuild
-as one ES module, which the explorer's view script imports as `@firehouse/search`. An icon keeps the drawing
+from `public/og-image.png`, and CI fails if they fall behind. An icon keeps the drawing
 exactly as the site renders it, at Lucide's 24×24, and leaves off what belongs to one
 use (class, inline style, `aria-hidden`, `focusable`). Where the plugin inlines an icon
 it adds those and replaces the size, as `Icon` does. Every icon may hold only the plain
@@ -745,6 +751,12 @@ else, and `tests/IconsTest.php` checks the file that ships, which may hold nothi
 its header and string literals, since the plugin runs it. Lucide's licence sits beside
 it as `LICENSE.txt`. The NOAA and GSL logos stay with the static build, since GSL's
 header carries its own.
+
+`assets/search/search.js` is the site's search (`src/content/search.ts`, with
+`effectiveRegions()` from `derive.ts` and the vocabulary they read), bundled by esbuild
+as one ES module and left unminified so a review can read it. The explorer's view
+script imports it as `@firehouse/search`, which `Blocks::register()` registers. Don't
+edit it: `npm run plugin:assets` writes it, and CI fails if it falls behind.
 
 The local WordPress runs in Docker and borrows GSL's theme, WordPress images and
 database from a checkout of GSL's internal gsl-wordpress repository beside this one

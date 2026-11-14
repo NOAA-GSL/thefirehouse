@@ -1,5 +1,29 @@
 {
-  "$comment": "Cases for what the explorer works out in both languages from a query: the sort's options, the applied filters' labels, and the results line's words after the count. Explorer_Page (PHP) prints them and blocks/explorer/view.js (JavaScript) redraws them, each from the published projects in site.json and the plugin's English words. `query` is a URL's query string. Each sort option is its value as the form sends it, its label, and whether it is chosen: the option the page falls back to sends what the address had, so a search added later lists by best match.",
+  "$comment": "Cases for what the explorer works out in both languages from a query: the sort's options, the applied filters' labels, and the results line's words after the count. Explorer_Page (PHP) prints them and blocks/explorer/view.js (JavaScript) redraws them, each from the published projects in site.json and the plugin's English words, which `strings` and `sorts` hold: Explorer_Page::state() sends exactly these, and the script's tests build its state from them. `query` is a URL's query string. Each sort option is its value as the form sends it, its label, and whether it is chosen: the option the page falls back to sends what the address had, so a search added later lists by best match.",
+  "strings": {
+    "hint": "Searches titles, authors, abstracts, and findings. Results update as you type. Press Escape to clear.",
+    "filter": {
+      "phase": "Phase: %s",
+      "region": "GACC: %s",
+      "year": "Year: %s",
+      "type": "Type: %s"
+    },
+    "remove": "Remove filter %s",
+    "of": [
+      "of %s project",
+      "of %s projects"
+    ],
+    "count": [
+      "project",
+      "projects"
+    ]
+  },
+  "sorts": {
+    "relevance": "Best match",
+    "newest": "Newest first",
+    "oldest": "Oldest first",
+    "title": "Title A–Z"
+  },
   "cases": [
     {
       "name": "no query",
@@ -78,7 +102,12 @@
         { "value": "oldest", "label": "Oldest first", "selected": false },
         { "value": "title", "label": "Title A–Z", "selected": false }
       ],
-      "applied": ["Phase: During", "GACC: Northwest", "Year: 2025", "Type: Testbed Evaluation"],
+      "applied": [
+        "Phase: During",
+        "GACC: Northwest",
+        "Year: 2025",
+        "Type: Testbed Evaluation"
+      ],
       "countRest": "of 4 projects"
     },
     {
@@ -89,7 +118,9 @@
         { "value": "oldest", "label": "Oldest first", "selected": false },
         { "value": "title", "label": "Title A–Z", "selected": false }
       ],
-      "applied": ["GACC: International"],
+      "applied": [
+        "GACC: International"
+      ],
       "countRest": "of 4 projects"
     },
     {
@@ -100,7 +131,10 @@
         { "value": "oldest", "label": "Oldest first", "selected": false },
         { "value": "title", "label": "Title A–Z", "selected": false }
       ],
-      "applied": ["Year: 2025", "Type: Research Study"],
+      "applied": [
+        "Year: 2025",
+        "Type: Research Study"
+      ],
       "countRest": "of 4 projects"
     },
     {
@@ -113,6 +147,19 @@
       ],
       "applied": [],
       "countRest": "projects"
+    },
+    {
+      "name": "a type's dollar signs, as written",
+      "query": "type=Cost+%24%24+and+%24%26+%24%60x",
+      "sortOptions": [
+        { "value": "", "label": "Newest first", "selected": true },
+        { "value": "oldest", "label": "Oldest first", "selected": false },
+        { "value": "title", "label": "Title A–Z", "selected": false }
+      ],
+      "applied": [
+        "Type: Cost $$ and $& $`x"
+      ],
+      "countRest": "of 4 projects"
     }
   ]
 }

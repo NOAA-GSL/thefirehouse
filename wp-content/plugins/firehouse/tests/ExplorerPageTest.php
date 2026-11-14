@@ -11,6 +11,7 @@ namespace Firehouse\Tests;
 
 use Brain\Monkey\Functions;
 use Firehouse\Domain\Derive;
+use Firehouse\Domain\Js;
 use Firehouse\Domain\Search;
 use Firehouse\Explorer_Page;
 use Firehouse\Store;
@@ -211,7 +212,14 @@ final class ExplorerPageTest extends WordPressTestCase {
 		$html  = self::render( 'q=smoke&phase=during' );
 		$xpath = self::dom( $html );
 
-		$this->assertSame( 'firehouse/explorer', self::one( $xpath, '//div[contains(@class, "fh-explorer ")]' )->getAttribute( 'data-wp-interactive' ) );
+		// The region is the store's only once the script has loaded and marked it so.
+		$root = self::one( $xpath, '//div[contains(@class, "fh-explorer ")]' );
+		$this->assertSame( array( 'firehouse/explorer', '', 'callbacks.adopt' ), array( $root->getAttribute( 'data-fh-interactive' ), $root->getAttribute( 'data-wp-interactive' ), $root->getAttribute( 'data-wp-init' ) ) );
+		$this->assertStringNotContainsString( 'data-wp-interactive', $html );
+		// Each list's template follows what the server printed of it, so those items keep their nodes.
+		$this->assertMatchesRegularExpression( '#data-wp-each-child="firehouse/explorer::state.results">.*<template data-wp-each--project#s', $html );
+		$this->assertMatchesRegularExpression( '#data-wp-each-child="firehouse/explorer::state.applied">.*<template data-wp-each--filter#s', $html );
+		$this->assertMatchesRegularExpression( '#data-wp-each-child="firehouse/explorer::state.sortOptions">[^<]*</option><template data-wp-each--option#', $html );
 		foreach ( array( 'state.results', 'state.applied', 'state.sortOptions' ) as $list ) {
 			$this->assertMatchesRegularExpression( '/<template data-wp-each--[a-z]+="' . preg_quote( $list, '/' ) . '" data-wp-each-key="context\.[a-z]+\.[a-z]+">/', $html, $list );
 		}
@@ -279,7 +287,7 @@ final class ExplorerPageTest extends WordPressTestCase {
 	public function test_shared_case( array $shared_case ): void {
 		$query     = Search::parse_query( $shared_case['query'] );
 		$xpath     = self::dom( self::render( $shared_case['query'] ) );
-		$searching = '' !== trim( $query['q'] );
+		$searching = '' !== Js::trim( $query['q'] );
 		$options   = Explorer_Page::sort_options( $query, $searching );
 		foreach ( $options as &$option ) {
 			unset( $option['key'] );
@@ -497,7 +505,7 @@ final class ExplorerPageTest extends WordPressTestCase {
 	 * What the view script starts from: the query, the box's text, the explorer's
 	 * address, and each project as the search reads it, in the shapes search.ts expects.
 	 * Nothing but those fields is sent: no survey answer the site doesn't show, nothing
-	 * editorial but a project's summary and address.
+	 * editorial but a project's summary, address and geography note.
 	 */
 	public function test_the_state_the_script_starts_from(): void {
 		$projects                     = self::projects();
@@ -550,7 +558,10 @@ final class ExplorerPageTest extends WordPressTestCase {
 			$state['short']['phase']
 		);
 		$this->assertSame( 'Remove filter %s', $state['strings']['remove'] );
-		$this->assertSame( array( 'of %s project', 'of %s projects' ), $state['strings']['of'] );
+		// The words are the shared cases' own, which the script's tests build from too.
+		$shared = Cases::read( 'explorer.json' );
+		$this->assertSame( $shared['strings'], $state['strings'] );
+		$this->assertSame( $shared['sorts'], $state['sorts'] );
 	}
 
 	/**
@@ -581,9 +592,42 @@ final class ExplorerPageTest extends WordPressTestCase {
 			true
 		);
 		$this->assertStringStartsWith( '<article class="fh-tile" data-wp-each-child="firehouse/explorer::state.results">', $bare );
-		$this->assertStringNotContainsString( 'fh-tile__kicker', $bare );
-		$this->assertStringNotContainsString( 'fh-tile__foot', $bare );
+		$this->assertStringContainsString( '<span class="fh-tile__kicker" hidden></span>', $bare );
+		$this->assertStringContainsString( '<span class="fh-tile__foot" hidden><span class="fh-tile__phases"></span></span>', $bare );
 		$this->assertStringContainsString( '<span class="fh-tile__byline">Unattributed · 2024</span>', $bare );
+	}
+
+	/**
+	 * The template the script draws each tile from is the tile the server prints, element
+	 * for element and class for class, with its words bound; so is each applied filter's.
+	 */
+	public function test_the_templates_are_the_markup_the_server_prints(): void {
+		$skeleton = static function ( string $html ): array {
+			$xpath = self::dom( $html );
+			$nodes = $xpath->query( '//body//*[not(self::template)][not(ancestor::svg)]' );
+			return array_map(
+				static fn( \DOMElement $node ): string => $node->nodeName . '.' . $node->getAttribute( 'class' ), // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- the DOM's own name.
+				false === $nodes ? array() : array_values( array_filter( iterator_to_array( $nodes ), static fn( mixed $node ): bool => $node instanceof \DOMElement ) )
+			);
+		};
+		$inside   = static fn( string $template ): string => (string) preg_replace( '#^<template[^>]*>|</template>$#', '', $template );
+		$project  = self::projects()[0] + array( 'projectType' => 'Research Study' );
+		$template = $inside( Explorer_Page::tile_template() );
+		// The phases' own template becomes the phases it draws.
+		$template = (string) preg_replace( '#<template[^>]*>(.*?)</template>#', '$1', $template );
+
+		$this->assertSame( $skeleton( Explorer_Page::tile( $project ) ), $skeleton( $template ) );
+		// A tile without a type or phases has the same shape, its kicker and footer hidden.
+		$bare = array(
+			'projectType' => null,
+			'firePhases'  => array(),
+		) + $project;
+		$this->assertSame( $skeleton( Explorer_Page::tile( $bare ) ), $skeleton( (string) preg_replace( '#<span class="fh-tile__phase"[^>]*></span>#', '', $template ) ) );
+
+		$html = self::render( 'phase=during' );
+		$this->assertSame( 1, preg_match( '#<template data-wp-each--filter="state.applied"[^>]*>(.*?)</template>#', $html, $pill ) );
+		$this->assertSame( 1, preg_match( '#<li data-wp-each-child="firehouse/explorer::state.applied">.*?</li>#', $html, $printed ) );
+		$this->assertSame( $skeleton( $printed[0] ), $skeleton( $pill[1] ) );
 	}
 
 	/**

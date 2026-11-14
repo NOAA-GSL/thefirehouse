@@ -206,6 +206,10 @@ final class BlocksTest extends WordPressTestCase {
 			$this->assertSame( ! $explorer, $block['supports']['interactivity'] ?? false );
 			$asset = require $folder . 'view.asset.php';
 			$this->assertSame( $explorer ? array( '@wordpress/interactivity', '@firehouse/search' ) : array( '@wordpress/interactivity' ), $asset['dependencies'] );
+			// WordPress maps only the modules declared, so a script that imports another
+			// would fail to load: what it imports is what it declares, in order.
+			preg_match_all( '/^import\b[^\'"]*[\'"]([^\'"]+)[\'"]/m', (string) file_get_contents( $folder . 'view.js' ), $imports );
+			$this->assertSame( $asset['dependencies'], $imports[1] );
 			$this->assertSame( (string) filemtime( $folder . 'view.js' ), $asset['version'] );
 		}
 	}

@@ -146,8 +146,8 @@ files.set('preview/og-image.png', readFileSync(resolve(ROOT, 'public/og-image.pn
 files.set('search/search.js', Buffer.from(await searchModule()));
 
 /**
- * The site's search (src/content/search.ts, and the regions a national study counts in
- * from derive.ts) as one ES module, for the explorer's view script: the same code the
+ * The site's search (src/content/search.ts, with effectiveRegions() from derive.ts, which
+ * counts a national study in every GACC, and the vocabulary they read) as one ES module, for the explorer's view script: the same code the
  * site runs, held to shared/cases/search.json by Vitest, so the browser lists what the
  * site lists. Bundled by esbuild, not minified, so a review reads it.
  */
@@ -156,7 +156,7 @@ async function searchModule() {
   const result = await build({
     stdin: {
       contents: [
-        "export { activeFacetCount, effectiveSort, facetCounts, filterProjects, serializeProjectQuery, MAX_TERMS } from './search';",
+        "export { activeFacetCount, effectiveSort, facetCounts, filterProjects, scores, serializeProjectQuery, MAX_TERMS } from './search';",
         "export { effectiveRegions } from './derive';",
       ].join('\n'),
       resolveDir: resolve(ROOT, 'src/content'),

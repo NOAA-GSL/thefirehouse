@@ -348,13 +348,22 @@ function withinOneEdit(a, b) {
   return edits + (a.length - i) + (b.length - j) <= 1;
 }
 var escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+var folded = /* @__PURE__ */ new WeakMap();
+function foldedFields(project) {
+  let fields = folded.get(project);
+  if (!fields) {
+    fields = fieldsOf(project).map(([text, weight]) => {
+      const foldedText = fold(text);
+      return { text: foldedText, weight, tokens: foldedText.split(/[^\p{L}\p{N}]+/u).filter(Boolean) };
+    });
+    folded.set(project, fields);
+  }
+  return fields;
+}
 function scoreProject(project, q) {
   const words = terms(q);
   if (words.length === 0) return 1;
-  const fields = fieldsOf(project).map(([text, weight]) => {
-    const folded = fold(text);
-    return { text: folded, weight, tokens: folded.split(/[^\p{L}\p{N}]+/u).filter(Boolean) };
-  });
+  const fields = foldedFields(project);
   let score = 0;
   for (const word of words) {
     const startsWord = new RegExp(`(^|[^\\p{L}\\p{N}])${escapeRegExp(word)}`, "u");
@@ -384,8 +393,11 @@ function effectiveSort(query) {
   if (query.sort && (query.sort !== "relevance" || query.q.trim())) return query.sort;
   return query.q.trim() ? "relevance" : "newest";
 }
-function filterProjects(projects, query) {
-  const scored = projects.filter((project) => matchesFacets(project, query)).map((project) => ({ project, score: scoreProject(project, query.q) })).filter(({ score }) => score > 0);
+function scores(projects, q) {
+  return projects.map((project) => scoreProject(project, q));
+}
+function filterProjects(projects, query, projectScores) {
+  const scored = projects.map((project, index) => ({ project, index })).filter(({ project }) => matchesFacets(project, query)).map(({ project, index }) => ({ project, score: projectScores?.[index] ?? scoreProject(project, query.q) })).filter(({ score }) => score > 0);
   switch (effectiveSort(query)) {
     case "relevance":
       scored.sort((a, b) => b.score - a.score || byRecency(a.project, b.project));
@@ -404,11 +416,11 @@ function filterProjects(projects, query) {
   }
   return scored.map(({ project }) => project);
 }
-function facetCounts(projects, query, facet, valuesOf) {
+function facetCounts(projects, query, facet, valuesOf, projectScores) {
   const counts = /* @__PURE__ */ new Map();
-  for (const project of projects) {
+  for (const [index, project] of projects.entries()) {
     if (!matchesFacets(project, query, facet)) continue;
-    if (scoreProject(project, query.q) === 0) continue;
+    if ((projectScores?.[index] ?? scoreProject(project, query.q)) === 0) continue;
     for (const value of valuesOf(project)) counts.set(value, (counts.get(value) ?? 0) + 1);
   }
   return counts;
@@ -420,5 +432,6 @@ export {
   effectiveSort,
   facetCounts,
   filterProjects,
+  scores,
   serializeProjectQuery
 };

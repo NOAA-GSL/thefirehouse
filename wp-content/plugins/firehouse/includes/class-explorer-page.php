@@ -44,7 +44,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  * a character reference alone, so a title stored as "R&amp;D" would show as "R&D".
  * Researchers' words, and the words in the address, are printed as they are (rule 1),
  * and the script sets them as text, which keeps them as they are too. What the server
- * prints for a list stands in until the script draws the list from its template.
+ * prints for a list stands in until the script draws the list from its template,
+ * which follows it so the items keep their nodes, and focus. The region is
+ * marked `data-fh-interactive`, and the script makes it WordPress's
+ * (`data-wp-interactive`) only once it has loaded, so a script that fails to load
+ * leaves the page as it is without JavaScript, rather than drawn from an empty store.
  */
 final class Explorer_Page {
 
@@ -132,8 +136,10 @@ final class Explorer_Page {
 	 * What the view script starts from, which the Interactivity API prints in the page as
 	 * JSON: the projects a visitor may see, as the search reads them; the query the page
 	 * was drawn for; and the words the script writes. Every value here is already on the
-	 * page or on a project's own page; a project's survey answers that the site doesn't
-	 * show, and anything editorial but its summary and address, stay out.
+	 * page or on a project's own page, with two exceptions the search reads anyway: a
+	 * geography note on a project with no region, and a paper whose link the project page
+	 * refuses. A project's survey answers that the site doesn't show, and anything
+	 * editorial but its summary, address and geography note, stay out.
 	 *
 	 * @param list<array<string, mixed>> $all   The projects a visitor may see, from projects().
 	 * @param array<string, mixed>       $query The query, from Search::parse_query().
@@ -244,7 +250,7 @@ final class Explorer_Page {
 
 		ob_start();
 		?>
-<div class="fh-explorer fh-container" data-wp-interactive="<?php echo esc_attr( self::STORE ); ?>">
+<div class="fh-explorer fh-container" data-fh-interactive="<?php echo esc_attr( self::STORE ); ?>" data-wp-init="callbacks.adopt">
 	<header class="fh-explorer__intro">
 		<span class="fh-eyebrow"><?php esc_html_e( 'Project explorer', 'firehouse' ); ?></span>
 		<h1 class="fh-explorer__heading"><?php esc_html_e( 'Completed research projects', 'firehouse' ); ?></h1>
@@ -278,20 +284,20 @@ final class Explorer_Page {
 		echo self::summary( count( $projects ), count( $all ), $filtered, $searching ? Js::trim( (string) $query['q'] ) : '' );
 		?>
 		<ul class="fh-explorer__applied" aria-label="<?php esc_attr_e( 'Applied filters', 'firehouse' ); ?>"<?php echo $hidden( ! $filtered ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- a fixed attribute. ?> data-wp-bind--hidden="!state.filtered">
-			<template data-wp-each--filter="state.applied" data-wp-each-key="context.filter.facet"><li><a class="fh-pill" data-wp-bind--href="context.filter.href" data-wp-bind--aria-label="context.filter.name" data-wp-on--click="actions.removeFilter"><span data-wp-text="context.filter.label"></span><?php echo Icons::svg( 'x', 14 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- as above. ?></a></li></template>
 			<?php foreach ( self::applied( $query ) as $facet => $label ) : ?>
 			<li data-wp-each-child="<?php echo esc_attr( self::STORE . '::state.applied' ); ?>"><a class="fh-pill" href="<?php echo self::href( $url, array( $facet => null ) + $query ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- href() escapes it. ?>" aria-label="<?php echo Markup::text( sprintf( /* translators: %s: the filter, such as "Phase: Before". */ __( 'Remove filter %s', 'firehouse' ), $label ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup::text() escapes it as the label shows, a character reference included. ?>"><span><?php echo Markup::text( $label ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- as above. ?></span><?php echo Icons::svg( 'x', 14 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- one of the plugin's checked icons. ?></a></li>
 			<?php endforeach; ?>
+			<template data-wp-each--filter="state.applied" data-wp-each-key="context.filter.facet"><li><a class="fh-pill" data-wp-bind--href="context.filter.href" data-wp-bind--aria-label="context.filter.name" data-wp-on--click="actions.removeFilter"><span data-wp-text="context.filter.label"></span><?php echo Icons::svg( 'x', 14 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- as above. ?></a></li></template>
 			<li><a class="fh-explorer__clear-all" href="<?php echo $cleared; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- href() escapes it. ?>" data-wp-bind--href="state.clearAllHref" data-wp-on--click="actions.clearAll"><?php esc_html_e( 'Clear all', 'firehouse' ); ?></a></li>
 		</ul>
 	</div>
 
 	<div class="fh-explorer__grid"<?php echo $hidden( array() === $projects ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- a fixed attribute. ?> data-wp-bind--hidden="!state.hasResults">
 		<?php
-		echo self::tile_template(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- a fixed template.
 		foreach ( $projects as $project ) {
 			echo self::tile( $project, true ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- tile() escapes what it builds.
 		}
+		echo self::tile_template(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- a fixed template.
 		?>
 	</div>
 	<div class="fh-explorer__empty"<?php echo $hidden( array() !== $projects ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- a fixed attribute. ?> data-wp-bind--hidden="state.hasResults">
@@ -485,7 +491,8 @@ final class Explorer_Page {
 	 * @param bool                 $searching Whether there's text to search for.
 	 */
 	private static function sort_select( array $query, bool $searching ): string {
-		$options = '<template data-wp-each--option="state.sortOptions" data-wp-each-key="context.option.key"><option data-wp-bind--value="context.option.value" data-wp-bind--selected="context.option.selected" data-wp-text="context.option.label"></option></template>';
+		$template = '<template data-wp-each--option="state.sortOptions" data-wp-each-key="context.option.key"><option data-wp-bind--value="context.option.value" data-wp-bind--selected="context.option.selected" data-wp-text="context.option.label"></option></template>';
+		$options  = '';
 		foreach ( self::sort_options( $query, $searching ) as $option ) {
 			$options .= sprintf(
 				'<option value="%1$s"%2$s data-wp-each-child="%3$s">%4$s</option>',
@@ -499,7 +506,7 @@ final class Explorer_Page {
 			'<div class="fh-filter"><label class="fh-filter__label" for="fh-explorer-sort">%1$s</label><div class="fh-filter__control"><select id="fh-explorer-sort" name="sort" form="%2$s" data-wp-on--change="actions.chooseSort">%3$s</select>%4$s</div></div>',
 			esc_html__( 'Sort by', 'firehouse' ),
 			esc_attr( self::FORM ),
-			$options,
+			$options . $template,
 			Icons::svg( 'chevron-down', 16 )
 		);
 	}
@@ -561,7 +568,8 @@ final class Explorer_Page {
 	/**
 	 * A project's tile, as the site's `ProjectTile`: a link on the title, stretched over
 	 * the tile by CSS, so the tile's whole area opens the project while the link's name
-	 * stays the title.
+	 * stays the title. A kicker or a footer with nothing in it is printed hidden, as the
+	 * script's template draws it, so a tile the script keeps has the shape it would draw.
 	 *
 	 * @param array<string, mixed> $project   The project, with its address.
 	 * @param bool                 $stand_in  Whether it stands in for the view script's list, which replaces it.
@@ -580,14 +588,14 @@ final class Explorer_Page {
 
 		return sprintf(
 			'<article class="fh-tile"%9$s><span class="fh-tile__glow" aria-hidden="true"></span><span class="fh-tile__body">%1$s<h3 class="fh-tile__title"><a class="fh-tile__link" href="%2$s">%3$s</a></h3><p class="fh-tile__summary">%4$s</p></span><span class="fh-tile__meta"><span class="fh-tile__byline">%5$s · %6$s</span>%7$s</span>%8$s</article>',
-			'' !== $type ? '<span class="fh-tile__kicker">' . Markup::text( $type ) . '</span>' : '',
+			'' !== $type ? '<span class="fh-tile__kicker">' . Markup::text( $type ) . '</span>' : '<span class="fh-tile__kicker" hidden></span>',
 			esc_url( $text( 'url' ) ),
 			Markup::text( $text( 'title' ) ),
 			Markup::text( $text( 'summary' ) ),
 			Markup::text( Format::byline( $authors ) ),
 			esc_html( (string) Search::key( $project['completionYear'] ?? '' ) ),
 			Icons::svg( 'arrow-up-right', 16 ),
-			'' !== $phases ? '<span class="fh-tile__foot"><span class="fh-tile__phases">' . $phases . '</span></span>' : '',
+			'<span class="fh-tile__foot"' . ( '' !== $phases ? '' : ' hidden' ) . '><span class="fh-tile__phases">' . $phases . '</span></span>',
 			$stand_in ? sprintf( ' data-wp-each-child="%s"', esc_attr( self::STORE . '::state.results' ) ) : ''
 		);
 	}
@@ -596,7 +604,7 @@ final class Explorer_Page {
 	 * The template the view script draws each tile from: tile()'s markup, its words bound
 	 * to the project. A kicker or a footer with nothing in it is hidden.
 	 */
-	private static function tile_template(): string {
+	public static function tile_template(): string {
 		return '<template data-wp-each--project="state.results" data-wp-each-key="context.project.slug"><article class="fh-tile"><span class="fh-tile__glow" aria-hidden="true"></span><span class="fh-tile__body"><span class="fh-tile__kicker" data-wp-bind--hidden="!context.project.projectType" data-wp-text="context.project.projectType"></span><h3 class="fh-tile__title"><a class="fh-tile__link" data-wp-bind--href="context.project.url" data-wp-text="context.project.title"></a></h3><p class="fh-tile__summary" data-wp-text="context.project.summary"></p></span><span class="fh-tile__meta"><span class="fh-tile__byline" data-wp-text="context.project.meta"></span>'
 			. Icons::svg( 'arrow-up-right', 16 )
 			. '</span><span class="fh-tile__foot" data-wp-bind--hidden="!context.project.phases.length"><span class="fh-tile__phases"><template data-wp-each--phase="context.project.phases" data-wp-each-key="context.phase.key"><span class="fh-tile__phase" data-wp-text="context.phase.label"></span></template></span></span></article></template>';

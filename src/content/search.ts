@@ -148,6 +148,32 @@ function withinOneEdit(a: string, b: string): boolean {
 
 const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+interface FoldedField {
+  text: string;
+  weight: number;
+  tokens: string[];
+}
+
+/**
+ * Each project's searchable fields, folded and split into words, worked out the first
+ * time the project is scored and kept: content isn't changed in place once it's loaded
+ * (normalize builds it), so a search as you type folds each field once, not on every
+ * keystroke. Kept by the project object, so a project nothing holds any more is let go.
+ */
+const folded = new WeakMap<Project, FoldedField[]>();
+
+function foldedFields(project: Project): FoldedField[] {
+  let fields = folded.get(project);
+  if (!fields) {
+    fields = fieldsOf(project).map(([text, weight]) => {
+      const foldedText = fold(text);
+      return { text: foldedText, weight, tokens: foldedText.split(/[^\p{L}\p{N}]+/u).filter(Boolean) };
+    });
+    folded.set(project, fields);
+  }
+  return fields;
+}
+
 /**
  * Relevance score, or 0 if the project doesn't match.
  *
@@ -163,10 +189,7 @@ export function scoreProject(project: Project, q: string): number {
   const words = terms(q);
   if (words.length === 0) return 1;
 
-  const fields = fieldsOf(project).map(([text, weight]) => {
-    const folded = fold(text);
-    return { text: folded, weight, tokens: folded.split(/[^\p{L}\p{N}]+/u).filter(Boolean) };
-  });
+  const fields = foldedFields(project);
 
   let score = 0;
   for (const word of words) {
@@ -200,10 +223,22 @@ export function effectiveSort(query: ProjectQuery): ProjectSort {
   return query.q.trim() ? 'relevance' : 'newest';
 }
 
-export function filterProjects(projects: Project[], query: ProjectQuery): Project[] {
+/**
+ * Each project's relevance to the search text, by its index in `projects`: what
+ * `scoreProject` gives each. A page that both lists and counts scores once and passes
+ * these to `filterProjects` and `facetCounts`, which would otherwise each score every
+ * project again, five times over for the explorer. The PHP has the same
+ * (`Search::scores()`).
+ */
+export function scores(projects: Project[], q: string): number[] {
+  return projects.map((project) => scoreProject(project, q));
+}
+
+export function filterProjects(projects: Project[], query: ProjectQuery, projectScores?: number[]): Project[] {
   const scored = projects
-    .filter((project) => matchesFacets(project, query))
-    .map((project) => ({ project, score: scoreProject(project, query.q) }))
+    .map((project, index) => ({ project, index }))
+    .filter(({ project }) => matchesFacets(project, query))
+    .map(({ project, index }) => ({ project, score: projectScores?.[index] ?? scoreProject(project, query.q) }))
     .filter(({ score }) => score > 0);
 
   switch (effectiveSort(query)) {
@@ -239,11 +274,12 @@ export function facetCounts<T extends string | number>(
   query: ProjectQuery,
   facet: FacetKey,
   valuesOf: (project: Project) => readonly T[],
+  projectScores?: number[],
 ): Map<T, number> {
   const counts = new Map<T, number>();
-  for (const project of projects) {
+  for (const [index, project] of projects.entries()) {
     if (!matchesFacets(project, query, facet)) continue;
-    if (scoreProject(project, query.q) === 0) continue;
+    if ((projectScores?.[index] ?? scoreProject(project, query.q)) === 0) continue;
     for (const value of valuesOf(project)) counts.set(value, (counts.get(value) ?? 0) + 1);
   }
   return counts;
