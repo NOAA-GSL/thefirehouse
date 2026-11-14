@@ -234,6 +234,9 @@ final class SearchTest extends DomainTestCase {
 	private static function call( string $name, array $args ): mixed {
 		return match ( $name ) {
 			'parseProjectQuery'     => Search::parse_query( ...$args ),
+			'scores'                => Search::scores( ...$args ),
+			'filterProjectsScored'  => Search::filter_projects( $args[0], $args[1], Search::scores( $args[0], $args[1]['q'] ) ),
+			'facetCountsScored'     => Search::facet_counts( $args[0], $args[1], $args[2], $args[3], Search::scores( $args[0], $args[1]['q'] ) ),
 			'serializeProjectQuery' => Search::serialize_query( ...$args ),
 			'activeFacetCount'      => Search::active_facet_count( ...$args ),
 			'effectiveSort'         => Search::effective_sort( ...$args ),

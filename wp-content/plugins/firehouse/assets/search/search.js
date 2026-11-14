@@ -397,7 +397,8 @@ function scores(projects, q) {
   return projects.map((project) => scoreProject(project, q));
 }
 function filterProjects(projects, query, projectScores) {
-  const scored = projects.map((project, index) => ({ project, index })).filter(({ project }) => matchesFacets(project, query)).map(({ project, index }) => ({ project, score: projectScores?.[index] ?? scoreProject(project, query.q) })).filter(({ score }) => score > 0);
+  const given = projectScores?.length === projects.length ? projectScores : void 0;
+  const scored = projects.map((project, index) => ({ project, index })).filter(({ project }) => matchesFacets(project, query)).map(({ project, index }) => ({ project, score: given?.[index] ?? scoreProject(project, query.q) })).filter(({ score }) => score > 0);
   switch (effectiveSort(query)) {
     case "relevance":
       scored.sort((a, b) => b.score - a.score || byRecency(a.project, b.project));
@@ -417,10 +418,11 @@ function filterProjects(projects, query, projectScores) {
   return scored.map(({ project }) => project);
 }
 function facetCounts(projects, query, facet, valuesOf, projectScores) {
+  const given = projectScores?.length === projects.length ? projectScores : void 0;
   const counts = /* @__PURE__ */ new Map();
   for (const [index, project] of projects.entries()) {
     if (!matchesFacets(project, query, facet)) continue;
-    if ((projectScores?.[index] ?? scoreProject(project, query.q)) === 0) continue;
+    if ((given?.[index] ?? scoreProject(project, query.q)) === 0) continue;
     for (const value of valuesOf(project)) counts.set(value, (counts.get(value) ?? 0) + 1);
   }
   return counts;

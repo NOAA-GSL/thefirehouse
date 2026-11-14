@@ -22,8 +22,10 @@
  * marks it `data-fh-interactive`, and this sets `data-wp-interactive`, before
  * WordPress takes the page over. If this script or the search fails to load, the
  * runtime, which other blocks load, leaves the region alone, and the page works as it
- * does without JavaScript, rather than drawn from an empty store. What the visitor
- * typed or chose before then is kept.
+ * does without JavaScript, rather than drawn from an empty store. This relies on
+ * WordPress running view modules before the document's DOMContentLoaded, when it takes
+ * pages over; one run later would leave the explorer as it is without JavaScript. What
+ * the visitor typed or chose before the takeover is kept, and focus stays where it was.
  *
  * Not ported: the site's "/" shortcut to the search. A one-key shortcut that can't be
  * turned off fails WCAG 2.1.4 (the Section 508 review, 13 November).
@@ -204,11 +206,16 @@ export function changedBeforeLoad( doc ) {
  */
 let tiles = new Map();
 let memo = { key: null };
+let scoredFor = { q: null };
 function worked( data ) {
 	const { q, phase, region, year, type, sort } = data.query;
 	const key = JSON.stringify( [ q, phase, region, year, type, sort ] );
 	if ( memo.key !== key ) {
-		const scored = search.scores( data.projects, data.query.q );
+		// The scores follow the text alone, so a filter or a sort changed reuses them.
+		if ( scoredFor.q !== q ) {
+			scoredFor = { q, scored: search.scores( data.projects, q ) };
+		}
+		const { scored } = scoredFor;
 		memo = { key, scored, counts: {}, results: results( search, data, data.query, scored, tiles ) };
 	}
 	return memo;
@@ -219,9 +226,17 @@ function counts( data, facet ) {
 	return cache.counts[ facet ];
 }
 
+/**
+ * Whether focus goes back to where it was before the takeover: only if the takeover
+ * dropped it to the page, and the element is still there. Focus the visitor has moved
+ * on with stays where they put it.
+ */
+export const refocuses = ( element, active, body ) => Boolean( element?.isConnected ) && ( ! active || active === body );
+
 /** Forgets the worked-out query and the tiles, for tests that change the projects. */
 export function forget() {
 	memo = { key: null };
+	scoredFor = { q: null };
 	tiles = new Map();
 }
 
@@ -236,10 +251,21 @@ const searchBox = () => document.getElementById( 'fh-explorer-q' );
 
 const browser = typeof document !== 'undefined';
 const region = browser ? document.querySelector( `[data-fh-interactive="${ STORE }"]` ) : null;
-const before = region ? changedBeforeLoad( document ) : { patch: {} };
-// Where focus was in the explorer when the script loaded, so a list item that's moved as
-// WordPress takes the page over (Clear all, after the filters' template) gets it back.
-const focusedBefore = region?.contains( document.activeElement ) ? document.activeElement : null;
+// What the visitor changed, and where focus was in the explorer, until WordPress takes
+// the page over: kept up to date as they type, choose and move, since the takeover
+// comes a little after this script runs. A list item that's moved as WordPress takes
+// over (Clear all, after the filters' template) gets focus back.
+let before = region ? changedBeforeLoad( document ) : { patch: {} };
+let focusedBefore = region?.contains( document.activeElement ) ? document.activeElement : null;
+const follow = () => {
+	before = changedBeforeLoad( document );
+};
+const track = ( event ) => {
+	focusedBefore = event.target;
+};
+region?.addEventListener( 'input', follow, true );
+region?.addEventListener( 'change', follow, true );
+region?.addEventListener( 'focusin', track, true );
 
 const { state, actions } = store( STORE, {
 	state: {
@@ -320,7 +346,7 @@ const { state, actions } = store( STORE, {
 		 */
 		write() {
 			const string = search.serializeProjectQuery( state.query ).toString();
-			window.history.replaceState( window.history.state, '', string ? `?${ string }` : window.location.pathname );
+			window.history.replaceState( window.history.state, '', window.location.pathname + ( string ? `?${ string }` : '' ) );
 		},
 		type( event ) {
 			state.text = event.target.value;
@@ -397,15 +423,23 @@ const { state, actions } = store( STORE, {
 		 * the page's state; otherwise the page would put the server's choices back.
 		 */
 		adopt() {
+			region?.removeEventListener( 'input', follow, true );
+			region?.removeEventListener( 'change', follow, true );
+			region?.removeEventListener( 'focusin', track, true );
 			if ( before.text !== undefined ) {
 				state.text = before.text;
 			}
 			if ( before.text !== undefined || Object.keys( before.patch ).length > 0 ) {
 				actions.update( before.patch );
 			}
-			if ( focusedBefore?.isConnected && document.activeElement !== focusedBefore ) {
+			if ( refocuses( focusedBefore, document.activeElement, document.body ) ) {
 				focusedBefore.focus();
 			}
+			if ( focusedBefore?.closest?.( '#fh-explorer-facets' ) ) {
+				state.filtersOpen = true;
+			}
+			before = { patch: {} };
+			focusedBefore = null;
 		},
 	},
 } );

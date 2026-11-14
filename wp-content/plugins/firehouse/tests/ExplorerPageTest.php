@@ -613,8 +613,10 @@ final class ExplorerPageTest extends WordPressTestCase {
 		$inside   = static fn( string $template ): string => (string) preg_replace( '#^<template[^>]*>|</template>$#', '', $template );
 		$project  = self::projects()[0] + array( 'projectType' => 'Research Study' );
 		$template = $inside( Explorer_Page::tile_template() );
-		// The phases' own template becomes the phases it draws.
-		$template = (string) preg_replace( '#<template[^>]*>(.*?)</template>#', '$1', $template );
+		// The phases' own template becomes the phases it draws: one span for each of the
+		// project's, two here.
+		$project['firePhases'] = array( 'before', 'during' );
+		$template              = (string) preg_replace_callback( '#<template[^>]*>(.*?)</template>#', static fn( array $found ): string => str_repeat( $found[1], count( $project['firePhases'] ) ), $template );
 
 		$this->assertSame( $skeleton( Explorer_Page::tile( $project ) ), $skeleton( $template ) );
 		// A tile without a type or phases has the same shape, its kicker and footer hidden.

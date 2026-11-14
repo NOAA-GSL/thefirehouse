@@ -1547,7 +1547,11 @@ its own (`DEFERRED`), loaded with the map.
     module. `npm run plugin:assets` writes it, and `plugin:assets:check`, which CI
     runs, fails if it falls behind. The projects come from the page's state
     (`Explorer_Page::state()`): each public project's fields the search reads, in the
-    shapes it expects, with its address and byline, and nothing else.*
+    shapes it expects, with its address and byline, and nothing else. Each project is
+    scored once per search, for the list and the four counts (`scores()`, as
+    `Search::scores()` does in PHP), and its fields folded once: at 48 projects on a
+    phone at a quarter of a desktop's speed, an update takes about 70 ms, from about
+    420.*
   - *Why the plugin prints the page. WordPress's processing of the directives prints
     text with `esc_html()`, which leaves a character reference as it is, so a title
     stored as "R&amp;D" would show as "R&D" (rule 1). So the block doesn't ask for it:
@@ -1560,8 +1564,8 @@ its own (`DEFERRED`), loaded with the map.
     and the script sets `data-wp-interactive` when it loads. If it or the search fails
     to load, WordPress's runtime, which other blocks load, leaves the region alone and
     the page works as it does without JavaScript; drawn from an empty store, it would
-    have shown no projects. What the visitor typed or chose before the script arrived
-    is kept.*
+    have shown no projects. What the visitor types or chooses until WordPress takes
+    the page over is kept, and focus the takeover drops to the page is put back.*
   - *WordPress 6.7 and 6.8. Actions that call `preventDefault()` are wrapped in
     `withSyncEvent()`. WordPress added it in 6.8, warns (with `SCRIPT_DEBUG` on)
     about an action that needs it and lacks it, and plans to run such actions after the

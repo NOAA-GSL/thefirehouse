@@ -11,6 +11,7 @@ import {
   scores,
   serializeProjectQuery,
   type FacetKey,
+  type ProjectQuery,
 } from './search';
 import type { Project } from './types';
 
@@ -25,6 +26,10 @@ interface Case {
 // Each entry spreads its case's arguments; the casts are the JSON boundary.
 const FUNCTIONS = {
   parseProjectQuery: (query: string) => parseProjectQuery(new URLSearchParams(query)),
+  scores,
+  filterProjectsScored: (projects: Project[], query: ProjectQuery) => filterProjects(projects, query, scores(projects, query.q)),
+  facetCountsScored: (projects: Project[], query: ProjectQuery, facet: FacetKey, valuesOf: (project: Project) => readonly (string | number)[]) =>
+    facetCounts(projects, query, facet, valuesOf, scores(projects, query.q)),
   serializeProjectQuery,
   activeFacetCount,
   effectiveSort,
@@ -66,7 +71,9 @@ describe('search (shared cases)', () => {
 describe('search, scored once', () => {
   it('gives with scores passed in what it gives scoring each time, for every sort, filter and count', () => {
     const projects = content.projects.filter((project) => project.published);
-    for (const string of ['', 'q=smoke', 'q=smoke+fire&sort=title', 'q=forcast&phase=during', 'q=zzzz', 'phase=before&sort=oldest', 'q=evac&region=NWCC']) {
+    // q=recovery&phase=after and q=outlook&phase=long-term leave out an earlier project,
+    // so a score taken by its place after the filter would be another project's.
+    for (const string of ['', 'q=smoke', 'q=smoke+fire&sort=title', 'q=forcast&phase=during', 'q=zzzz', 'phase=before&sort=oldest', 'q=evac&region=NWCC', 'q=recovery&phase=after', 'q=outlook&phase=long-term']) {
       const query = parseProjectQuery(new URLSearchParams(string));
       const scored = scores(projects, query.q);
       expect(scored, string).toEqual(projects.map((project) => scoreProject(project, query.q)));
@@ -75,6 +82,14 @@ describe('search, scored once', () => {
         expect(facetCounts(projects, query, facet as FacetKey, valuesOf, scored), `${string} ${facet}`).toEqual(facetCounts(projects, query, facet as FacetKey, valuesOf));
       }
     }
+  });
+
+  it('ignores scores for a list of another length', () => {
+    const projects = content.projects.filter((project) => project.published);
+    const query = parseProjectQuery(new URLSearchParams('q=smoke'));
+    const scored = scores(projects, query.q);
+    expect(slugs(filterProjects(projects.slice(1), query, scored))).toEqual(slugs(filterProjects(projects.slice(1), query)));
+    expect(facetCounts(projects.slice(1), query, 'phase', VALUES.phase, scored)).toEqual(facetCounts(projects.slice(1), query, 'phase', VALUES.phase));
   });
 
   it('scores a project the same however often it is scored', () => {

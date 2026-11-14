@@ -114,6 +114,16 @@ describe('the explorer view script', () => {
     expect(view.addressOf(lib, ARCHIVE, parseProjectQuery(new URLSearchParams('')))).toBe(ARCHIVE);
   });
 
+  it('puts focus back only where the takeover dropped it to the page', () => {
+    const body = {};
+    const there = { isConnected: true };
+    expect(view.refocuses(there, body, body)).toBe(true);
+    expect(view.refocuses(there, null, body)).toBe(true);
+    expect(view.refocuses(there, { id: 'a header link' }, body)).toBe(false);
+    expect(view.refocuses({ isConnected: false }, body, body)).toBe(false);
+    expect(view.refocuses(null, body, body)).toBe(false);
+  });
+
   it('reads an option as the query holds it', () => {
     expect(view.facetValue('phase', '')).toBeNull();
     expect(view.facetValue('year', '2025')).toBe(2025);
@@ -227,6 +237,12 @@ describe('the explorer store', () => {
     expect([state.filtersOpen, state.facetsOpen]).toEqual([true, true]);
   });
 
+  it("keeps each tile's object from one query to the next, so a tile kept isn't redrawn", () => {
+    const first = new Map(state.results.map((tile) => [tile.slug, tile]));
+    state.query = { ...state.query, q: 'smoke' };
+    for (const tile of state.results) expect(tile).toBe(first.get(tile.slug));
+  });
+
   it('works out the page from the query', () => {
     expect([state.searching, state.filtered, state.hasResults, state.shown, state.countRest]).toEqual([false, false, true, 4, 'projects']);
     state.query = { ...state.query, q: ' smoke ', phase: 'during' };
@@ -258,11 +274,11 @@ describe('the explorer store', () => {
     actions.type({ target: { value: 'smoke' } });
     expect([state.text, state.query.q, replaced]).toEqual(['smoke', '', []]);
     vi.advanceTimersByTime(view.DEBOUNCE_MS);
-    expect([state.query.q, replaced]).toEqual(['smoke', ['?q=smoke']]);
+    expect([state.query.q, replaced]).toEqual(['smoke', [`${PATH}?q=smoke`]]);
     actions.type({ target: { value: 'smoke fire' } });
     const event = click();
     actions.submit(event);
-    expect([event.preventDefault.mock.calls.length, state.query.q, replaced.at(-1)]).toEqual([1, 'smoke fire', '?q=smoke+fire']);
+    expect([event.preventDefault.mock.calls.length, state.query.q, replaced.at(-1)]).toEqual([1, 'smoke fire', `${PATH}?q=smoke+fire`]);
     vi.advanceTimersByTime(view.DEBOUNCE_MS);
     expect(replaced).toHaveLength(2);
   });
@@ -282,7 +298,7 @@ describe('the explorer store', () => {
   it('changes a filter, or the sort, at once', () => {
     context = { facet: 'year' };
     actions.choose({ target: { value: '2025' } });
-    expect([state.query.year, replaced.at(-1)]).toEqual([2025, '?year=2025']);
+    expect([state.query.year, replaced.at(-1)]).toEqual([2025, `${PATH}?year=2025`]);
     actions.choose({ target: { value: '' } });
     expect(state.query.year).toBeNull();
     actions.chooseSort({ target: { value: 'title' } });
@@ -298,7 +314,7 @@ describe('the explorer store', () => {
     expect([state.text, state.query.q, state.query.phase, focused]).toEqual(['', '', 'during', ['fh-explorer-q']]);
     state.text = 'fire';
     actions.clearAll(click());
-    expect([state.text, state.query, replaced.at(-1)]).toEqual(['', view.cleared({ sort: 'title' }), '?sort=title']);
+    expect([state.text, state.query, replaced.at(-1)]).toEqual(['', view.cleared({ sort: 'title' }), `${PATH}?sort=title`]);
   });
 
   it('leaves a click with a modifier key to the browser, which opens the link', () => {
@@ -315,7 +331,8 @@ describe('the explorer store', () => {
   });
 
   it('moves focus before removing a filter: to the filter after it, else Clear all, else the search', () => {
-    const focusable = (name) => ({ name, focus: () => focused.push(name) });
+    // Focus moves while the filter is still applied, so it never falls to the page.
+    const focusable = (name) => ({ name, focus: () => focused.push(list.removing && state.query[list.removing] === null ? `${name}, too late` : name) });
     const list = { pills: [focusable('phase'), focusable('year')] };
     list.querySelectorAll = () => list.pills;
     list.querySelector = () => focusable('clear all');
@@ -324,7 +341,9 @@ describe('the explorer store', () => {
       ref.closest = () => list;
       element = { ref };
       context = { filter: { facet } };
+      list.removing = facet;
       actions.removeFilter(click());
+      list.removing = null;
     };
 
     state.query = { ...state.query, phase: 'during', year: 2025 };

@@ -228,17 +228,24 @@ export function effectiveSort(query: ProjectQuery): ProjectSort {
  * `scoreProject` gives each. A page that both lists and counts scores once and passes
  * these to `filterProjects` and `facetCounts`, which would otherwise each score every
  * project again, five times over for the explorer. The PHP has the same
- * (`Search::scores()`).
+ * (`Search::scores()`). A score is held to its project by its place in the list, so
+ * pass them with the same projects, in the same order.
  */
 export function scores(projects: Project[], q: string): number[] {
   return projects.map((project) => scoreProject(project, q));
 }
 
+/**
+ * The projects that match the query, in its sort. `projectScores`, if given, is
+ * `scores(projects, query.q)`, by index in `projects`; scores for a list of another
+ * length are ignored, and the projects scored here.
+ */
 export function filterProjects(projects: Project[], query: ProjectQuery, projectScores?: number[]): Project[] {
+  const given = projectScores?.length === projects.length ? projectScores : undefined;
   const scored = projects
     .map((project, index) => ({ project, index }))
     .filter(({ project }) => matchesFacets(project, query))
-    .map(({ project, index }) => ({ project, score: projectScores?.[index] ?? scoreProject(project, query.q) }))
+    .map(({ project, index }) => ({ project, score: given?.[index] ?? scoreProject(project, query.q) }))
     .filter(({ score }) => score > 0);
 
   switch (effectiveSort(query)) {
@@ -267,7 +274,9 @@ export function filterProjects(projects: Project[], query: ProjectQuery, project
  * filter and the search text fixed.
  *
  * Shown next to each option so a reader can see a dead end before choosing it,
- * rather than picking a filter and landing on "no results".
+ * rather than picking a filter and landing on "no results". `projectScores`, if given,
+ * is `scores(projects, query.q)`, by index in `projects`; scores for a list of another
+ * length are ignored, and the projects scored here.
  */
 export function facetCounts<T extends string | number>(
   projects: Project[],
@@ -276,10 +285,11 @@ export function facetCounts<T extends string | number>(
   valuesOf: (project: Project) => readonly T[],
   projectScores?: number[],
 ): Map<T, number> {
+  const given = projectScores?.length === projects.length ? projectScores : undefined;
   const counts = new Map<T, number>();
   for (const [index, project] of projects.entries()) {
     if (!matchesFacets(project, query, facet)) continue;
-    if ((projectScores?.[index] ?? scoreProject(project, query.q)) === 0) continue;
+    if ((given?.[index] ?? scoreProject(project, query.q)) === 0) continue;
     for (const value of valuesOf(project)) counts.set(value, (counts.get(value) ?? 0) + 1);
   }
   return counts;
