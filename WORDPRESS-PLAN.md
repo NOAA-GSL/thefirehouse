@@ -1020,8 +1020,8 @@ ones.
     on the real pages in Phase 4.*
   - The project dialog's overlay sits below a theme header with a higher stacking
     order, close button included. A native `<dialog>` opened with `showModal()`
-    (rule 10) sits above everything and makes the rest of the page inert. *Moves to
-    Phase 5 with the explorer, whose quick look it is.*
+    (rule 10) sits above everything and makes the rest of the page inert. *Moved to
+    Phase 5 with the explorer, whose quick look it is, and done there (13 November).*
   - The skip link hides by sitting above its wrapper, which works only at the top of a
     page. It belongs before the theme's header, hidden by clipping. *The theme prints
     no `wp_body_open` hook, so nothing can go before its header. The skip link sits at
@@ -1445,9 +1445,8 @@ snapshots, and Stephanie and Emily can review them on the test site.
 
 The explorer (search, filters with counts, sort, removable filter chips, quick-look
 `<dialog>`) and the coverage map. (The mobile menu came with the Firehouse bar in Phase
-3, and the scrollable need cards with the project pages in Phase 4.) The explorer's CSS
-is in the one stylesheet, all but the quick look's, which comes off `EXPLORER` in
-`scripts/plugin-css-sources.mjs` with its dialog. The coverage map's CSS is a chunk of
+3, and the scrollable need cards with the project pages in Phase 4.) The explorer's CSS,
+its quick look's included, is in the one stylesheet. The coverage map's CSS is a chunk of
 its own (`DEFERRED`), loaded with the map.
 
 - *Search done 13 November: `domain/class-search.php` ports `search.ts` and passes
@@ -1518,7 +1517,7 @@ its own (`DEFERRED`), loaded with the map.
     not compared until the script makes it match.*
   - *The explorer's page and tile CSS joined the one stylesheet, as Phase 4's weight
     decided (not split by page), adding about 1.4 kB compressed. The quick look's
-    (`ProjectDetailModal.css`) stays on `EXPLORER` until its dialog comes.*
+    (`ProjectDetailModal.css`) came with its dialog, about 0.5 kB more.*
   - *The review's notes for the script slice (the "/" shortcut, focus after a filter is
     removed, the status line's node, the hint's second sentence, and `disabled` bound
     to live counts) are done with the script, below.*
@@ -1587,11 +1586,31 @@ its own (`DEFERRED`), loaded with the map.
     the main landmarks and the addresses matched, except for the quick look, which
     comes next, and the links above, which are buttons on the site. With the search
     module or the script blocked, the page works as it does without JavaScript.
-    `npm run plugin:compare` lists the page as not compared until the quick look
-    comes. Vitest runs the script's workings against `shared/cases/explorer.json`
+    Vitest runs the script's workings against `shared/cases/explorer.json`
     with the shipped module, its store's getters and actions with stand-ins for
     WordPress 6.8 and for 6.7, and checks every directive path the PHP prints
     against the store. PHPUnit holds the templates to the markup the server prints.*
+- *The quick look, 13 November: the site's `ProjectDetailModal` as a native
+  `<dialog>`, one at the end of the explorer, opened with `showModal()` from each tile's
+  "Quick look at …" button.*
+  - *What it shows. A project's type, title, every author, organization and year, its
+    phases and publication status, its abstract and first three end-user needs as the
+    researcher wrote them, and counts of what else its page holds, with a link to it.
+    Its words are bound to the project being looked at (`quickLook()` in the view
+    script); the page's state gains each project's full byline and publication status,
+    both already on its page.*
+  - *As a dialog. The browser makes the page behind inert, closes it on Escape and
+    puts focus on its close button; the script puts focus back on the button that
+    opened it, closes it on a click on the page around it, and stops the page
+    scrolling behind it, as the site's does. It opens a moment after the click, once
+    its words are the project's, so it's announced by the right name. `frame.css`
+    takes the browser's own dialog box off, so the site's overlay styles hold.*
+  - *Without JavaScript, the tiles' buttons are hidden and the dialog never opens; a
+    tile without phases hides its footer.*
+  - *Checked by hand: each of the eight projects' quick look matched the site's, its
+    focus included, and the explorer's main landmark now matches the site's at the
+    same 34 addresses and after the same 11 steps with nothing left out. `npm run
+    plugin:compare` compares the explorer: 32 of 32 match.*
 
 **Done when:** it reaches feature parity with the React site, every URL parameter
 behaves the same, and the accessibility snapshots match.

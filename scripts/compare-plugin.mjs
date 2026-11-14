@@ -35,16 +35,13 @@ const PLACEHOLDER = 'This page is being built.';
  * kind of page (`topic--`). Each one must be there and match; the rest are listed as
  * not built yet. Each Phase 4 page adds itself here.
  */
-export const BUILT = ['about', 'home', 'not-found', 'project--', 'topic--'];
+export const BUILT = ['about', 'home', 'not-found', 'project--', 'projects', 'topic--'];
 
 /**
  * Pages the plugin has built that can't match the reference yet, with why: listed, not
  * compared. Each comes off when it can match.
  */
-export const UNCOMPARED = {
-  projects:
-    'the explorer, until its quick look: the site has a Quick look button on each tile',
-};
+export const UNCOMPARED = {};
 
 /**
  * Parts of a built page that come in a later phase, by the region's name in the

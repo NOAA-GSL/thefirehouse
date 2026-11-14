@@ -33,8 +33,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * With JavaScript, the block's view script (blocks/explorer/view.js) takes the same
  * markup over through the Interactivity API: results that update as you type, Escape
- * to clear the search, the filters folded behind a button on a phone, and the address
- * kept in step. It searches in the browser with the site's own search.ts, bundled as
+ * to clear the search, the filters folded behind a button on a phone, the address
+ * kept in step, and the quick look: a native dialog that previews a project from its
+ * tile. It searches in the browser with the site's own search.ts, bundled as
  * the `@firehouse/search` module (scripts/plugin-assets.mjs), over the projects in the
  * page's state (state()). The markup carries the directives it binds to, and templates
  * for the lists it redraws: the tiles, the applied filters, and the sort's options.
@@ -158,6 +159,7 @@ final class Explorer_Page {
 			'short'    => array(
 				'phase'  => $short( 'firePhases' ),
 				'region' => $short( 'regions' ),
+				'status' => array_map( static fn( array $item ): string => (string) $item['label'], Vocabulary::items( 'publicationStatuses' ) ),
 			),
 			'sorts'    => self::sorts(),
 			'strings'  => array(
@@ -182,6 +184,19 @@ final class Explorer_Page {
 					_n( 'of %s project', 'of %s projects', 2, 'firehouse' ),
 				),
 				'count'  => array( _n( 'project', 'projects', 1, 'firehouse' ), _n( 'project', 'projects', 2, 'firehouse' ) ),
+				// The quick look's counts of what the project page holds that it doesn't.
+				'look'   => array(
+					/* translators: %s: how many more needs the project page lists. */
+					'more'            => __( 'and %s more on the project page', 'firehouse' ),
+					/* translators: %s: what else the project page holds, such as "2 takeaways, 1 related paper". */
+					'rest'            => __( 'Also on the full page: %s.', 'firehouse' ),
+					/* translators: %s: a number. */
+					'takeaways'       => array( _n( '%s takeaway', '%s takeaways', 1, 'firehouse' ), _n( '%s takeaway', '%s takeaways', 2, 'firehouse' ) ),
+					/* translators: %s: a number. */
+					'recommendations' => array( _n( '%s recommendation', '%s recommendations', 1, 'firehouse' ), _n( '%s recommendation', '%s recommendations', 2, 'firehouse' ) ),
+					/* translators: %s: a number. */
+					'papers'          => array( _n( '%s related paper', '%s related papers', 1, 'firehouse' ), _n( '%s related paper', '%s related papers', 2, 'firehouse' ) ),
+				),
 			),
 		);
 	}
@@ -189,7 +204,8 @@ final class Explorer_Page {
 	/**
 	 * A project as the view script searches and shows it: the fields search.ts reads, in
 	 * the shapes it expects (anything else stored is passed over, as the PHP search
-	 * passes it over), its address, and its byline as the tile prints it.
+	 * passes it over), its address, its byline as the tile prints it, and, for the quick
+	 * look, every author's name and its publication status, as its page prints them.
 	 *
 	 * @param array<string, mixed> $project The project, with its address.
 	 * @return array<string, mixed>
@@ -209,25 +225,27 @@ final class Explorer_Page {
 		$authors = array_values( array_filter( is_array( $project['authors'] ?? null ) ? $project['authors'] : array(), static fn( mixed $author ): bool => is_array( $author ) && is_string( $author['name'] ?? null ) ) );
 		$geo     = is_array( $project['geo'] ?? null ) ? $project['geo'] : array();
 		return array(
-			'slug'           => (string) $project['slug'],
-			'url'            => (string) $project['url'],
-			'title'          => (string) $project['title'],
-			'projectType'    => $text( $project['projectType'] ?? null ),
-			'authors'        => array_map( static fn( array $author ): array => array( 'name' => $author['name'] ), $authors ),
-			'org'            => $text( $project['org'] ?? null ),
-			'summary'        => $text( $project['summary'] ?? null ) ?? '',
-			'abstract'       => $text( $project['abstract'] ?? null ),
-			'takeaways'      => $texts( $project['takeaways'] ?? null ),
-			'methods'        => $texts( $project['methods'] ?? null ),
-			'needs'          => $entries( $project['needs'] ?? null, 'need', 'recommendation' ),
-			'papers'         => $entries( $project['papers'] ?? null, 'title', 'container' ),
-			'geo'            => array(
+			'slug'              => (string) $project['slug'],
+			'url'               => (string) $project['url'],
+			'title'             => (string) $project['title'],
+			'projectType'       => $text( $project['projectType'] ?? null ),
+			'authors'           => array_map( static fn( array $author ): array => array( 'name' => $author['name'] ), $authors ),
+			'org'               => $text( $project['org'] ?? null ),
+			'summary'           => $text( $project['summary'] ?? null ) ?? '',
+			'abstract'          => $text( $project['abstract'] ?? null ),
+			'takeaways'         => $texts( $project['takeaways'] ?? null ),
+			'methods'           => $texts( $project['methods'] ?? null ),
+			'needs'             => $entries( $project['needs'] ?? null, 'need', 'recommendation' ),
+			'papers'            => $entries( $project['papers'] ?? null, 'title', 'container' ),
+			'geo'               => array(
 				'regions' => $texts( $geo['regions'] ?? null ),
 				'note'    => $text( $geo['note'] ?? null ),
 			),
-			'completionYear' => $project['completionYear'],
-			'firePhases'     => $texts( $project['firePhases'] ?? null ),
-			'byline'         => Format::byline( $authors ),
+			'completionYear'    => $project['completionYear'],
+			'firePhases'        => $texts( $project['firePhases'] ?? null ),
+			'byline'            => Format::byline( $authors ),
+			'fullByline'        => Format::byline( $authors, 0 ),
+			'publicationStatus' => $text( $project['publicationStatus'] ?? null ),
 		);
 	}
 
@@ -306,6 +324,7 @@ final class Explorer_Page {
 		<a class="fh-explorer__empty-action" href="<?php echo $cleared; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- href() escapes it. ?>"<?php echo $hidden( ! $filtered ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- as above. ?> data-wp-bind--hidden="!state.filtered" data-wp-bind--href="state.clearAllHref" data-wp-on--click="actions.clearAll"><?php esc_html_e( 'Clear search and filters', 'firehouse' ); ?></a>
 		<a class="fh-explorer__empty-action" href="<?php echo esc_url( home_url( '/' . Query::ROOT_PATH . '/#top-needs' ) ); ?>"<?php echo $hidden( $filtered ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- as above. ?> data-wp-bind--hidden="state.filtered"><?php esc_html_e( 'Browse topic areas', 'firehouse' ); ?></a>
 	</div>
+		<?php echo self::quick_look(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- a fixed template. ?>
 </div>
 		<?php
 		return (string) ob_get_clean();
@@ -568,8 +587,10 @@ final class Explorer_Page {
 	/**
 	 * A project's tile, as the site's `ProjectTile`: a link on the title, stretched over
 	 * the tile by CSS, so the tile's whole area opens the project while the link's name
-	 * stays the title. A kicker or a footer with nothing in it is printed hidden, as the
-	 * script's template draws it, so a tile the script keeps has the shape it would draw.
+	 * stays the title. A kicker with nothing in it is printed hidden, as the script's
+	 * template draws it, so a tile the script keeps has the shape it would draw. The
+	 * footer holds the phases and the quick look's button, which only the script can
+	 * open: without it, the button is hidden, and so is a footer with no phases.
 	 *
 	 * @param array<string, mixed> $project   The project, with its address.
 	 * @param bool                 $stand_in  Whether it stands in for the view script's list, which replaces it.
@@ -595,7 +616,7 @@ final class Explorer_Page {
 			Markup::text( Format::byline( $authors ) ),
 			esc_html( (string) Search::key( $project['completionYear'] ?? '' ) ),
 			Icons::svg( 'arrow-up-right', 16 ),
-			'<span class="fh-tile__foot"' . ( '' !== $phases ? '' : ' hidden' ) . '><span class="fh-tile__phases">' . $phases . '</span></span>',
+			'<span class="fh-tile__foot"' . ( '' !== $phases ? '' : ' hidden' ) . ' data-wp-bind--hidden="!state.live"><span class="fh-tile__phases">' . $phases . '</span>' . self::peek( '<span>' . Markup::text( $text( 'title' ) ) . '</span>' ) . '</span>',
 			$stand_in ? sprintf( ' data-wp-each-child="%s"', esc_attr( self::STORE . '::state.results' ) ) : ''
 		);
 	}
@@ -607,7 +628,66 @@ final class Explorer_Page {
 	public static function tile_template(): string {
 		return '<template data-wp-each--project="state.results" data-wp-each-key="context.project.slug"><article class="fh-tile"><span class="fh-tile__glow" aria-hidden="true"></span><span class="fh-tile__body"><span class="fh-tile__kicker" data-wp-bind--hidden="!context.project.projectType" data-wp-text="context.project.projectType"></span><h3 class="fh-tile__title"><a class="fh-tile__link" data-wp-bind--href="context.project.url" data-wp-text="context.project.title"></a></h3><p class="fh-tile__summary" data-wp-text="context.project.summary"></p></span><span class="fh-tile__meta"><span class="fh-tile__byline" data-wp-text="context.project.meta"></span>'
 			. Icons::svg( 'arrow-up-right', 16 )
-			. '</span><span class="fh-tile__foot" data-wp-bind--hidden="!context.project.phases.length"><span class="fh-tile__phases"><template data-wp-each--phase="context.project.phases" data-wp-each-key="context.phase.key"><span class="fh-tile__phase" data-wp-text="context.phase.label"></span></template></span></span></article></template>';
+			. '</span><span class="fh-tile__foot" data-wp-bind--hidden="!state.live"><span class="fh-tile__phases"><template data-wp-each--phase="context.project.phases" data-wp-each-key="context.phase.key"><span class="fh-tile__phase" data-wp-text="context.phase.label"></span></template></span>'
+			. self::peek( '<span data-wp-text="context.project.title"></span>' )
+			. '</span></article></template>';
+	}
+
+	/**
+	 * A tile's quick look button, as the site's `ProjectTile` has it: named for its
+	 * project ("Quick look at …"), so twelve of them aren't twelve of the same. Hidden
+	 * without the script, which alone can open the dialog.
+	 *
+	 * @param string $title The project's title, escaped, or the markup that binds it.
+	 */
+	private static function peek( string $title ): string {
+		return sprintf(
+			'<button type="button" class="fh-tile__peek" hidden data-wp-bind--hidden="!state.live" data-wp-on--click="actions.peek">%1$s%2$s <span class="fh-visually-hidden">%3$s</span></button>',
+			Icons::svg( 'eye', 14 ),
+			esc_html__( 'Quick look', 'firehouse' ),
+			/* translators: %s: a project's title. */
+			sprintf( esc_html__( 'at %s', 'firehouse' ), $title )
+		);
+	}
+
+	/**
+	 * The quick look, as the site's `ProjectDetailModal`: a preview of one project,
+	 * opened from its tile, that answers "is this the project I want?" without leaving
+	 * the list. It shows the abstract and the first three end-user needs, as the
+	 * researcher wrote them, counts what else the project's page holds, and leads to it.
+	 *
+	 * A native dialog, which the script opens with showModal(): the page behind it is
+	 * inert, Escape closes it, and focus goes to its close button, then back to the
+	 * button that opened it. Its words are bound to the project being looked at; it
+	 * holds none until then, and without the script it never opens.
+	 */
+	private static function quick_look(): string {
+		$section = static fn( string $bound, string $title, string $body ): string => sprintf(
+			'<section class="fh-modal__section" data-wp-bind--hidden="!state.peek.%1$s"><h3 class="fh-modal__section-title">%2$s</h3>%3$s</section>',
+			$bound,
+			esc_html( $title ),
+			$body
+		);
+		return '<dialog id="fh-quick-look" class="fh-modal__overlay" aria-labelledby="fh-quick-look-title" data-wp-on--click="actions.peekBackdrop" data-wp-on--close="actions.peekClosed">'
+			. '<div class="fh-modal">'
+			. '<header class="fh-modal__header"><div class="fh-modal__identity">'
+			. '<span class="fh-eyebrow" data-wp-bind--hidden="!state.peek.kicker" data-wp-text="state.peek.kicker"></span>'
+			. '<h2 id="fh-quick-look-title" class="fh-modal__title" data-wp-text="state.peek.title"></h2>'
+			. '<span class="fh-modal__byline" data-wp-text="state.peek.byline"></span>'
+			. '<span class="fh-modal__meta" data-wp-bind--hidden="!state.peek.hasMeta"><template data-wp-each--phase="state.peek.phases" data-wp-each-key="context.phase.key"><span class="fh-modal__meta-item" data-wp-text="context.phase.label"></span></template><span class="fh-modal__meta-item fh-modal__meta-item--status" data-wp-bind--hidden="!state.peek.status" data-wp-text="state.peek.status"></span></span>'
+			. '</div>'
+			. sprintf( '<button type="button" class="fh-modal__close" data-wp-on--click="actions.closePeek">%1$s<span class="fh-visually-hidden">%2$s</span></button>', Icons::svg( 'x', 20 ), esc_html__( 'Close project details', 'firehouse' ) )
+			. '</header>'
+			. $section( 'abstract', __( 'Abstract', 'firehouse' ), '<p class="fh-modal__prose fh-modal__prose--clamped" data-wp-text="state.peek.abstract"></p>' )
+			. $section( 'needs.length', __( 'End-user needs', 'firehouse' ), '<ul class="fh-modal__list"><template data-wp-each--need="state.peek.needs" data-wp-each-key="context.need.key"><li data-wp-text="context.need.text"></li></template></ul><p class="fh-modal__more" data-wp-bind--hidden="!state.peek.more" data-wp-text="state.peek.more"></p>' )
+			. '<p class="fh-modal__rest" data-wp-bind--hidden="!state.peek.rest" data-wp-text="state.peek.rest"></p>'
+			. sprintf(
+				'<footer class="fh-modal__footer"><a class="fh-btn fh-btn--accent fh-btn--md" data-wp-bind--href="state.peek.url">%1$s%2$s</a><span class="fh-modal__footer-note">%3$s</span></footer>',
+				esc_html__( 'Open project page', 'firehouse' ),
+				Icons::svg( 'arrow-right', 16 ),
+				esc_html__( 'Full takeaways, recommendations and papers', 'firehouse' )
+			)
+			. '</div></dialog>';
 	}
 
 	/**

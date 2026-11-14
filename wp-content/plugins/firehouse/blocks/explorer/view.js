@@ -17,6 +17,9 @@
  * - On a phone the filters fold behind a "Filters and sort" button, which the server
  *   prints hidden, for a page without the script; the "Update results" button, which a
  *   page without the script needs, goes.
+ * - Each tile's "Quick look" button opens the quick look, a native dialog previewing
+ *   the project (quickLook()): the page behind is inert, Escape closes it, and focus
+ *   goes back to the button that opened it.
  *
  * The region becomes interactive only here, when this script has loaded: the server
  * marks it `data-fh-interactive`, and this sets `data-wp-interactive`, before
@@ -162,6 +165,60 @@ export function sortOptions( lib, data, query ) {
 		.map( ( [ key, label ] ) => ( { key, value: key === sort ? sent : key, label, selected: key === sort } ) );
 }
 
+/** One of a word's two forms, picked by a count as English picks it, the count filled in. */
+const counted = ( forms, n ) => fill( forms[ n === 1 ? 0 : 1 ], n );
+
+/** The quick look with no project in it: what it binds to while closed. */
+export const NO_LOOK = Object.freeze( {
+	slug: '',
+	title: '',
+	kicker: '',
+	byline: '',
+	phases: [],
+	status: '',
+	hasMeta: false,
+	abstract: '',
+	needs: [],
+	more: '',
+	rest: '',
+	url: '',
+} );
+
+/**
+ * A project as the quick look shows it, as the site's `ProjectDetailModal` does: its
+ * type, title, every author, organization and year; its phases and publication status;
+ * its abstract and first three end-user needs, as written; and counts of what else its
+ * page holds, rather than the things themselves, so the page is worth opening.
+ */
+export function quickLook( data, project ) {
+	const look = data.strings.look;
+	const needs = project.needs.map( ( entry ) => entry.need ).filter( Boolean );
+	const recommendations = project.needs.filter( ( entry ) => entry.recommendation ).length;
+	const rest = [
+		project.takeaways.length > 0 && counted( look.takeaways, project.takeaways.length ),
+		recommendations > 0 && counted( look.recommendations, recommendations ),
+		project.papers.length > 0 && counted( look.papers, project.papers.length ),
+	].filter( Boolean );
+	const status = Object.hasOwn( data.short.status, project.publicationStatus ?? '' ) ? data.short.status[ project.publicationStatus ] : '';
+	const phases = project.firePhases
+		.filter( ( phase ) => Object.hasOwn( data.short.phase, phase ) )
+		.map( ( phase, index ) => ( { key: `${ index }-${ phase }`, label: data.short.phase[ phase ] } ) );
+	return {
+		slug: project.slug,
+		title: project.title,
+		kicker: project.projectType || '',
+		byline: `${ project.fullByline }${ project.org ? `, ${ project.org }` : '' } · ${ project.completionYear }`,
+		phases,
+		status,
+		hasMeta: phases.length > 0 || status !== '',
+		abstract: project.abstract || '',
+		needs: needs.slice( 0, 3 ).map( ( text, index ) => ( { key: String( index ), text } ) ),
+		more: needs.length > 3 ? fill( look.more, needs.length - 3 ) : '',
+		rest: rest.length > 0 ? fill( look.rest, rest.join( ', ' ) ) : '',
+		url: project.url,
+	};
+}
+
 /**
  * The results line's words after the count: "of 8 projects", or "projects". Two forms,
  * picked as English picks them; a language with other plural rules would need more.
@@ -260,6 +317,13 @@ const plain = ( event ) => ! ( event.button || event.metaKey || event.ctrlKey ||
 /** The search box, for focus. */
 const searchBox = () => document.getElementById( 'fh-explorer-q' );
 
+/** The quick look's dialog. */
+const dialog = () => document.getElementById( 'fh-quick-look' );
+
+/** The button that opened the quick look, which focus goes back to, and the page's overflow before. */
+let opener = null;
+let overflow = '';
+
 const browser = typeof document !== 'undefined';
 const region = browser ? document.querySelector( `[data-fh-interactive="${ STORE }"]` ) : null;
 // What the visitor changed, and where focus was in the explorer, until WordPress takes
@@ -348,6 +412,12 @@ const { state, actions } = store( STORE, {
 		get optionDisabled() {
 			return state.optionCount === 0 && ! state.optionSelected;
 		},
+		peekSlug: null,
+		/** The project in the quick look, as it shows it, or NO_LOOK while it's closed. */
+		get peek() {
+			const project = state.peekSlug === null ? null : state.projects.find( ( candidate ) => candidate.slug === state.peekSlug );
+			return project ? quickLook( state, project ) : NO_LOOK;
+		},
 	},
 	actions: {
 		/** The query, changed, with the typed text in it, and the address with it. */
@@ -431,6 +501,35 @@ const { state, actions } = store( STORE, {
 		} ),
 		toggleFilters() {
 			state.filtersOpen = ! state.filtersOpen;
+		},
+		/**
+		 * Opens the quick look for a tile's project. It opens a moment later, once its
+		 * words are the project's, so the name it's announced by is the right one; the
+		 * page behind stops scrolling, as the site's does.
+		 */
+		peek() {
+			opener = getElement().ref;
+			state.peekSlug = getContext().project.slug;
+			overflow = document.body.style.overflow;
+			document.body.style.overflow = 'hidden';
+			setTimeout( () => dialog()?.showModal() );
+		},
+		closePeek() {
+			dialog()?.close();
+		},
+		/** A click on the dimmed page around the quick look, not in it, closes it. */
+		peekBackdrop( event ) {
+			const { ref } = getElement();
+			if ( event.target === ref ) {
+				ref.close();
+			}
+		},
+		/** However the quick look closed (its button, Escape, the page around it). */
+		peekClosed() {
+			document.body.style.overflow = overflow;
+			state.peekSlug = null;
+			opener?.focus();
+			opener = null;
 		},
 	},
 	callbacks: {

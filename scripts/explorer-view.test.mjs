@@ -44,12 +44,12 @@ function serverState(query = '') {
   return {
     projects: site()
       .projects.filter((project) => project.published)
-      .map((project) => ({ ...project, url: `${ARCHIVE}${project.slug}/`, byline: formatByline(project.authors) })),
+      .map((project) => ({ ...project, url: `${ARCHIVE}${project.slug}/`, byline: formatByline(project.authors), fullByline: formatByline(project.authors, 0), publicationStatus: project.publicationStatus ?? null })),
     query: parsed,
     text: parsed.q.replace(/[\r\n]/g, ' '),
     url: ARCHIVE,
     landing: '#fh-content',
-    short: { phase: shortOf(vocabulary.firePhases), region: shortOf(vocabulary.regions) },
+    short: { phase: shortOf(vocabulary.firePhases), region: shortOf(vocabulary.regions), status: Object.fromEntries(vocabulary.publicationStatuses.map((item) => [item.key, item.label])) },
     sorts: shared.sorts,
     strings: shared.strings,
   };
@@ -165,6 +165,53 @@ describe('the explorer view script', () => {
   });
 });
 
+describe('the quick look', () => {
+  const project = (more = {}) => ({ ...serverState().projects[0], ...more });
+
+  it('shows a project as the site\'s ProjectDetailModal does', () => {
+    const data = serverState();
+    const one = project({
+      projectType: 'Research Study',
+      title: 'R&amp;D <one>',
+      fullByline: 'A. Name, B. Name and C. Name',
+      org: 'An Org',
+      completionYear: 2025,
+      firePhases: ['before', 'not-a-phase', 'during'],
+      publicationStatus: 'in-review',
+      abstract: 'An abstract.',
+      takeaways: ['One', 'Two'],
+      needs: [{ need: 'N1', recommendation: 'R1' }, { need: 'N2' }, { need: null, recommendation: 'R3' }, { need: 'N4' }, { need: 'N5' }],
+      papers: [{ title: 'A paper' }],
+    });
+    expect(view.quickLook(data, one)).toEqual({
+      slug: one.slug,
+      title: 'R&amp;D <one>',
+      kicker: 'Research Study',
+      byline: 'A. Name, B. Name and C. Name, An Org · 2025',
+      phases: [{ key: '0-before', label: 'Before' }, { key: '1-during', label: 'During' }],
+      status: 'In review',
+      hasMeta: true,
+      abstract: 'An abstract.',
+      needs: [{ key: '0', text: 'N1' }, { key: '1', text: 'N2' }, { key: '2', text: 'N4' }],
+      more: 'and 1 more on the project page',
+      rest: 'Also on the full page: 2 takeaways, 2 recommendations, 1 related paper.',
+      url: one.url,
+    });
+  });
+
+  it('leaves out what a project lacks', () => {
+    const look = view.quickLook(serverState(), project({ projectType: null, org: null, firePhases: [], publicationStatus: 'constructor', abstract: null, takeaways: [], needs: [], papers: [] }));
+    expect([look.kicker, look.status, look.hasMeta, look.abstract, look.needs, look.more, look.rest]).toEqual(['', '', false, '', [], '', '']);
+    expect(look.byline).not.toContain(', null');
+    expect(view.quickLook(serverState(), project({ takeaways: ['One'], needs: [{ recommendation: 'R' }], papers: [] })).rest).toBe('Also on the full page: 1 takeaway, 1 recommendation.');
+  });
+
+  it('binds to nothing while closed', () => {
+    expect(Object.keys(view.NO_LOOK).sort()).toEqual(Object.keys(view.quickLook(serverState(), project())).sort());
+    expect(Object.isFrozen(view.NO_LOOK)).toBe(true);
+  });
+});
+
 describe('the explorer\'s markup and its store', () => {
   const php = readFileSync(plugin('includes/class-explorer-page.php'), 'utf8');
   const paths = (pattern) => [...new Set([...php.matchAll(pattern)].map((match) => match[1]))];
@@ -176,7 +223,9 @@ describe('the explorer\'s markup and its store', () => {
     const known = (path) => {
       const [first, ...rest] = path.split('.');
       if (rest.length === 0) return first in definition.state || first in server;
-      return rest.reduce((value, key) => value?.[key], server[first]) !== undefined;
+      // The quick look binds into what it shows, which has NO_LOOK's shape.
+      const root = first === 'peek' ? view.NO_LOOK : server[first];
+      return rest.reduce((value, key) => value?.[key], root) !== undefined;
     };
     const found = paths(/"!?state\.([\w.]+)"/g).concat(paths(/::state\.([\w.]+)/g));
     expect(found.length).toBeGreaterThan(20);
@@ -190,6 +239,7 @@ describe('the explorer\'s markup and its store', () => {
       filter: view.applied(lib, data, data.query)[0],
       option: view.sortOptions(lib, data, data.query)[0],
       phase: view.results(lib, data, data.query)[0].phases[0],
+      need: view.quickLook(data, data.projects[0]).needs[0],
     };
     const found = paths(/"!?context\.(\w+\.[\w.]+)"/g);
     expect(found.length).toBeGreaterThan(10);
@@ -218,7 +268,7 @@ describe('the explorer store', () => {
     focused = [];
     vi.stubGlobal('window', { history: { state: null, replaceState: (_state, _title, url) => replaced.push(url) }, location: { pathname: PATH } });
     vi.stubGlobal('document', { getElementById: (id) => ({ focus: () => focused.push(id) }) });
-    Object.assign(definition.state, serverState(), { filtersOpen: false });
+    Object.assign(definition.state, serverState(), { filtersOpen: false, peekSlug: null });
   });
   afterEach(() => {
     vi.useRealTimers();
@@ -334,6 +384,36 @@ describe('the explorer store', () => {
     }
     actions.clearAll(click({ button: 1 }));
     expect([state.query.phase, replaced]).toEqual(['during', []]);
+  });
+
+  it('opens the quick look for a tile\'s project, and puts everything back when it closes', () => {
+    const calls = [];
+    const opener = { focus: () => calls.push('opener focused') };
+    const quickLook = { showModal: () => calls.push('opened'), close: () => calls.push('closed') };
+    const body = { style: { overflow: 'auto' } };
+    vi.stubGlobal('document', { body, getElementById: (id) => (id === 'fh-quick-look' ? quickLook : { focus: () => {} }) });
+    const project = state.projects[1];
+    element = { ref: opener };
+    context = { project: { slug: project.slug } };
+
+    actions.peek();
+    expect([state.peekSlug, state.peek.title, body.style.overflow, calls]).toEqual([project.slug, project.title, 'hidden', []]);
+    vi.advanceTimersByTime(0);
+    expect(calls).toEqual(['opened']);
+
+    actions.closePeek();
+    actions.peekClosed();
+    expect([state.peekSlug, state.peek, body.style.overflow, calls]).toEqual([null, view.NO_LOOK, 'auto', ['opened', 'closed', 'opener focused']]);
+  });
+
+  it('closes the quick look on a click around it, not in it', () => {
+    const closed = [];
+    const quickLook = { close: () => closed.push(true) };
+    element = { ref: quickLook };
+    actions.peekBackdrop({ target: { tagName: 'P' } });
+    expect(closed).toEqual([]);
+    actions.peekBackdrop({ target: quickLook });
+    expect(closed).toEqual([true]);
   });
 
   it('moves focus before removing a filter: to the filter after it, else Clear all, else the search', () => {

@@ -410,6 +410,9 @@ nothing from the database. Each class's docblock has the detail; this is the map
     page's script has measured it, sets the explorer's Update results button level
     with its selects (on a row of its own on a phone), and keeps the links that stand
     in for the site's buttons free of underlines, Clear all at the button's height;
+  - it takes the browser's own dialog box off the quick look, a native `<dialog>`
+    where the site has an overlay `<div>`, so the site's overlay styles hold, and keeps
+    a closed one hidden;
   - on Firehouse pages only, it hides the theme's hero background and the mission
     section above its footer.
 
@@ -502,8 +505,10 @@ nothing from the database. Each class's docblock has the detail; this is the map
   script redraws, and marks the region `data-fh-interactive`; the script makes it
   WordPress's only once it has loaded, so a script that fails to load leaves the page
   working as without JavaScript. `tests/ExplorerPageTest.php` and
-  `scripts/explorer-view.test.mjs` both pass `shared/cases/explorer.json`. The quick
-  look comes in Phase 5.
+  `scripts/explorer-view.test.mjs` both pass `shared/cases/explorer.json`. Each tile's
+  "Quick look" button opens the quick look, a native `<dialog>` previewing the
+  project, as the site's `ProjectDetailModal` does; without JavaScript the buttons are
+  hidden.
 - `Markup` writes the design system's small components as the site renders them: a
   link styled as a `Button` (opening another site in a new tab, and saying so), a
   `TopicTag`, and the `SynthesisNote` that says the needs are synthesized and whether
@@ -701,9 +706,8 @@ inside GSL's theme without reaching the theme's header and footer (plan rule 9).
 `SCRIPT_DEBUG`; the minified copy is that one minified as the site's own build
 minifies its CSS. One stylesheet serves every
 Firehouse page; it isn't split by page. Both copies leave out what GSL's theme replaces
-(the static build's page shell, gov banner and footer), the quick look's CSS and the
-coverage map's until Phase 5, the design system's components no page renders, and the
-fonts, which load on their own (`scripts/plugin-css-sources.mjs`); a test fails
+(the static build's page shell, gov banner and footer), the coverage map's CSS until
+Phase 5, the design system's components no page renders, and the fonts, which load on their own (`scripts/plugin-css-sources.mjs`); a test fails
 if the plugin's markup uses a class only those left-out files style. Don't edit either:
 `npm run plugin:css` writes both from `src/`, and CI fails if either falls behind.
 The site's own build scopes every stylesheet the same way (`scripts/scope-css.ts`), with

@@ -1,13 +1,13 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { EXPLORER, UNUSED } from './plugin-css-sources.mjs';
+import { UNUSED } from './plugin-css-sources.mjs';
 
 /**
  * The plugin's stylesheet leaves some of the site's stylesheets out until a page the
- * plugin renders needs them (scripts/plugin-css-sources.mjs): the explorer's quick
- * look's, until Phase 5, and those of the design system's components no page renders. A class only
- * those style would render unstyled in the plugin, focus rings included, so the
+ * plugin renders needs them (scripts/plugin-css-sources.mjs): those of the design
+ * system's components no page renders. A class only those style would render unstyled
+ * in the plugin, focus rings included, so the
  * plugin's markup mustn't use one until its file is taken off the list.
  */
 const root = (path) => fileURLToPath(new URL(`../${path}`, import.meta.url));
@@ -20,7 +20,7 @@ const styled = new Set(
   ['assets/css/firehouse.css', 'assets/css/frame.css'].flatMap((file) => [...classes(readFileSync(root(PLUGIN + file), 'utf8'))]),
 );
 /** For each left-out stylesheet, the classes only it and the other left-out ones style. */
-const leftOutFiles = [...EXPLORER, ...UNUSED].map((file) => [file, [...classes(readFileSync(root(file), 'utf8'))].filter((name) => !styled.has(name))]);
+const leftOutFiles = UNUSED.map((file) => [file, [...classes(readFileSync(root(file), 'utf8'))].filter((name) => !styled.has(name))]);
 const leftOutOnly = [...new Set(leftOutFiles.flatMap(([, names]) => names))].sort();
 
 /** What the plugin prints: its PHP, scripts and JSON, not its tests, assets or dependencies. */

@@ -238,6 +238,29 @@ final class ExplorerPageTest extends WordPressTestCase {
 	}
 
 	/**
+	 * The quick look is one native dialog at the end of the explorer, closed, named by its
+	 * title, with its words bound to the project it shows: nothing in it until then. Each
+	 * tile's button opens it, and is hidden without the script.
+	 */
+	public function test_the_quick_look(): void {
+		$html  = self::render();
+		$xpath = self::dom( $html );
+
+		$dialog = self::one( $xpath, '//dialog' );
+		$this->assertSame( array( 'fh-quick-look', 'fh-modal__overlay', 'fh-quick-look-title', '' ), array( $dialog->getAttribute( 'id' ), $dialog->getAttribute( 'class' ), $dialog->getAttribute( 'aria-labelledby' ), $dialog->getAttribute( 'open' ) ) );
+		$this->assertSame( array( 'actions.peekBackdrop', 'actions.peekClosed' ), array( $dialog->getAttribute( 'data-wp-on--click' ), $dialog->getAttribute( 'data-wp-on--close' ) ) );
+		$this->assertSame( 'state.peek.title', self::one( $xpath, '//*[@id="fh-quick-look-title"]' )->getAttribute( 'data-wp-text' ) );
+		$this->assertSame( '', self::text( $dialog->getElementsByTagName( 'h2' )->item( 0 ) ?? $dialog ) );
+		$this->assertSame( 'Close project details', self::text( self::one( $xpath, '//button[@class="fh-modal__close"]' ) ) );
+		$this->assertSame( 'state.peek.url', self::one( $xpath, '//dialog//a' )->getAttribute( 'data-wp-bind--href' ) );
+		$this->assertMatchesRegularExpression( '#</dialog>\s*</div>$#', trim( $html ) );
+
+		$buttons = $xpath->query( '//article[@class="fh-tile"][not(ancestor::template)]//button[@class="fh-tile__peek"][@hidden]' );
+		$this->assertSame( count( self::projects() ), false === $buttons ? 0 : $buttons->length );
+		$this->assertSame( array(), self::shown( $xpath, '//button[@class="fh-tile__peek"]' ) );
+	}
+
+	/**
 	 * Each option says how many projects it would leave; one that would leave none stays
 	 * enabled, since without JavaScript the counts don't follow a change to another
 	 * select. The GACCs and the other regions are in groups, as on the site; years run
@@ -522,7 +545,7 @@ final class ExplorerPageTest extends WordPressTestCase {
 		$this->assertSame( array( 'projects', 'query', 'text', 'url', 'landing', 'short', 'sorts', 'strings' ), array_keys( $state ) );
 		$this->assertSame( Search::parse_query( 'q=smoke&phase=during' ), $state['query'] );
 		$this->assertSame( array( 'smoke', self::URL, '#fh-content' ), array( $state['text'], $state['url'], $state['landing'] ) );
-		$this->assertSame( array( 'slug', 'url', 'title', 'projectType', 'authors', 'org', 'summary', 'abstract', 'takeaways', 'methods', 'needs', 'papers', 'geo', 'completionYear', 'firePhases', 'byline' ), array_keys( $first ) );
+		$this->assertSame( array( 'slug', 'url', 'title', 'projectType', 'authors', 'org', 'summary', 'abstract', 'takeaways', 'methods', 'needs', 'papers', 'geo', 'completionYear', 'firePhases', 'byline', 'fullByline', 'publicationStatus' ), array_keys( $first ) );
 		$this->assertSame(
 			array(
 				array(
@@ -544,6 +567,8 @@ final class ExplorerPageTest extends WordPressTestCase {
 		$this->assertSame( array( 'One' ), $first['takeaways'] );
 		$this->assertSame( array( array( 'name' => 'A. Name' ) ), $first['authors'] );
 		$this->assertSame( 'A. Name', $first['byline'] );
+		// The quick look's byline names every author, as the project's page does.
+		$this->assertSame( Explorer_Page::searchable( array( 'authors' => array_fill( 0, 5, array( 'name' => 'N.' ) ) ) + $projects[1] )['fullByline'], 'N., N., N., N. and N.' );
 		$this->assertSame( self::URL . $projects[0]['slug'] . '/', $first['url'] );
 		$this->assertStringNotContainsString( 'example.test/record', (string) wp_json_encode( $state ) );
 		$this->assertStringNotContainsString( 'someone@', (string) wp_json_encode( $state ) );
@@ -570,7 +595,7 @@ final class ExplorerPageTest extends WordPressTestCase {
 	 */
 	public function test_a_tile(): void {
 		$this->assertSame(
-			'<article class="fh-tile"><span class="fh-tile__glow" aria-hidden="true"></span><span class="fh-tile__body"><span class="fh-tile__kicker">Research Study</span><h3 class="fh-tile__title"><a class="fh-tile__link" href="https://example.test/firehouse/projects/one/">One</a></h3><p class="fh-tile__summary">A summary.</p></span><span class="fh-tile__meta"><span class="fh-tile__byline">A. Name, B. Name, C. Name et al. · 2025</span>' . \Firehouse\Icons::svg( 'arrow-up-right', 16 ) . '</span><span class="fh-tile__foot"><span class="fh-tile__phases"><span class="fh-tile__phase">Before</span><span class="fh-tile__phase">Long-term</span></span></span></article>',
+			'<article class="fh-tile"><span class="fh-tile__glow" aria-hidden="true"></span><span class="fh-tile__body"><span class="fh-tile__kicker">Research Study</span><h3 class="fh-tile__title"><a class="fh-tile__link" href="https://example.test/firehouse/projects/one/">One</a></h3><p class="fh-tile__summary">A summary.</p></span><span class="fh-tile__meta"><span class="fh-tile__byline">A. Name, B. Name, C. Name et al. · 2025</span>' . \Firehouse\Icons::svg( 'arrow-up-right', 16 ) . '</span><span class="fh-tile__foot" data-wp-bind--hidden="!state.live"><span class="fh-tile__phases"><span class="fh-tile__phase">Before</span><span class="fh-tile__phase">Long-term</span></span><button type="button" class="fh-tile__peek" hidden data-wp-bind--hidden="!state.live" data-wp-on--click="actions.peek">' . \Firehouse\Icons::svg( 'eye', 14 ) . 'Quick look <span class="fh-visually-hidden">at <span>One</span></span></button></span></article>',
 			Explorer_Page::tile(
 				array(
 					'url'            => 'https://example.test/firehouse/projects/one/',
@@ -593,7 +618,9 @@ final class ExplorerPageTest extends WordPressTestCase {
 		);
 		$this->assertStringStartsWith( '<article class="fh-tile" data-wp-each-child="firehouse/explorer::state.results">', $bare );
 		$this->assertStringContainsString( '<span class="fh-tile__kicker" hidden></span>', $bare );
-		$this->assertStringContainsString( '<span class="fh-tile__foot" hidden><span class="fh-tile__phases"></span></span>', $bare );
+		// Without phases, and without the script, the footer is hidden; with it, the quick look's button shows it.
+		$this->assertStringContainsString( '<span class="fh-tile__foot" hidden data-wp-bind--hidden="!state.live"><span class="fh-tile__phases"></span><button type="button" class="fh-tile__peek" hidden', $bare );
+		$this->assertStringContainsString( '<span class="fh-visually-hidden">at <span>Two</span></span></button>', $bare );
 		$this->assertStringContainsString( '<span class="fh-tile__byline">Unattributed · 2024</span>', $bare );
 	}
 
