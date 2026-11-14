@@ -42,6 +42,9 @@ const topics = read('src/content/data/topics.json');
 
 const PAGES = [
   ['home', '/'],
+  // The landing page with a region selected, for the coverage map's results, which
+  // the page with none selected doesn't show.
+  ['home--GBCC', '/?region=GBCC'],
   ['projects', '/projects'],
   ['about', '/about'],
   ...projects.map((project) => [`project--${project.slug}`, `/projects/${project.slug}`]),

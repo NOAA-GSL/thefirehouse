@@ -95,6 +95,10 @@ final class Coverage_Map {
 	 * The coverage section: its heading and words, the region list with each region's
 	 * count, and the selected region's projects, or a hint when none is selected.
 	 *
+	 * The results end in a status line, empty when the page loads, where the map's
+	 * script, which comes next, says what a choice changed: "2 projects in Great Basin",
+	 * not the whole list, which a live region around the results would read out.
+	 *
 	 * @param list<array<string, mixed>> $projects The projects, from projects().
 	 * @param string|null                $selected The selected region's key, or null for none.
 	 * @param string                     $action   The landing page's address, which the form submits to.
@@ -125,7 +129,7 @@ final class Coverage_Map {
 		}
 
 		return sprintf(
-			'<section class="fh-coverage-section fh-container" aria-labelledby="coverage-heading"><div class="fh-coverage"><div class="fh-coverage__head"><h2 id="coverage-heading" class="fh-coverage__title">%1$s</h2><p class="fh-coverage__sub">%2$s</p></div><div class="fh-map"><div class="fh-map__side"><form id="%3$s" method="get" action="%4$s" hidden></form><div class="fh-map__side-head"><h3 class="fh-map__side-title" id="fh-map-list">%5$s</h3><p class="fh-map__side-total">%6$s</p></div>%7$s<ul class="fh-map__list" aria-labelledby="fh-map-list">%8$s</ul><div class="fh-map__offmap"><h4 class="fh-map__offmap-title">%9$s</h4><ul class="fh-map__list">%10$s</ul></div></div><div class="fh-map__results" id="%12$s" role="region" aria-live="polite">%11$s</div></div></div></section>',
+			'<section class="fh-coverage-section fh-container" aria-labelledby="coverage-heading"><div class="fh-coverage"><div class="fh-coverage__head"><h2 id="coverage-heading" class="fh-coverage__title">%1$s</h2><p class="fh-coverage__sub">%2$s</p></div><div class="fh-map"><div class="fh-map__side"><form id="%3$s" method="get" action="%4$s" hidden></form><div class="fh-map__side-head"><h3 class="fh-map__side-title" id="fh-map-list">%5$s</h3><p class="fh-map__side-total">%6$s</p></div>%7$s<ul class="fh-map__list" aria-labelledby="fh-map-list">%8$s</ul><div class="fh-map__offmap"><h4 class="fh-map__offmap-title">%9$s</h4><ul class="fh-map__list">%10$s</ul></div></div><div class="fh-map__results" id="%12$s">%11$s<p class="fh-visually-hidden" role="status"></p></div></div></div></section>',
 			esc_html__( 'Where the research comes from', 'firehouse' ),
 			esc_html__( 'Submissions by Geographic Area Coordination Center (GACC). Select one to open the projects filed there.', 'firehouse' ),
 			esc_attr( self::FORM ),
@@ -182,9 +186,9 @@ final class Coverage_Map {
 	}
 
 	/**
-	 * The selected region's projects, in the order given, each linking to its page; a
-	 * national study's is tagged so in any region but National. Or, if none is filed
-	 * there, saying so.
+	 * The selected region's projects, under a heading that counts them, in the order
+	 * given, each linking to its page; a national study's is tagged so in any region but
+	 * National. Or, if none is filed there, saying so.
 	 *
 	 * @param list<array<string, mixed>> $projects The projects, from projects().
 	 * @param string                     $selected The selected region's key.
@@ -205,7 +209,7 @@ final class Coverage_Map {
 		}
 		$count = count( $shown );
 		return sprintf(
-			'<p class="fh-map__results-head">%1$s%2$s<button type="submit" form="%3$s" class="fh-map__clear">%4$s</button></p>%5$s',
+			'<div class="fh-map__results-head">%1$s<h3 class="fh-map__results-title">%2$s</h3><button type="submit" form="%3$s" class="fh-map__clear">%4$s</button></div>%5$s',
 			Icons::svg( 'map-pin', 14 ),
 			sprintf(
 				/* translators: 1: how many projects are filed under the region; 2: the region's name. */

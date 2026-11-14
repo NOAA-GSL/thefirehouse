@@ -127,8 +127,8 @@
         - button "International 0"
       - listitem:
         - button "Not sure 0"
-    - region:
-      - paragraph: Select a GACC on the map or in the list to see the research filed there.
+    - paragraph: Select a GACC on the map or in the list to see the research filed there.
+    - status
   - region "Have a finding to share?":
     - heading "Have a finding to share?" [level=2]
     - paragraph: Describe what you learned in your own words. Submissions are reviewed and folded into the four topic areas above.

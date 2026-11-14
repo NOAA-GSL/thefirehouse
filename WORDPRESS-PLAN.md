@@ -1691,9 +1691,25 @@ its own (`DEFERRED`), loaded only on a page with the map.
   - *For the map's script: load Leaflet's CSS with it, not in the head, where it
     styles nothing until the map is drawn (about 6.6 KB of the 8.5, 3.9 of it images
     Leaflet's controls the map doesn't use); measured, it costs less than the noise
-    today (the WordPress performance review, 14 November). And, on both sites, give
-    the results a heading, and announce only "N projects in …", not the whole list,
-    when a script changes them (the Section 508 review).*
+    today (the WordPress performance review, 14 November).*
+  - *The results' heading and status line, done 14 November on both sites, the
+    Section 508 review's other point for the script. The results sit under an `h3`
+    that counts them ("4 projects in Great Basin"), with Clear beside it, and are no
+    longer a live region, which read the whole list out on each change. A status
+    line at their end says that sentence when a choice changes them. It says nothing
+    for the region the page opened with, which isn't news, and nothing once none is
+    selected. The site's Clear moves focus to "All submissions", then the pressed
+    one, rather than dropping it with the button, once the router's transition
+    commits, so it never lands on the button before it's pressed. The plugin's status
+    line stays empty until the map's script fills it. The reference now holds the
+    landing page with a region selected too (`home--GBCC`), so `plugin:compare`
+    checks the results.*
+  - *For the map's script, from the same review: the site's hidden map takes
+    keyboard focus. Tab reaches Leaflet's zoom links and, in Chromium, each region's
+    shape, since `bindTooltip` gives it focus listeners, though the canvas is
+    `aria-hidden`. Fix it where the drawing is shared, before the plugin draws the
+    map. And take the status line's sentence from the PHP's `_n()` string, not a
+    copy in the script.*
   - *Left for Stephanie and Emily: "Select a GACC on the map or in the list" and "Not
     on the map" speak of a map that a visitor without JavaScript doesn't get. The
     site's words are the same, and the site shows nothing at all without it.*

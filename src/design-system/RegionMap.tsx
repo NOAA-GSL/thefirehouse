@@ -1,4 +1,12 @@
-import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from 'react';
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import boundaries from '../content/data/gaccBoundaries.json';
@@ -110,6 +118,10 @@ const OFF_FRAME: Partial<Record<RegionKey, L.LatLngBoundsExpression>> = {
   ],
 };
 
+/** "4 projects in": what comes before the region's name, in the results' heading and
+    the status line alike. */
+const projectsIn = (count: number) => `${count} ${count === 1 ? 'project' : 'projects'} in`;
+
 export function RegionMap({
   counts,
   projects,
@@ -133,6 +145,7 @@ export function RegionMap({
    */
   const viewRef = useRef<L.LatLngBoundsExpression>(HOME_VIEW);
   const onSelectRef = useRef(onSelect);
+  const allRef = useRef<HTMLButtonElement>(null);
   const [tilesFailed, setTilesFailed] = useState(false);
   const [showCodes, setShowCodes] = useState(true);
   const listId = useId();
@@ -155,6 +168,38 @@ export function RegionMap({
     () => (selected ? projects.filter((p) => p.regions.includes(selected)) : []),
     [projects, selected],
   );
+
+  /**
+   * What the status line says: how many projects the region just chosen holds, and
+   * nothing else. A live region around the results read the whole list out on every
+   * change. It stays empty until the selection changes, since what the page opened
+   * with isn't news, and empties again when none is selected, which the button used
+   * says itself: Clear leaves focus on "All submissions", now pressed, and a region's
+   * own button, pressed again, is no longer pressed.
+   */
+  const [announced, setAnnounced] = useState({ selected, text: '' });
+  if (announced.selected !== selected) {
+    setAnnounced({
+      selected,
+      text: selected ? `${projectsIn(shown.length)} ${REGIONS[selected].short}` : '',
+    });
+  }
+
+  /* Clear goes once none is selected, so focus moves to "All submissions", then the
+     pressed one, rather than falling back to the top of the page. The router applies
+     a choice in a transition, a moment after the click, so focus moves when that
+     commits, in the same task that removes Clear: moved any sooner, it would land on
+     a button still saying it isn't pressed. A choice made before the commit cancels
+     the move. */
+  const focusAllOnClear = useRef(false);
+  const clear = () => {
+    focusAllOnClear.current = true;
+    onSelect(null);
+  };
+  useLayoutEffect(() => {
+    if (focusAllOnClear.current && selected === null) allRef.current?.focus();
+    focusAllOnClear.current = false;
+  }, [selected]);
 
   /* ---- Create the map once ---- */
   useEffect(() => {
@@ -392,6 +437,7 @@ export function RegionMap({
         <ul className="fh-map__list" aria-labelledby={listId}>
           <li>
             <button
+              ref={allRef}
               type="button"
               className={`fh-map__region${selected === null ? ' fh-map__region--on' : ''}`}
               aria-pressed={selected === null}
@@ -454,18 +500,21 @@ export function RegionMap({
         </div>
       </div>
 
-      {/* ---- Projects in the selected region ---- */}
-      <div className="fh-map__results" role="region" aria-live="polite">
+      {/* ---- Projects in the selected region ----
+          A heading to find them by, and no live region around them: the status line
+          at the end announces what changed. */}
+      <div className="fh-map__results">
         {selected ? (
           <>
-            <p className="fh-map__results-head">
+            <div className="fh-map__results-head">
               <Icon name="map-pin" size={14} />
-              {shown.length} {shown.length === 1 ? 'project' : 'projects'} in{' '}
-              <strong>{label(selected).short}</strong>
-              <button type="button" className="fh-map__clear" onClick={() => onSelect(null)}>
+              <h3 className="fh-map__results-title">
+                {projectsIn(shown.length)} <strong>{label(selected).short}</strong>
+              </h3>
+              <button type="button" className="fh-map__clear" onClick={clear}>
                 Clear
               </button>
-            </p>
+            </div>
             {shown.length > 0 ? (
               <ul className="fh-map__projects">
                 {shown.map((project) => (
@@ -492,6 +541,9 @@ export function RegionMap({
             Select a GACC on the map or in the list to see the research filed there.
           </p>
         )}
+        <p className="fh-visually-hidden" role="status">
+          {announced.text}
+        </p>
       </div>
     </div>
   );

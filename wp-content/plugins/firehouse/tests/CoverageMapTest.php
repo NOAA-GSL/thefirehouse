@@ -125,7 +125,8 @@ final class CoverageMapTest extends WordPressTestCase {
 	 * With none selected: the heading and its words, the count of projects that name a
 	 * region (the one with none left out), the note on the national study, every region
 	 * in the vocabulary's order with its count (a national study in every GACC), and the
-	 * hint. "All submissions" is pressed.
+	 * hint. "All submissions" is pressed. The results are no live region: they end in a
+	 * status line, empty when the page loads.
 	 */
 	public function test_the_counts_with_none_selected(): void {
 		$xpath = self::dom();
@@ -164,8 +165,16 @@ final class CoverageMapTest extends WordPressTestCase {
 		$this->assertSame( 4, $xpath->query( '//div[@class="fh-map__offmap"]//button[@class="fh-map__region fh-map__region--sm"]' )->length );
 		$this->assertSame( 0, $xpath->query( '//div[@class="fh-map__offmap"]//span[@class="fh-map__swatch" or @class="fh-map__region-code"]' )->length );
 		$this->assertSame( 'Select a GACC on the map or in the list to see the research filed there.', self::text( self::one( $xpath, '//div[@class="fh-map__results"]/p[@class="fh-map__hint"]' ) ) );
-		$results = self::one( $xpath, '//div[@class="fh-map__results"]' );
-		$this->assertSame( array( 'region', 'polite' ), array( $results->getAttribute( 'role' ), $results->getAttribute( 'aria-live' ) ) );
+		$results    = self::one( $xpath, '//div[@class="fh-map__results"]' );
+		$attributes = array();
+		foreach ( $results->attributes as $attribute ) {
+			$attributes[] = $attribute->name;
+		}
+		$this->assertSame( array( 'class', 'id' ), $attributes );
+		$status = self::one( $xpath, '//div[@class="fh-map__results"]/p[@role="status"]' );
+		$this->assertSame( '<p class="fh-visually-hidden" role="status"></p>', $status->ownerDocument->saveHTML( $status ) ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- the DOM's own name.
+		$this->assertSame( $status, $results->lastChild ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- as above.
+		$this->assertSame( 0, $xpath->query( '//h3[@class="fh-map__results-title"]' )->length );
 	}
 
 	/**
@@ -204,8 +213,9 @@ final class CoverageMapTest extends WordPressTestCase {
 
 	/**
 	 * Selected, a region's button is pressed and submits nothing, so pressing it again
-	 * selects none; "All submissions" isn't pressed. Its projects follow, in order, each
-	 * linking to its page, a national study tagged so, with its year.
+	 * selects none; "All submissions" isn't pressed. Its projects follow a heading that
+	 * counts them, in order, each linking to its page, a national study tagged so, with
+	 * its year. The status line stays empty: nothing has changed since the page loaded.
 	 */
 	public function test_a_selected_region(): void {
 		$xpath = self::dom( 'NWCC' );
@@ -215,10 +225,15 @@ final class CoverageMapTest extends WordPressTestCase {
 		$this->assertSame( 'fh-map__region fh-map__region--on', self::one( $xpath, '//button[@aria-pressed="true"]' )->getAttribute( 'class' ) );
 		$this->assertSame( 0, $xpath->query( '//p[@class="fh-map__hint"]' )->length );
 
-		$head = self::one( $xpath, '//p[@class="fh-map__results-head"]' );
+		$head = self::one( $xpath, '//div[@class="fh-map__results"]/div[@class="fh-map__results-head"]' );
 		$this->assertSame( '2 projects in NorthwestClear', self::text( $head ) );
-		$this->assertSame( 'Northwest', self::text( self::one( $xpath, '//p[@class="fh-map__results-head"]/strong' ) ) );
 		$this->assertSame( 'svg', $head->firstChild->nodeName ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- the DOM's own name.
+		$title = self::one( $xpath, '//div[@class="fh-map__results-head"]/h3[@class="fh-map__results-title"]' );
+		$this->assertSame( '2 projects in Northwest', self::text( $title ) );
+		$this->assertSame( 'Northwest', self::text( self::one( $xpath, '//h3[@class="fh-map__results-title"]/strong' ) ) );
+		$this->assertSame( 'Clear', self::text( self::one( $xpath, '//div[@class="fh-map__results-head"]/button[@class="fh-map__clear"]' ) ) );
+		$status = self::one( $xpath, '//p[@role="status"]' );
+		$this->assertSame( '<p class="fh-visually-hidden" role="status"></p>', $status->ownerDocument->saveHTML( $status ) ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- the DOM's own name.
 
 		$links = array();
 		foreach ( $xpath->query( '//ul[@class="fh-map__projects"]/li/a[@class="fh-map__project"]' ) as $link ) {
@@ -239,12 +254,12 @@ final class CoverageMapTest extends WordPressTestCase {
 	 */
 	public function test_national_empty_and_one(): void {
 		$national = self::dom( 'NATIONAL' );
-		$this->assertSame( '1 project in NationalClear', self::text( self::one( $national, '//p[@class="fh-map__results-head"]' ) ) );
+		$this->assertSame( '1 project in National', self::text( self::one( $national, '//h3[@class="fh-map__results-title"]' ) ) );
 		$this->assertSame( 0, $national->query( '//span[@class="fh-map__project-tag"]' )->length );
 		$this->assertSame( 1, $national->query( '//a[@class="fh-map__project"]' )->length );
 
 		$empty = self::dom( 'INTL' );
-		$this->assertSame( '0 projects in InternationalClear', self::text( self::one( $empty, '//p[@class="fh-map__results-head"]' ) ) );
+		$this->assertSame( '0 projects in International', self::text( self::one( $empty, '//h3[@class="fh-map__results-title"]' ) ) );
 		$this->assertSame( 'No published research is filed under this region yet.', self::text( self::one( $empty, '//p[@class="fh-map__empty"]' ) ) );
 		$this->assertSame( 0, $empty->query( '//ul[@class="fh-map__projects"]' )->length );
 	}
