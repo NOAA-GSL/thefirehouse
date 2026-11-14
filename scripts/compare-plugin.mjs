@@ -35,7 +35,7 @@ const PLACEHOLDER = 'This page is being built.';
  * kind of page (`topic--`). Each one must be there and match; the rest are listed as
  * not built yet. Each page adds itself here once it is built.
  */
-export const BUILT = ['about', 'home', 'not-found', 'project--', 'projects', 'topic--'];
+export const BUILT = ['about', 'home', 'home--', 'not-found', 'project--', 'projects', 'topic--'];
 
 /**
  * Pages the plugin has built that can't match the reference yet, with why: listed, not
@@ -47,10 +47,11 @@ export const UNCOMPARED = {};
  * Parts of a built page that come later, each by how its line in the reference begins
  * (`button "GACC labels"`, `paragraph: "Boundaries: …`): they're left out
  * of the reference before comparing, with everything inside them, and listed. On the
- * landing page, the coverage map's toggle and credit come with the map, which only its
- * script draws (Phase 5).
+ * landing page, with or without a region selected, the coverage map's toggle and
+ * credit come with the map, which only its script draws (Phase 5).
  */
-export const LATER = { home: ['button "GACC labels"', 'paragraph: "Boundaries: NIFC National GACC Boundaries.'] };
+const MAP_LATER = ['button "GACC labels"', 'paragraph: "Boundaries: NIFC National GACC Boundaries.'];
+export const LATER = { home: MAP_LATER, 'home--GBCC': MAP_LATER };
 
 /** A snapshot's lines without each part named as LATER names them, and everything inside it. */
 export function withoutLater(lines, parts = []) {
@@ -75,11 +76,12 @@ export function isBuilt(name, built = BUILT) {
   return built.some((entry) => (entry.endsWith('--') ? name.startsWith(entry) : name === entry));
 }
 
-/** The plugin's address for a reference page. */
+/** The plugin's address for a reference page: `home--GBCC` is the landing page's `?region=GBCC`. */
 function pluginPath(name) {
   if (name === 'home') return `${PREFIX}/`;
   if (name === 'not-found') return `${PREFIX}/no-such-page/`;
   const [kind, key] = name.split('--');
+  if (kind === 'home') return `${PREFIX}/?region=${key}`;
   if (kind === 'project') return `${PREFIX}/projects/${key}/`;
   if (kind === 'topic') return `${PREFIX}/topics/${key}/`;
   return `${PREFIX}/${name}/`;

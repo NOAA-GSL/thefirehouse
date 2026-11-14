@@ -1,4 +1,12 @@
-import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from 'react';
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import boundaries from '../content/data/gaccBoundaries.json';
@@ -110,6 +118,10 @@ const OFF_FRAME: Partial<Record<RegionKey, L.LatLngBoundsExpression>> = {
   ],
 };
 
+/** "4 projects in": what comes before the region's name, in the results' heading and
+    the status line alike. */
+const projectsIn = (count: number) => `${count} ${count === 1 ? 'project' : 'projects'} in`;
+
 export function RegionMap({
   counts,
   projects,
@@ -161,25 +173,33 @@ export function RegionMap({
    * What the status line says: how many projects the region just chosen holds, and
    * nothing else. A live region around the results read the whole list out on every
    * change. It stays empty until the selection changes, since what the page opened
-   * with isn't news, and empties again when none is selected: focus is then on "All
-   * submissions", which says so itself.
+   * with isn't news, and empties again when none is selected, which the button used
+   * says itself: Clear leaves focus on "All submissions", now pressed, and a region's
+   * own button, pressed again, is no longer pressed.
    */
   const [announced, setAnnounced] = useState({ selected, text: '' });
   if (announced.selected !== selected) {
     setAnnounced({
       selected,
-      text: selected
-        ? `${shown.length} ${shown.length === 1 ? 'project' : 'projects'} in ${REGIONS[selected].short}`
-        : '',
+      text: selected ? `${projectsIn(shown.length)} ${REGIONS[selected].short}` : '',
     });
   }
 
-  /* Clear goes as the selection does, so focus moves to "All submissions", now the
-     pressed one, rather than falling back to the top of the page. */
+  /* Clear goes once none is selected, so focus moves to "All submissions", then the
+     pressed one, rather than falling back to the top of the page. The router applies
+     a choice in a transition, a moment after the click, so focus moves when that
+     commits, in the same task that removes Clear: moved any sooner, it would land on
+     a button still saying it isn't pressed. A choice made before the commit cancels
+     the move. */
+  const focusAllOnClear = useRef(false);
   const clear = () => {
-    allRef.current?.focus();
+    focusAllOnClear.current = true;
     onSelect(null);
   };
+  useLayoutEffect(() => {
+    if (focusAllOnClear.current && selected === null) allRef.current?.focus();
+    focusAllOnClear.current = false;
+  }, [selected]);
 
   /* ---- Create the map once ---- */
   useEffect(() => {
@@ -489,8 +509,7 @@ export function RegionMap({
             <div className="fh-map__results-head">
               <Icon name="map-pin" size={14} />
               <h3 className="fh-map__results-title">
-                {shown.length} {shown.length === 1 ? 'project' : 'projects'} in{' '}
-                <strong>{label(selected).short}</strong>
+                {projectsIn(shown.length)} <strong>{label(selected).short}</strong>
               </h3>
               <button type="button" className="fh-map__clear" onClick={clear}>
                 Clear

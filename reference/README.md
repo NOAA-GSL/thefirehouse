@@ -2,7 +2,8 @@
 
 `aria/` holds an accessibility snapshot of every route of the React site, at desktop
 (1280 px) and phone (390 px) width: the headings, landmarks, links, buttons and text a
-screen reader meets, in order. The plugin's pages are checked against them, so a
+screen reader meets, in order. The landing page is there twice: as it opens, and with
+a region selected (`home--GBCC`, `?region=GBCC`), for the coverage map's results. The plugin's pages are checked against them, so a
 difference shows up as a diff rather than a surprise in a screen-reader audit.
 
 Screenshots of every route, in light and dark, go to `screenshots/`. They aren't

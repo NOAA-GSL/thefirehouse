@@ -627,7 +627,9 @@ nothing from the database. Each class's docblock has the detail; this is the map
   each region is a button that submits a GET form for `?region=` and its key, the
   address the static site uses, and the page comes back at that region's projects.
   The selected region's button, "All submissions" and "Clear" submit nothing, which
-  selects none, and the page comes back at the section's heading, by the list. Each
+  selects none, and the page comes back at the section's heading, by the list. The
+  selected region's projects sit under an `h3` that counts them, and end in a visually
+  hidden `role="status"` line, empty until the map's script fills it. Each
   GACC with something filed under it has a swatch carrying its colour for both themes,
   from `Map_Colors`, the site's `heat.ts` ported and held to it by
   `shared/cases/coverage-map.json`, and `frame.css` shows the theme's. The map itself,
@@ -844,10 +846,14 @@ surface â€” real buttons, real counts, driving the same state the polygons do â€
 the Leaflet canvas is `aria-hidden` so assistive technology is sent there rather
 than into unlabelled SVG paths. Colour is never the only channel; every region
 carries its count as a number. The selected region's projects sit under a heading
-that counts them, and aren't a live region, which would read the whole list out on
-each change: a status line after them says only "4 projects in Great Basin" when a
-choice changes them, and nothing for the region the page opened with. Clear moves
-focus to "All submissions" rather than losing it with the button.
+that counts them. They aren't a live region, which would read the whole list out on
+each change. Instead, a visually hidden `role="status"` line after them says only "4
+projects in Great Basin" when a choice changes them. It says nothing for the region
+the page opened with, or once none is selected. Clear disappears once nothing is
+selected, so it first moves focus to "All submissions", now the pressed button,
+rather than letting focus fall back to the top of the page. The plugin's
+`Coverage_Map` has the same heading and status line, but the line stays empty until
+the map's script fills it, and its Clear reloads the page.
 
 ## Survey import
 

@@ -165,10 +165,14 @@ final class CoverageMapTest extends WordPressTestCase {
 		$this->assertSame( 4, $xpath->query( '//div[@class="fh-map__offmap"]//button[@class="fh-map__region fh-map__region--sm"]' )->length );
 		$this->assertSame( 0, $xpath->query( '//div[@class="fh-map__offmap"]//span[@class="fh-map__swatch" or @class="fh-map__region-code"]' )->length );
 		$this->assertSame( 'Select a GACC on the map or in the list to see the research filed there.', self::text( self::one( $xpath, '//div[@class="fh-map__results"]/p[@class="fh-map__hint"]' ) ) );
-		$results = self::one( $xpath, '//div[@class="fh-map__results"]' );
-		$this->assertSame( array( false, false ), array( $results->hasAttribute( 'role' ), $results->hasAttribute( 'aria-live' ) ) );
+		$results    = self::one( $xpath, '//div[@class="fh-map__results"]' );
+		$attributes = array();
+		foreach ( $results->attributes as $attribute ) {
+			$attributes[] = $attribute->name;
+		}
+		$this->assertSame( array( 'class', 'id' ), $attributes );
 		$status = self::one( $xpath, '//div[@class="fh-map__results"]/p[@role="status"]' );
-		$this->assertSame( array( 'fh-visually-hidden', '' ), array( $status->getAttribute( 'class' ), $status->textContent ) ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- the DOM's own name.
+		$this->assertSame( '<p class="fh-visually-hidden" role="status"></p>', $status->ownerDocument->saveHTML( $status ) ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- the DOM's own name.
 		$this->assertSame( $status, $results->lastChild ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- as above.
 		$this->assertSame( 0, $xpath->query( '//h3[@class="fh-map__results-title"]' )->length );
 	}
@@ -228,7 +232,8 @@ final class CoverageMapTest extends WordPressTestCase {
 		$this->assertSame( '2 projects in Northwest', self::text( $title ) );
 		$this->assertSame( 'Northwest', self::text( self::one( $xpath, '//h3[@class="fh-map__results-title"]/strong' ) ) );
 		$this->assertSame( 'Clear', self::text( self::one( $xpath, '//div[@class="fh-map__results-head"]/button[@class="fh-map__clear"]' ) ) );
-		$this->assertSame( '', self::one( $xpath, '//p[@role="status"]' )->textContent ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- the DOM's own name.
+		$status = self::one( $xpath, '//p[@role="status"]' );
+		$this->assertSame( '<p class="fh-visually-hidden" role="status"></p>', $status->ownerDocument->saveHTML( $status ) ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- the DOM's own name.
 
 		$links = array();
 		foreach ( $xpath->query( '//ul[@class="fh-map__projects"]/li/a[@class="fh-map__project"]' ) as $link ) {
