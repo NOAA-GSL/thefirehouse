@@ -36,7 +36,25 @@ visitor may see with a search, filters that show how many projects each choice
 leaves, and a sort. With JavaScript, results update as you type and as each filter
 changes; without it, the filters apply when the form is sent. Either way, an address
 with the static site's parameters, such as /firehouse/projects/?q=smoke&region=NWCC, opens it already
-filtered.
+filtered. The landing page's coverage map shows where the research comes from: a map
+of the Geographic Area Coordination Centers, coloured by how many projects are filed
+under each, a count for every region, and the projects filed under the one chosen.
+With JavaScript, a choice on the map or in the list changes the page in place;
+without it, the list works on its own and the map isn't shown.
+
+The coverage map is the plugin's one outside service. Its basemap tiles come from
+Esri (server.arcgisonline.com). On the landing page, and only with JavaScript, the
+visitor's browser loads them straight from Esri: when the map is drawn, and again as
+the visitor moves or zooms it, picks a region, or switches between light and dark. As
+with any image a page loads from another site, each request gives Esri the visitor's
+IP address, the browser's usual headers (such as its name and version and its
+preferred languages), any cookies the browser keeps for Esri where it allows them,
+and, through the tiles it asks for, the part of the map in view. The plugin sends no
+Referer with them, so Esri isn't told which site or page the visitor is reading, and
+the server never calls Esri. Esri's terms require its attribution, which is printed
+under the map. Without the tiles, the map still draws the regions on a blank
+background. A site with a Content Security Policy must allow images from
+https://server.arcgisonline.com.
 
 The fonts in assets/fonts/, Archivo and Public Sans, are third-party, under the SIL
 Open Font License 1.1, whose text is beside them. assets/fonts/SOURCES.json records
@@ -44,6 +62,10 @@ where each file came from.
 
 The icons in assets/icons/ are Lucide's, under the ISC License, whose text is beside
 them in LICENSE.txt. Lucide credits portions of them to Feather (MIT) there.
+
+The coverage map's drawing in assets/map/ includes Leaflet, under the BSD 2-Clause
+License, whose text is beside it in LICENSE.txt. The map's region boundaries are
+simplified from the National Interagency Fire Center's National GACC Boundaries.
 
 The Import screen keeps nothing it doesn't import: the uploaded file isn't saved, and
 the checked content waits briefly for the confirmation and is then cleared. The plugin
@@ -75,11 +97,15 @@ one is.
   exactly as stored, on the topic pages too.
 * The landing page, created by the Import screen from the seed bundle when there's
   none: the hero with live counts, the four topic areas' top needs, where the research
-  comes from (how many projects are filed under each region, and the projects filed
-  under the one chosen; it works without JavaScript), and the submit band. The map
-  itself comes later. A landing page imported before this doesn't have that section:
-  add `<!-- wp:firehouse/coverage-map /-->` before its submit band in the block
-  editor's Code editor.
+  comes from, and the submit band. Where the research comes from is a map of the
+  Geographic Area Coordination Centers, coloured by how many projects are filed under
+  each, with a count for every region and the projects filed under the one chosen.
+  With JavaScript, a choice on the map or in the list changes the page in place, and
+  the address with it. Without it, the list works alone, and the map isn't shown. The
+  map's basemap tiles are the plugin's one outside service: the visitor's browser
+  loads them from Esri (see the Description). A landing page imported before this
+  doesn't have that section: add `<!-- wp:firehouse/coverage-map /-->` before its
+  submit band in the block editor's Code editor.
 * The About page, created by the Import screen under the landing page when there's
   none: what the hub is, who it serves, how it works, the team, with portraits an
   administrator uploads to the Media Library before importing (initials otherwise),

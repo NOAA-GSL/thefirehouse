@@ -179,11 +179,29 @@
   background: var(--fh-swatch-dark, transparent);
 }
 
-/* Without the map, which only its script draws, the selected region's projects sit
-   beside the region list, not below the rows the map would take, and after it, as
-   they come after it in the page, so the order you see is the order you Tab in. */
+/* The coverage map without its map. Only the view script draws it, so without
+   JavaScript its stage and credit go: the server prints them for the script, which
+   would otherwise have to add them as the page shows, and move what's below. The view
+   script hides them itself if the map can't be drawn. Either way, the selected
+   region's projects sit beside the region list, not below the rows the map would
+   take, and after it, as they come after it in the page, so the order you see is the
+   order you Tab in. */
+@media (scripting: none) {
+  .fh-app .fh-map__stage,
+  .fh-app .fh-map__credit {
+    display: none;
+  }
+}
+
+@media (scripting: none) and (min-width: 900px) {
+  .fh-app .fh-map {
+    grid-template-columns: 236px minmax(0, 1fr);
+    grid-template-areas: 'side results';
+  }
+}
+
 @media (min-width: 900px) {
-  .fh-app .fh-map:not(:has(> .fh-map__stage)) {
+  .fh-app .fh-map:has(> .fh-map__stage[hidden]) {
     grid-template-columns: 236px minmax(0, 1fr);
     grid-template-areas: 'side results';
   }

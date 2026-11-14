@@ -17,7 +17,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * A region's colours on the coverage map, from its count and the busiest region's,
  * on one of the two ramps in shared/coverage-map.json, one per basemap. heat.ts says
  * why the ramps are blue, normalized against the busiest region, and two.
- * shared/cases/coverage-map.json holds this and heat.ts to the same answers.
+ * shared/cases/coverage-map.json holds this and heat.ts to the same answers. The file
+ * holds the basemap too, and this reads its attribution, for the credit under the map.
  */
 final class Map_Colors {
 
@@ -34,10 +35,36 @@ final class Map_Colors {
 	 *
 	 * @param string $theme `dark` or `light`.
 	 * @return array<string, mixed>
+	 */
+	public static function ramp( string $theme ): array {
+		return self::data()['ramps'][ $theme ];
+	}
+
+	/**
+	 * The basemap's attribution, which Esri's terms require under the map: the same file
+	 * holds the tiles' addresses, which the map's script reads.
+	 */
+	public static function attribution(): string {
+		return (string) self::data()['basemap']['attribution'];
+	}
+
+	/**
+	 * The origin the basemap's tiles come from, `https://` and the host, which the map's
+	 * script connects to early: both themes' tiles are on it.
+	 */
+	public static function tile_origin(): string {
+		$url = wp_parse_url( (string) self::data()['basemap']['tiles']['light'] );
+		return $url['scheme'] . '://' . $url['host'];
+	}
+
+	/**
+	 * The file, decoded once per request.
+	 *
+	 * @return array<string, mixed>
 	 * @throws \RuntimeException When the file is missing or isn't JSON, which is a
 	 *                           broken release rather than anything content can cause.
 	 */
-	public static function ramp( string $theme ): array {
+	private static function data(): array {
 		if ( null === self::$data ) {
 			$data = wp_json_file_decode( dirname( __DIR__ ) . '/shared/coverage-map.json', array( 'associative' => true ) );
 			if ( ! is_array( $data ) ) {
@@ -45,7 +72,7 @@ final class Map_Colors {
 			}
 			self::$data = $data;
 		}
-		return self::$data['ramps'][ $theme ];
+		return self::$data;
 	}
 
 	/**

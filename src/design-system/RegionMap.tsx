@@ -1,17 +1,8 @@
-import {
-  useEffect,
-  useId,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-} from 'react';
-import L from 'leaflet';
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import 'leaflet/dist/leaflet.css';
-import boundaries from '../content/data/gaccBoundaries.json';
-import { heat, RAMPS } from './heat';
+import { heat } from './heat';
 import { Icon } from './Icon';
+import { BASEMAP, drawMap, type MapCanvas } from './mapCanvas';
 import {
   GACC_LIST,
   NON_GACC_LIST,
@@ -47,12 +38,9 @@ export interface RegionMapProps {
 /**
  * Coverage map — where the research comes from.
  *
- * Boundaries are the authoritative NIFC file (`National_GACC_Boundaries`, served
- * from NIFC's ArcGIS instance), simplified and committed to the repo rather than
- * fetched at runtime. Committing it means the map still draws when the network is
- * hostile — a conference floor, or a federal network that blocks the host outright.
- * The basemap tiles are the only live dependency, and the map degrades to
- * boundaries-on-a-blank-canvas if they fail rather than showing nothing.
+ * The map itself is drawn by `mapCanvas.ts`, which the plugin's view script draws from
+ * too; this component holds the selection and renders everything around the map: the
+ * labels toggle, the credit, the region list and the selected region's projects.
  *
  * ---------------------------------------------------------------------------
  * Accessibility
@@ -72,52 +60,6 @@ export interface RegionMapProps {
  * selection is conveyed by the list's `aria-pressed` as well as by the highlight.
  */
 
-/* Esri's free basemaps. Attribution is required by their terms and is rendered
-   below the map — do not remove it. */
-const BASEMAPS = {
-  dark: {
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-    attribution: 'Esri, HERE, Garmin, © OpenStreetMap contributors',
-  },
-  light: {
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-    attribution: 'Esri, HERE, Garmin, © OpenStreetMap contributors',
-  },
-};
-
-/**
- * Default view: the lower 48.
- *
- * Framing Alaska, Hawaii and CONUS at once is the obvious first instinct and it is
- * wrong — Web Mercator has to zoom out to most of the Pacific to hold all three,
- * and the result is a map where every mainland region is a few pixels across. The
- * default therefore shows the area most submissions are in, and selecting Alaska or
- * the Pacific flies there (see `flyToRegion`), which is also a better answer than a
- * static inset: the reader gets the whole region rather than a thumbnail of it.
- */
-const HOME_VIEW: L.LatLngBoundsExpression = [
-  [24.4, -125.2],
-  [49.6, -66.5],
-];
-
-/** How far out the reader may pan — enough for Alaska and Hawaii, not the globe. */
-const MAX_VIEW: L.LatLngBoundsExpression = [
-  [10.0, -180.0],
-  [72.0, -60.0],
-];
-
-/** Regions that sit outside the default frame and need a fly-to. */
-const OFF_FRAME: Partial<Record<RegionKey, L.LatLngBoundsExpression>> = {
-  AICC: [
-    [51.0, -170.0],
-    [71.5, -130.0],
-  ],
-  PACIFIC: [
-    [18.5, -160.5],
-    [22.5, -154.5],
-  ],
-};
-
 /** "4 projects in": what comes before the region's name, in the results' heading and
     the status line alike. */
 const projectsIn = (count: number) => `${count} ${count === 1 ? 'project' : 'projects'} in`;
@@ -131,19 +73,7 @@ export function RegionMap({
   theme,
 }: RegionMapProps) {
   const hostRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<L.Map | null>(null);
-  const tilesRef = useRef<L.TileLayer | null>(null);
-  const layersRef = useRef<Map<RegionKey, L.Path>>(new Map());
-  const labelsRef = useRef<L.LayerGroup | null>(null);
-  /**
-   * The view the map should currently be showing.
-   *
-   * Held in a ref because the ResizeObserver below has to restore *this*, not the
-   * home view. Without it, arriving on `?region=GBCC` zoomed to the Great Basin and
-   * was then immediately yanked back out to the whole country when the observer
-   * fired on first layout — a deep link that visibly undid itself.
-   */
-  const viewRef = useRef<L.LatLngBoundsExpression>(HOME_VIEW);
+  const canvasRef = useRef<MapCanvas | null>(null);
   const onSelectRef = useRef(onSelect);
   const allRef = useRef<HTMLButtonElement>(null);
   const [tilesFailed, setTilesFailed] = useState(false);
@@ -201,194 +131,32 @@ export function RegionMap({
     focusAllOnClear.current = false;
   }, [selected]);
 
-  /* ---- Create the map once ---- */
+  /* ---- The map: drawn once, then told what changed ---- */
+  const initial = useRef({ counts, theme, selected, showCodes });
   useEffect(() => {
-    if (!hostRef.current || mapRef.current) return;
-
-    const map = L.map(hostRef.current, {
-      zoomControl: false,
-      attributionControl: false,
-      // Never hijack page scroll. The map sits in the hero, so a wheel-zoom here
-      // would trap someone trying to scroll past it — a classic way to make a
-      // landing page feel broken.
-      scrollWheelZoom: false,
-      doubleClickZoom: false,
-      // Leaflet's own keyboard handling would put the canvas in the tab order as a
-      // single opaque stop. The region list is the operable surface instead.
-      keyboard: false,
+    if (!hostRef.current) return;
+    const canvas = drawMap(hostRef.current, {
+      ...initial.current,
+      submissions: (count) => `${count} ${count === 1 ? 'submission' : 'submissions'}`,
+      onSelect: (key) => onSelectRef.current(key),
+      onTiles: setTilesFailed,
     });
-
-    map.fitBounds(HOME_VIEW);
-    map.setMaxBounds(MAX_VIEW);
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
-    mapRef.current = map;
-
-    // Leaflet measures its container once, at construction. In a CSS grid inside a
-    // glass panel inside a hero, the container has no final width at that moment —
-    // so the map computes a zero-size viewport, requests a handful of zoom-2 tiles
-    // and renders a sliver. It looks exactly like "tiles failed to load", which is
-    // the wrong thing to go debugging.
-    //
-    // A ResizeObserver fixes it for every case at once: first layout, the hero's
-    // 1100px breakpoint, a window drag, and the panel reflowing when the region
-    // list wraps. `fitBounds` is re-applied because invalidateSize alone keeps the
-    // stale centre and leaves Alaska cropped.
-    const observer = new ResizeObserver(() => {
-      map.invalidateSize({ animate: false });
-      map.fitBounds(viewRef.current);
-    });
-    observer.observe(hostRef.current);
-
+    canvasRef.current = canvas;
     return () => {
-      observer.disconnect();
-      map.remove();
-      mapRef.current = null;
-      layersRef.current.clear();
+      canvas.remove();
+      canvasRef.current = null;
     };
   }, []);
 
-  /* ---- Basemap, swapped with the theme ---- */
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-
-    tilesRef.current?.remove();
-    const config = BASEMAPS[theme];
-    const layer = L.tileLayer(config.url, { maxZoom: 8, minZoom: 2 });
-    layer.on('tileerror', () => setTilesFailed(true));
-    layer.on('tileload', () => setTilesFailed(false));
-    layer.addTo(map);
-    tilesRef.current = layer;
-  }, [theme]);
-
-  /* ---- Region polygons ---- */
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-
-    layersRef.current.forEach((layer) => layer.remove());
-    layersRef.current.clear();
-
-    for (const feature of boundaries.features) {
-      const key = feature.properties.key as RegionKey;
-      const count = counts[key] ?? 0;
-      const { fill, stroke, alpha } = heat(count, max, theme);
-
-      const layer = L.geoJSON(feature as unknown as GeoJSON.Feature, {
-        style: {
-          color: stroke,
-          weight: 1.2,
-          opacity: 0.9,
-          fillColor: fill,
-          fillOpacity: alpha,
-        },
-      });
-
-      layer.on('click', () => onSelectRef.current(selected === key ? null : key));
-      layer.on('mouseover', () => layer.setStyle({ weight: 3, fillOpacity: alpha + 0.2 }));
-      layer.on('mouseout', () => layer.setStyle({ weight: 1.2, fillOpacity: alpha }));
-      layer.bindTooltip(
-        `<strong>${REGIONS[key].short}</strong><br>${count} ${count === 1 ? 'submission' : 'submissions'}`,
-        { direction: 'top', className: 'fh-map__tip' },
-      );
-      layer.addTo(map);
-      layersRef.current.set(key, layer as unknown as L.Path);
-    }
-  }, [counts, max, selected, theme]);
-
-  /* ---- GACC code labels ----
-     Small, and non-interactive so they never swallow a click meant for the region
-     underneath. Anchored to the hand-placed centres in the taxonomy rather than
-     to polygon centroids: EACC and SACC are shapes whose centroid can land in a
-     neighbour. The toggle exists because ten labels on a small map can crowd it,
-     and a reader who knows the regions by shape may prefer them off. */
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-
-    labelsRef.current?.remove();
-    labelsRef.current = null;
-    if (!showCodes) return;
-
-    const group = L.layerGroup();
-    for (const region of GACC_LIST) {
-      if (!region.center) continue;
-      const isSelected = selected === region.key;
-      L.marker(region.center, {
-        interactive: false,
-        keyboard: false,
-        icon: L.divIcon({
-          className: `fh-map__code${isSelected ? ' fh-map__code--on' : ''}${
-            selected && !isSelected ? ' fh-map__code--dim' : ''
-          }`,
-          html: region.key,
-          iconSize: undefined,
-        }),
-      }).addTo(group);
-    }
-    group.addTo(map);
-    labelsRef.current = group;
-  }, [showCodes, selected]);
-
-  /* ---- Fly to the selected region ---- */
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-
-    if (!selected) {
-      viewRef.current = HOME_VIEW;
-      map.flyToBounds(HOME_VIEW, { duration: 0.6 });
-      return;
-    }
-
-    const off = OFF_FRAME[selected];
-    if (off) {
-      viewRef.current = off;
-      map.flyToBounds(off, { duration: 0.8, maxZoom: 6 });
-      return;
-    }
-
-    const layer = layersRef.current.get(selected);
-    if (layer) {
-      const bounds = (layer as unknown as L.GeoJSON).getBounds();
-      viewRef.current = bounds;
-      map.flyToBounds(bounds, { duration: 0.7, padding: [24, 24], maxZoom: 6 });
-    }
-    // NATIONAL, INTL and UNKNOWN have nowhere to fly to, so the map holds still and
-    // only the results list below it changes. Moving the map for them would imply a
-    // location that the answer explicitly does not have.
-  }, [selected, counts]);
-
-  /* ---- Selection highlight ---- */
-  useEffect(() => {
-    layersRef.current.forEach((layer, key) => {
-      const count = counts[key] ?? 0;
-      const { fill, stroke, alpha } = heat(count, max, theme);
-      const isSelected = selected === key;
-      (layer as unknown as L.GeoJSON).setStyle({
-        color: isSelected ? RAMPS[theme].selected : stroke,
-        weight: isSelected ? 3.5 : 1.2,
-        fillColor: fill,
-        // Dim the unselected regions rather than only brightening the selected one:
-        // at these counts a single highlight is easy to miss.
-        fillOpacity: selected && !isSelected ? alpha * 0.35 : alpha,
-      });
-    });
-  }, [selected, counts, max, theme]);
+    canvasRef.current?.update({ counts, theme, selected, showCodes });
+  }, [counts, theme, selected, showCodes]);
 
   const label = (key: RegionKey) => REGIONS[key];
 
   return (
     <div className="fh-map">
-      <div
-        className="fh-map__stage"
-        style={
-          {
-            '--map-label': RAMPS[theme].label.text,
-            '--map-label-halo': RAMPS[theme].label.halo,
-          } as CSSProperties
-        }
-      >
+      <div className="fh-map__stage">
         {/* aria-hidden: assistive technology is sent to the region list below, which
             carries the same data in an operable form. */}
         <div ref={hostRef} className="fh-map__canvas" aria-hidden="true" />
@@ -412,7 +180,7 @@ export function RegionMap({
       </div>
 
       <p className="fh-map__credit">
-        Boundaries: NIFC National GACC Boundaries. Basemap: {BASEMAPS[theme].attribution}.
+        Boundaries: NIFC National GACC Boundaries. Basemap: {BASEMAP.attribution}.
       </p>
 
       <div className="fh-map__side">

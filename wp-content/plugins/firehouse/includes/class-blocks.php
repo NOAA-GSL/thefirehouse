@@ -76,10 +76,12 @@ final class Blocks {
 	}
 
 	/**
-	 * Registers the blocks, with their metadata from the manifest, and the site's search
-	 * as a script module, which the explorer's view script imports by name
-	 * (blocks/explorer/view.asset.php). WordPress loads the module only on a page whose
-	 * script imports it.
+	 * Registers the blocks, with their metadata from the manifest, and two script modules
+	 * the blocks' view scripts import by name: the site's search, for the explorer's
+	 * (blocks/explorer/view.asset.php), and the map's drawing with Leaflet, for the
+	 * coverage map's (blocks/coverage-map/view.asset.php), minified unless
+	 * `SCRIPT_DEBUG` is on. WordPress loads a module only on a page whose script imports
+	 * it.
 	 */
 	public static function register(): void {
 		$root   = dirname( __DIR__ );
@@ -89,6 +91,13 @@ final class Blocks {
 			plugins_url( 'assets/search/search.js', $root . '/firehouse.php' ),
 			array(),
 			VERSION . '-' . (int) filemtime( $root . '/assets/search/search.js' )
+		);
+		$map = 'assets/map/map' . wp_scripts_get_suffix() . '.js';
+		wp_register_script_module(
+			Coverage_Map::MAP_MODULE,
+			plugins_url( $map, $root . '/firehouse.php' ),
+			array(),
+			VERSION . '-' . (int) filemtime( $root . '/' . $map )
 		);
 		wp_register_block_metadata_collection( $blocks, $blocks . '/blocks-manifest.php' );
 		foreach ( self::NAMES as $name ) {

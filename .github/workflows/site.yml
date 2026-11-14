@@ -68,7 +68,9 @@ jobs:
       - name: Plugin stylesheet is current
         run: npm run plugin:css:check
 
-      - name: Plugin icons and logos are current
+      # Rebuilds the generated scripts the plugin serves (the search, and the map with
+      # Leaflet) and its icons, logos and preview image, and compares them byte for byte.
+      - name: Plugin's generated scripts, icons and logos are current
         run: npm run plugin:assets:check
 
       - name: Production build

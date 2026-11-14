@@ -44,14 +44,12 @@ export const BUILT = ['about', 'home', 'home--', 'not-found', 'project--', 'proj
 export const UNCOMPARED = {};
 
 /**
- * Parts of a built page that come later, each by how its line in the reference begins
- * (`button "GACC labels"`, `paragraph: "Boundaries: …`): they're left out
- * of the reference before comparing, with everything inside them, and listed. On the
- * landing page, with or without a region selected, the coverage map's toggle and
- * credit come with the map, which only its script draws (Phase 5).
+ * Parts of a built page that come later, by page, each by how its line in the reference
+ * begins (`button "GACC labels"`, `paragraph: "Boundaries: …`): they're left out of the
+ * reference before comparing, with everything inside them, and listed. None today: the
+ * last, the coverage map's toggle and credit, came with the map (Phase 5).
  */
-const MAP_LATER = ['button "GACC labels"', 'paragraph: "Boundaries: NIFC National GACC Boundaries.'];
-export const LATER = { home: MAP_LATER, 'home--GBCC': MAP_LATER };
+export const LATER = {};
 
 /** A snapshot's lines without each part named as LATER names them, and everything inside it. */
 export function withoutLater(lines, parts = []) {

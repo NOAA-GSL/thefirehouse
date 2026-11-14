@@ -12,5 +12,6 @@
 		"multiple": false,
 		"reusable": false
 	},
-	"render": "file:./render.php"
+	"render": "file:./render.php",
+	"viewScriptModule": "file:./view.js"
 }

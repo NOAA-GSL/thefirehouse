@@ -22,8 +22,9 @@ npm run plugin:css # write the plugin's stylesheets from src/, scoped under .fh-
                    # (Node 22.18+, and Edge or Chrome installed, as for npm run reference;
                    # plugin:css:check only compares, and CI runs it)
 npm run plugin:assets
-                   # write the plugin's icons, logos, link-preview image and search module
-                   # from the site's own (plugin:assets:check only compares; CI runs it)
+                   # write the plugin's icons, logos, link-preview image, search module
+                   # and map module from the site's own (plugin:assets:check only
+                   # compares; CI runs it)
 npm run plugin:blocks
                    # write the plugin's block manifest from its block.json files
                    # (plugin:blocks:check only compares)
@@ -89,9 +90,11 @@ wp-content/plugins/firehouse/
                     assets/fonts/ and assets/css/fonts.css hold the fonts;
                     assets/js/block-editor.js, which shows the blocks in the
                     block editor, is written by hand;
-                    assets/icons/, assets/logos/ and assets/preview/ are generated
-                    from src/ and public/; blocks/blocks-manifest.php is generated
-                    from the blocks' block.json files.
+                    assets/icons/, assets/logos/, assets/preview/, assets/search/
+                    and assets/map/ are generated from src/, public/ and the site's
+                    npm packages by npm run plugin:assets;
+                    blocks/blocks-manifest.php is generated from the blocks'
+                    block.json files.
 ```
 
 ### The design system
@@ -416,8 +419,12 @@ nothing from the database. Each class's docblock has the detail; this is the map
     where the site has an overlay `<div>`, so the site's overlay styles hold, and keeps
     a closed one hidden;
   - it gives each coverage-map swatch the colour `Coverage_Map` wrote for the page's
-    theme, and, while there's no map, puts the selected region's projects beside the
-    region list, after it, as they come in the page;
+    theme;
+  - without JavaScript, it hides the map's stage (the box the view script draws the
+    map into, with the GACC labels toggle) and the credit under it, which mean nothing
+    without the map. When there's no map, without JavaScript or because the map's
+    module couldn't load, it puts the selected region's projects beside the region
+    list, after it, as they come in the page;
   - on Firehouse pages only, it hides the theme's hero background and the mission
     section above its footer.
 
@@ -437,11 +444,12 @@ nothing from the database. Each class's docblock has the detail; this is the map
     templates or the Import screen place it.
   - An interactive block has a view script module for WordPress's Interactivity API.
     It's plain JavaScript with no build step: WordPress maps its imports, which
-    `view.asset.php` declares (`@wordpress/interactivity`, and for the explorer
-    `@firehouse/search`), and `tests/BlocksTest.php` holds the two to each other. The
-    bar and the project block declare `supports.interactivity`, so WordPress
-    processes their directives on the server; the explorer doesn't (`Explorer_Page`
-    says why).
+    `view.asset.php` declares (`@wordpress/interactivity`; for the explorer,
+    `@firehouse/search`; for the coverage map, `@firehouse/coverage-map`, as a dynamic
+    import, so WordPress maps it without loading it first), and `tests/BlocksTest.php`
+    holds the two to each other. The bar and the project block declare
+    `supports.interactivity`, so WordPress processes their directives on the server;
+    the explorer and the coverage map don't (`Explorer_Page` says why).
   - In the block editor, each block is a read-only box with its title and what the
     page stores in it (`assets/js/block-editor.js`, also plain JavaScript): its words,
     and the links, icons, portraits and counts' settings that go with them. That lets
@@ -620,22 +628,43 @@ nothing from the database. Each class's docblock has the detail; this is the map
   renders, from the projects a visitor may see and the published topics, with the
   topic pages' counting. A button with nowhere to go, such as Submit
   a Finding with no survey address set, is left out.
-- `Coverage_Map` is the coverage map's block, as the site's `RegionMap` lists it: how
-  many projects are filed under each GACC (a national study counts in every one) and
-  under the four answers with no boundary, and the selected region's projects. Until
-  the map's script comes, and without JavaScript after it, the region list is the map:
-  each region is a button that submits a GET form for `?region=` and its key, the
-  address the static site uses, and the page comes back at that region's projects.
-  The selected region's button, "All submissions" and "Clear" submit nothing, which
-  selects none, and the page comes back at the section's heading, by the list. The
-  selected region's projects sit under an `h3` that counts them, and end in a visually
-  hidden `role="status"` line, empty until the map's script fills it. Each
-  GACC with something filed under it has a swatch carrying its colour for both themes,
-  from `Map_Colors`, the site's `heat.ts` ported and held to it by
-  `shared/cases/coverage-map.json`, and `frame.css` shows the theme's. The map itself,
-  which Leaflet draws, comes next. A landing page imported before the
-  block existed doesn't have it: add `<!-- wp:firehouse/coverage-map /-->` before its
-  submit band.
+- `Coverage_Map` is the coverage map's block, as the site's `RegionMap` renders it: the
+  map, how many projects are filed under each GACC (a national study counts in every
+  one) and under the four answers with no boundary, and the selected region's
+  projects, under an `h3` that counts them, ending in a visually hidden
+  `role="status"` line.
+  - Without JavaScript, the region list is the map: each region is a button that
+    submits a GET form for `?region=` and its key, the address the static site uses,
+    and the page comes back at that region's projects. The selected region's button,
+    "All submissions" and "Clear" submit nothing, which selects none, and the page
+    comes back at the section's heading, by the list.
+  - With JavaScript, its view script (`blocks/coverage-map/view.js`) takes the same
+    markup over through the Interactivity API, as the explorer's does. A choice
+    changes the page in place, and the address with it; the status line says "4
+    projects in Great Basin", from the heading's own words; and Clear moves focus to
+    "All submissions". The map is the site's own drawing (`assets/map/`, below), which
+    the script imports once the page is up and which follows the selection, the GACC
+    labels toggle and GSL's light/dark switch. The toggle shows once the map is drawn.
+    If the map's module can't load, the stage and credit go and the list works as
+    before. If the view script itself doesn't load, the list works as it does without
+    JavaScript, but the stage stays on the page, empty: `frame.css` can tell only
+    whether scripting is on.
+  - So the server prints every part a choice can show (the hint, the heading, the list
+    and the empty message), each hidden unless the selection shows it, and a template
+    the script draws the list from. Each project it prints has the template's shape,
+    its National tag printed hidden where it doesn't apply, since WordPress takes them
+    over element by element. It also hands the script its starting state
+    (`Coverage_Map::state()`): the selection, the projects, each region's count and
+    name, the tiles' host, and the translated words, singular and plural, so the script
+    holds no English of its own. `tests/CoverageMapTest.php` and
+    `scripts/coverage-map-view.test.mjs` both pass `shared/cases/coverage-map-view.json`:
+    the heading split around the region's name, and the map's tooltip line.
+  - Each GACC with something filed under it has a swatch carrying its colour for both
+    themes, from `Map_Colors`, the site's `heat.ts` ported and held to it by
+    `shared/cases/coverage-map.json`, and `frame.css` shows the theme's.
+
+  A landing page imported before the block existed doesn't have it: add
+  `<!-- wp:firehouse/coverage-map /-->` before its submit band.
 - `About_Page` is the About page's blocks, as the site's `AboutPage` renders them:
   `firehouse/about-intro`, `firehouse/about-sections` holding `about-mission`,
   `about-audiences`, `about-process` and `about-team`, and `firehouse/about-cta`. The
@@ -716,7 +745,8 @@ The traps, for whoever changes this code next:
   holds the few JavaScript rules PHP doesn't share, such as what counts as true, as
   whitespace, or as a number, and how `Math.round()` takes a tie.
 - `Map_Colors` is the coverage map's colours, from the two ramps in
-  `shared/coverage-map.json`, which the site's `src/design-system/heat.ts` reads too.
+  `shared/coverage-map.json`, which the site's `src/design-system/heat.ts` reads too,
+  and the basemap's attribution for the credit under the map, from the same file.
 - `Json::decode()` reads JSON as the TypeScript sees it: an empty or numbered object
   (`{}`, `{"0": …}`) stays an object, a `Json_Object`, instead of passing for a list.
   `Normalize` turns every one back into an array on the way out, so pages and post meta
@@ -736,7 +766,8 @@ banner and footer), the coverage map's CSS, the design system's components no pa
 renders, and the fonts, which load on their own (`scripts/plugin-css-sources.mjs`); a
 test fails if the plugin's markup uses a class only the unused components' stylesheets
 style. The coverage map's CSS, Leaflet's and the site's `RegionMap.css`, is a chunk of
-its own in the site's build (`DEFERRED`), and so it is in the plugin:
+its own in the site's build (`DEFERRED`), and so it is in the plugin, less three of
+Leaflet's images for parts the map doesn't draw:
 `coverage-map.min.css`, or under `SCRIPT_DEBUG` the readable `coverage-map.css`,
 which loads only on a page whose content holds the map's block, after the site's
 stylesheet and before `frame.css`. Don't edit any of them: `npm run plugin:css`
@@ -793,6 +824,20 @@ as one ES module and left unminified so a review can read it. The explorer's vie
 script imports it as `@firehouse/search`, which `Blocks::register()` registers. Don't
 edit it: `npm run plugin:assets` writes it, and CI fails if it falls behind.
 
+`assets/map/map.min.js` is the site's map drawing (`src/design-system/mapCanvas.ts`,
+with `heat.ts`, the vocabulary, the GACC boundaries, and the colours and tile addresses
+from `shared/coverage-map.json`) and Leaflet, bundled by esbuild as one ES module, about
+60 KB compressed; `map.js` beside it is the same, unminified, for review and
+`SCRIPT_DEBUG`. The coverage map's view script imports it as `@firehouse/coverage-map`
+once the page is up (`Blocks::register()` registers it, and `view.asset.php` declares
+it a dynamic import, so it never holds the page up). Leaflet sets `window.L` as it
+loads; the module puts back whatever was there, so another plugin's Leaflet on the page
+is left alone. Leaflet's licence sits beside it as `LICENSE.txt`. Don't edit them:
+`npm run plugin:assets` writes them, and CI fails if they fall behind. Leaflet is
+pinned to one version in `package.json`, so `npm ci`, then `npm run
+plugin:assets:check`, shows a reviewer that the committed bundle is what the script
+makes. Leaflet's CSS isn't in them: it's in `coverage-map.min.css`, above.
+
 The local WordPress runs in Docker and borrows GSL's theme, WordPress images and
 database from a checkout of GSL's internal gsl-wordpress repository beside this one
 (`../wordpress-gsl`, or set `GSL_WORDPRESS_DIR`). GSL's database has to be running for
@@ -834,26 +879,37 @@ the top needs, built to `FirehouseFormAdditions.pdf`.
   hostile network; only the basemap tiles are live.
 - **Selection lives in `?region=`**, so a filtered view of the map is a link someone
   can paste into an email.
+- **One drawing for both sites.** `src/design-system/mapCanvas.ts` draws the map with
+  Leaflet, and no framework: the site's `RegionMap` calls it, and the plugin bundles it
+  for its view script (`assets/map/`). `RegionMap` and the plugin's markup render
+  everything around it.
 
-**The one runtime third-party dependency on the whole site is the basemap tiles**
+**The one runtime third-party request FireHouse makes is the basemap tiles**
 (`server.arcgisonline.com`, Esri — attribution is rendered under the map and is
-required by their terms). If a federal review objects to the external call, the map
-degrades to boundaries on a blank canvas rather than failing, and the `BASEMAPS`
-constant in `src/design-system/RegionMap.tsx` is the only thing to change.
+required by their terms). The browser asks for them with no Referer, so Esri isn't
+told which page is open. If a federal review objects to the external call, the map
+degrades to boundaries on a blank canvas rather than failing. To use another tile host,
+change the `basemap` in `wp-content/plugins/firehouse/shared/coverage-map.json` (its
+tile addresses and attribution), which both sites read, then run `npm run
+plugin:assets`: the plugin's map module carries the tile addresses, and CI fails until
+it's rewritten. Dropping the tiles altogether also means changing `drawTiles()` in
+`mapCanvas.ts` and the credit's wording.
 
 Accessibility: the region list beside the map is not a fallback. It is the operable
 surface — real buttons, real counts, driving the same state the polygons do — and
 the Leaflet canvas is `aria-hidden` so assistive technology is sent there rather
-than into unlabelled SVG paths. Colour is never the only channel; every region
-carries its count as a number. The selected region's projects sit under a heading
-that counts them. They aren't a live region, which would read the whole list out on
+than into unlabelled SVG paths; nothing in the map takes keyboard focus, so Tab
+never stops on a part of it that says nothing. Colour is never the only channel; every
+region carries its count as a number. For a visitor who has asked for less motion,
+the map moves to a region without flying there. The selected region's projects sit
+under a heading that counts them. They aren't a live region, which would read the whole list out on
 each change. Instead, a visually hidden `role="status"` line after them says only "4
 projects in Great Basin" when a choice changes them. It says nothing for the region
 the page opened with, or once none is selected. Clear disappears once nothing is
 selected, so it first moves focus to "All submissions", now the pressed button,
-rather than letting focus fall back to the top of the page. The plugin's
-`Coverage_Map` has the same heading and status line, but the line stays empty until
-the map's script fills it, and its Clear reloads the page.
+rather than letting focus fall back to the top of the page. The plugin's coverage
+map block does the same with JavaScript, through its view script; without it, its
+Clear reloads the page, and the status line stays empty.
 
 ## Survey import
 
