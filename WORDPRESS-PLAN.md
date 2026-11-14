@@ -1,9 +1,9 @@
 # WordPress plan — The Firehouse as a GSL WordPress plugin
 
-> **Status: the plan being built, last updated 13 November 2026.** Phases 0–4 are built
-> on the local copy of GSL's WordPress, and the frame is signed off; Phase 4's "Done
-> when" waits on Stephanie and Emily's review on that local copy (see Where each phase
-> is reviewed), and Phase 5 has started. This
+> **Status: the plan being built, last updated 14 November 2026.** Phases 0–5 are built
+> on the local copy of GSL's WordPress, and the frame is signed off; Phases 4 and 5's
+> "Done when" wait on Stephanie and Emily's review on that local copy (see Where each
+> phase is reviewed). This
 > document is the current plan: the decisions made so far, the architecture
 > they lead to, and a phased plan from the current `main` branch to a plugin running on
 > gsl.noaa.gov. It changes through pull requests, so earlier versions are in its git
@@ -18,8 +18,9 @@ that produced it).
 
 - **What.** The Firehouse becomes a WordPress plugin that renders every page in
   WordPress itself: PHP templates and blocks, with WordPress's Interactivity API for
-  the parts that respond to input. React, Vite and the static build retire at
-  cutover.
+  the parts that respond to input. The React app and the static build retire at
+  cutover; the sources the plugin's generated files are built from may stay (Phase
+  8).
 - **Where.** A section of GSL's existing WordPress sites at `/firehouse`, inside GSL's
   own header and footer. The GSL test site first, then gsl.noaa.gov.
 - **Who edits.** Stephanie and Emily, in wp-admin, through a FireHouse Editor role
@@ -137,7 +138,7 @@ The alternatives, and why not:
 | `citation.ts` and the citation tabs | Not ported: the site offers no citations (see [Decisions so far](#decisions-so-far)). |
 | `search.ts` | Kept in both languages: PHP renders the first, already-filtered page, and JavaScript filters as you type. |
 | `RegionMap.tsx` | Leaflet stays. Its drawing moved into `mapCanvas.ts`, which both sites run; in the plugin, an Interactivity API store drives it |
-| Mobile menu, scrollable need cards, quick-look modal | Interactivity API. The modal becomes a native `<dialog>`, which traps focus and handles Escape itself. |
+| Mobile menu, scrollable need cards, quick-look modal | Interactivity API. The modal becomes a native `<dialog>`, which makes the page behind it inert and handles Escape itself. |
 | React Router, `ContentProvider`, the adapters, `RouteFocusManager` | Retired. Full page loads make them unnecessary. |
 | `SiteHeader`, `GovBanner`, `SiteFooter` | The Firehouse bar (`firehouse/subnav`) sits under GSL's header. GSL's header and footer take over the gov banner, the NOAA and GSL logos and the footer (see [Look and feel](#look-and-feel)). |
 | `ThemeProvider` and its light/dark toggle | Retired. GSL's header has its own toggle, which sets the same `data-theme` attribute Firehouse's dark colors key off (open question 9). |
@@ -150,7 +151,7 @@ The alternatives, and why not:
 | `scripts/notebooklm-source.mjs` | Rewritten in PHP as **Download NotebookLM source**, for the paste-in fallback |
 | The Google Form (outside this repository) | The plugin's survey form (see [The survey form](#the-survey-form)) |
 | The NotebookLM notebook | Analyze results and an approved AI service (see [The AI service](#the-ai-service)); paste-in stays as the fallback |
-| Vite, `public/.htaccess`, `public/_redirects` | Retired. View scripts are plain ES modules, and the blocks' editor script (`assets/js/block-editor.js`) is plain JavaScript, with no build step; `@wordpress/scripts` comes in if Phase 6's editing controls need one. The generated scripts are the explorer's search module (`assets/search/search.js`) and the coverage map's drawing (`assets/map/`), which `npm run plugin:assets` bundles with esbuild from `search.ts` and from `mapCanvas.ts` with Leaflet. |
+| Vite, `public/.htaccess`, `public/_redirects` | The hosting files retire. Vite stays while the plugin's generated files come from `src/`: `npm run plugin:css` builds the plugin's CSS with the site's own Vite build, and `npm run plugin:assets` draws the icons from `Icon.tsx` through it (see Phase 8). View scripts are plain ES modules, and the blocks' editor script (`assets/js/block-editor.js`) is plain JavaScript, with no build step; `@wordpress/scripts` comes in if Phase 6's editing controls need one. The generated scripts are the explorer's search module (`assets/search/search.js`) and the coverage map's drawing (`assets/map/`), which `npm run plugin:assets` bundles with esbuild from `search.ts` and from `mapCanvas.ts` with Leaflet. |
 
 The rewrite is smaller than the line counts suggest. The design system is already in
 plain CSS files with `fh-` class names, not inline React styles. The PHP templates emit
@@ -215,9 +216,10 @@ wp-content/plugins/firehouse/
                    checks at save and import (which call domain/), the seed import
                    screen, the query, visibility and verbatim filters, the frame and
                    its head tags (Head), block registration, the markup the blocks
-                   render (the bar, the 404, the explorer, the project, topic,
-                   landing and About pages, and what those two share
-                   (Page_Blocks), icons, buttons, topic tags, the synthesis note);
+                   render (the bar, the 404, the explorer, the coverage map, the
+                   project, topic, landing and About pages, and what those two
+                   share (Page_Blocks), icons, buttons, topic tags, the synthesis
+                   note);
                    later, the AI service client
   survey/          the survey form, self-contained (see The survey form)
   domain/          PHP versions of the vocabularies, validation (normalize), derive,
@@ -361,10 +363,11 @@ Links people have already shared keep working either way.
   the server for each change (13 November): results are instant and work on bad
   wifi, as the site's are. The page carries each public project's searchable text for
   it, about 14 KB gzipped at eight projects, and about six times as much at 48; the
-  view script and the search module add about 5 KB and 4 KB gzipped.*
-- **Map.** Leaflet's ES module build loads in the block's view script. The region list
-  is a set of real buttons in the same kind of form, and the boundary GeoJSON ships as
-  a plugin asset. *The list came first, then the map (14 November): see "Coverage
+  view script and the search module add about 8 KB (with the quick look) and 4 KB
+  gzipped.*
+- **Map.** Leaflet stays, in one module with the site's drawing and the boundary
+  GeoJSON, which the block's view script imports. The region list is a set of real
+  buttons in the same kind of form. *The list came first, then the map (14 November): see "Coverage
   map's list done" and "The coverage map done" under Phase 5. The map is the site's
   own drawing, moved into `mapCanvas.ts`, bundled with Leaflet and the boundaries into
   one module the view script imports once the page is up. The bundle wraps Leaflet's
@@ -899,7 +902,8 @@ local copy Eric is always there.
   changes and are retaken with them (bridge step 8).*
 - **Add shared test cases.** Unit tests for `normalize`, `derive`, `search` and
   `format`, written as data files (input and expected output) that the PHP tests will
-  read later. *Done: 201 cases in `shared/cases/`, run by `npm test` and in CI.*
+  read later. *Done: 201 cases in `shared/cases/` at first, run by `npm test` and in
+  CI; each phase since has added more.*
 - **Move the vocabularies** into `shared/vocabulary.json`, with each option's label as
   the Google Form shows it, and generate a JSON Schema from `types.ts`. *Done: `npm run
   schema` writes `shared/project.schema.json`, and CI fails if it is out of date.*
@@ -1363,7 +1367,7 @@ signed off on the frame.
   WordPress does with its own files. `npm run plugin:css` minifies the readable copy as
   the site's own build minifies its CSS, and the checks run on both. Both leave out the
   explorer's CSS (its page, the project tiles and the quick look) until the explorer
-  arrives in Phase 5, and the design system's `TextField`, `TextArea` and `TopicTagRow`,
+  arrives in Phase 5 (it has), and the design system's `TextField`, `TextArea` and `TopicTagRow`,
   which no page renders. Compressed (Node's gzip), the site's CSS goes from 28.7 kB to
   9.8 kB: leaving those out takes it to 24.6 kB, and minifying does the rest.*
   *Not split by page. Minified the same way, one file per kind of page would be 5.1 to
@@ -1377,7 +1381,8 @@ signed off on the frame.
   found only once the HTML arrives, adds a round trip, about 0.6 s there (first paint
   1.3 to 1.4 s against 0.7 s with the one file from the cache). Revisit if the file
   grows past about 20 kB compressed.*
-  *Not minified: `frame.css` (1.8 kB compressed, 0.5 kB if minified first), written by
+  *Not minified: `frame.css` (2.9 kB compressed, 0.8 kB if minified first, after
+  Phase 5's rules), written by
   hand, and `fonts.css` (1.1 kB and 0.5 kB), which `scripts/fonts.test.mjs` and the
   frame's tests read as text. They arrive with `firehouse.min.css`, before the page's last
   render-blocking stylesheet.*
@@ -1442,7 +1447,7 @@ signed off on the frame.
   landing, About, project, topic and not-found pages has the site's computed styles, at
   desktop and phone width in both themes, and so does every focusable element there
   with keyboard focus, each showing its focus ring. Left out: the landing page's
-  coverage map (Phase 5), and the site's About wrapper, which has no styles. It found
+  coverage map (Phase 5, where it's still to do), and the site's About wrapper, which has no styles. It found
   one difference, invisible on both sites: the project pager's link took the browser's
   default link colour, which follows the colour scheme the frame sets; its parts set
   their own, and the link now inherits (`ProjectPage.css`). Hover isn't checked.*
@@ -1648,7 +1653,8 @@ its own (`DEFERRED`), loaded only on a page with the map.
     landmark matched the site's at the same 34 addresses and after the same 11 steps,
     with the links above read as the site's buttons, and nothing else left out. `npm
     run plugin:compare` now compares the explorer too, at both widths: all 32
-    comparisons (16 pages, desktop and phone) match.*
+    comparisons (16 pages, desktop and phone) match, and 34 since the coverage map
+    added `home--GBCC`.*
   - *Left for Stephanie and Emily: the phase and status pills in the quick look, as on
     its tiles and on the site, have no label a screen reader hears ("Before During
     Published"); a visually hidden "Fire phases:" and "Status:" would need their
@@ -1719,7 +1725,9 @@ its own (`DEFERRED`), loaded only on a page with the map.
     copy in the script. Both done with the map, below.*
   - *Left for Stephanie and Emily: "Select a GACC on the map or in the list" and "Not
     on the map" speak of a map that a visitor without JavaScript doesn't get. The
-    site's words are the same, and the site shows nothing at all without it.*
+    site's words are the same, and the site shows nothing at all without it. "Not on
+    the map" also names a group in the explorer's region filter, on both sites, where
+    no map is shown.*
 - *The coverage map done 14 November (`blocks/coverage-map/view.js`,
   `src/design-system/mapCanvas.ts`):*
   - *One drawing for both sites. What `RegionMap.tsx` drew with Leaflet moved into
@@ -1793,7 +1801,11 @@ its own (`DEFERRED`), loaded only on a page with the map.
     - *browsers without `@media (scripting)` (Chrome before 120, Firefox before 113,
       Safari before 17) with JavaScript off show the map's empty stage and credit;*
     - *clicking a region's shape or a zoom button gives it focus, inside the hidden
-      map, though Tab never does.*
+      map, though Tab never does;*
+    - *the frame's computed-style and focus checks (Phase 4's rerun on the real pages)
+      and the contrast audits inside GSL's header and footer (rule 9) weren't rerun on
+      the explorer, the quick look or the coverage section. Phase 5 compared their
+      accessibility trees with the site's, and the map's pixels.*
 
 **Done when:** it reaches feature parity with the React site, every URL parameter
 behaves the same, and the accessibility snapshots match.
@@ -1882,7 +1894,11 @@ ships.
   behind the bridge), remove the static directory, and point Submit a Finding at the
   Submit page.
 - Confirm link previews on prod.
-- Retire the React app and the static-hosting files.
+- Retire the React app's pages and the static-hosting files. The plugin's generated
+  files are built from `src/`: its CSS from the site's Vite build, its icons from
+  `Icon.tsx`, the search module from `search.ts` and `derive.ts`, and the map module
+  from `mapCanvas.ts`, `heat.ts` and the GACC boundaries. Decide first whether those
+  sources stay in `src/`, with Vite, or move.
 
 **Done when:** gsl.noaa.gov/firehouse is served by the plugin, and every URL from the
 bridge resolves to the same content.

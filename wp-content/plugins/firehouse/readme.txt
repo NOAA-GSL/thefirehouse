@@ -44,7 +44,9 @@ without it, the list works on its own and the map isn't shown.
 
 The coverage map is the plugin's one outside service. Its basemap tiles come from
 Esri (server.arcgisonline.com). On the landing page, and only with JavaScript, the
-visitor's browser loads them straight from Esri: when the map is drawn, and again as
+visitor's browser opens a connection to Esri as soon as the page's script starts
+loading the map, which shows Esri the visitor's IP address even if the map then fails
+to load. It loads the tiles straight from Esri when the map is drawn, and again as
 the visitor moves or zooms it, picks a region, or switches between light and dark. As
 with any image a page loads from another site, each request gives Esri the visitor's
 IP address, the browser's usual headers (such as its name and version and its
