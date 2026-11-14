@@ -230,8 +230,6 @@ wp-content/plugins/firehouse/
   blocks/blocks-manifest.php
                    every block.json in one array, generated (npm run plugin:blocks)
   templates/       frame.php, the one template every Firehouse page uses
-  patterns/        landing and About layouts, locked to text-only edits (Phase 6; today
-                   the Import screen creates both pages from custom blocks)
   assets/          tokens and component CSS, icons, logos, fonts, the link-preview
                    image, the blocks' script for the block editor, the site's search
                    as a module for the explorer's script, and the site's map drawing,
@@ -275,18 +273,19 @@ bridge resolves unchanged under the plugin. The Submit page is new.
   `updatedAt`, `sourceCount`, `model`, `reviewedBy`). Each need points to its projects
   by **post ID**; the ID is turned back into a slug when the page renders.
 - **Landing and About.** Ordinary WordPress pages built from blocks. Their layouts are
-  to be locked to text-only editing (`contentOnly`), with a short allowed-blocks list
-  and no Custom HTML block; nothing locks the pages' layout yet (Phase 6). *Their sections are
-  custom blocks whose attributes hold the words
-  (Blocks, below), which `contentOnly` doesn't show to editors; how they're edited is
-  decided in Phase 6.*
+  to be locked to text-only editing, with no blocks but their own and no Custom HTML
+  block; nothing locks the pages' layout yet (Phase 6). *Their sections are custom
+  blocks whose attributes hold the words (Blocks, below), which `contentOnly` locking
+  doesn't show to editors. Decided by Eric, 14 November: the blocks stay, and in the
+  block editor their words become text fields in place (Phase 6).*
 - **The disclaimer.** It ends every Firehouse page, above GSL's footer (`disclaimer`
   in `settings.json`). The Phase 1 import doesn't read it. Phase 4 decides whether the
   plugin keeps it as a setting or as the templates' own copy (*decided: the templates'
-  own copy, `Frame::disclaimer()`, which a test holds to `settings.json`*); whether an editor can
-  reword the cleared text is decided with the editing screens in Phase 6. Wherever it is
-  kept, the templates render it inside the theme's `main`, after the content, never
-  from `wp_footer` or a footer widget, which land after GSL's footer.
+  own copy, `Frame::disclaimer()`, which a test holds to `settings.json`*). No one
+  rewords the cleared text from WordPress (*decided by Eric, 14 November: a cleared
+  change comes as a pull request, which records who approved what text, and when*).
+  Wherever it is kept, the templates render it inside the theme's `main`, after the
+  content, never from `wp_footer` or a footer widget, which land after GSL's footer.
 - **Settings.** A FireHouse → Settings screen holds the site name, the submit label, the
   submit address and the navigation labels; later, the survey's question wording
   (Phase 7a), the AI prompt (Phase 7b) and who is emailed about new submissions.
@@ -333,8 +332,8 @@ page is built the same way (11 November): its parts' markup (labelled sections, 
 cards, numbered steps, the closing band) isn't core blocks', so each is a block whose
 attributes hold its words, and its audience cards are a list in one block's
 attributes, as the landing page's counts are, rather than a `firehouse/audience` block
-each. Whether these blocks stay, edited through their own controls, or give way to
-core blocks in a locked pattern is decided in Phase 6.*
+each. These blocks stay, edited through text fields of their own (Eric, 14 November;
+see Phase 6).*
 
 **Editor previews** are rendered on the server, so each block's markup is written once,
 in PHP. *Until Phase 6 (13 November): the editor shows each block as a read-only box of
@@ -418,7 +417,9 @@ in a rewrite.
 5. **Slugs are shared links.** The site offers no citations, but project links travel
    in slides, email and posts, so the migration keeps every current slug exactly.
    Needs point to projects by post ID, so renaming a project cannot silently strip a
-   need's sources (today `normalize.ts` drops an unknown slug without an error).
+   need's sources (today `normalize.ts` drops an unknown slug without an error). An
+   editor sets a project's slug while it's a draft; once it has been published, the
+   edit screen shows it read-only (Eric, 14 November).
 6. **Fail loudly where the editor is, not on the public site.** Today one bad record
    throws in `normalize.ts` and the whole site shows "Content could not be loaded".
    That is right for JSON that goes through git review, and wrong for a CMS where
@@ -577,11 +578,12 @@ as the newest image titled as the bundle's `photo` (`stephanie-hoekstra`,
 and who uploaded it, for whoever imports to check; and the page keeps it by its ID
 (decided by Eric, 12 November, after the security review found that a lookup by title
 as the page renders let anyone who can upload media change a portrait). Until an
-editor can choose a portrait in Phase 6, one uploaded after the import changes
-nothing, and a card with none shows the person's initials. The slug can't be used:
-WordPress gives every upload a slug no other post has, so where a staff profile page
-already uses `stephanie-hoekstra`, as on the copy of GSL's site this was built
-against, the upload becomes `stephanie-hoekstra-2`. The plugin checks the bundle
+editor can choose a portrait in Phase 6 (from the Media Library, on each team card,
+as Eric decided on 14 November), one uploaded after the import changes nothing, and
+a card with none shows the person's initials. The slug can't be used: WordPress gives
+every upload a slug no other post has, so where a staff profile page already uses
+`stephanie-hoekstra`, as on the copy of GSL's site this was built against, the upload
+becomes `stephanie-hoekstra-2`. The plugin checks the bundle
 itself: a field it doesn't store in a project, topic or synthesis, or anything shaped
 like an email address but a team work address in the About page's team mailbox field,
 stops the import; the landing and About pages keep only the text their blocks use.
@@ -621,7 +623,10 @@ Next to it is the **synthesis screen**, where the AI pass comes back in:
    from the number of projects it lists, and any topic area whose needs don't run by
    project count, highest first, as the About page says. A project unpublished later
    lowers the counts the pages show, so publishing or unpublishing a project checks
-   the order again (decided with the screen in Phase 6: flag it, or sort at render).
+   the order again. *Decided by Eric, 14 November: the topic pages sort each area's
+   needs by the counts they show, highest first, ties keeping the reviewed order, so
+   the About page stays true; and the synthesis screen marks the area as changed since
+   its review.*
 3. **Compare.** The screen shows what changes against the published synthesis: needs
    added, dropped or reworded, rank and count changes, and sources gained or lost. This
    is what the reviewer signs off on.
@@ -1288,8 +1293,9 @@ signed off on the frame.
   `about.json` itself passes the site's checks without it.*
   - *For Phase 6: trashing the landing page leaves a published About page answering at
     `/firehouse__trashed/about/`, as an ordinary page of GSL's theme with nothing in
-    it, until the landing page is restored. Decide whether trashing the landing page
-    trashes the pages under it.*
+    it, until the landing page is restored. Decided by Eric, 14 November: the landing
+    page can't be trashed while a published page sits under it, and the notice names
+    them.*
 - Description and Open Graph tags, and whether a Firehouse page's `<title>` names The
   Firehouse. *Done 12 November (`includes/class-head.php`). Decided by Eric, as GSL's
   web team, 12 November: a Firehouse page's title names both, the site's title for it
@@ -1800,32 +1806,53 @@ behaves the same, and the accessibility snapshots match.
 
 ### Phase 6 — Editing screens (2–2.5 weeks)
 
+Eric decided this phase's open questions on 14 November, asked one by one; each is
+marked below.
+
 - Project and topic edit screens: survey fields read-only, editorial fields editable,
-  publishing through WordPress's Publish button.
+  publishing through WordPress's Publish button. *A project's slug is editable while
+  it's a draft and read-only once it has been published (rule 5).*
 - Landing and About layouts locked to text-only edits. Their sections are custom
   blocks whose words are attributes, which `contentOnly` locking doesn't show to
-  editors: decide whether they get their own text controls or become core blocks in a
-  locked pattern. *Until then (13 November, at Eric's request, to tell the page's words
+  editors. *Decided: they keep their blocks and markup, and in the block editor each
+  block's words become text fields in place, in plain JavaScript like
+  `block-editor.js`; the layout stays fixed. The team block's cards can be added,
+  removed and reordered, each with a portrait chosen from the Media Library, kept by
+  its ID and shown only where visitors may see it (the import's check). The audience
+  cards and the numbered steps stay fixed lists whose words change. Editors' text is
+  kept as typed, though their saves run it through kses (below).*
+  *Until then (13 November, at Eric's request, to tell the page's words
   from what FireHouse adds): `assets/js/block-editor.js` shows each block in the editor
   as a read-only box of what the page stores in it. Every block saves its inner blocks,
   so a save keeps the page's blocks; a save that rebuilds the page leaves out values
   equal to a block's default, which render the same, and a FireHouse Editor's save
-  still runs the words through kses (Phase 4's About page note). The Code editor can
-  still change anything stored, so the boxes aren't a control. Either choice replaces
+  still runs the words through kses (Phase 4's landing page note). The Code editor can
+  still change anything stored, so the boxes aren't a control. The text fields replace
   the boxes.*
-- Whether an editor can reword the cleared disclaimer.
+- Whether an editor can reword the cleared disclaimer. *Decided: no one can from
+  WordPress. It stays the templates' own copy, and a cleared change comes as a pull
+  request.*
 - Which blocks a page in the Firehouse tree allows. Nothing limits them today, so an
   editor can add a core Paragraph or Image to the landing or About page, with its
   Italic button and caption, which GSL's theme sets in italic. The fonts have no
   italic face (Phase 4's weight work), so the browser would slant the upright one.
   Keep core text blocks out of the tree, or add the italic faces they use to
-  `scripts/fetch-fonts.mjs`.
+  `scripts/fetch-fonts.mjs`. *Decided: the landing and About pages accept only their
+  own FireHouse blocks, so no core block and no Custom HTML.*
+- *The landing page can't be trashed while a published page sits under it (decided;
+  Phase 4's About page note).*
 - The synthesis screen: paste, validation, the comparison against the published
   synthesis, and **Mark reviewed**. Validation includes the order: each topic area's
   needs by project count, highest first, since the About page says so (ties go by
   broader interagency or multi-regional applicability, which the reviewer judges).
+  *Decided: when a project published or unpublished later changes the counts, the
+  topic pages sort by the counts they show, ties keeping the reviewed order, and the
+  screen marks the area as changed since its review.*
 - Download NotebookLM source, for the paste-in fallback.
-- Submit buttons bound to the settings.
+- Submit buttons bound to the settings. *With the blocks staying and no core blocks
+  allowed (above), no core button is on a FireHouse page: the blocks that print a
+  Submit button store a link to the survey empty, and read the address from the
+  settings as the page renders (`Page_Blocks`).*
 - Validation notices.
 
 **Done when:** Stephanie and Emily have done every task in `README.md` and
