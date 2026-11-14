@@ -11,6 +11,7 @@ namespace Firehouse\Tests;
 
 use Brain\Monkey\Functions;
 use Firehouse\Blocks;
+use Firehouse\Coverage_Map;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Depends;
 
@@ -26,7 +27,9 @@ final class BlocksTest extends WordPressTestCase {
 	private const BLOCKS = __DIR__ . '/../blocks/';
 
 	/**
-	 * Every block registers from its own folder.
+	 * Every block registers from its own folder, and the two script modules the view
+	 * scripts import by name: the site's search, and the map's drawing, minified unless
+	 * `SCRIPT_DEBUG` is on.
 	 */
 	public function test_each_block_registers_from_its_folder(): void {
 		$registered  = array();
@@ -50,16 +53,30 @@ final class BlocksTest extends WordPressTestCase {
 			}
 		);
 
+		Functions\when( 'wp_scripts_get_suffix' )->justReturn( '.min' );
+
 		Blocks::register();
 
-		// The explorer's view script imports the site's search by this name.
+		// The explorer's view script imports the site's search by this name, and the
+		// coverage map's the map's drawing.
+		$version = static fn( string $path ): string => \Firehouse\VERSION . '-' . filemtime( dirname( __DIR__ ) . '/' . $path );
 		$this->assertSame(
-			array( array( '@firehouse/search', 'https://example.test/wp-content/plugins/firehouse/assets/search/search.js', array(), \Firehouse\VERSION . '-' . filemtime( dirname( __DIR__ ) . '/assets/search/search.js' ) ) ),
+			array(
+				array( '@firehouse/search', 'https://example.test/wp-content/plugins/firehouse/assets/search/search.js', array(), $version( 'assets/search/search.js' ) ),
+				array( Coverage_Map::MAP_MODULE, 'https://example.test/wp-content/plugins/firehouse/assets/map/map.min.js', array(), $version( 'assets/map/map.min.js' ) ),
+			),
 			$modules
 		);
+
 		$this->assertSame( array_map( static fn( string $name ): string => dirname( __DIR__ ) . '/blocks/' . $name, array( 'about-audiences', 'about-cta', 'about-intro', 'about-mission', 'about-process', 'about-sections', 'about-team', 'coverage-map', 'explorer', 'hero', 'not-found', 'project', 'stats', 'submit-band', 'subnav', 'top-needs', 'topic' ) ), $registered );
 		// The manifest comes first, so no block reads its block.json.
 		$this->assertSame( array( array( dirname( __DIR__ ) . '/blocks', dirname( __DIR__ ) . '/blocks/blocks-manifest.php', 0 ) ), $collections );
+
+		// Under SCRIPT_DEBUG, the readable copy.
+		$modules = array();
+		Functions\when( 'wp_scripts_get_suffix' )->justReturn( '' );
+		Blocks::register();
+		$this->assertSame( 'https://example.test/wp-content/plugins/firehouse/assets/map/map.js', $modules[1][1] );
 	}
 
 	/**
@@ -182,7 +199,8 @@ final class BlocksTest extends WordPressTestCase {
 
 	/**
 	 * A block is named after its folder, renders on the server, stays out of the
-	 * inserter, and its view script, if it has one, declares the Interactivity API.
+	 * inserter, and its view script, if it has one, declares the Interactivity API, and
+	 * each module it imports: one it imports only once the page is up, as dynamic.
 	 *
 	 * @param string $name The block's folder.
 	 */
@@ -200,16 +218,37 @@ final class BlocksTest extends WordPressTestCase {
 
 		if ( isset( $block['viewScriptModule'] ) ) {
 			$this->assertSame( 'file:./view.js', $block['viewScriptModule'] );
-			// The explorer prints its own page and doesn't ask WordPress to process its
-			// directives (Explorer_Page says why); it imports the site's search too.
-			$explorer = 'explorer' === $name;
-			$this->assertSame( ! $explorer, $block['supports']['interactivity'] ?? false );
+			// The explorer and the coverage map print their own page and don't ask
+			// WordPress to process their directives (Explorer_Page says why); the explorer
+			// imports the site's search too, and the coverage map the map's drawing, once
+			// the page is up.
+			$prints = in_array( $name, array( 'explorer', 'coverage-map' ), true );
+			$this->assertSame( ! $prints, $block['supports']['interactivity'] ?? false );
 			$asset = require $folder . 'view.asset.php';
-			$this->assertSame( $explorer ? array( '@wordpress/interactivity', '@firehouse/search' ) : array( '@wordpress/interactivity' ), $asset['dependencies'] );
+			$this->assertSame(
+				array(
+					'explorer'     => array( '@wordpress/interactivity', '@firehouse/search' ),
+					'coverage-map' => array(
+						'@wordpress/interactivity',
+						array(
+							'id'     => Coverage_Map::MAP_MODULE,
+							'import' => 'dynamic',
+						),
+					),
+				)[ $name ] ?? array( '@wordpress/interactivity' ),
+				$asset['dependencies']
+			);
 			// WordPress maps only the modules declared, so a script that imports another
-			// would fail to load: what it imports is what it declares, in order.
-			preg_match_all( '/^import\b[^\'"]*[\'"]([^\'"]+)[\'"]/m', (string) file_get_contents( $folder . 'view.js' ), $imports );
-			$this->assertSame( $asset['dependencies'], $imports[1] );
+			// would fail to load: what it imports is what it declares, in order, and what
+			// it imports later, by name, is declared dynamic.
+			$script = (string) file_get_contents( $folder . 'view.js' );
+			preg_match_all( '/^import\b[^\'"]*[\'"]([^\'"]+)[\'"]/m', $script, $imports );
+			$this->assertSame( array_values( array_filter( $asset['dependencies'], 'is_string' ) ), $imports[1] );
+			foreach ( array_filter( $asset['dependencies'], 'is_array' ) as $dependency ) {
+				$this->assertSame( 'dynamic', $dependency['import'] );
+				$this->assertStringContainsString( "export const MAP_MODULE = '" . $dependency['id'] . "';", $script );
+				$this->assertStringContainsString( 'await import( MAP_MODULE )', $script );
+			}
 			$this->assertSame( (string) filemtime( $folder . 'view.js' ), $asset['version'] );
 		}
 	}

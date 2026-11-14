@@ -1,0 +1,22 @@
+{
+  "$comment": "The coverage map's words with JavaScript, held to the same answers in PHP (Coverage_Map::state() and ::heading(), tests/CoverageMapTest.php) and in the view script (blocks/coverage-map/view.js, scripts/coverage-map-view.test.mjs). `strings` is what the server sends, in English: each count's two forms, the first for one. `headings` is the results' heading for a count, as the two pieces of text around the region's name; `reordered` is a translation that puts the name first. `submissions` is the map's tooltip line.",
+  "strings": {
+    "heading": ["%1$d project in %2$s", "%1$d projects in %2$s"],
+    "submissions": ["%d submission", "%d submissions"]
+  },
+  "headings": [
+    { "count": 0, "parts": ["0 projects in ", ""] },
+    { "count": 1, "parts": ["1 project in ", ""] },
+    { "count": 4, "parts": ["4 projects in ", ""] },
+    { "count": 12, "parts": ["12 projects in ", ""] }
+  ],
+  "reordered": [
+    { "format": "%2$s: %1$d", "count": 3, "parts": ["", ": 3"] },
+    { "format": "In %2$s, %1$d (%1$d)", "count": 2, "parts": ["In ", ", 2 (2)"] }
+  ],
+  "submissions": [
+    { "count": 0, "text": "0 submissions" },
+    { "count": 1, "text": "1 submission" },
+    { "count": 7, "text": "7 submissions" }
+  ]
+}

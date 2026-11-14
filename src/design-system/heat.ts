@@ -1,3 +1,4 @@
+import type { RegionKey } from './taxonomy';
 import coverageMap from '../../wp-content/plugins/firehouse/shared/coverage-map.json' with { type: 'json' };
 
 /**
@@ -71,4 +72,53 @@ export function heat(
   const stroke = mix(stops[Math.max(i, 1)], stops[Math.min(i + 2, stops.length - 1)], local);
 
   return { fill, stroke, alpha: 0.38 + 0.4 * t };
+}
+
+/** How one region is drawn. */
+export interface RegionStyle {
+  color: string;
+  weight: number;
+  opacity: number;
+  fillColor: string;
+  fillOpacity: number;
+}
+
+/**
+ * A region's style, with the selection applied: coloured by its count against the
+ * busiest GACC's, the selected region outlined, and, while one is selected, the rest
+ * dimmed rather than only the selected one brightened: at these counts a single
+ * highlight is easy to miss.
+ */
+export function regionStyle(
+  key: RegionKey,
+  count: number,
+  max: number,
+  theme: MapTheme,
+  selected: RegionKey | null,
+): RegionStyle {
+  const { fill, stroke, alpha } = heat(count, max, theme);
+  const isSelected = selected === key;
+  return {
+    color: isSelected ? RAMPS[theme].selected : stroke,
+    weight: isSelected ? 3.5 : 1.2,
+    opacity: 0.9,
+    fillColor: fill,
+    fillOpacity: selected && !isSelected ? alpha * 0.35 : alpha,
+  };
+}
+
+/**
+ * The same region under the pointer: a heavier edge, and its fill a step stronger than
+ * undimmed, so a dimmed region still answers. Leaving it puts back `regionStyle()`,
+ * the selection included.
+ */
+export function hoveredStyle(
+  key: RegionKey,
+  count: number,
+  max: number,
+  theme: MapTheme,
+  selected: RegionKey | null,
+): RegionStyle {
+  const style = regionStyle(key, count, max, theme, selected);
+  return { ...style, weight: Math.max(style.weight, 3), fillOpacity: heat(count, max, theme).alpha + 0.2 };
 }

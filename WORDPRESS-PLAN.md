@@ -136,7 +136,7 @@ The alternatives, and why not:
 | `derive.ts`, `format.ts`, `normalize.ts` | Rewritten in PHP. |
 | `citation.ts` and the citation tabs | Not ported: the site offers no citations (see [Decisions so far](#decisions-so-far)). |
 | `search.ts` | Kept in both languages: PHP renders the first, already-filtered page, and JavaScript filters as you type. |
-| `RegionMap.tsx` | Leaflet stays, driven by an Interactivity API store |
+| `RegionMap.tsx` | Leaflet stays. Its drawing moved into `mapCanvas.ts`, which both sites run; in the plugin, an Interactivity API store drives it |
 | Mobile menu, scrollable need cards, quick-look modal | Interactivity API. The modal becomes a native `<dialog>`, which traps focus and handles Escape itself. |
 | React Router, `ContentProvider`, the adapters, `RouteFocusManager` | Retired. Full page loads make them unnecessary. |
 | `SiteHeader`, `GovBanner`, `SiteFooter` | The Firehouse bar (`firehouse/subnav`) sits under GSL's header. GSL's header and footer take over the gov banner, the NOAA and GSL logos and the footer (see [Look and feel](#look-and-feel)). |
@@ -150,7 +150,7 @@ The alternatives, and why not:
 | `scripts/notebooklm-source.mjs` | Rewritten in PHP as **Download NotebookLM source**, for the paste-in fallback |
 | The Google Form (outside this repository) | The plugin's survey form (see [The survey form](#the-survey-form)) |
 | The NotebookLM notebook | Analyze results and an approved AI service (see [The AI service](#the-ai-service)); paste-in stays as the fallback |
-| Vite, `public/.htaccess`, `public/_redirects` | Retired. View scripts are plain ES modules, and the blocks' editor script (`assets/js/block-editor.js`) is plain JavaScript, with no build step; `@wordpress/scripts` comes in if Phase 6's editing controls need one. The one generated script is the explorer's search module (`assets/search/search.js`), which `npm run plugin:assets` bundles from `search.ts` with esbuild. |
+| Vite, `public/.htaccess`, `public/_redirects` | Retired. View scripts are plain ES modules, and the blocks' editor script (`assets/js/block-editor.js`) is plain JavaScript, with no build step; `@wordpress/scripts` comes in if Phase 6's editing controls need one. The generated scripts are the explorer's search module (`assets/search/search.js`) and the coverage map's drawing (`assets/map/`), which `npm run plugin:assets` bundles with esbuild from `search.ts` and from `mapCanvas.ts` with Leaflet. |
 
 The rewrite is smaller than the line counts suggest. The design system is already in
 plain CSS files with `fh-` class names, not inline React styles. The PHP templates emit
@@ -234,9 +234,10 @@ wp-content/plugins/firehouse/
                    the Import screen creates both pages from custom blocks)
   assets/          tokens and component CSS, icons, logos, fonts, the link-preview
                    image, the blocks' script for the block editor, the site's search
-                   as a module for the explorer's script; GACC boundaries with the
-                   coverage map (Phase 5)
-  shared/          vocabulary.json, the coverage map's colour ramps, the project and
+                   as a module for the explorer's script, and the site's map drawing,
+                   with Leaflet and the GACC boundaries, as a module for the coverage
+                   map's script
+  shared/          vocabulary.json, the coverage map's colour ramps and basemap, the project and
                    topic schemas, the email pattern, the icon allowlist and test
                    cases, read by PHP and JS
   tests/           PHPUnit tests, run without WordPress through Brain Monkey
@@ -363,8 +364,11 @@ Links people have already shared keep working either way.
   view script and the search module add about 5 KB and 4 KB gzipped.*
 - **Map.** Leaflet's ES module build loads in the block's view script. The region list
   is a set of real buttons in the same kind of form, and the boundary GeoJSON ships as
-  a plugin asset. *The list came first (14 November): see "Coverage map's list done"
-  under Phase 5.*
+  a plugin asset. *The list came first, then the map (14 November): see "Coverage
+  map's list done" and "The coverage map done" under Phase 5. The map is the site's
+  own drawing, moved into `mapCanvas.ts`, bundled with Leaflet and the boundaries into
+  one module the view script imports once the page is up. The bundle wraps Leaflet's
+  UMD build, the one its package points at.*
 
 If working without JavaScript turns out not to be required, the PHP search can be
 dropped. That saves about a week and removes the only logic that exists twice. *It is
@@ -1691,7 +1695,8 @@ its own (`DEFERRED`), loaded only on a page with the map.
   - *For the map's script: load Leaflet's CSS with it, not in the head, where it
     styles nothing until the map is drawn (about 6.6 KB of the 8.5, 3.9 of it images
     Leaflet's controls the map doesn't use); measured, it costs less than the noise
-    today (the WordPress performance review, 14 November).*
+    today (the WordPress performance review, 14 November). Not taken: see "The
+    coverage map done", below.*
   - *The results' heading and status line, done 14 November on both sites, the
     Section 508 review's other point for the script. The results sit under an `h3`
     that counts them ("4 projects in Great Basin"), with Clear beside it, and are no
@@ -1709,10 +1714,53 @@ its own (`DEFERRED`), loaded only on a page with the map.
     shape, since `bindTooltip` gives it focus listeners, though the canvas is
     `aria-hidden`. Fix it where the drawing is shared, before the plugin draws the
     map. And take the status line's sentence from the PHP's `_n()` string, not a
-    copy in the script.*
+    copy in the script. Both done with the map, below.*
   - *Left for Stephanie and Emily: "Select a GACC on the map or in the list" and "Not
     on the map" speak of a map that a visitor without JavaScript doesn't get. The
     site's words are the same, and the site shows nothing at all without it.*
+- *The coverage map done 14 November (`blocks/coverage-map/view.js`,
+  `src/design-system/mapCanvas.ts`):*
+  - *One drawing for both sites. What `RegionMap.tsx` drew with Leaflet moved into
+    `mapCanvas.ts`, which takes no framework; the site's map draws pixel for pixel as
+    before. The site's `RegionMap` calls it, and `npm run plugin:assets` bundles it
+    with Leaflet and the GACC boundaries as the `@firehouse/coverage-map` module:
+    `assets/map/map.min.js` (about 60 KB compressed) and the readable `map.js`. The
+    basemap's tile addresses and attribution moved to `shared/coverage-map.json`, where
+    the plugin's credit reads the attribution.*
+  - *The view script takes the list's markup over through the Interactivity API, as
+    the explorer's does. A choice changes the page in place and the address with it,
+    with no history entry, as on the site. The script imports the map's module only
+    once the page is up (a dynamic import), so the list works while it loads; if it
+    can't load, the stage and credit go and the list carries on. The map follows the
+    selection, the labels toggle and GSL's light/dark switch.*
+  - *Without JavaScript nothing changes. The server prints the map's stage and credit
+    for the script, and `frame.css` hides them under `@media (scripting: none)`. A
+    page with JavaScript then doesn't move as the map arrives, but a script that
+    fails to load leaves the stage empty.*
+  - *The status line's words are the PHP's `_n()` strings, in the page's state, as
+    the explorer's are; `shared/cases/coverage-map-view.json` holds the script and
+    `Coverage_Map` to the same split of the heading around the region's name.*
+  - *Fixed on both sites, where the drawing is shared:*
+    - *nothing in the hidden map takes keyboard focus;*
+    - *leaving a region with the pointer, while another was selected, put it back
+      undimmed;*
+    - *for a visitor who has asked for less motion, the map moves to a region without
+      flying.*
+  - *Leaflet's CSS stays in `coverage-map.min.css`, in the head, rather than loading
+    with the script, as the performance review suggested. With JavaScript, the map
+    draws as soon as the page is up, so its CSS is needed at once, and loading it
+    from the script would hold the map back by a request. The review measured its
+    cost below the noise.*
+  - *Checked:*
+    - *`plugin:compare` matches the reference with the map's toggle and credit
+      (`LATER` is now empty);*
+    - *the section's tree matches the site's at 19 `?region=` addresses, and after
+      each of nine choices, by click, Enter and Space, desktop and phone, with the
+      same status line and address;*
+    - *after Clear, focus lands on "All submissions", already pressed;*
+    - *the plugin's map matches the site's within a pixel's shift, in both themes, at
+      three addresses;*
+    - *a map module that can't load, and tiles that can't, were tried.*
 
 **Done when:** it reaches feature parity with the React site, every URL parameter
 behaves the same, and the accessibility snapshots match.

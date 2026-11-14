@@ -1,5 +1,5 @@
 {
-  "$comment": "The coverage map's colours, one ramp per basemap: read by the site's src/design-system/heat.ts and the plugin's Domain\\Map_Colors. Each ramp's stops run from one submission to the busiest region; `empty` is a region with none, `selected` the selected region's outline, and `label` the GACC codes drawn on the map. heat.ts says why the ramps are blue, and why there are two.",
+  "$comment": "The coverage map's colours and basemap: read by the site's src/design-system/heat.ts and mapCanvas.ts, and the plugin's Domain\\Map_Colors. Each ramp's stops run from one submission to the busiest region; `empty` is a region with none, `selected` the selected region's outline, and `label` the GACC codes drawn on the map. heat.ts says why the ramps are blue, and why there are two.",
   "ramps": {
     "dark": {
       "stops": ["#3d6fb0", "#4f93d9", "#7fbaf2", "#c4e2ff"],
@@ -12,6 +12,14 @@
       "empty": { "fill": "#9caece", "stroke": "#6e85af" },
       "selected": "#0a1020",
       "label": { "text": "#0a1020", "halo": "rgba(255, 255, 255, 0.9)" }
+    }
+  },
+  "basemap": {
+    "$comment": "Esri's free canvas basemaps, one per theme. The visitor's browser loads the tiles straight from Esri: the map's only outside host, and the only thing to change if a review objects to it. Esri's terms require the attribution, which is printed under the map.",
+    "attribution": "Esri, HERE, Garmin, © OpenStreetMap contributors",
+    "tiles": {
+      "dark": "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
+      "light": "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}"
     }
   }
 }

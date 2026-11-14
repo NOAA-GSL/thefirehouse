@@ -79,4 +79,12 @@ final class MapColorsTest extends DomainTestCase {
 			$this->assertSame( $expected, Js::round( $value ), (string) $value );
 		}
 	}
+
+	/**
+	 * The basemap's attribution, from the same file the map's script reads its tiles
+	 * from: Esri's terms require it under the map.
+	 */
+	public function test_the_basemap_attribution(): void {
+		$this->assertSame( 'Esri, HERE, Garmin, © OpenStreetMap contributors', Map_Colors::attribution() );
+	}
 }
