@@ -228,8 +228,7 @@ final class Explorer_Page {
 		);
 		$authors = array_values( array_filter( is_array( $project['authors'] ?? null ) ? $project['authors'] : array(), static fn( mixed $author ): bool => is_array( $author ) && is_string( $author['name'] ?? null ) ) );
 		$geo     = is_array( $project['geo'] ?? null ) ? $project['geo'] : array();
-		$status  = $text( $project['publicationStatus'] ?? null );
-		$papers  = is_array( $project['papers'] ?? null ) ? $project['papers'] : array();
+		$status  = $project['publicationStatus'] ?? null;
 		return array(
 			'slug'              => (string) $project['slug'],
 			'url'               => (string) $project['url'],
@@ -251,8 +250,8 @@ final class Explorer_Page {
 			'firePhases'        => $texts( $project['firePhases'] ?? null ),
 			'byline'            => Format::byline( $authors ),
 			'fullByline'        => Format::byline( $authors, 0 ),
-			'publicationStatus' => null !== $status && isset( Vocabulary::items( 'publicationStatuses' )[ $status ] ) ? $status : null,
-			'paperCount'        => count( array_filter( array_map( array( Project_Page::class, 'paper' ), $papers ) ) ),
+			'publicationStatus' => Vocabulary::is_one_of( $status, Vocabulary::publication_statuses() ) ? $status : null,
+			'paperCount'        => count( Project_Page::papers( $project['papers'] ?? null ) ),
 		);
 	}
 
@@ -679,7 +678,7 @@ final class Explorer_Page {
 			esc_html( $title ),
 			$body
 		);
-		return '<dialog id="fh-quick-look" class="fh-modal__overlay" tabindex="-1" aria-labelledby="fh-quick-look-title" data-wp-on--pointerdown="actions.peekPress" data-wp-on--click="actions.peekBackdrop" data-wp-on--close="actions.peekClosed">'
+		return '<dialog id="fh-quick-look" class="fh-modal__overlay" tabindex="-1" aria-labelledby="fh-quick-look-title" data-wp-on--pointerdown="actions.peekPress" data-wp-on--pointerup="actions.peekRelease" data-wp-on--click="actions.peekBackdrop" data-wp-on--close="actions.peekClosed">'
 			. '<div class="fh-modal">'
 			. '<header class="fh-modal__header"><div class="fh-modal__identity">'
 			. '<span class="fh-eyebrow" data-wp-bind--hidden="!state.peek.kicker" data-wp-text="state.peek.kicker"></span>'

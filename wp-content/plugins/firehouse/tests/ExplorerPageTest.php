@@ -33,9 +33,9 @@ final class ExplorerPageTest extends WordPressTestCase {
 	 * Stands in for WordPress's addresses, escaping and shared JSON. esc_html() and
 	 * esc_attr() leave a character reference alone, as WordPress's do, where Brain
 	 * Monkey's would escape it again; esc_url() drops an encoded line break and writes
-	 * an & as &#038;, as WordPress's does; and esc_url_raw() refuses an address that
-	 * isn't http or https, as WordPress's does for a paper's link, where Brain Monkey's
-	 * would make one of it.
+	 * an & as &#038;, as WordPress's does; and esc_url_raw() keeps only an http or https
+	 * address, which is all these tests give it besides `javascript:` and none, where
+	 * Brain Monkey's would make an address of either.
 	 */
 	protected function setUp(): void {
 		parent::setUp();
@@ -253,7 +253,7 @@ final class ExplorerPageTest extends WordPressTestCase {
 		$dialog = self::one( $xpath, '//dialog' );
 		$this->assertSame( array( 'fh-quick-look', 'fh-modal__overlay', 'fh-quick-look-title', '-1' ), array( $dialog->getAttribute( 'id' ), $dialog->getAttribute( 'class' ), $dialog->getAttribute( 'aria-labelledby' ), $dialog->getAttribute( 'tabindex' ) ) );
 		$this->assertFalse( $dialog->hasAttribute( 'open' ) );
-		$this->assertSame( array( 'actions.peekPress', 'actions.peekBackdrop', 'actions.peekClosed' ), array( $dialog->getAttribute( 'data-wp-on--pointerdown' ), $dialog->getAttribute( 'data-wp-on--click' ), $dialog->getAttribute( 'data-wp-on--close' ) ) );
+		$this->assertSame( array( 'actions.peekPress', 'actions.peekRelease', 'actions.peekBackdrop', 'actions.peekClosed' ), array( $dialog->getAttribute( 'data-wp-on--pointerdown' ), $dialog->getAttribute( 'data-wp-on--pointerup' ), $dialog->getAttribute( 'data-wp-on--click' ), $dialog->getAttribute( 'data-wp-on--close' ) ) );
 		$this->assertSame( self::one( $xpath, '//button[@class="fh-modal__close"]' ), self::one( $xpath, '//dialog//*[@autofocus]' ) );
 		$this->assertSame( 'state.peek.title', self::one( $xpath, '//*[@id="fh-quick-look-title"]' )->getAttribute( 'data-wp-text' ) );
 		$this->assertSame( '', self::text( $dialog->getElementsByTagName( 'h2' )->item( 0 ) ?? $dialog ) );

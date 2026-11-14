@@ -305,11 +305,19 @@ export function refocusTarget( element, active, body, fallback ) {
 	return active === element ? null : element;
 }
 
-/** Forgets the worked-out query and the tiles, for tests that change the projects. */
+/**
+ * Forgets the worked-out query, the tiles and the quick look's opening, for tests that
+ * change the projects or the page.
+ */
 export function forget() {
 	memo = { key: null };
 	scoredFor = { q: null };
 	tiles = new Map();
+	clearTimeout( opening );
+	opening = null;
+	opener = null;
+	overflow = null;
+	pressed = false;
 }
 
 /** The pending write of the typed text into the query. */
@@ -325,11 +333,13 @@ const searchBox = () => document.getElementById( 'fh-explorer-q' );
 const dialog = () => document.getElementById( 'fh-quick-look' );
 
 /**
- * The button that opened the quick look, which focus goes back to; the page's overflow
- * before it opened, or null while the page isn't held still; and whether the press of
- * the click under way was on the page around it.
+ * The button that opened the quick look, which focus goes back to; its opening, while
+ * it waits to open; the page's overflow before it opened, or null while the page isn't
+ * held still; and whether the click under way was pressed and released on the page
+ * around it.
  */
 let opener = null;
+let opening = null;
 let overflow = null;
 let pressed = false;
 
@@ -515,15 +525,17 @@ const { state, actions } = store( STORE, {
 		 * Opens the quick look for a tile's project. It opens a moment later, once its
 		 * words are the project's, so the name it's announced by is the right one; then
 		 * the page behind stops scrolling, as the site's does. A second press before it
-		 * opens (a double click) changes nothing: the page's own overflow is saved once,
+		 * opens (a double click) opens it once: the page's own overflow is saved once,
 		 * and put back once.
 		 */
 		peek() {
 			opener = getElement().ref;
 			state.peekSlug = getContext().project.slug;
-			setTimeout( () => {
+			clearTimeout( opening );
+			opening = setTimeout( () => {
+				opening = null;
 				const quickLook = dialog();
-				if ( ! quickLook || quickLook.open || state.peekSlug === null ) {
+				if ( ! quickLook || quickLook.open ) {
 					return;
 				}
 				quickLook.showModal();
@@ -533,18 +545,27 @@ const { state, actions } = store( STORE, {
 				}
 			} );
 		},
-		closePeek() {
+		/** Its close button; not on the second click of a double click that opened it. */
+		closePeek( event ) {
+			if ( event?.detail > 1 ) {
+				return;
+			}
 			dialog()?.close();
 		},
-		/** Where a click on the quick look began, which peekBackdrop() reads. */
+		/** Where a click on the quick look was pressed, which peekBackdrop() reads. */
 		peekPress( event ) {
 			pressed = event.target === getElement().ref;
 		},
+		/** And where it was released. */
+		peekRelease( event ) {
+			pressed = pressed && event.target === getElement().ref;
+		},
 		/**
 		 * A click on the dimmed page around the quick look closes it: pressed and released
-		 * there, so a drag that selects its text and ends outside it doesn't, and not the
-		 * second click of a double click, which would close what the first just opened.
-		 * A press on its scrollbar fires no click.
+		 * there, so a drag that selects its text, into it or out of it, doesn't (the
+		 * browser gives such a click to the dialog), and not the second click of a double
+		 * click, which would close what the first just opened. A press on its scrollbar
+		 * fires no click.
 		 */
 		peekBackdrop( event ) {
 			const { ref } = getElement();
@@ -556,7 +577,9 @@ const { state, actions } = store( STORE, {
 		/**
 		 * However the quick look closed (its button, Escape, the page around it). Focus
 		 * goes back to the button that opened it, or, if a search took its tile away, to
-		 * the search box. A close event for a look that has since reopened is passed over.
+		 * the search box. The close event comes a moment after the close, so it can come
+		 * after another look was asked for: it puts the page's overflow back, if that look
+		 * hasn't opened yet, and leaves that look be.
 		 */
 		peekClosed() {
 			if ( dialog()?.open ) {
@@ -566,8 +589,12 @@ const { state, actions } = store( STORE, {
 				document.body.style.overflow = overflow;
 				overflow = null;
 			}
+			// Another look is about to open, or this close is an earlier look's, handled.
+			if ( opening !== null || opener === null ) {
+				return;
+			}
 			state.peekSlug = null;
-			( opener?.isConnected ? opener : searchBox() )?.focus();
+			( opener.isConnected ? opener : searchBox() )?.focus();
 			opener = null;
 		},
 	},

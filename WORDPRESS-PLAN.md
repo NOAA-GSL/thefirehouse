@@ -1610,16 +1610,18 @@ its own (`DEFERRED`), loaded with the map.
     are the project's, so it's announced by the right name. `frame.css` takes the
     browser's own dialog box off, so the site's overlay styles hold.*
   - *Where it differs from the site's. A click closes it only when pressed and
-    released on the page around it, and not as the second click of a double click:
-    the site's closes on the press, so a drag that selects its text and ends outside
-    it doesn't close it there either, but a press on the overlay's scrollbar does,
-    and a double click on a tile's button opens it and closes it again. The dialog takes no
-    tab stop of its own (`tabindex="-1"`); when the panel is taller than the window
-    it scrolls, and the browser would stop on it with its focus ring off the screen
-    (the Section 508 review, 14 November). Tab moves from its last control to the
-    browser's, as a native dialog's does, where the site's loops back to its close
-    button. Its project comes from the page's state, not the results, so it stays
-    open if a pending search drops that project from the list; the site's closes.*
+    released on the page around it, so a drag that selects its text, into the panel
+    or out of it, leaves it open; and neither the page around it nor its close button
+    takes the second click of a double click. The site's closes on the press, so a
+    drag that begins outside the panel, or a press on the overlay's scrollbar, closes
+    it, and a double click on a tile's button opens it and closes it again. The
+    dialog takes no tab stop of its own (`tabindex="-1"`); when the panel is taller
+    than the window it scrolls, and the browser would stop on it with its focus ring
+    off the screen (the Section 508 review, 14 November). Tab moves from its last
+    control to the browser's, as a native dialog's does, where the site's loops back
+    to its close button. Its project comes from the page's state, not the results, so
+    it stays open if a pending search drops that project from the list; the site's
+    closes.*
   - *Without JavaScript, the tiles' buttons are hidden and the dialog never opens; a
     tile without phases hides its footer.*
   - *Checked by hand, with the same scratch scripts: each of the eight projects'
@@ -1632,6 +1634,11 @@ its own (`DEFERRED`), loaded with the map.
     its tiles and on the site, have no label a screen reader hears ("Before During
     Published"); a visually hidden "Fire phases:" and "Status:" would need their
     wording, on both sites.*
+  - *Left for Eric, on both sites: on a phone the panel fills the screen, so there's
+    no page around it to tap, and its close button scrolls away with its header (a
+    sticky header would keep it in reach; Escape and Android's back gesture still
+    close it); and a second click or tap just after one that closes it goes through to
+    the tile beneath.*
 
 **Done when:** it reaches feature parity with the React site, every URL parameter
 behaves the same, and the accessibility snapshots match.

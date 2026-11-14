@@ -285,7 +285,7 @@ describe('the explorer store', () => {
 
   it('runs each action that prevents the event\'s default as the event happens', () => {
     for (const name of ['keydown', 'submit', 'clearSearch', 'removeFilter', 'clearAll']) expect(definition.actions[name].sync, name).toBe(true);
-    for (const name of ['type', 'choose', 'chooseSort', 'toggleFilters', 'peek', 'closePeek', 'peekPress', 'peekBackdrop', 'peekClosed']) expect(definition.actions[name].sync, name).toBeUndefined();
+    for (const name of ['type', 'choose', 'chooseSort', 'toggleFilters', 'peek', 'closePeek', 'peekPress', 'peekRelease', 'peekBackdrop', 'peekClosed']) expect(definition.actions[name].sync, name).toBeUndefined();
   });
 
   it('shows what the script adds, and folds the filters until asked', () => {
@@ -458,12 +458,59 @@ describe('the explorer store', () => {
     expect([state.peekSlug, body.style.overflow, calls.at(-1)]).toEqual([null, 'auto', 'opener focused']);
   });
 
-  it('opens nothing for a look closed before it opened', () => {
+  it('opens a look asked for before the last one\'s close event came, and leaves it be', () => {
     const { calls, body, open } = withQuickLook();
-    open(state.projects[1]);
-    actions.peekClosed();
+    const [first, second] = state.projects;
+    open(first);
     vi.advanceTimersByTime(0);
-    expect([calls.filter((call) => call.startsWith('opened')), body.style.overflow]).toEqual([[], 'auto']);
+    actions.closePeek();
+    open(second);
+    // The first look's close event comes before the second opens.
+    actions.peekClosed();
+    expect([state.peekSlug, body.style.overflow, calls.at(-1)]).toEqual([second.slug, 'auto', 'closed']);
+    vi.advanceTimersByTime(0);
+    expect([body.style.overflow, calls.at(-1)]).toEqual(['hidden', `opened ${second.title}`]);
+    actions.closePeek();
+    actions.peekClosed();
+    expect([state.peekSlug, body.style.overflow, calls.at(-1)]).toEqual([null, 'auto', 'opener focused']);
+  });
+
+  it('puts focus back once when two looks\' close events both come late', () => {
+    const { calls, body, open } = withQuickLook();
+    const [first, second] = state.projects;
+    open(first);
+    vi.advanceTimersByTime(0);
+    actions.closePeek();
+    open(second);
+    vi.advanceTimersByTime(0);
+    actions.closePeek();
+    actions.peekClosed();
+    actions.peekClosed();
+    expect([calls.filter((call) => call.endsWith('focused')), state.peekSlug, body.style.overflow]).toEqual([['opener focused'], null, 'auto']);
+  });
+
+  it('leaves the page as it was if there is no dialog to open, or it can\'t open', () => {
+    const { quickLook, body, open } = withQuickLook();
+    quickLook.showModal = () => {
+      throw new Error('no showModal');
+    };
+    open(state.projects[1]);
+    expect(() => vi.advanceTimersByTime(0)).toThrow('no showModal');
+    expect(body.style.overflow).toBe('auto');
+    vi.stubGlobal('document', { body, getElementById: () => undefined });
+    open(state.projects[1]);
+    expect(() => vi.advanceTimersByTime(0)).not.toThrow();
+    expect(body.style.overflow).toBe('auto');
+  });
+
+  it('stays open on the second click of a double click that lands on its close button', () => {
+    const { quickLook, open } = withQuickLook();
+    open(state.projects[1]);
+    vi.advanceTimersByTime(0);
+    actions.closePeek({ detail: 2 });
+    expect(quickLook.open).toBe(true);
+    actions.closePeek({ detail: 1 });
+    expect(quickLook.open).toBe(false);
   });
 
   it('puts focus in the search box if a search took the opening tile away', () => {
@@ -476,18 +523,21 @@ describe('the explorer store', () => {
     expect(calls.at(-1)).toBe('search box focused');
   });
 
-  it('closes the quick look on a click pressed and released around it, not one begun in it', () => {
+  it('closes the quick look on a click pressed and released around it, not a drag into it or out of it', () => {
     const closed = [];
     const quickLook = { close: () => closed.push(true) };
     const inside = { tagName: 'P' };
     element = { ref: quickLook };
+    // As a browser clicks: on what was pressed and released, or, if they differ, on what holds both.
     const clickOn = (down, up, detail = 1) => {
       actions.peekPress({ target: down });
-      actions.peekBackdrop({ target: up, detail });
+      actions.peekRelease({ target: up });
+      actions.peekBackdrop({ target: down === up ? down : quickLook, detail });
     };
     clickOn(inside, inside);
-    // A drag that selects its text and ends on the page around it: the click lands on the dialog.
+    // A drag that selects its text and ends on the page around it, and one that begins there.
     clickOn(inside, quickLook);
+    clickOn(quickLook, inside);
     // The second click of a double click on a tile's button, landing around it.
     clickOn(quickLook, quickLook, 2);
     expect(closed).toEqual([]);
