@@ -57,7 +57,7 @@ final class BlocksTest extends WordPressTestCase {
 			array( array( '@firehouse/search', 'https://example.test/wp-content/plugins/firehouse/assets/search/search.js', array(), \Firehouse\VERSION . '-' . filemtime( dirname( __DIR__ ) . '/assets/search/search.js' ) ) ),
 			$modules
 		);
-		$this->assertSame( array_map( static fn( string $name ): string => dirname( __DIR__ ) . '/blocks/' . $name, array( 'about-audiences', 'about-cta', 'about-intro', 'about-mission', 'about-process', 'about-sections', 'about-team', 'explorer', 'hero', 'not-found', 'project', 'stats', 'submit-band', 'subnav', 'top-needs', 'topic' ) ), $registered );
+		$this->assertSame( array_map( static fn( string $name ): string => dirname( __DIR__ ) . '/blocks/' . $name, array( 'about-audiences', 'about-cta', 'about-intro', 'about-mission', 'about-process', 'about-sections', 'about-team', 'coverage-map', 'explorer', 'hero', 'not-found', 'project', 'stats', 'submit-band', 'subnav', 'top-needs', 'topic' ) ), $registered );
 		// The manifest comes first, so no block reads its block.json.
 		$this->assertSame( array( array( dirname( __DIR__ ) . '/blocks', dirname( __DIR__ ) . '/blocks/blocks-manifest.php', 0 ) ), $collections );
 	}

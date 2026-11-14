@@ -6,9 +6,9 @@
  *
  * Every rule is scoped under .fh-app (WORDPRESS-PLAN.md rule 9), in the order the
  * site loads them. Left out: the static build's page shell, gov banner and footer,
- * which GSL's theme replaces; the coverage map, which arrives in Phase 5; the design
- * system's components no page renders; and the fonts, which the plugin loads on its
- * own from fonts.css.
+ * which GSL's theme replaces; the coverage map, which has its own (coverage-map.css);
+ * the design system's components no page renders; and the fonts, which the plugin
+ * loads on its own from fonts.css.
  */
 
 /* Design system Button.

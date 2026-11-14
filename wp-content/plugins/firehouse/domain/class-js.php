@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Truthiness and whitespace as JavaScript has them.
+ * Truthiness, whitespace, numbers and Math.round()'s ties as JavaScript has them.
  *
  * The TypeScript this plugin ports tests values with `if (value)` and trims with
  * `trim()`. PHP's nearest equivalents differ at the edges: empty() calls "0" and an
@@ -91,5 +91,20 @@ final class Js {
 			return $value;
 		}
 		return NAN;
+	}
+
+	/**
+	 * A number rounded as JavaScript's Math.round() rounds it: to the nearest whole
+	 * number, a tie going up, so 2.5 is 3 and -2.5 is -2. PHP's round() takes a tie away
+	 * from zero, and before PHP 8.4 it first rounded to 15 digits, so a number just
+	 * under a half, such as 0.49999999999999994, could come out a whole number higher.
+	 *
+	 * @param float $value A finite number.
+	 */
+	public static function round( float $value ): float {
+		$floor = floor( $value );
+		// For a number of 0 or more the subtraction is exact: its floor is 0 or within a
+		// factor of two of it.
+		return $value - $floor >= 0.5 ? $floor + 1 : $floor;
 	}
 }

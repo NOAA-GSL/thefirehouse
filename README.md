@@ -18,7 +18,7 @@ npm test           # the shared test cases, and the CSS, font and script tests
 npm run schema     # regenerate shared/*.schema.json from types.ts
                    # (schema:check only compares; CI runs it, and typecheck too)
 npm run seed       # write seed/firehouse-seed.json for the plugin's Import screen
-npm run plugin:css # write the plugin's stylesheet from src/, scoped under .fh-app
+npm run plugin:css # write the plugin's stylesheets from src/, scoped under .fh-app
                    # (Node 22.18+, and Edge or Chrome installed, as for npm run reference;
                    # plugin:css:check only compares, and CI runs it)
 npm run plugin:assets
@@ -83,8 +83,9 @@ wp-content/plugins/firehouse/
                     bar, the not-found page, the project pages, the topic
                     pages, the landing page and the About page); the shared
                     vocabularies and test cases; and the PHP tests.
-                    assets/css/firehouse.min.css and firehouse.css are generated
-                    from src/, and assets/css/frame.css is written by hand;
+                    assets/css/firehouse.min.css, coverage-map.min.css and their
+                    readable copies are generated from src/, and
+                    assets/css/frame.css is written by hand;
                     assets/fonts/ and assets/css/fonts.css hold the fonts;
                     assets/js/block-editor.js, which shows the blocks in the
                     block editor, is written by hand;
@@ -376,10 +377,11 @@ nothing from the database. Each class's docblock has the detail; this is the map
     `firehouse/topic` block, the project archive the `firehouse/explorer` block, a page
     in the Firehouse tree its own blocks (not through `the_content`), and an empty page
     in the tree a placeholder.
-  - **Stylesheets:** it loads `fonts.css`, `firehouse.min.css` and `frame.css` after
-    the theme's stylesheet, at the plugin's version and each file's modified time, and
-    adds `fh-page` to the body. Under `SCRIPT_DEBUG` it loads `firehouse.css`, the same
-    rules readable, in place of `firehouse.min.css`. The local WordPress turns
+  - **Stylesheets:** it loads `fonts.css`, `firehouse.min.css`, `coverage-map.min.css`
+    on a page whose content holds the coverage map's block, and `frame.css`, after the
+    theme's stylesheet, at the plugin's version and each file's modified time, and adds
+    `fh-page` to the body. Under `SCRIPT_DEBUG` it loads `firehouse.css` and
+    `coverage-map.css`, the same rules readable, in place of the minified copies. The local WordPress turns
     `SCRIPT_DEBUG` on (`docker-compose.yml`), so pages reviewed there use the readable
     copy; turn it off there to see the minified one. It preloads Public Sans's latin
     file, the text font, so text doesn't shift when it arrives. Nothing depends on the
@@ -413,6 +415,9 @@ nothing from the database. Each class's docblock has the detail; this is the map
   - it takes the browser's own dialog box off the quick look, a native `<dialog>`
     where the site has an overlay `<div>`, so the site's overlay styles hold, and keeps
     a closed one hidden;
+  - it gives each coverage-map swatch the colour `Coverage_Map` wrote for the page's
+    theme, and, while there's no map, puts the selected region's projects beside the
+    region list, after it, as they come in the page;
   - on Firehouse pages only, it hides the theme's hero background and the mission
     section above its footer.
 
@@ -607,11 +612,28 @@ nothing from the database. Each class's docblock has the detail; this is the map
     FireHouse", as the site's is, so it isn't a second "About" beside the site's own.
   - Each post and page is read back after it is written.
 - `Landing_Page` is the landing page's blocks: `firehouse/hero` with `firehouse/stats`
-  inside it, `firehouse/top-needs` and `firehouse/submit-band`, as the site's
-  `LandingPage` renders them, without the coverage map, which comes in Phase 5. The words are the blocks' attributes; the counts, the four topic cards
-  and the synthesis note are computed as the page renders, from the projects a visitor
-  may see and the published topics, with the topic pages' counting. A button with
-  nowhere to go, such as Submit a Finding with no survey address set, is left out.
+  inside it, `firehouse/top-needs`, `firehouse/coverage-map` and
+  `firehouse/submit-band`, as the site's `LandingPage` renders them. The words are the
+  blocks' attributes, except the coverage map's, which are fixed in `Coverage_Map` as
+  they are in the site's `LandingPage` and `RegionMap`; the counts, the four topic
+  cards, the synthesis note and the map's region counts are computed as the page
+  renders, from the projects a visitor may see and the published topics, with the
+  topic pages' counting. A button with nowhere to go, such as Submit
+  a Finding with no survey address set, is left out.
+- `Coverage_Map` is the coverage map's block, as the site's `RegionMap` lists it: how
+  many projects are filed under each GACC (a national study counts in every one) and
+  under the four answers with no boundary, and the selected region's projects. Until
+  the map's script comes, and without JavaScript after it, the region list is the map:
+  each region is a button that submits a GET form for `?region=` and its key, the
+  address the static site uses, and the page comes back at that region's projects.
+  The selected region's button, "All submissions" and "Clear" submit nothing, which
+  selects none, and the page comes back at the section's heading, by the list. Each
+  GACC with something filed under it has a swatch carrying its colour for both themes,
+  from `Map_Colors`, the site's `heat.ts` ported and held to it by
+  `shared/cases/coverage-map.json`, and `frame.css` shows the theme's. The map itself,
+  which Leaflet draws, comes next. A landing page imported before the
+  block existed doesn't have it: add `<!-- wp:firehouse/coverage-map /-->` before its
+  submit band.
 - `About_Page` is the About page's blocks, as the site's `AboutPage` renders them:
   `firehouse/about-intro`, `firehouse/about-sections` holding `about-mission`,
   `about-audiences`, `about-process` and `about-team`, and `firehouse/about-cta`. The
@@ -658,7 +680,7 @@ The traps, for whoever changes this code next:
   site, and the capabilities; the content stays.
 
 `domain/` holds the PHP versions of `src/content/derive.ts`, `format.ts`,
-`normalize.ts` and `search.ts`:
+`normalize.ts` and `search.ts`, and of `src/design-system/heat.ts` (`Map_Colors`):
 
 - `Normalize::site_content()` checks the raw content files and returns them in the
   JSON shape of `src/content/types.ts`. When it refuses content, it throws a
@@ -690,7 +712,9 @@ The traps, for whoever changes this code next:
   differently from the browser.
 - `Vocabulary` reads the keys and icon names from `shared/vocabulary.json`, and `Js`
   holds the few JavaScript rules PHP doesn't share, such as what counts as true, as
-  whitespace, or as a number.
+  whitespace, or as a number, and how `Math.round()` takes a tie.
+- `Map_Colors` is the coverage map's colours, from the two ramps in
+  `shared/coverage-map.json`, which the site's `src/design-system/heat.ts` reads too.
 - `Json::decode()` reads JSON as the TypeScript sees it: an empty or numbered object
   (`{}`, `{"0": …}`) stays an object, a `Json_Object`, instead of passing for a list.
   `Normalize` turns every one back into an array on the way out, so pages and post meta
@@ -698,7 +722,7 @@ The traps, for whoever changes this code next:
   reads the seed bundle through it.
 
 They pass the cases in `shared/cases/derive.json`, `format.json`, `normalize.json`,
-`email-shape.json` and `search.json`, the same ones `npm test` runs.
+`email-shape.json`, `search.json` and `coverage-map.json`, the same ones `npm test` runs.
 
 `assets/css/firehouse.min.css` is the site's CSS, scoped under `.fh-app` so it can sit
 inside GSL's theme without reaching the theme's header and footer (plan rule 9).
@@ -706,15 +730,19 @@ inside GSL's theme without reaching the theme's header and footer (plan rule 9).
 `SCRIPT_DEBUG`; the minified copy is that one minified as the site's own build
 minifies its CSS. One stylesheet serves every Firehouse page; it isn't split by page.
 Both copies leave out what GSL's theme replaces (the static build's page shell, gov
-banner and footer), the coverage map's CSS, which loads with the map (`DEFERRED`), the
-design system's components no page renders, and the fonts, which load on their own
-(`scripts/plugin-css-sources.mjs`); a test fails if the plugin's markup uses a class
-only the unused components' stylesheets style. Don't edit either:
-`npm run plugin:css` writes both from `src/`, and CI fails if either falls behind.
+banner and footer), the coverage map's CSS, the design system's components no page
+renders, and the fonts, which load on their own (`scripts/plugin-css-sources.mjs`); a
+test fails if the plugin's markup uses a class only the unused components' stylesheets
+style. The coverage map's CSS, Leaflet's and the site's `RegionMap.css`, is a chunk of
+its own in the site's build (`DEFERRED`), and so it is in the plugin:
+`coverage-map.min.css`, or under `SCRIPT_DEBUG` the readable `coverage-map.css`,
+which loads only on a page whose content holds the map's block, after the site's
+stylesheet and before `frame.css`. Don't edit any of them: `npm run plugin:css`
+writes all four from `src/`, and CI fails if one falls behind.
 The site's own build scopes every stylesheet the same way (`scripts/scope-css.ts`), with
 `#root` as the wrapper, so the static site runs on the same CSS the plugin gets, and
 the build stops on any rule that could match outside the wrapper. Before writing,
-`plugin:css` also loads both copies into a real browser (`scripts/css-browser-check.mjs`)
+`plugin:css` also loads all four files into a real browser (`scripts/css-browser-check.mjs`)
 and stops on any request, unscoped rule or loading value it finds there, since
 PostCSS and a browser tokenize some CSS differently.
 `src/styles/inward-reset.css` undoes GSL's element styles inside the wrapper, and
@@ -788,8 +816,8 @@ isn't hosted outside GSL, even for a demo.
 
 ## The coverage map
 
-The landing-page hero carries a map of where research comes from, built to
-`FirehouseFormAdditions.pdf`.
+The landing page carries a map of where research comes from, in its own section after
+the top needs, built to `FirehouseFormAdditions.pdf`.
 
 - **Regions are the survey's recode values** — `ONCC`, not `Northern California
   (ONCC)`. Display text gets reworded over time; codes must not, or the map breaks

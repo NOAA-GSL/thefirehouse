@@ -309,6 +309,19 @@
   font-weight: 600;
 }
 
+/* Forced colours paint every border, the rows' transparent ones included, and drop
+   the tint, so the selected region would differ from the rest only in weight: theirs
+   take the background and the selected one the highlight. */
+@media (forced-colors: active) {
+  .fh-map__region {
+    border-color: Canvas;
+  }
+
+  .fh-map__region--on {
+    border-color: Highlight;
+  }
+}
+
 .fh-map__region--sm {
   font: var(--text-caption);
 }

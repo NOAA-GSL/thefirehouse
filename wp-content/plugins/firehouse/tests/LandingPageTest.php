@@ -210,14 +210,15 @@ final class LandingPageTest extends WordPressTestCase {
 	}
 
 	/**
-	 * The page's blocks: the hero with the counts inside it, the top needs, and the
-	 * submit band, each with its words as attributes. A link to the bundle's survey
-	 * address is stored empty, so it follows the settings; any other is kept.
+	 * The page's blocks: the hero with the counts inside it, the top needs, the coverage
+	 * map, and the submit band, each with its words as attributes (the map has none). A
+	 * link to the bundle's survey address is stored empty, so it follows the settings;
+	 * any other is kept.
 	 */
 	public function test_the_blocks_built_from_the_bundle(): void {
 		$blocks = Landing_Page::blocks( self::landing(), self::SURVEY );
 
-		$this->assertMatchesRegularExpression( '#^<!-- wp:firehouse/hero (\{.*?\}) --><!-- wp:firehouse/stats (\{.*?\}) /--><!-- /wp:firehouse/hero --><!-- wp:firehouse/top-needs (\{.*?\}) /--><!-- wp:firehouse/submit-band (\{.*?\}) /-->$#', $blocks );
+		$this->assertMatchesRegularExpression( '#^<!-- wp:firehouse/hero (\{.*?\}) --><!-- wp:firehouse/stats (\{.*?\}) /--><!-- /wp:firehouse/hero --><!-- wp:firehouse/top-needs (\{.*?\}) /--><!-- wp:firehouse/coverage-map /--><!-- wp:firehouse/submit-band (\{.*?\}) /-->$#', $blocks );
 		preg_match_all( '#<!-- wp:\S+ (\{.*?\}) /?-->#', $blocks, $found );
 		$attributes = array_map( static fn( string $json ): array => json_decode( $json, true ), $found[1] );
 

@@ -367,7 +367,7 @@ final class ImporterTest extends WordPressTestCase {
 			array_diff_key( $landing['post'], array( 'post_content' => true ) )
 		);
 		$blocks = $landing['post']['post_content'];
-		$this->assertMatchesRegularExpression( '#^<!-- wp:firehouse/hero \{.*\} --><!-- wp:firehouse/stats \{"items":\[.*\]\} /--><!-- /wp:firehouse/hero --><!-- wp:firehouse/top-needs \{.*\} /--><!-- wp:firehouse/submit-band \{.*\} /-->$#s', $blocks );
+		$this->assertMatchesRegularExpression( '#^<!-- wp:firehouse/hero \{.*\} --><!-- wp:firehouse/stats \{"items":\[.*\]\} /--><!-- /wp:firehouse/hero --><!-- wp:firehouse/top-needs \{.*\} /--><!-- wp:firehouse/coverage-map /--><!-- wp:firehouse/submit-band \{.*\} /-->$#s', $blocks );
 		$this->assertStringContainsString( '"primaryCta":{"label":"Submit a Finding","href":""}', $blocks );
 		$this->assertStringNotContainsString( 'forms.example.org', $blocks );
 		$this->assertSame( array(), $landing['problems'] );

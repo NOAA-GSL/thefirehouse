@@ -1,0 +1,17 @@
+{
+  "$comment": "The coverage map's colours, one ramp per basemap: read by the site's src/design-system/heat.ts and the plugin's Domain\\Map_Colors. Each ramp's stops run from one submission to the busiest region; `empty` is a region with none, `selected` the selected region's outline, and `label` the GACC codes drawn on the map. heat.ts says why the ramps are blue, and why there are two.",
+  "ramps": {
+    "dark": {
+      "stops": ["#3d6fb0", "#4f93d9", "#7fbaf2", "#c4e2ff"],
+      "empty": { "fill": "#6e85af", "stroke": "#8fa3c4" },
+      "selected": "#ffffff",
+      "label": { "text": "#f5f7fb", "halo": "rgba(10, 16, 32, 0.85)" }
+    },
+    "light": {
+      "stops": ["#8fb8e6", "#4f8fd6", "#2563b8", "#0b3d86"],
+      "empty": { "fill": "#9caece", "stroke": "#6e85af" },
+      "selected": "#0a1020",
+      "label": { "text": "#0a1020", "halo": "rgba(255, 255, 255, 0.9)" }
+    }
+  }
+}

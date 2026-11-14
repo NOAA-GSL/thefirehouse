@@ -27,9 +27,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - `firehouse/hero`: the hero, with `firehouse/stats`, the live counts, inside it.
  * - `firehouse/top-needs`: the four topic cards, the synthesis note, and "Where these
  *   needs come from".
+ * - `firehouse/coverage-map`: where the research comes from (Coverage_Map).
  * - `firehouse/submit-band`: the closing band with the Submit button.
- *
- * The coverage map comes in Phase 5.
  *
  * Its links are stored as Page_Blocks keeps them: one to the survey address follows the
  * Submit a Finding address in the settings, and with none set, its button is left out
@@ -82,6 +81,7 @@ final class Landing_Page {
 					Page_Blocks::text_fields( $landing['topicSection'] ?? null, array( 'eyebrow', 'heading', 'body' ) )
 						+ array( 'needsPerCard' => is_int( $landing['needsPerCard'] ?? null ) ? $landing['needsPerCard'] : Topic_Page::NEEDS )
 				),
+				Page_Blocks::block( 'firehouse/coverage-map', array() ),
 				Page_Blocks::block(
 					'firehouse/submit-band',
 					array_intersect_key( $words( $landing['submitBand'] ?? null ), array_flip( array( 'heading', 'body' ) ) )
@@ -239,6 +239,9 @@ final class Landing_Page {
 	 * `topics`, the published topic areas in order, each with its fields; and
 	 * `topicSummaries`, their syntheses. Read once per request: two queries for the
 	 * projects and their fields, and the topics; the cards count from the same projects.
+	 * The projects are asked for as the explorer asks (Explorer_Page::projects()), in
+	 * the same order, so the coverage map's read of them is answered from WordPress's
+	 * own cache of the query; the order changes nothing here.
 	 *
 	 * @return array{projects: list<array<string, mixed>>, topics: list<array<string, mixed>>, topicSummaries: list<array<string, mixed>>}
 	 */
@@ -247,7 +250,12 @@ final class Landing_Page {
 			return self::$content;
 		}
 		$projects = array();
-		foreach ( get_posts( Store::public_projects_query( array( 'numberposts' => -1 ) ) ) as $post ) {
+		$args     = array(
+			'numberposts' => -1,
+			'orderby'     => 'ID',
+			'order'       => 'ASC',
+		);
+		foreach ( get_posts( Store::public_projects_query( $args ) ) as $post ) {
 			if ( Store::is_public( $post ) ) {
 				$needs      = get_post_meta( $post->ID, Meta::key( 'needs' ), true );
 				$projects[] = array(

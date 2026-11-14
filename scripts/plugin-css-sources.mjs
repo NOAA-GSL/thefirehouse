@@ -19,5 +19,9 @@ export const UNUSED = ['src/design-system/Field.css', 'src/design-system/TopicTa
 /** Left out, but allowed to stop being imported: the fonts, when the site stops loading them. */
 export const MAY_GO = ['wp-content/plugins/firehouse/assets/css/fonts.css'];
 
-/** Chunks whose stylesheets load with them, not in the plugin's: the coverage map (Phase 5). */
+/**
+ * Chunks whose stylesheets the plugin loads on their own, not in firehouse.css: the
+ * coverage map's, which `scripts/plugin-css.mjs` writes as coverage-map.css and
+ * coverage-map.min.css. That script stops if there's more than this one.
+ */
 export const DEFERRED = ['RegionMap'];
