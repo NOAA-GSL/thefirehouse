@@ -35,6 +35,7 @@ final class Frame {
 	 */
 	public const FONTS = 'firehouse-fonts';
 	public const STYLE = 'firehouse';
+	public const MAP   = 'firehouse-coverage-map';
 	public const FRAME = 'firehouse-frame';
 
 	/**
@@ -180,15 +181,22 @@ final class Frame {
 	}
 
 	/**
-	 * Loads the Firehouse stylesheets on a Firehouse request, in order. frame.css
-	 * depends on the site's CSS; nothing depends on the fonts, so a site that wants its
-	 * own can dequeue `firehouse-fonts` and lose nothing else. This runs at priority 20
-	 * of `wp_enqueue_scripts`, so the dequeue has to come after it, at 21 or later:
-	 * WordPress forgets a dequeue of a handle not yet queued.
+	 * Loads the Firehouse stylesheets on a Firehouse request, in order. The coverage
+	 * map's and frame.css depend on the site's CSS; nothing depends on the fonts, so a
+	 * site that wants its own can dequeue `firehouse-fonts` and lose nothing else. This
+	 * runs at priority 20 of `wp_enqueue_scripts`, so the dequeue has to come after it,
+	 * at 21 or later: WordPress forgets a dequeue of a handle not yet queued.
+	 *
+	 * The coverage map's stylesheet loads only on a page whose content holds the map's
+	 * block, in the head, as the others do: the site loads it with the map, a chunk of
+	 * its own. A block's own stylesheet would load on every page of a classic theme's
+	 * site, or late, at the foot of the page. frame.css comes last, so its rules win
+	 * their ties with the map's too.
 	 *
 	 * The site's CSS is the minified copy, firehouse.min.css, or under SCRIPT_DEBUG the
 	 * same rules readable, firehouse.css, as WordPress chooses between its own
-	 * (`wp_scripts_get_suffix()`). scripts/plugin-css.mjs writes both.
+	 * (`wp_scripts_get_suffix()`); and so is the map's. scripts/plugin-css.mjs writes
+	 * all four.
 	 */
 	public static function enqueue(): void {
 		if ( ! self::is_firehouse_request() ) {
@@ -196,6 +204,10 @@ final class Frame {
 		}
 		self::style( self::FONTS, 'fonts.css', array() );
 		self::style( self::STYLE, 'firehouse' . wp_scripts_get_suffix() . '.css', array() );
+		$page = get_queried_object();
+		if ( $page instanceof \WP_Post && has_block( 'firehouse/coverage-map', $page ) ) {
+			self::style( self::MAP, 'coverage-map' . wp_scripts_get_suffix() . '.css', array( self::STYLE ) );
+		}
 		self::style( self::FRAME, 'frame.css', array( self::STYLE ) );
 	}
 

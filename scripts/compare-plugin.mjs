@@ -44,22 +44,24 @@ export const BUILT = ['about', 'home', 'not-found', 'project--', 'projects', 'to
 export const UNCOMPARED = {};
 
 /**
- * Parts of a built page that come in a later phase, by the region's name in the
- * reference: they're left out of the reference before comparing, and listed. The
- * landing page's coverage map comes in Phase 5.
+ * Parts of a built page that come later, each by how its line in the reference begins
+ * (`region "Where the research comes from"`, `button "GACC labels"`): they're left out
+ * of the reference before comparing, with everything inside them, and listed. On the
+ * landing page, the coverage map's toggle and credit come with the map, which only its
+ * script draws (Phase 5).
  */
-export const LATER = { home: ['Where the research comes from'] };
+export const LATER = { home: ['button "GACC labels"', 'paragraph: "Boundaries: NIFC National GACC Boundaries.'] };
 
-/** A snapshot's lines without each named region and everything inside it. */
-export function withoutRegions(lines, names = []) {
+/** A snapshot's lines without each part named as LATER names them, and everything inside it. */
+export function withoutLater(lines, parts = []) {
   const out = [];
   let skipping = -1;
   for (const line of lines) {
     const indent = line.search(/\S/);
     if (skipping >= 0 && indent > skipping) continue;
     skipping = -1;
-    const region = line.match(/^\s*- region "(.*)"/);
-    if (region && names.includes(region[1])) {
+    const node = line.replace(/^\s*- /, '');
+    if (parts.some((part) => node.startsWith(part))) {
       skipping = indent;
       continue;
     }
@@ -194,7 +196,7 @@ async function main() {
           continue;
         }
         const later = LATER[name] ?? [];
-        const expected = withoutRegions(mainOf(readFileSync(resolve(ROOT, 'reference/aria', widthName, `${name}.yml`), 'utf8')), later);
+        const expected = withoutLater(mainOf(readFileSync(resolve(ROOT, 'reference/aria', widthName, `${name}.yml`), 'utf8')), later);
         const actual = normalize(mainOf(await page.locator('main').ariaSnapshot()));
         const changes = diff(expected, actual);
         if (changes.length === 0) {

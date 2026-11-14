@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BUILT, LATER, UNCOMPARED, diff, isBuilt, mainOf, normalize, siteAddress, siteLink, withoutRegions } from './compare-plugin.mjs';
+import { BUILT, LATER, UNCOMPARED, diff, isBuilt, mainOf, normalize, siteAddress, siteLink, withoutLater } from './compare-plugin.mjs';
 
 const ORIGIN = 'http://localhost:8090';
 
@@ -32,7 +32,7 @@ describe('compare-plugin', () => {
     expect(isBuilt('home', built)).toBe(false);
   });
 
-  it('leaves out a region that comes later, and everything inside it, by its name', () => {
+  it('leaves out a part that comes later, and everything inside it, by how its line begins', () => {
     const lines = [
       '- main:',
       '  - region "Top needs":',
@@ -43,14 +43,17 @@ describe('compare-plugin', () => {
       '  - region "Have a finding?":',
       '    - heading "Have a finding?" [level=2]',
     ];
-    expect(withoutRegions(lines, ['Where the research comes from'])).toEqual([
+    expect(withoutLater(lines, ['region "Where the research comes from"'])).toEqual([
       '- main:',
       '  - region "Top needs":',
       '    - heading "Top needs" [level=2]',
       '  - region "Have a finding?":',
       '    - heading "Have a finding?" [level=2]',
     ]);
-    expect(withoutRegions(lines)).toEqual(lines);
+    expect(withoutLater(lines, ['button "GACC labels"'])).toEqual(lines.filter((line) => !line.includes('GACC labels')));
+    // A part names the start of a line, not something inside it.
+    expect(withoutLater(lines, ['heading "Where', 'GACC labels'])).toEqual(lines.filter((line) => !line.includes('heading "Where')));
+    expect(withoutLater(lines)).toEqual(lines);
   });
 
   it('leaves out only parts of pages it has built', () => {

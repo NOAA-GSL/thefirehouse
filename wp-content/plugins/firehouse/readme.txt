@@ -74,8 +74,10 @@ one is.
   A need card that scrolls can be reached and scrolled by keyboard. Stored text shows
   exactly as stored, on the topic pages too.
 * The landing page, created by the Import screen from the seed bundle when there's
-  none: the hero with live counts, the four topic areas' top needs, and the submit
-  band. The coverage map comes later.
+  none: the hero with live counts, the four topic areas' top needs, where the research
+  comes from (how many projects are filed under each region, and the selected
+  region's projects, without JavaScript too), and the submit band. The map itself
+  comes later.
 * The About page, created by the Import screen under the landing page when there's
   none: what the hub is, who it serves, how it works, the team, with portraits an
   administrator uploads to the Media Library before importing (initials otherwise),

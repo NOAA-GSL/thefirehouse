@@ -1,0 +1,25 @@
+{
+  "$comment": "Cases for the coverage map's colours: src/design-system/heat.ts and the plugin's Domain\\Map_Colors. Each case calls `fn` with `args` and expects `expected`. heat's args are a region's count, the busiest region's count and the theme; mix's are two #rrggbb colours and how far from the first to the second.",
+  "cases": [
+    { "name": "no submissions: the empty colours, almost no fill", "fn": "heat", "args": [0, 8, "light"], "expected": { "fill": "#9caece", "stroke": "#6e85af", "alpha": 0.05 } },
+    { "name": "no submissions, dark", "fn": "heat", "args": [0, 8, "dark"], "expected": { "fill": "#6e85af", "stroke": "#8fa3c4", "alpha": 0.05 } },
+    { "name": "the only count there is: the top of the ramp", "fn": "heat", "args": [1, 1, "light"], "expected": { "fill": "#0b3d86", "stroke": "#0b3d86", "alpha": 0.78 } },
+    { "name": "a busiest of none still gives a count its top", "fn": "heat", "args": [1, 0, "dark"], "expected": { "fill": "#c4e2ff", "stroke": "#c4e2ff", "alpha": 0.78 } },
+    { "name": "one submission of eight: the bottom of the ramp", "fn": "heat", "args": [1, 8, "light"], "expected": { "fill": "#8fb8e6", "stroke": "#4f8fd6", "alpha": 0.38 } },
+    { "name": "one submission of eight, dark", "fn": "heat", "args": [1, 8, "dark"], "expected": { "fill": "#3d6fb0", "stroke": "#4f93d9", "alpha": 0.38 } },
+    { "name": "between two stops", "fn": "heat", "args": [4, 8, "light"], "expected": { "fill": "#4382cd", "stroke": "#3c78bf", "alpha": 0.5514285714285714 } },
+    { "name": "between two stops, dark", "fn": "heat", "args": [4, 8, "dark"], "expected": { "fill": "#5d9ee0", "stroke": "#70aae4", "alpha": 0.5514285714285714 } },
+    { "name": "halfway between two stops: a channel ending in .5 rounds up", "fn": "heat", "args": [2, 3, "dark"], "expected": { "fill": "#67a7e6", "stroke": "#8abbec", "alpha": 0.5800000000000001 } },
+    { "name": "on a stop", "fn": "heat", "args": [3, 4, "light"], "expected": { "fill": "#2563b8", "stroke": "#2563b8", "alpha": 0.6466666666666667 } },
+    { "name": "a third of the way", "fn": "heat", "args": [2, 4, "dark"], "expected": { "fill": "#4f93d9", "stroke": "#4f93d9", "alpha": 0.5133333333333333 } },
+    { "name": "just below the busiest", "fn": "heat", "args": [7, 8, "light"], "expected": { "fill": "#164d9b", "stroke": "#164d9b", "alpha": 0.7228571428571429 } },
+    { "name": "the busiest: the last stop", "fn": "heat", "args": [8, 8, "light"], "expected": { "fill": "#0b3d86", "stroke": "#0b3d86", "alpha": 0.78 } },
+    { "name": "the busiest, dark", "fn": "heat", "args": [8, 8, "dark"], "expected": { "fill": "#c4e2ff", "stroke": "#c4e2ff", "alpha": 0.78 } },
+
+    { "name": "no way along: the first colour", "fn": "mix", "args": ["#000000", "#ffffff", 0], "expected": "#000000" },
+    { "name": "all the way: the second colour", "fn": "mix", "args": ["#000000", "#ffffff", 1], "expected": "#ffffff" },
+    { "name": "halfway: 127.5 rounds up", "fn": "mix", "args": ["#000000", "#ffffff", 0.5], "expected": "#808080" },
+    { "name": "downhill, with a .5", "fn": "mix", "args": ["#8fb8e6", "#4f8fd6", 0.5], "expected": "#6fa4de" },
+    { "name": "a channel under 16 keeps its leading zero", "fn": "mix", "args": ["#000000", "#101010", 0.5], "expected": "#080808" }
+  ]
+}

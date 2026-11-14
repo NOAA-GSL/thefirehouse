@@ -251,6 +251,22 @@ return array(
 		),
 		'render'      => 'file:./render.php',
 	),
+	'coverage-map'    => array(
+		'$schema'     => 'https://schemas.wp.org/trunk/block.json',
+		'apiVersion'  => 3,
+		'name'        => 'firehouse/coverage-map',
+		'title'       => 'FireHouse coverage map',
+		'category'    => 'widgets',
+		'description' => 'The landing page\'s coverage map: how many projects are filed under each Geographic Area Coordination Center and the other regions, and the projects filed under the one selected.',
+		'textdomain'  => 'firehouse',
+		'supports'    => array(
+			'html'     => false,
+			'inserter' => false,
+			'multiple' => false,
+			'reusable' => false,
+		),
+		'render'      => 'file:./render.php',
+	),
 	'explorer'        => array(
 		'$schema'          => 'https://schemas.wp.org/trunk/block.json',
 		'apiVersion'       => 3,

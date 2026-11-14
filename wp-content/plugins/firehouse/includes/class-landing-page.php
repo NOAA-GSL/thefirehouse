@@ -27,9 +27,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - `firehouse/hero`: the hero, with `firehouse/stats`, the live counts, inside it.
  * - `firehouse/top-needs`: the four topic cards, the synthesis note, and "Where these
  *   needs come from".
+ * - `firehouse/coverage-map`: where the research comes from (Coverage_Map).
  * - `firehouse/submit-band`: the closing band with the Submit button.
- *
- * The coverage map comes in Phase 5.
  *
  * Its links are stored as Page_Blocks keeps them: one to the survey address follows the
  * Submit a Finding address in the settings, and with none set, its button is left out
@@ -82,6 +81,7 @@ final class Landing_Page {
 					Page_Blocks::text_fields( $landing['topicSection'] ?? null, array( 'eyebrow', 'heading', 'body' ) )
 						+ array( 'needsPerCard' => is_int( $landing['needsPerCard'] ?? null ) ? $landing['needsPerCard'] : Topic_Page::NEEDS )
 				),
+				Page_Blocks::block( 'firehouse/coverage-map', array() ),
 				Page_Blocks::block(
 					'firehouse/submit-band',
 					array_intersect_key( $words( $landing['submitBand'] ?? null ), array_flip( array( 'heading', 'body' ) ) )

@@ -305,10 +305,11 @@ final class FrameTest extends WordPressTestCase {
 	 * plugin's assets/css/, each at the plugin's version and the file's modified time.
 	 * Only the frame depends on another; nothing depends on the fonts. The site's
 	 * stylesheet is the minified copy, or the readable one under SCRIPT_DEBUG, which
-	 * WordPress's suffix says.
+	 * WordPress's suffix says. A page without the coverage map doesn't load the map's.
 	 */
 	public function test_the_stylesheets_load_in_order(): void {
 		self::resolve( array( 'singular' => 'fh_topic' ) );
+		Functions\when( 'has_block' )->justReturn( false );
 		$plugin = dirname( __DIR__ );
 		Functions\when( 'plugins_url' )->alias(
 			function ( string $path, string $file ) use ( $plugin ): string {
@@ -344,6 +345,60 @@ final class FrameTest extends WordPressTestCase {
 			}
 			$this->assertSame( $expected, $loaded, $site );
 		}
+	}
+
+	/**
+	 * A page whose content holds the coverage map loads the map's stylesheet after the
+	 * site's and before the frame, minified or, under SCRIPT_DEBUG, readable. Only a
+	 * page is asked; an explorer, with no post to ask about, loads none.
+	 */
+	public function test_the_maps_stylesheet_loads_with_the_map(): void {
+		$plugin = dirname( __DIR__ );
+		Functions\when( 'plugins_url' )->alias( static fn( string $path ): string => 'https://example.test/wp-content/plugins/firehouse/' . $path );
+		$asked = array();
+		Functions\when( 'has_block' )->alias(
+			static function ( string $name, \WP_Post $post ) use ( &$asked ): bool {
+				$asked[] = array( $name, $post->ID );
+				return self::ROOT === $post->ID;
+			}
+		);
+		$loaded = array();
+		Functions\when( 'wp_enqueue_style' )->alias(
+			static function ( string $handle, string $src, array $deps ) use ( &$loaded ): void {
+				$loaded[] = array( $handle, basename( $src ), $deps );
+			}
+		);
+
+		foreach ( array(
+			'.min' => 'coverage-map.min.css',
+			''     => 'coverage-map.css',
+		) as $suffix => $file ) {
+			Functions\when( 'wp_scripts_get_suffix' )->justReturn( (string) $suffix );
+			$this->assertFileExists( $plugin . '/assets/css/' . $file );
+			foreach ( array(
+				self::ROOT => true,
+				8          => false,
+			) as $id => $has_map ) {
+				self::resolve(
+					array(
+						'page'      => $id,
+						'ancestors' => array( self::ROOT ),
+					)
+				);
+				$loaded = array();
+				Frame::enqueue();
+				$this->assertSame( array( Frame::FONTS, Frame::STYLE, ...( $has_map ? array( Frame::MAP ) : array() ), Frame::FRAME ), array_column( $loaded, 0 ), (string) $id );
+				if ( $has_map ) {
+					$this->assertSame( array( Frame::MAP, $file, array( Frame::STYLE ) ), $loaded[2] );
+				}
+			}
+		}
+		$this->assertSame( array( 'firehouse/coverage-map', self::ROOT ), $asked[0] );
+
+		$asked = array();
+		self::resolve( array( 'archive' => 'fh_project' ) );
+		Frame::enqueue();
+		$this->assertSame( array(), $asked );
 	}
 
 	/**

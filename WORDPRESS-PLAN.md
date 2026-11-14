@@ -361,7 +361,7 @@ Links people have already shared keep working either way.
   view script and the search module add about 5 KB and 4 KB gzipped.*
 - **Map.** Leaflet's ES module build loads in the block's view script. The region list
   is a set of real buttons in the same kind of form, and the boundary GeoJSON ships as
-  a plugin asset.
+  a plugin asset. *The list came first (14 November), below.*
 
 If working without JavaScript turns out not to be required, the PHP search can be
 dropped. That saves about a week and removes the only logic that exists twice. *It is
@@ -1447,7 +1447,7 @@ The explorer (search, filters with counts, sort, removable filter chips, quick-l
 `<dialog>`) and the coverage map. (The mobile menu came with the Firehouse bar in Phase
 3, and the scrollable need cards with the project pages in Phase 4.) The explorer's CSS,
 its quick look's included, is in the one stylesheet. The coverage map's CSS is a chunk of
-its own (`DEFERRED`), loaded with the map.
+its own (`DEFERRED`), loaded only on a page with the map.
 
 - *Search done 13 November: `domain/class-search.php` ports `search.ts` and passes
   every case in `shared/cases/search.json`, which now also hold the query string and
@@ -1643,6 +1643,36 @@ its own (`DEFERRED`), loaded with the map.
     sticky header would keep it in reach; Escape and Android's back gesture still
     close it); and a second click or tap just after one that closes it goes through to
     the tile beneath.*
+- *Coverage map's list done 14 November, without the map, which comes next:
+  `firehouse/coverage-map` (`Coverage_Map`) sits between the top needs and the submit
+  band, and the Import screen puts it there in a new landing page. A page imported
+  before it needs the block added by hand.*
+  - *What it lists. As the site's `RegionMap` does, with the same counting: each
+    GACC's count, a national study counted in every one; the four answers with no
+    boundary; how many projects name a region; the note on national studies; and the
+    selected region's projects, in import order, each with its year, and a national
+    study's tagged so anywhere but National.*
+  - *Without JavaScript. The region list is a set of buttons that submit `?region=`
+    and the key through one empty, hidden GET form (`form="fh-map-form"`), which
+    leaves the layout as it is. The selected region's button, "All submissions" and
+    "Clear" submit nothing, which selects none, and the form goes back to the
+    section's heading. With no map, the results take its place beside the list
+    (`frame.css`).*
+  - *The colours. The ramps moved to `shared/coverage-map.json`, which the site's
+    `heat.ts` (split out of `RegionMap.tsx`) and the plugin's `Map_Colors` read, held
+    together by `shared/cases/coverage-map.json`. The site colours a swatch for the
+    theme it's showing; the plugin writes both themes' colours on it, and
+    `frame.css` shows the theme's, without JavaScript too.*
+  - *The CSS. `plugin:css` writes the map's chunk, Leaflet's CSS and `RegionMap.css`,
+    as `coverage-map.min.css` (about 8.5 KB compressed) and `coverage-map.css`. The
+    frame loads it, in the head, only on a page whose content holds the block. A
+    block's own stylesheet would load on every page of a classic theme's site, or at
+    the foot of the page.*
+  - *Checked: `plugin:compare` now compares the section, without the map's toggle
+    and credit, which come with the map (`LATER`); the section's accessibility tree
+    matches the site's at all 19 `?region=` addresses tried, desktop and phone;
+    and with JavaScript off, every kind of button selects as described, landing on
+    the heading below the FireHouse bar.*
 
 **Done when:** it reaches feature parity with the React site, every URL parameter
 behaves the same, and the accessibility snapshots match.
