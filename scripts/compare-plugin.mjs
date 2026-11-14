@@ -45,7 +45,7 @@ export const UNCOMPARED = {};
 
 /**
  * Parts of a built page that come later, each by how its line in the reference begins
- * (`region "Where the research comes from"`, `button "GACC labels"`): they're left out
+ * (`button "GACC labels"`, `paragraph: "Boundaries: …`): they're left out
  * of the reference before comparing, with everything inside them, and listed. On the
  * landing page, the coverage map's toggle and credit come with the map, which only its
  * script draws (Phase 5).

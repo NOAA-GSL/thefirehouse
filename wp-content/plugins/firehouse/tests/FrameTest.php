@@ -349,8 +349,10 @@ final class FrameTest extends WordPressTestCase {
 
 	/**
 	 * A page whose content holds the coverage map loads the map's stylesheet after the
-	 * site's and before the frame, minified or, under SCRIPT_DEBUG, readable. Only a
-	 * page is asked; an explorer, with no post to ask about, loads none.
+	 * site's and before the frame, minified or, under SCRIPT_DEBUG, readable. The page
+	 * asked about is the query's post, which the frame renders, not the queried object:
+	 * in a preview of a published page, the one holds the unsaved changes and the
+	 * other is as published. Only a page is asked; an explorer loads none.
 	 */
 	public function test_the_maps_stylesheet_loads_with_the_map(): void {
 		$plugin = dirname( __DIR__ );
@@ -359,8 +361,15 @@ final class FrameTest extends WordPressTestCase {
 		Functions\when( 'has_block' )->alias(
 			static function ( string $name, \WP_Post $post ) use ( &$asked ): bool {
 				$asked[] = array( $name, $post->ID );
-				return self::ROOT === $post->ID;
+				return str_contains( $post->post_content, '<!-- wp:firehouse/coverage-map /-->' );
 			}
+		);
+		$page   = static fn( int $id, bool $map ): \WP_Post => new \WP_Post(
+			array(
+				'ID'           => $id,
+				'post_type'    => 'page',
+				'post_content' => '<!-- wp:firehouse/top-needs /-->' . ( $map ? '<!-- wp:firehouse/coverage-map /-->' : '' ),
+			)
 		);
 		$loaded = array();
 		Functions\when( 'wp_enqueue_style' )->alias(
@@ -385,6 +394,7 @@ final class FrameTest extends WordPressTestCase {
 						'ancestors' => array( self::ROOT ),
 					)
 				);
+				Functions\when( 'get_post' )->justReturn( $page( $id, $has_map ) );
 				$loaded = array();
 				Frame::enqueue();
 				$this->assertSame( array( Frame::FONTS, Frame::STYLE, ...( $has_map ? array( Frame::MAP ) : array() ), Frame::FRAME ), array_column( $loaded, 0 ), (string) $id );
@@ -395,8 +405,20 @@ final class FrameTest extends WordPressTestCase {
 		}
 		$this->assertSame( array( 'firehouse/coverage-map', self::ROOT ), $asked[0] );
 
+		// A preview that adds the map to the published page loads it; one that takes it
+		// off doesn't.
+		foreach ( array( true, false ) as $previewed ) {
+			self::resolve( array( 'page' => self::ROOT ) );
+			Functions\when( 'get_queried_object' )->justReturn( $page( self::ROOT, ! $previewed ) );
+			Functions\when( 'get_post' )->justReturn( $page( self::ROOT, $previewed ) );
+			$loaded = array();
+			Frame::enqueue();
+			$this->assertSame( $previewed, in_array( Frame::MAP, array_column( $loaded, 0 ), true ) );
+		}
+
 		$asked = array();
 		self::resolve( array( 'archive' => 'fh_project' ) );
+		Functions\when( 'get_post' )->justReturn( null );
 		Frame::enqueue();
 		$this->assertSame( array(), $asked );
 	}

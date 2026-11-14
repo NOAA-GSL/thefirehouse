@@ -170,7 +170,9 @@ final class CoverageMapTest extends WordPressTestCase {
 
 	/**
 	 * Every region button, "All submissions" and "Clear" submit the one form, a hidden
-	 * GET form back to the section's heading on the landing page.
+	 * GET form back to the section's heading on the landing page. A button that selects
+	 * a region brings the page back at the results instead (its `formaction`); one that
+	 * selects none, beside the list, keeps the heading.
 	 */
 	public function test_every_button_submits_the_one_form(): void {
 		$xpath = self::dom( 'GBCC' );
@@ -187,6 +189,17 @@ final class CoverageMapTest extends WordPressTestCase {
 			$this->assertSame( array( 'submit', Coverage_Map::FORM ), array( $button->getAttribute( 'type' ), $button->getAttribute( 'form' ) ), self::text( $button ) );
 		}
 		$this->assertFalse( self::one( $xpath, '//button[@class="fh-map__clear"]' )->hasAttribute( 'name' ) );
+
+		$this->assertSame( Coverage_Map::RESULTS, self::one( $xpath, '//div[@class="fh-map__results"]' )->getAttribute( 'id' ) );
+		foreach ( $buttons as $button ) {
+			$this->assertSame(
+				$button->hasAttribute( 'name' ) ? self::URL . '#' . Coverage_Map::RESULTS : '',
+				$button->getAttribute( 'formaction' ),
+				self::text( $button )
+			);
+		}
+		// Every region but the one selected.
+		$this->assertSame( 13, $xpath->query( '//button[@formaction]' )->length );
 	}
 
 	/**
@@ -252,6 +265,24 @@ final class CoverageMapTest extends WordPressTestCase {
 		$this->assertFalse( self::one( $without, '//button[@value="AICC"]/span[@class="fh-map__swatch"]' )->hasAttribute( 'style' ) );
 		$this->assertSame( 0, $without->query( '//p[@class="fh-map__note"]' )->length );
 		$this->assertSame( '3 submissions', self::text( self::one( $without, '//p[@class="fh-map__side-total"]' ) ) );
+	}
+
+	/**
+	 * The swatches scale against the busiest GACC, not the busiest region: three
+	 * projects in Hawaii / Pacific and one in the Great Basin give the Great Basin the
+	 * top of the ramp, as on the site.
+	 */
+	public function test_swatches_scale_against_the_busiest_gacc(): void {
+		$project = static fn( string $slug, string $region ): array => array(
+			'title'          => $slug,
+			'completionYear' => 2025,
+			'url'            => 'https://example.test/firehouse/projects/' . $slug . '/',
+			'geo'            => array( 'regions' => array( $region ) ),
+		);
+		$xpath   = self::dom( null, array( $project( 'a', 'PACIFIC' ), $project( 'b', 'PACIFIC' ), $project( 'c', 'PACIFIC' ), $project( 'd', 'GBCC' ) ) );
+
+		$this->assertSame( '--fh-swatch-light: #0b3d86; --fh-swatch-dark: #c4e2ff', self::one( $xpath, '//button[@value="GBCC"]/span[@class="fh-map__swatch"]' )->getAttribute( 'style' ) );
+		$this->assertSame( 'Hawaii / Pacific3', self::buttons( $xpath )[11][0] );
 	}
 
 	/**

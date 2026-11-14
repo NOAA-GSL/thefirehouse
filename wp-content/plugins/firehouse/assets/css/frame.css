@@ -169,7 +169,7 @@
 
 /* The coverage map's swatches. The site colours each from the map's ramp for the theme
    it's showing; the plugin writes both themes' colours on the swatch (Coverage_Map),
-   and the theme picks one, so it's right before any script runs. A region with
+   and the theme picks one, so it's right with no FireHouse script. A region with
    nothing filed has none. */
 .fh-app .fh-map__swatch {
   background: var(--fh-swatch-light, transparent);
@@ -180,10 +180,12 @@
 }
 
 /* Without the map, which only its script draws, the selected region's projects sit
-   beside the region list where the map would be, not below the rows it would take. */
+   beside the region list, not below the rows the map would take, and after it, as
+   they come after it in the page, so the order you see is the order you Tab in. */
 @media (min-width: 900px) {
   .fh-app .fh-map:not(:has(> .fh-map__stage)) {
-    grid-template-areas: 'results side';
+    grid-template-columns: 236px minmax(0, 1fr);
+    grid-template-areas: 'side results';
   }
 }
 

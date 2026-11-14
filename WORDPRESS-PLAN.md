@@ -221,8 +221,9 @@ wp-content/plugins/firehouse/
                    later, the AI service client
   survey/          the survey form, self-contained (see The survey form)
   domain/          PHP versions of the vocabularies, validation (normalize), derive,
-                   format and search, with the email shape, the JSON reading and
-                   the JavaScript rules they share (Email_Shape, Json, Js)
+                   format, search and the coverage map's colours (Map_Colors), with
+                   the email shape, the JSON reading and the JavaScript rules they
+                   share (Email_Shape, Json, Js)
   blocks/<name>/   block.json · render.php · view.js and view.asset.php when it is
                    interactive (Interactivity API) · an editor preview once editors
                    place it
@@ -235,8 +236,9 @@ wp-content/plugins/firehouse/
                    image, the blocks' script for the block editor, the site's search
                    as a module for the explorer's script; GACC boundaries with the
                    coverage map (Phase 5)
-  shared/          vocabulary.json, the project and topic schemas, the email pattern,
-                   the icon allowlist and test cases, read by PHP and JS
+  shared/          vocabulary.json, the coverage map's colour ramps, the project and
+                   topic schemas, the email pattern, the icon allowlist and test
+                   cases, read by PHP and JS
   tests/           PHPUnit tests, run without WordPress through Brain Monkey
   uninstall.php    removes the role and the capabilities; the content stays
 ```
@@ -361,7 +363,8 @@ Links people have already shared keep working either way.
   view script and the search module add about 5 KB and 4 KB gzipped.*
 - **Map.** Leaflet's ES module build loads in the block's view script. The region list
   is a set of real buttons in the same kind of form, and the boundary GeoJSON ships as
-  a plugin asset. *The list came first (14 November), below.*
+  a plugin asset. *The list came first (14 November): see "Coverage map's list done"
+  under Phase 5.*
 
 If working without JavaScript turns out not to be required, the PHP search can be
 dropped. That saves about a week and removes the only logic that exists twice. *It is
@@ -718,6 +721,12 @@ each public project's searchable text in its state, so a hidden project's text w
 stay in every cached entry, not only those whose search found it. Copies others keep
 (an archive's snapshot of the explorer) hold it too, so a request to remove a
 withdrawn project names the explorer's address as well as the project's.
+
+The landing page's HTML depends on its `?region=` too, which selects the coverage
+map's region: the cache key must hold it, and a purge reach each copy. Its copies
+print only public projects' titles, years and links, and carry no script state. Every
+copy's canonical link is the landing page's own address, so search engines index
+none of them.
 
 Whatever Cloudflare does with other pages, **the Submit page is never cached.** A cached copy would carry an expired
 nonce, and real submissions would start failing within a day. The page is sent with
@@ -1654,10 +1663,13 @@ its own (`DEFERRED`), loaded only on a page with the map.
     study's tagged so anywhere but National.*
   - *Without JavaScript. The region list is a set of buttons that submit `?region=`
     and the key through one empty, hidden GET form (`form="fh-map-form"`), which
-    leaves the layout as it is. The selected region's button, "All submissions" and
-    "Clear" submit nothing, which selects none, and the form goes back to the
-    section's heading. With no map, the results take its place beside the list
-    (`frame.css`).*
+    leaves the layout as it is, and bring the page back at that region's projects
+    (`formaction`, `#fh-map-results`). The selected region's button, "All
+    submissions" and "Clear" submit nothing, which selects none, and bring it back at
+    the section's heading, by the list. With no map, the results sit beside the list,
+    after it, as they come after it in the page and in the Tab order (`frame.css`).
+    The site keeps focus on the button pressed and announces the results; a page that
+    reloads can do neither (the Section 508 review, 14 November).*
   - *The colours. The ramps moved to `shared/coverage-map.json`, which the site's
     `heat.ts` (split out of `RegionMap.tsx`) and the plugin's `Map_Colors` read, held
     together by `shared/cases/coverage-map.json`. The site colours a swatch for the
@@ -1668,11 +1680,23 @@ its own (`DEFERRED`), loaded only on a page with the map.
     frame loads it, in the head, only on a page whose content holds the block. A
     block's own stylesheet would load on every page of a classic theme's site, or at
     the foot of the page.*
+  - *In Windows' high-contrast mode the selected region showed only in bold, on both
+    sites: `RegionMap.css` now gives the rows' borders the background and the
+    selected one's the highlight, as the site's bar does its current link.*
   - *Checked: `plugin:compare` now compares the section, without the map's toggle
     and credit, which come with the map (`LATER`); the section's accessibility tree
     matches the site's at all 19 `?region=` addresses tried, desktop and phone;
-    and with JavaScript off, every kind of button selects as described, landing on
-    the heading below the FireHouse bar.*
+    and with JavaScript off, every kind of button selects as described, landing
+    below the FireHouse bar.*
+  - *For the map's script: load Leaflet's CSS with it, not in the head, where it
+    styles nothing until the map is drawn (about 6.6 KB of the 8.5, 3.9 of it images
+    Leaflet's controls the map doesn't use); measured, it costs less than the noise
+    today (the WordPress performance review, 14 November). And, on both sites, give
+    the results a heading, and announce only "N projects in …", not the whole list,
+    when a script changes them (the Section 508 review).*
+  - *Left for Stephanie and Emily: "Select a GACC on the map or in the list" and "Not
+    on the map" speak of a map that a visitor without JavaScript doesn't get. The
+    site's words are the same, and the site shows nothing at all without it.*
 
 **Done when:** it reaches feature parity with the React site, every URL parameter
 behaves the same, and the accessibility snapshots match.

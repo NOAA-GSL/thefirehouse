@@ -45,13 +45,18 @@ final class MapColorsTest extends DomainTestCase {
 	}
 
 	/**
-	 * Each theme's ramp is the shared file's, as the site reads it.
+	 * Each theme's ramp has four stops, and every colour mix() reads is #rrggbb: on
+	 * anything else the two languages part ways (with #fff, JavaScript writes "NaN"
+	 * where hexdec() reads 0).
 	 */
-	public function test_ramps_are_the_shared_files(): void {
-		$file = json_decode( (string) file_get_contents( dirname( __DIR__ ) . '/shared/coverage-map.json' ), true );
-		$this->assertSame( $file['ramps']['dark'], Map_Colors::ramp( 'dark' ) );
-		$this->assertSame( $file['ramps']['light'], Map_Colors::ramp( 'light' ) );
-		$this->assertSame( array( 'stops', 'empty', 'selected', 'label' ), array_keys( Map_Colors::ramp( 'light' ) ) );
+	public function test_each_ramp_is_written_as_mix_reads_it(): void {
+		foreach ( array( 'dark', 'light' ) as $theme ) {
+			$ramp = Map_Colors::ramp( $theme );
+			$this->assertCount( 4, $ramp['stops'], $theme );
+			foreach ( array( ...$ramp['stops'], $ramp['empty']['fill'], $ramp['empty']['stroke'], $ramp['selected'] ) as $colour ) {
+				$this->assertMatchesRegularExpression( '/^#[0-9a-f]{6}$/D', $colour, $theme );
+			}
+		}
 	}
 
 	/**

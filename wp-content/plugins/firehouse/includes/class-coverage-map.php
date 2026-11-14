@@ -25,15 +25,17 @@ if ( ! defined( 'ABSPATH' ) ) {
  * with no boundary (Pacific, national, international, not sure), and the projects
  * filed under the one selected.
  *
- * Without JavaScript, the region list is the map. Each region is a button that submits
- * a GET form for `?region=` and its key, the address the site uses, and the page
- * comes back with that region's projects; the selected region's button, "All
- * submissions" and "Clear" submit nothing, which selects none. The form goes back to
- * the section's heading. The map itself, which only the script can draw, comes in
- * the next part of Phase 5.
+ * Until the map's script comes, and without JavaScript after it, the region list is
+ * the map. Each region is a button that submits a GET form for `?region=` and its key,
+ * the address the static site uses, and the page comes back at that region's projects
+ * (the button's `formaction`). The selected region's button, "All submissions" and
+ * "Clear" submit nothing, which selects none, and the page comes back at the section's
+ * heading, by the list. The map itself, which only the script can draw, comes in the
+ * next part of Phase 5.
  *
- * Each GACC's swatch carries its colour for both themes, from the map's ramps
- * (Map_Colors), and frame.css shows the one for the theme the page is in.
+ * Each GACC with something filed under it has a swatch carrying its colour for both
+ * themes, from the map's ramps (Map_Colors), and frame.css shows the one for the theme
+ * the page is in.
  */
 final class Coverage_Map {
 
@@ -43,9 +45,19 @@ final class Coverage_Map {
 	public const FORM = 'fh-map-form';
 
 	/**
+	 * The selected region's projects, where a button that selects a region brings the
+	 * page back to.
+	 */
+	public const RESULTS = 'fh-map-results';
+
+	/**
 	 * The map for this request: the projects a visitor may see, and the region the
 	 * address selects, read as the explorer reads its query (Search::params()), with a
 	 * key that isn't a region's ignored, as the site ignores it.
+	 *
+	 * The projects are the explorer's, so one without a slug, a title as text or a year
+	 * as a number is left out (rule 6), where the hero's counts, which read every public
+	 * project (Landing_Page::content()), keep it. The site counts one set for both.
 	 */
 	public static function for_request(): string {
 		$region = Search::params( Explorer_Page::query_string() )['region'] ?? null;
@@ -102,17 +114,18 @@ final class Coverage_Map {
 		$national = count( array_filter( $projects, static fn( array $project ): bool => $project['national'] ) );
 		$regions  = Vocabulary::items( 'regions' );
 
-		$list = self::region( null, __( 'All submissions', 'firehouse' ), $total, $selected );
+		$results = $action . '#' . self::RESULTS;
+		$list    = self::region( null, __( 'All submissions', 'firehouse' ), $total, $selected, $results );
 		foreach ( $gaccs as $key ) {
-			$list .= self::region( $key, $regions[ $key ]['short'], $counts[ $key ], $selected, $max );
+			$list .= self::region( $key, $regions[ $key ]['short'], $counts[ $key ], $selected, $results, $max );
 		}
 		$off_map = '';
 		foreach ( array_diff( Vocabulary::regions(), $gaccs ) as $key ) {
-			$off_map .= self::region( $key, $regions[ $key ]['short'], $counts[ $key ], $selected );
+			$off_map .= self::region( $key, $regions[ $key ]['short'], $counts[ $key ], $selected, $results );
 		}
 
 		return sprintf(
-			'<section class="fh-coverage-section fh-container" aria-labelledby="coverage-heading"><div class="fh-coverage"><div class="fh-coverage__head"><h2 id="coverage-heading" class="fh-coverage__title">%1$s</h2><p class="fh-coverage__sub">%2$s</p></div><div class="fh-map"><div class="fh-map__side"><form id="%3$s" method="get" action="%4$s" hidden></form><div class="fh-map__side-head"><h3 class="fh-map__side-title" id="fh-map-list">%5$s</h3><p class="fh-map__side-total">%6$s</p></div>%7$s<ul class="fh-map__list" aria-labelledby="fh-map-list">%8$s</ul><div class="fh-map__offmap"><h4 class="fh-map__offmap-title">%9$s</h4><ul class="fh-map__list">%10$s</ul></div></div><div class="fh-map__results" role="region" aria-live="polite">%11$s</div></div></div></section>',
+			'<section class="fh-coverage-section fh-container" aria-labelledby="coverage-heading"><div class="fh-coverage"><div class="fh-coverage__head"><h2 id="coverage-heading" class="fh-coverage__title">%1$s</h2><p class="fh-coverage__sub">%2$s</p></div><div class="fh-map"><div class="fh-map__side"><form id="%3$s" method="get" action="%4$s" hidden></form><div class="fh-map__side-head"><h3 class="fh-map__side-title" id="fh-map-list">%5$s</h3><p class="fh-map__side-total">%6$s</p></div>%7$s<ul class="fh-map__list" aria-labelledby="fh-map-list">%8$s</ul><div class="fh-map__offmap"><h4 class="fh-map__offmap-title">%9$s</h4><ul class="fh-map__list">%10$s</ul></div></div><div class="fh-map__results" id="%12$s" role="region" aria-live="polite">%11$s</div></div></div></section>',
 			esc_html__( 'Where the research comes from', 'firehouse' ),
 			esc_html__( 'Submissions by Geographic Area Coordination Center (GACC). Select one to open the projects filed there.', 'firehouse' ),
 			esc_attr( self::FORM ),
@@ -127,23 +140,25 @@ final class Coverage_Map {
 			$list,
 			esc_html__( 'Not on the map', 'firehouse' ),
 			$off_map,
-			null !== $selected ? self::results( $projects, $selected, $regions[ $selected ]['short'] ) : '<p class="fh-map__hint">' . esc_html__( 'Select a GACC on the map or in the list to see the research filed there.', 'firehouse' ) . '</p>'
+			null !== $selected ? self::results( $projects, $selected, $regions[ $selected ]['short'] ) : '<p class="fh-map__hint">' . esc_html__( 'Select a GACC on the map or in the list to see the research filed there.', 'firehouse' ) . '</p>',
+			esc_attr( self::RESULTS )
 		);
 	}
 
 	/**
 	 * One region's button: its name, its code for a GACC, and its count. A GACC's swatch
 	 * holds its colour for each theme; one with nothing filed has none. Pressed, it
-	 * selects its region, or none if it's already selected; "All submissions" (no key)
-	 * selects none.
+	 * selects its region and brings the page back at its projects, or selects none if
+	 * it's already selected; "All submissions" (no key) selects none.
 	 *
 	 * @param string|null $key      The region's key, or null for all.
 	 * @param string      $name     What the button calls it.
 	 * @param int         $count    Its count.
 	 * @param string|null $selected The selected region's key, or null for none.
+	 * @param string      $results  The landing page's address at the results.
 	 * @param int|null    $max      The busiest GACC's count, for a GACC; null for the rest.
 	 */
-	private static function region( ?string $key, string $name, int $count, ?string $selected, ?int $max = null ): string {
+	private static function region( ?string $key, string $name, int $count, ?string $selected, string $results, ?int $max = null ): string {
 		$on     = $key === $selected;
 		$swatch = '';
 		if ( null !== $max ) {
@@ -155,7 +170,7 @@ final class Coverage_Map {
 		return sprintf(
 			'<li><button type="submit" form="%1$s"%2$s class="fh-map__region%3$s%4$s" aria-pressed="%5$s">%6$s<span class="fh-map__region-name">%7$s%8$s</span><span class="fh-map__region-count">%9$d</span></button></li>',
 			esc_attr( self::FORM ),
-			null !== $key && ! $on ? ' name="region" value="' . esc_attr( $key ) . '"' : '',
+			null !== $key && ! $on ? ' formaction="' . esc_url( $results ) . '" name="region" value="' . esc_attr( $key ) . '"' : '',
 			null === $key || in_array( $key, Vocabulary::gaccs(), true ) ? '' : ' fh-map__region--sm',
 			$on ? ' fh-map__region--on' : '',
 			$on ? 'true' : 'false',

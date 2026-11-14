@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Truthiness and whitespace as JavaScript has them.
+ * Truthiness, whitespace, numbers and Math.round()'s ties as JavaScript has them.
  *
  * The TypeScript this plugin ports tests values with `if (value)` and trims with
  * `trim()`. PHP's nearest equivalents differ at the edges: empty() calls "0" and an

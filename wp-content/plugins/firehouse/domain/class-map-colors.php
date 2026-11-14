@@ -55,7 +55,8 @@ final class Map_Colors {
 	 * ramp's high-contrast end, so a sparse region still has a crisp edge.
 	 *
 	 * @param int    $count The region's count.
-	 * @param int    $max   The busiest region's count, at least $count.
+	 * @param int    $max   The busiest region's count; at 1 or less, any count above 0
+	 *                      is the top of the ramp.
 	 * @param string $theme `dark` or `light`.
 	 * @return array{fill: string, stroke: string, alpha: float}
 	 */

@@ -23,8 +23,16 @@ describe('the coverage map colours (shared cases)', () => {
     expect(asJson(call(...args))).toEqual(expected);
   });
 
-  it('reads its ramps from the shared file', () => {
-    expect(RAMPS).toEqual(coverageMap.ramps);
-    expect(Object.keys(RAMPS).sort()).toEqual(['dark', 'light']);
+  // mix() reads #rrggbb only, and the two languages part ways on anything else: with
+  // #fff, JavaScript writes "NaN" where PHP's hexdec() reads 0.
+  it('has two ramps, each colour mix() reads written #rrggbb', () => {
+    expect(Object.keys(coverageMap.ramps).sort()).toEqual(['dark', 'light']);
+    for (const theme of ['dark', 'light'] as const) {
+      const ramp = RAMPS[theme];
+      expect(ramp.stops, theme).toHaveLength(4);
+      for (const colour of [...ramp.stops, ramp.empty.fill, ramp.empty.stroke, ramp.selected]) {
+        expect(colour, theme).toMatch(/^#[0-9a-f]{6}$/);
+      }
+    }
   });
 });

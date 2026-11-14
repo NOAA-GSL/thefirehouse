@@ -3,8 +3,8 @@ import coverageMap from '../../wp-content/plugins/firehouse/shared/coverage-map.
 /**
  * The coverage map's colours: a sequential blue ramp for a choropleth over a *small*
  * count range. The ramps live in `wp-content/plugins/firehouse/shared/coverage-map.json`,
- * which the plugin reads too, and `shared/cases/coverage-map.json` holds both ports to
- * the same answers.
+ * which the plugin reads too, and `shared/cases/coverage-map.json` holds this and its PHP
+ * port, `Map_Colors`, to the same answers.
  *
  * Blue rather than the ember/amber ramp this started with: on a fire site, red and
  * yellow read as danger and caution, so a busy region looked like a *hazard* rather
@@ -37,7 +37,7 @@ export interface MapRamp {
   label: { text: string; halo: string };
 }
 
-export const RAMPS = coverageMap.ramps as Record<MapTheme, MapRamp>;
+export const RAMPS: Record<MapTheme, MapRamp> = coverageMap.ramps;
 
 /** Mixes two `#rrggbb` colours, `t` of the way from `a` to `b`. */
 export function mix(a: string, b: string, t: number): string {
