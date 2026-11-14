@@ -49,6 +49,15 @@ final class Map_Colors {
 	}
 
 	/**
+	 * The origin the basemap's tiles come from, `https://` and the host, which the map's
+	 * script connects to early: both themes' tiles are on it.
+	 */
+	public static function tile_origin(): string {
+		$url = wp_parse_url( (string) self::data()['basemap']['tiles']['light'] );
+		return $url['scheme'] . '://' . $url['host'];
+	}
+
+	/**
 	 * The file, decoded once per request.
 	 *
 	 * @return array<string, mixed>

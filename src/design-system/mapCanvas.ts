@@ -117,7 +117,6 @@ export function drawMap(host: HTMLElement, options: MapCanvasOptions): MapCanvas
     // single opaque stop. The region list is the operable surface instead.
     keyboard: false,
   });
-  map.fitBounds(HOME_VIEW);
   map.setMaxBounds(MAX_VIEW);
   const zoom = L.control.zoom({ position: 'bottomright' }).addTo(map);
   // The zoom buttons are links, and the host is aria-hidden: in the Tab order, each
@@ -146,10 +145,10 @@ export function drawMap(host: HTMLElement, options: MapCanvasOptions): MapCanvas
   // A ResizeObserver fixes it for every case at once: first layout, the section's
   // breakpoint, a window drag, and the panel reflowing when the region list wraps.
   // The view is fitted again because invalidateSize alone keeps the stale centre and
-  // leaves Alaska cropped.
+  // leaves Alaska cropped. It jumps: a refit is layout, not a journey.
   const observer = new ResizeObserver(() => {
     map.invalidateSize({ animate: false });
-    map.fitBounds(view.bounds, view.options);
+    map.fitBounds(view.bounds, { ...view.options, animate: false });
   });
   observer.observe(host);
 
@@ -157,7 +156,9 @@ export function drawMap(host: HTMLElement, options: MapCanvasOptions): MapCanvas
   let tiles: L.TileLayer | null = null;
   function drawTiles() {
     tiles?.remove();
-    const layer = L.tileLayer(BASEMAP.tiles[state.theme], { maxZoom: 8, minZoom: 2 });
+    // No Referer: Esri needs nothing from the page to serve a tile, so it isn't told
+    // which site, or which address on it, the visitor is reading.
+    const layer = L.tileLayer(BASEMAP.tiles[state.theme], { maxZoom: 8, minZoom: 2, referrerPolicy: 'no-referrer' });
     layer.on('tileerror', () => options.onTiles(true));
     layer.on('tileload', () => options.onTiles(false));
     layer.addTo(map);
@@ -189,7 +190,15 @@ export function drawMap(host: HTMLElement, options: MapCanvasOptions): MapCanvas
     max = Math.max(1, ...GACC_LIST.map((region) => countOf(region.key)));
     for (const feature of boundaries.features) {
       const key = feature.properties.key as RegionKey;
-      const layer = L.geoJSON(feature as unknown as GeoJSON.Feature, { style: styleOf(key) });
+      const layer = L.geoJSON(feature as unknown as GeoJSON.Feature, {
+        style: styleOf(key),
+        // The tooltip gives each shape focus listeners, which Chromium takes to mean an
+        // SVG shape belongs in the Tab order. It doesn't: it's aria-hidden, and Enter
+        // on it does nothing (the Section 508 review, 14 November). Set as each shape
+        // is drawn, which waits for the map's first view.
+        onEachFeature: (_feature, shape) =>
+          shape.on('add', () => (shape as L.Path).getElement()?.setAttribute('tabindex', '-1')),
+      });
       layer.on('click', () => options.onSelect(state.selected === key ? null : key));
       layer.on('mouseover', () =>
         layer.setStyle(hoveredStyle(key, countOf(key), max, state.theme, state.selected)),
@@ -197,10 +206,6 @@ export function drawMap(host: HTMLElement, options: MapCanvasOptions): MapCanvas
       layer.on('mouseout', () => layer.setStyle(styleOf(key)));
       layer.bindTooltip(tip(key), { direction: 'top', className: 'fh-map__tip' });
       layer.addTo(map);
-      // The tooltip gives each shape focus listeners, which Chromium takes to mean an
-      // SVG shape belongs in the Tab order. It doesn't: it's aria-hidden, and Enter
-      // on it does nothing (the Section 508 review, 14 November).
-      layer.eachLayer((shape) => (shape as L.Path).getElement()?.setAttribute('tabindex', '-1'));
       layers.set(key, layer);
     }
   }
@@ -225,6 +230,9 @@ export function drawMap(host: HTMLElement, options: MapCanvasOptions): MapCanvas
     for (const region of GACC_LIST) {
       if (!region.center) continue;
       const isSelected = state.selected === region.key;
+      // An element, which Leaflet appends, rather than a string it would parse as HTML.
+      const code = document.createElement('span');
+      code.textContent = region.key;
       L.marker(region.center, {
         interactive: false,
         keyboard: false,
@@ -232,7 +240,7 @@ export function drawMap(host: HTMLElement, options: MapCanvasOptions): MapCanvas
           className: `fh-map__code${isSelected ? ' fh-map__code--on' : ''}${
             state.selected && !isSelected ? ' fh-map__code--dim' : ''
           }`,
-          html: region.key,
+          html: code,
           iconSize: undefined,
         }),
       }).addTo(group);
@@ -242,35 +250,34 @@ export function drawMap(host: HTMLElement, options: MapCanvasOptions): MapCanvas
   }
 
   /* ---- Fly to the selected region ---- */
-  function frame(bounds: L.LatLngBoundsExpression, fit: L.FitBoundsOptions, duration: number) {
+  /** Frames a view: flying there, or, at first or for less motion, jumping. */
+  function frame(bounds: L.LatLngBoundsExpression, fit: L.FitBoundsOptions, duration: number, jump: boolean) {
     view = { bounds, options: fit };
-    if (still()) map.fitBounds(bounds, { ...fit, animate: false });
+    if (jump || still()) map.fitBounds(bounds, { ...fit, animate: false });
     else map.flyToBounds(bounds, { ...fit, duration });
   }
 
-  function fly() {
+  /** Frames the selected region, or the lower 48 for none; `first`, the view the map opens on. */
+  function fly(first = false) {
     const { selected } = state;
-    if (!selected) {
-      frame(HOME_VIEW, {}, 0.6);
-      return;
-    }
-    const off = OFF_FRAME[selected];
-    if (off) {
-      frame(off, { maxZoom: 6 }, 0.8);
-      return;
-    }
-    const layer = layers.get(selected);
-    if (layer) frame(layer.getBounds(), { padding: [24, 24], maxZoom: 6 }, 0.7);
-    // NATIONAL, INTL and UNKNOWN have nowhere to fly to, so the map holds still and
-    // only the results list beside it changes. Moving the map for them would imply a
-    // location that the answer explicitly does not have.
+    const off = selected ? OFF_FRAME[selected] : undefined;
+    const layer = selected ? layers.get(selected) : undefined;
+    if (off) frame(off, { maxZoom: 6 }, 0.8, first);
+    else if (layer) frame(layer.getBounds(), { padding: [24, 24], maxZoom: 6 }, 0.7, first);
+    // NATIONAL, INTL and UNKNOWN have nowhere to fly to, so once the map is open it
+    // holds still and only the results list beside it changes. Moving the map for them
+    // would imply a location that the answer explicitly does not have.
+    else if (!selected || first) frame(HOME_VIEW, {}, 0.6, first);
   }
 
+  // The regions and codes wait for the map's first view, which opens where the address
+  // points without flying there; the basemap comes last, so its first tiles are that
+  // view's, not the lower 48's on the way.
   paintCodes();
-  drawTiles();
   drawRegions();
   drawCodes();
-  fly();
+  fly(true);
+  drawTiles();
 
   return {
     update(changes) {

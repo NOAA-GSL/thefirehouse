@@ -82,7 +82,8 @@
   mix-blend-mode: overlay;
 }
 
-/* The sweep. One slow pass, low contrast. */
+/* The sweep. One slow pass, low contrast, as the map arrives: it moves for under
+   five seconds and stops, so it needs no way to pause it (WCAG 2.2.2). */
 .fh-map__scan::after {
   content: '';
   position: absolute;
@@ -94,7 +95,7 @@
     transparent 58%
   );
   transform: translateX(-100%);
-  animation: fh-map-sweep 9s ease-in-out infinite;
+  animation: fh-map-sweep 9s ease-in-out 1;
 }
 
 @keyframes fh-map-sweep {
@@ -107,7 +108,7 @@
   }
 }
 
-/* A continuously animating background is exactly what this preference is for. */
+/* An animating background is exactly what this preference is for. */
 @media (prefers-reduced-motion: reduce) {
   .fh-map__scan::after {
     animation: none;
@@ -115,11 +116,14 @@
   }
 }
 
+/* It stops short of the zoom buttons in the corner beside it (44px wide), which sit
+   above it, so a narrow map or longer words never put text under them. */
 .fh-map__offline {
   position: absolute;
   left: var(--space-sm);
   bottom: var(--space-sm);
   z-index: 500;
+  max-width: calc(100% - 2 * var(--space-sm) - 44px);
   margin: 0;
   padding: 6px 10px;
   border-radius: var(--radius-md);
@@ -163,8 +167,10 @@
   font-weight: 700;
 }
 
+/* Dimmed, but still legible: at 0.7 the codes keep over 4.5:1 against the tiles in
+   both themes (the Section 508 review, 14 November). */
 .fh-map__code--dim {
-  opacity: 0.45;
+  opacity: 0.7;
 }
 
 .fh-map__codes-toggle {
@@ -320,6 +326,14 @@
   .fh-map__region--on {
     border-color: Highlight;
   }
+
+  /* The box's tick is a dark image, lost on a dark palette's forced background: the
+     box fills with the highlight instead, so on and off differ in any palette. */
+  .fh-map__codes-toggle[aria-pressed='true'] .fh-map__codes-box {
+    forced-color-adjust: none;
+    background-color: Highlight;
+    border-color: Highlight;
+  }
 }
 
 .fh-map__region--sm {
@@ -424,7 +438,7 @@
   padding: 0;
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
   gap: 4px;
 }
 

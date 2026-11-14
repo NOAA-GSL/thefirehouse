@@ -727,10 +727,12 @@ stay in every cached entry, not only those whose search found it. Copies others 
 withdrawn project names the explorer's address as well as the project's.
 
 The landing page's HTML depends on its `?region=` too, which selects the coverage
-map's region: the cache key must hold it, and a purge reach each copy. Its copies
-print only public projects' titles, years and links, and carry no script state. Every
-copy's canonical link is the landing page's own address, so search engines index
-none of them.
+map's region: the cache key must hold it, and a purge reach each copy. Every landing
+address, whatever its region, carries each public project's title, year, link and
+regions in the coverage map's script state, so a hidden project's title would stay in
+every cached copy, not only the one for its region, and a request to remove a
+withdrawn project names the landing page's address as well. Every copy's canonical
+link is the landing page's own address, so search engines index none of them.
 
 Whatever Cloudflare does with other pages, **the Submit page is never cached.** A cached copy would carry an expired
 nonce, and real submissions would start failing within a day. The page is sent with
@@ -1721,18 +1723,22 @@ its own (`DEFERRED`), loaded only on a page with the map.
 - *The coverage map done 14 November (`blocks/coverage-map/view.js`,
   `src/design-system/mapCanvas.ts`):*
   - *One drawing for both sites. What `RegionMap.tsx` drew with Leaflet moved into
-    `mapCanvas.ts`, which takes no framework; the site's map draws pixel for pixel as
-    before. The site's `RegionMap` calls it, and `npm run plugin:assets` bundles it
-    with Leaflet and the GACC boundaries as the `@firehouse/coverage-map` module:
-    `assets/map/map.min.js` (about 60 KB compressed) and the readable `map.js`. The
-    basemap's tile addresses and attribution moved to `shared/coverage-map.json`, where
-    the plugin's credit reads the attribution.*
+    `mapCanvas.ts`, which takes no framework. The site's `RegionMap` calls it, and
+    `npm run plugin:assets` bundles it with Leaflet and the GACC boundaries as the
+    `@firehouse/coverage-map` module: `assets/map/map.min.js` (about 60 KB compressed)
+    and the readable `map.js`. Leaflet is pinned to one version, and the module puts
+    back any `window.L` it found. The basemap's tile addresses and attribution moved to
+    `shared/coverage-map.json`, where the plugin's credit reads the attribution.*
   - *The view script takes the list's markup over through the Interactivity API, as
     the explorer's does. A choice changes the page in place and the address with it,
     with no history entry, as on the site. The script imports the map's module only
-    once the page is up (a dynamic import), so the list works while it loads; if it
-    can't load, the stage and credit go and the list carries on. The map follows the
-    selection, the labels toggle and GSL's light/dark switch.*
+    once the page is up (a dynamic import), so the list works while it loads, and
+    connects to the tiles' host meanwhile; if it can't load, the stage and credit go
+    and the list carries on. The map draws in a task of its own after the module's
+    (on a slowed phone, the performance review measured one 250–400 ms task become
+    two of under 100), follows a choice
+    a task later, so the list's change paints first, and follows the labels toggle,
+    which shows once the map is drawn, and GSL's light/dark switch.*
   - *Without JavaScript nothing changes. The server prints the map's stage and credit
     for the script, and `frame.css` hides them under `@media (scripting: none)`. A
     page with JavaScript then doesn't move as the map arrives, but a script that
@@ -1740,17 +1746,35 @@ its own (`DEFERRED`), loaded only on a page with the map.
   - *The status line's words are the PHP's `_n()` strings, in the page's state, as
     the explorer's are; `shared/cases/coverage-map-view.json` holds the script and
     `Coverage_Map` to the same split of the heading around the region's name.*
-  - *Fixed on both sites, where the drawing is shared:*
+  - *The server's projects have the template's shape, the National tag printed hidden
+    where it doesn't apply, as the explorer's tiles keep theirs. WordPress takes them
+    over element by element: where the tag was left out, the template's tag took the
+    year's place, and after National then a GACC the tag showed as plain text (the
+    code review, 14 November).*
+  - *Changed on both sites, where the drawing is shared:*
     - *nothing in the hidden map takes keyboard focus;*
     - *leaving a region with the pointer, while another was selected, put it back
       undimmed;*
     - *for a visitor who has asked for less motion, the map moves to a region without
-      flying.*
+      flying, and a resize refits it without moving;*
+    - *the map opens on the view its address asks for, without flying there, and
+      fetches no tiles for the lower 48 on the way to a region;*
+    - *a resize keeps a region's padded framing, where a deep link used to settle on
+      the unpadded one; and a selected region under the pointer keeps its thick
+      outline. The site's map draws as before otherwise: pixel for pixel at four
+      addresses in both themes, but for the dimmed codes, below;*
+    - *the tiles are fetched with no Referer, and the codes drawn as elements, not
+      HTML (the security review, 14 November);*
+    - *from the Section 508 review (14 November): the dimmed codes at 0.7 opacity, not
+      0.45, over 4.5:1; the labels toggle's box filled with the highlight in forced
+      colours; the basemap notice kept clear of the zoom buttons; the sweep run once,
+      under five seconds; and the results' grid no wider than its column at 320px.*
   - *Leaflet's CSS stays in `coverage-map.min.css`, in the head, rather than loading
-    with the script, as the performance review suggested. With JavaScript, the map
-    draws as soon as the page is up, so its CSS is needed at once, and loading it
-    from the script would hold the map back by a request. The review measured its
-    cost below the noise.*
+    with the script, as the performance review of the list suggested: the map's
+    review measured the difference within noise, it keeps one way of loading it, and
+    the `RegionMap.css` half has to be there for the no-JS form, which brings the page
+    back at the section. Leaflet's three images for parts the map doesn't draw are
+    taken out of it, which halves it, to about 4.6 KB compressed.*
   - *Checked:*
     - *`plugin:compare` matches the reference with the map's toggle and credit
       (`LATER` is now empty);*
@@ -1761,6 +1785,15 @@ its own (`DEFERRED`), loaded only on a page with the map.
     - *the plugin's map matches the site's within a pixel's shift, in both themes, at
       three addresses;*
     - *a map module that can't load, and tiles that can't, were tried.*
+  - *Left for Eric:*
+    - *loading the map only as it nears the screen. It sits about two windows down
+      on a desktop and four on a phone, and every landing view with JavaScript pays
+      for the module, the tiles and the draw, and contacts Esri. The site loads it at
+      once too, and `plugin:compare` would then have to scroll to see the toggle;*
+    - *browsers without `@media (scripting)` (Chrome before 120, Firefox before 113,
+      Safari before 17) with JavaScript off show the map's empty stage and credit;*
+    - *clicking a region's shape or a zoom button gives it focus, inside the hidden
+      map, though Tab never does.*
 
 **Done when:** it reaches feature parity with the React site, every URL parameter
 behaves the same, and the accessibility snapshots match.

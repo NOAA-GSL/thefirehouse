@@ -129,8 +129,10 @@ final class Coverage_Map {
 
 	/**
 	 * What the view script starts from: the selected region; each project as the results
-	 * list it, its year as the page prints it; each region's count, which colours the
-	 * map; each region's short name; and the words a choice rewrites, with each count's
+	 * list it, its year as the page prints it and its address as WordPress would keep
+	 * it, so the script can't bind one the server would have dropped; each region's
+	 * count, which colours the map; each region's short name; the tiles' host, which
+	 * the script connects to early; and the words a choice rewrites, with each count's
 	 * two forms, which the script picks between as English does, as the explorer's does.
 	 *
 	 * @param list<array<string, mixed>> $projects The projects, from projects().
@@ -144,7 +146,7 @@ final class Coverage_Map {
 				static fn( array $project ): array => array(
 					'title'    => $project['title'],
 					'year'     => (string) Search::key( $project['year'] ),
-					'url'      => $project['url'],
+					'url'      => esc_url_raw( $project['url'] ),
 					'regions'  => $project['regions'],
 					'national' => $project['national'],
 				),
@@ -152,6 +154,7 @@ final class Coverage_Map {
 			),
 			'counts'   => self::counts( $projects ),
 			'names'    => array_map( static fn( array $item ): string => (string) $item['short'], Vocabulary::items( 'regions' ) ),
+			'tileHost' => Map_Colors::tile_origin(),
 			'strings'  => array(
 				'heading'     => array(
 					/* translators: 1: how many projects are filed under the region; 2: the region's name. */
@@ -226,14 +229,15 @@ final class Coverage_Map {
 	/**
 	 * The map's stage and credit, as the site's are: the canvas the view script draws the
 	 * map into, hidden from assistive technology, which the list serves; the GACC labels
-	 * toggle; the notice that the basemap didn't load, hidden until then; and, under it,
+	 * toggle, hidden until the map is drawn, so it's never a button that does nothing;
+	 * the notice that the basemap didn't load, hidden until then; and, under it,
 	 * the boundaries' source and the basemap's attribution, which Esri's terms require.
 	 * Both are hidden if the map can't be drawn, and frame.css hides them without
 	 * JavaScript.
 	 */
 	private static function stage(): string {
 		return sprintf(
-			'<div class="fh-map__stage" data-wp-bind--hidden="state.failed"><div class="fh-map__canvas" aria-hidden="true" data-wp-init="callbacks.draw"></div><div class="fh-map__scan" aria-hidden="true"></div><button type="button" class="fh-map__codes-toggle" aria-pressed="true" data-wp-bind--aria-pressed="state.showCodes" data-wp-on--click="actions.toggleCodes"><span class="fh-map__codes-box" aria-hidden="true"></span>%1$s</button><p class="fh-map__offline" role="status" hidden data-wp-bind--hidden="!state.tilesFailed">%2$s</p></div><p class="fh-map__credit" data-wp-bind--hidden="state.failed">%3$s</p>',
+			'<div class="fh-map__stage" data-wp-bind--hidden="state.failed"><div class="fh-map__canvas" aria-hidden="true" data-wp-init="callbacks.draw"></div><div class="fh-map__scan" aria-hidden="true"></div><button type="button" class="fh-map__codes-toggle" aria-pressed="true" hidden data-wp-bind--hidden="!state.drawn" data-wp-bind--aria-pressed="state.showCodes" data-wp-on--click="actions.toggleCodes"><span class="fh-map__codes-box" aria-hidden="true"></span>%1$s</button><p class="fh-map__offline" role="status" hidden data-wp-bind--hidden="!state.tilesFailed">%2$s</p></div><p class="fh-map__credit" data-wp-bind--hidden="state.failed">%3$s</p>',
 			esc_html__( 'GACC labels', 'firehouse' ),
 			esc_html__( 'Basemap unavailable — region boundaries and counts are still shown.', 'firehouse' ),
 			/* translators: %s: the basemap's attribution, such as "Esri, HERE, Garmin, © OpenStreetMap contributors". */
@@ -285,7 +289,10 @@ final class Coverage_Map {
 	 * projects, with Clear; their list, in the order given, each linking to its page, a
 	 * national study's tagged so in any region but National; and, when none is filed
 	 * there, saying so. The view script rewrites the heading's parts and draws the list
-	 * from its template, which follows the projects the server printed.
+	 * from its template, which follows the projects the server printed. Each of those
+	 * has the template's shape, the tag printed hidden where it doesn't apply, as the
+	 * explorer's tiles have theirs: WordPress takes them over element by element, so a
+	 * missing one would hand the year to the tag.
 	 *
 	 * @param list<array<string, mixed>> $projects The projects, from projects().
 	 * @param string|null                $selected The selected region's key, or null for none.
@@ -297,13 +304,14 @@ final class Coverage_Map {
 		$items  = '';
 		foreach ( $shown as $project ) {
 			$items .= sprintf(
-				'<li data-wp-each-child="%6$s"><a class="fh-map__project" href="%1$s"><span>%2$s</span>%3$s<span class="fh-map__project-year">%4$s</span>%5$s</a></li>',
+				'<li data-wp-each-child="%6$s"><a class="fh-map__project" href="%1$s"><span>%2$s</span><span class="fh-map__project-tag"%3$s>%7$s</span><span class="fh-map__project-year">%4$s</span>%5$s</a></li>',
 				esc_url( $project['url'] ),
 				Markup::text( $project['title'] ),
-				$project['national'] && 'NATIONAL' !== $selected ? '<span class="fh-map__project-tag">' . esc_html__( 'National', 'firehouse' ) . '</span>' : '',
+				$project['national'] && 'NATIONAL' !== $selected ? '' : ' hidden',
 				esc_html( (string) Search::key( $project['year'] ) ),
 				Icons::svg( 'arrow-right', 14 ),
-				esc_attr( self::STORE . '::state.shown' )
+				esc_attr( self::STORE . '::state.shown' ),
+				esc_html__( 'National', 'firehouse' )
 			);
 		}
 		$count = count( $shown );

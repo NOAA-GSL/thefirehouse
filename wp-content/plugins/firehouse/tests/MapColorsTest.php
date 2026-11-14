@@ -9,6 +9,7 @@ declare( strict_types = 1 );
 
 namespace Firehouse\Tests;
 
+use Brain\Monkey\Functions;
 use Firehouse\Domain\Js;
 use Firehouse\Domain\Map_Colors;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -86,5 +87,13 @@ final class MapColorsTest extends DomainTestCase {
 	 */
 	public function test_the_basemap_attribution(): void {
 		$this->assertSame( 'Esri, HERE, Garmin, © OpenStreetMap contributors', Map_Colors::attribution() );
+	}
+
+	/**
+	 * The tiles' origin, which the map's script connects to early.
+	 */
+	public function test_the_tile_origin(): void {
+		Functions\when( 'wp_parse_url' )->alias( static fn( string $url, int $component = -1 ): mixed => parse_url( $url, $component ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url -- the stand-in for wp_parse_url.
+		$this->assertSame( 'https://server.arcgisonline.com', Map_Colors::tile_origin() );
 	}
 }

@@ -4,9 +4,10 @@ import { readCases } from '../src/content/cases';
 /**
  * The coverage map's view script (wp-content/plugins/firehouse/blocks/coverage-map/view.js),
  * run without WordPress: its imports stand in for the Interactivity API (as WordPress
- * 6.8 and later have it, with withSyncEvent()), and for the map's module, which only a
- * browser can run. Its words are shared/cases/coverage-map-view.json's, which
- * tests/CoverageMapTest.php holds Coverage_Map to.
+ * 6.8 and later have it, with withSyncEvent() and splitTask()), and for the map's
+ * module, which only a browser can run. Its words are shared/cases/coverage-map-view.json's,
+ * which tests/CoverageMapTest.php holds Coverage_Map to. coverage-map-view-6-7.test.mjs
+ * runs it as WordPress 6.7 has it, and in a page.
  */
 let context = {};
 let element = {};
@@ -19,7 +20,11 @@ vi.mock('@wordpress/interactivity', () => ({
   getContext: () => context,
   getElement: () => element,
   withSyncEvent: (action) => Object.assign(action, { sync: true }),
+  splitTask: () => Promise.resolve(),
 }));
+
+/** Lets what the script put off to a later task run. */
+const later = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 /** Each map drawn, with what it was given and told. A host of 'broken' throws, as Leaflet might. */
 const drawn = [];
@@ -90,12 +95,14 @@ describe('the store', () => {
   let actions;
   let replaced;
   let observed;
+  let linked;
 
   beforeEach(() => {
     ({ state, actions } = definition);
-    Object.assign(state, { selected: null, projects: PROJECTS, names: NAMES, strings: shared.strings, counts: { NWCC: 2, GBCC: 1 }, announced: '', showCodes: true, tilesFailed: false, failed: false });
+    Object.assign(state, { selected: null, projects: PROJECTS, names: NAMES, strings: shared.strings, counts: { NWCC: 2, GBCC: 1 }, tileHost: 'https://tiles.example.test', announced: '', showCodes: true, tilesFailed: false, drawn: false, failed: false });
     replaced = [];
     observed = [];
+    linked = [];
     vi.stubGlobal('window', {
       history: { state: { kept: true }, replaceState: (...args) => replaced.push(args) },
       location: { pathname: '/firehouse/' },
@@ -109,7 +116,11 @@ describe('the store', () => {
         }
       },
     });
-    vi.stubGlobal('document', { documentElement: { theme: 'light', getAttribute() { return this.theme; } } });
+    vi.stubGlobal('document', {
+      documentElement: { theme: 'light', getAttribute() { return this.theme; } },
+      createElement: (tag) => ({ tag }),
+      head: { append: (element) => linked.push(element) },
+    });
   });
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -182,17 +193,26 @@ describe('the store', () => {
     state.selected = 'GBCC';
     element = { ref: 'host' };
     await definition.callbacks.draw();
+    // The tiles' host is connected to early, with no crossorigin: the tiles are plain images.
+    expect(linked).toEqual([{ tag: 'link', rel: 'preconnect', href: 'https://tiles.example.test' }]);
     const canvas = drawn.at(-1);
     expect(canvas.host).toBe('host');
     expect(canvas.options).toMatchObject({ counts: { NWCC: 2, GBCC: 1 }, theme: 'light', selected: 'GBCC', showCodes: true });
     expect(canvas.options.submissions(1)).toBe('1 submission');
+    expect(state.drawn).toBe(true);
 
+    // The list changes at once; the map a task later, with the selection as it is then.
     canvas.options.onSelect('NWCC');
     expect([state.selected, state.announced]).toEqual(['NWCC', '2 projects in Northwest']);
-    expect(canvas.updates.at(-1)).toEqual({ selected: 'NWCC' });
+    expect(canvas.updates).toEqual([]);
+    context = { key: 'GBCC' };
+    actions.select({ preventDefault: () => {} });
+    await later();
+    expect(canvas.updates).toEqual([{ selected: 'GBCC' }, { selected: 'GBCC' }]);
 
     actions.toggleCodes();
     expect(state.showCodes).toBe(false);
+    await later();
     expect(canvas.updates.at(-1)).toEqual({ showCodes: false });
 
     canvas.options.onTiles(true);
@@ -208,9 +228,9 @@ describe('the store', () => {
     expect(state.failed).toBe(false);
   });
 
-  it('leaves the map out if it can’t be drawn', async () => {
+  it('leaves the map out if it can’t be drawn, and its toggle hidden', async () => {
     element = { ref: 'broken' };
     await definition.callbacks.draw();
-    expect(state.failed).toBe(true);
+    expect([state.failed, state.drawn]).toEqual([true, false]);
   });
 });

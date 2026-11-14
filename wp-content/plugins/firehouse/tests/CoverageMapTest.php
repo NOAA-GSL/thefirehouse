@@ -41,6 +41,9 @@ final class CoverageMapTest extends WordPressTestCase {
 			static fn( string $filename, array $options = array() ): mixed => json_decode( (string) file_get_contents( $filename ), ! empty( $options['associative'] ) )
 		);
 		Functions\when( 'home_url' )->alias( static fn( string $path = '' ): string => 'https://example.test' . $path );
+		// As ExplorerPageTest's: only an http or https address is kept.
+		Functions\when( 'esc_url_raw' )->alias( static fn( string $url ): string => 1 === preg_match( '#^https?://#i', $url ) ? $url : '' );
+		Functions\when( 'wp_parse_url' )->alias( static fn( string $url, int $component = -1 ): mixed => parse_url( $url, $component ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url -- the stand-in for wp_parse_url.
 	}
 
 	/**
@@ -102,6 +105,23 @@ final class CoverageMapTest extends WordPressTestCase {
 	 */
 	private static function text( \DOMNode $node ): string {
 		return trim( (string) preg_replace( '/\s+/', ' ', (string) $node->textContent ) ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- the DOM's own name.
+	}
+
+	/**
+	 * An element's shape: its tag and class, then each child element's, all the way
+	 * down, leaving out what the script binds and whether it's hidden.
+	 *
+	 * @param \DOMElement $element The element.
+	 * @return array<int, mixed>
+	 */
+	private static function shape( \DOMElement $element ): array {
+		$shape = array( $element->tagName . '.' . $element->getAttribute( 'class' ) ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- the DOM's own name.
+		foreach ( $element->childNodes as $child ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- as above.
+			if ( $child instanceof \DOMElement ) {
+				$shape[] = self::shape( $child );
+			}
+		}
+		return $shape;
 	}
 
 	/**
@@ -292,12 +312,13 @@ final class CoverageMapTest extends WordPressTestCase {
 
 		$links = array();
 		foreach ( $xpath->query( '//ul[@class="fh-map__projects"]/li/a[@class="fh-map__project"]' ) as $link ) {
-			$links[] = array( $link->getAttribute( 'href' ), self::text( $link ), $xpath->query( 'span[@class="fh-map__project-tag"]', $link )->length, $xpath->query( 'svg', $link )->length );
+			$tag     = self::one( $xpath, '//a[@href="' . $link->getAttribute( 'href' ) . '"]/span[@class="fh-map__project-tag"]' );
+			$links[] = array( $link->getAttribute( 'href' ), self::text( $link->firstChild ), $tag->hasAttribute( 'hidden' ), self::text( $tag ), self::text( $link->lastChild->previousSibling ), $xpath->query( 'svg', $link )->length ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- the DOM's own names.
 		}
 		$this->assertSame(
 			array(
-				array( 'https://example.test/firehouse/projects/smoke-alerts-for-evacuation/', 'Smoke alerts for evacuation decisions2025', 0, 1 ),
-				array( 'https://example.test/firehouse/projects/national-outlook-study/', 'National outlook studyNational2024', 1, 1 ),
+				array( 'https://example.test/firehouse/projects/smoke-alerts-for-evacuation/', 'Smoke alerts for evacuation decisions', true, 'National', '2025', 1 ),
+				array( 'https://example.test/firehouse/projects/national-outlook-study/', 'National outlook study', false, 'National', '2024', 1 ),
 			),
 			$links
 		);
@@ -310,7 +331,8 @@ final class CoverageMapTest extends WordPressTestCase {
 	public function test_national_empty_and_one(): void {
 		$national = self::dom( 'NATIONAL' );
 		$this->assertSame( '1 project in National', self::text( self::one( $national, '//h3[@class="fh-map__results-title"]' ) ) );
-		$this->assertSame( 0, $national->query( '//ul[@class="fh-map__projects"]/li//span[@class="fh-map__project-tag"]' )->length );
+		$this->assertSame( 1, $national->query( '//ul[@class="fh-map__projects"]/li//span[@class="fh-map__project-tag"][@hidden]' )->length );
+		$this->assertSame( 0, $national->query( '//ul[@class="fh-map__projects"]/li//span[@class="fh-map__project-tag"][not(@hidden)]' )->length );
 		$this->assertSame( 1, $national->query( '//ul[@class="fh-map__projects"]/li/a[@class="fh-map__project"]' )->length );
 
 		$empty = self::dom( 'INTL' );
@@ -378,7 +400,8 @@ final class CoverageMapTest extends WordPressTestCase {
 		);
 		$xpath   = self::dom( 'SWCC', array( $project ) );
 
-		$this->assertSame( 'Fire & <smoke> "plumes"2026', self::text( self::one( $xpath, '//ul[@class="fh-map__projects"]/li/a[@class="fh-map__project"]' ) ) );
+		$link = self::one( $xpath, '//ul[@class="fh-map__projects"]/li/a[@class="fh-map__project"]' );
+		$this->assertSame( array( 'Fire & <smoke> "plumes"', '2026' ), array( self::text( $link->firstChild ), self::text( $link->lastChild->previousSibling ) ) ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- the DOM's own names.
 		$this->assertSame( '1 submission', self::text( self::one( $xpath, '//p[@class="fh-map__side-total"]' ) ) );
 		$this->assertSame( 'Great BasinGBCC0', self::buttons( $xpath )[6][0] );
 		$this->assertSame( array( 'SWCC' ), Coverage_Map::projects( array( $project ) )[0]['regions'] );
@@ -444,8 +467,8 @@ final class CoverageMapTest extends WordPressTestCase {
 
 		$toggle = self::one( $xpath, '//div[@class="fh-map__stage"]/button[@class="fh-map__codes-toggle"]' );
 		$this->assertSame(
-			array( 'GACC labels', 'true', 'state.showCodes', 'actions.toggleCodes' ),
-			array( self::text( $toggle ), $toggle->getAttribute( 'aria-pressed' ), $toggle->getAttribute( 'data-wp-bind--aria-pressed' ), $toggle->getAttribute( 'data-wp-on--click' ) )
+			array( 'GACC labels', 'true', 'state.showCodes', 'actions.toggleCodes', true, '!state.drawn' ),
+			array( self::text( $toggle ), $toggle->getAttribute( 'aria-pressed' ), $toggle->getAttribute( 'data-wp-bind--aria-pressed' ), $toggle->getAttribute( 'data-wp-on--click' ), $toggle->hasAttribute( 'hidden' ), $toggle->getAttribute( 'data-wp-bind--hidden' ) )
 		);
 		$this->assertSame( 'true', self::one( $xpath, '//button[@class="fh-map__codes-toggle"]/span[@class="fh-map__codes-box"]' )->getAttribute( 'aria-hidden' ) );
 
@@ -506,6 +529,18 @@ final class CoverageMapTest extends WordPressTestCase {
 		}
 		$template = self::one( $xpath, '//ul[@class="fh-map__projects"]/template' );
 		$this->assertSame( array( 'state.shown', 'context.project.url' ), array( $template->getAttribute( 'data-wp-each--project' ), $template->getAttribute( 'data-wp-each-key' ) ) );
+		// WordPress takes the server's projects over element by element: each has the
+		// template's shape, at a region with a national study and one without, and at
+		// National, where no tag shows.
+		$item = self::shape( self::one( $xpath, '//template/li' ) );
+		foreach ( array( 'NWCC', 'ONCC', 'NATIONAL' ) as $key ) {
+			$at = self::dom( $key );
+			$this->assertGreaterThan( 0, $at->query( '//ul[@class="fh-map__projects"]/li' )->length, $key );
+			foreach ( $at->query( '//ul[@class="fh-map__projects"]/li' ) as $server ) {
+				$this->assertSame( $item, self::shape( $server ), $key );
+			}
+		}
+
 		$link = self::one( $xpath, '//template/li/a[@class="fh-map__project"]' );
 		$this->assertSame( 'context.project.url', $link->getAttribute( 'data-wp-bind--href' ) );
 		$this->assertSame(
@@ -528,7 +563,8 @@ final class CoverageMapTest extends WordPressTestCase {
 	public function test_the_state(): void {
 		$projects = Coverage_Map::projects( self::all() );
 		$state    = Coverage_Map::state( $projects, 'NWCC' );
-		$this->assertSame( array( 'selected', 'projects', 'counts', 'names', 'strings' ), array_keys( $state ) );
+		$this->assertSame( array( 'selected', 'projects', 'counts', 'names', 'tileHost', 'strings' ), array_keys( $state ) );
+		$this->assertSame( 'https://server.arcgisonline.com', $state['tileHost'] );
 		$this->assertSame( 'NWCC', $state['selected'] );
 		$this->assertSame(
 			array(
@@ -547,6 +583,10 @@ final class CoverageMapTest extends WordPressTestCase {
 		$this->assertSame( \Firehouse\Domain\Vocabulary::regions(), array_keys( $state['names'] ) );
 		$this->assertSame( Cases::read( 'coverage-map-view.json' )['strings'], $state['strings'] );
 		$this->assertNull( Coverage_Map::state( $projects, null )['selected'] );
+
+		// An address WordPress wouldn't keep doesn't reach the script, which binds it as it is.
+		$odd = array( array( 'url' => 'javascript:alert(1)' ) + $projects[0] );
+		$this->assertSame( '', Coverage_Map::state( $odd, null )['projects'][0]['url'] );
 	}
 
 	/**

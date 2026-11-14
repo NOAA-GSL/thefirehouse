@@ -14,9 +14,12 @@
  *   top of the page.
  * - The map is the site's: the `@firehouse/coverage-map` module, its mapCanvas.ts and
  *   Leaflet bundled by scripts/plugin-assets.mjs, which this imports once the page is
- *   up, so the list works while it loads. The map follows the selection, the GACC
- *   labels toggle and GSL's light/dark switch (`data-theme` on the page). If the
- *   module can't load, the stage and credit go and the list works as before.
+ *   up, so the list works while it loads. The connection to the tile host opens while
+ *   it does. The map draws in a task of its own, after the module's, so neither holds
+ *   the page for long, and follows a choice a task later, so the list's change paints
+ *   first. It follows the selection, the GACC labels toggle, which shows once the map
+ *   is drawn, and GSL's light/dark switch (`data-theme` on the page). If the module
+ *   can't load, the stage and credit go and the list works as before.
  *
  * The region becomes interactive only here, when this script has loaded: the server
  * marks it `data-fh-interactive`, and this sets `data-wp-interactive`, before WordPress
@@ -34,6 +37,9 @@ const { getContext, getElement, store } = interactivity;
 
 /** As in the explorer's view script: preventDefault() needs it from WordPress 6.8. */
 const withSyncEvent = interactivity.withSyncEvent ?? ( ( action ) => action );
+
+/** Yields to the browser, so what follows runs as a task of its own: WordPress's, or a timeout where it has none. */
+const splitTask = interactivity.splitTask ?? ( () => new Promise( ( resolve ) => setTimeout( resolve, 0 ) ) );
 
 /** The coverage map's store, and the region it takes over. */
 export const STORE = 'firehouse/coverage-map';
@@ -86,6 +92,7 @@ const { state, actions } = store( STORE, {
 	state: {
 		showCodes: true,
 		tilesFailed: false,
+		drawn: false,
 		failed: false,
 		announced: '',
 		get none() {
@@ -119,7 +126,10 @@ const { state, actions } = store( STORE, {
 			state.selected = key;
 			state.announced = announcement( state, key );
 			window.history.replaceState( window.history.state, '', addressOf( window.location.pathname, key ) );
-			canvas?.update( { selected: key } );
+			// The map follows a task later, so the list's change paints first: it's
+			// aria-hidden, and only shows what the list says.
+			const map = canvas;
+			splitTask().then( () => map?.update( { selected: state.selected } ) );
 		},
 		/** A region's button: selects it, or none if it's selected; "All submissions" selects none. */
 		select: withSyncEvent( function ( event ) {
@@ -136,7 +146,8 @@ const { state, actions } = store( STORE, {
 		} ),
 		toggleCodes() {
 			state.showCodes = ! state.showCodes;
-			canvas?.update( { showCodes: state.showCodes } );
+			const map = canvas;
+			splitTask().then( () => map?.update( { showCodes: state.showCodes } ) );
 		},
 	},
 	callbacks: {
@@ -144,8 +155,16 @@ const { state, actions } = store( STORE, {
 		async draw() {
 			const host = getElement().ref;
 			const root = document.documentElement;
+			// The tiles' host, contacted only now the map is coming, while its module
+			// loads. Leaflet's tiles are plain images, so no `crossorigin`.
+			const early = document.createElement( 'link' );
+			early.rel = 'preconnect';
+			early.href = state.tileHost;
+			document.head.append( early );
 			try {
 				const { drawMap } = await import( MAP_MODULE );
+				// Leaflet's evaluation is a long task; the first draw gets one of its own.
+				await splitTask();
 				canvas = drawMap( host, {
 					counts: state.counts,
 					theme: themeOf( root ),
@@ -161,6 +180,7 @@ const { state, actions } = store( STORE, {
 				state.failed = true;
 				return;
 			}
+			state.drawn = true;
 			new window.MutationObserver( () => canvas.update( { theme: themeOf( root ) } ) ).observe( root, { attributes: true, attributeFilter: [ 'data-theme' ] } );
 		},
 	},
