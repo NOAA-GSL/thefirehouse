@@ -18,9 +18,9 @@ that produced it).
 
 - **What.** The Firehouse becomes a WordPress plugin that renders every page in
   WordPress itself: PHP templates and blocks, with WordPress's Interactivity API for
-  the parts that respond to input. The React app and the static build retire at
-  cutover; the sources the plugin's generated files are built from may stay (Phase
-  8).
+  the parts that respond to input. React, Vite and the static build retire at
+  cutover, except what the plugin's generated files are built from, whose place Phase 8
+  decides.
 - **Where.** A section of GSL's existing WordPress sites at `/firehouse`, inside GSL's
   own header and footer. The GSL test site first, then gsl.noaa.gov.
 - **Who edits.** Stephanie and Emily, in wp-admin, through a FireHouse Editor role
@@ -367,11 +367,11 @@ Links people have already shared keep working either way.
   gzipped.*
 - **Map.** Leaflet stays, in one module with the site's drawing and the boundary
   GeoJSON, which the block's view script imports. The region list is a set of real
-  buttons in the same kind of form. *The list came first, then the map (14 November): see "Coverage
-  map's list done" and "The coverage map done" under Phase 5. The map is the site's
-  own drawing, moved into `mapCanvas.ts`, bundled with Leaflet and the boundaries into
-  one module the view script imports once the page is up. The bundle wraps Leaflet's
-  UMD build, the one its package points at.*
+  buttons in the same kind of form. *The list came first, then the map (14 November):
+  see "Coverage map's list done" and "The coverage map done" under Phase 5. The map is
+  the site's own drawing, moved into `mapCanvas.ts`, bundled with Leaflet and the
+  boundaries into one module the view script imports once the page is up. The bundle
+  wraps Leaflet's UMD build, the one its package points at.*
 
 If working without JavaScript turns out not to be required, the PHP search can be
 dropped. That saves about a week and removes the only logic that exists twice. *It is
@@ -903,7 +903,7 @@ local copy Eric is always there.
 - **Add shared test cases.** Unit tests for `normalize`, `derive`, `search` and
   `format`, written as data files (input and expected output) that the PHP tests will
   read later. *Done: 201 cases in `shared/cases/` at first, run by `npm test` and in
-  CI; each phase since has added more.*
+  CI; later phases have added more.*
 - **Move the vocabularies** into `shared/vocabulary.json`, with each option's label as
   the Google Form shows it, and generate a JSON Schema from `types.ts`. *Done: `npm run
   schema` writes `shared/project.schema.json`, and CI fails if it is out of date.*
@@ -1365,11 +1365,12 @@ signed off on the frame.
   *Stylesheet done 12 November: the frame loads `firehouse.min.css`, and keeps
   `firehouse.css`, the same rules readable, for review and for `SCRIPT_DEBUG`, as
   WordPress does with its own files. `npm run plugin:css` minifies the readable copy as
-  the site's own build minifies its CSS, and the checks run on both. Both leave out the
+  the site's own build minifies its CSS, and the checks run on both. Both left out the
   explorer's CSS (its page, the project tiles and the quick look) until the explorer
-  arrives in Phase 5 (it has), and the design system's `TextField`, `TextArea` and `TopicTagRow`,
-  which no page renders. Compressed (Node's gzip), the site's CSS goes from 28.7 kB to
-  9.8 kB: leaving those out takes it to 24.6 kB, and minifying does the rest.*
+  arrived in Phase 5, and still leave out the design system's `TextField`, `TextArea`
+  and `TopicTagRow`, which no page renders. Compressed (Node's gzip), the site's CSS
+  went from 28.7 kB to 9.8 kB: leaving those out took it to 24.6 kB, and minifying did
+  the rest. With the explorer's CSS, `firehouse.min.css` is 11.7 kB (14 November).*
   *Not split by page. Minified the same way, one file per kind of page would be 5.1 to
   6.7 kB compressed, 3 to 4.7 kB less than the whole; a shared file plus one per page
   would save 1.9 to 4 kB, and need a third file, since `global.css` (the tokens, the
@@ -1447,10 +1448,11 @@ signed off on the frame.
   landing, About, project, topic and not-found pages has the site's computed styles, at
   desktop and phone width in both themes, and so does every focusable element there
   with keyboard focus, each showing its focus ring. Left out: the landing page's
-  coverage map (Phase 5, where it's still to do), and the site's About wrapper, which has no styles. It found
-  one difference, invisible on both sites: the project pager's link took the browser's
-  default link colour, which follows the colour scheme the frame sets; its parts set
-  their own, and the link now inherits (`ProjectPage.css`). Hover isn't checked.*
+  coverage map (Phase 5, where it's still to do), and the site's About wrapper, which
+  has no styles. It found one difference, invisible on both sites: the project pager's
+  link took the browser's default link colour, which follows the colour scheme the
+  frame sets; its parts set their own, and the link now inherits (`ProjectPage.css`).
+  Hover isn't checked.*
 - Keep the Firehouse bar to one per page once a page's own content renders blocks. The
   bar's block prints on any Firehouse page, so its comment typed into a page in the tree
   would print a second bar, with a duplicate drawer ID. *Done 12 November: the frame
@@ -1894,11 +1896,13 @@ ships.
   behind the bridge), remove the static directory, and point Submit a Finding at the
   Submit page.
 - Confirm link previews on prod.
-- Retire the React app's pages and the static-hosting files. The plugin's generated
-  files are built from `src/`: its CSS from the site's Vite build, its icons from
-  `Icon.tsx`, the search module from `search.ts` and `derive.ts`, and the map module
-  from `mapCanvas.ts`, `heat.ts` and the GACC boundaries. Decide first whether those
-  sources stay in `src/`, with Vite, or move.
+- Decide where the sources of the plugin's generated files live after cutover, then
+  retire the React app and the static-hosting files that aren't among them. The
+  sources: its CSS, from the site's Vite build, which finds each stylesheet through
+  the pages' imports; its icons, which React draws from `Icon.tsx`; its logos
+  (`src/assets/logos/`); its link-preview image (`public/og-image.png`); the search
+  module (`search.ts`, `derive.ts`); and the map module (`mapCanvas.ts`, `heat.ts`,
+  the GACC boundaries).
 
 **Done when:** gsl.noaa.gov/firehouse is served by the plugin, and every URL from the
 bridge resolves to the same content.
