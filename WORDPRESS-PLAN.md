@@ -1448,7 +1448,7 @@ signed off on the frame.
   landing, About, project, topic and not-found pages has the site's computed styles, at
   desktop and phone width in both themes, and so does every focusable element there
   with keyboard focus, each showing its focus ring. Left out: the landing page's
-  coverage map (Phase 5, where it's still to do), and the site's About wrapper, which
+  coverage map (done in Phase 5, 14 November), and the site's About wrapper, which
   has no styles. It found one difference, invisible on both sites: the project pager's
   link took the browser's default link colour, which follows the colour scheme the
   frame sets; its parts set their own, and the link now inherits (`ProjectPage.css`).
@@ -1803,11 +1803,31 @@ its own (`DEFERRED`), loaded only on a page with the map.
     - *browsers without `@media (scripting)` (Chrome before 120, Firefox before 113,
       Safari before 17) with JavaScript off show the map's empty stage and credit;*
     - *clicking a region's shape or a zoom button gives it focus, inside the hidden
-      map, though Tab never does;*
-    - *the frame's computed-style and focus checks (Phase 4's rerun on the real pages)
-      and the contrast audits inside GSL's header and footer (rule 9) weren't rerun on
-      the explorer, the quick look or the coverage section. Phase 5 compared their
-      accessibility trees with the site's, and the map's pixels.*
+      map, though Tab never does.*
+- *The frame's style, focus and contrast checks rerun on Phase 5's pieces, 14
+  November, on the local copy against the site's build, at desktop and phone width in
+  both themes, with reduced motion:*
+  - *Computed styles. Every element of the coverage section (with no region, Great
+    Basin and National), of the explorer (as it opens, with a search, with filters
+    and a sort, and with no results) and of the open quick look has the site's
+    computed styles, and so does every focusable element there with keyboard focus,
+    each showing its focus ring. Left aside, by design: the plain spans the plugin
+    adds for its script's text, Leaflet's tiles, and the site's "/" shortcut hint.*
+  - *The controls the plugin prints as links where the site has buttons (clearing
+    the search, removing a filter, Clear all, and the empty state's action) differ
+    only in a button's browser defaults (centred text, its font, the clear button's
+    padding), which change no box. Their screenshots match the site's within a
+    pixel's shift, focused or not.*
+  - *The quick look's dialog has the site's overlay styles, its own backdrop is
+    transparent, and the panel is in the same place at the same size.*
+  - *Contrast. The token check passes. Inside GSL's header and footer, the live
+    audit passes for the explorer, the quick look and the coverage section in both
+    themes, and for the landing page and the explorer without JavaScript, "Update
+    results" included. On the landing page in light, it reports what it reports on
+    the site, and nothing more: the hero and stats band, whose dark background is an
+    image it can't see, and the map's codes, drawn with a halo over the tiles, which
+    it can't see either. Measured against the pixels drawn beside it, the hero's and
+    stats' text is 6.45:1 at the lowest, on both sites.*
 
 **Done when:** it reaches feature parity with the React site, every URL parameter
 behaves the same, and the accessibility snapshots match.

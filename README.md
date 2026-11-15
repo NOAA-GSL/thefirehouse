@@ -1030,8 +1030,14 @@ walk reads computed styles off real DOM nodes and catches what a token audit can
 — cascade bugs, hardcoded component colours, unaccounted translucent ancestors. Run
 both; they have caught different things.
 
-Current state: 0 AA text-contrast failures across all routes in both themes, and in
-both fallback states.
+Current state (14 November): the token audit passes. The live walk passes on every
+route in dark, at rest and in both fallback states. In light it reports the landing
+page only: the coverage map's GACC codes, drawn with a halo over the basemap tiles,
+which the walk can't see, and, except with reduced transparency, the hero and stats
+band, whose dark background is an image it can't see either. Measured against the
+pixels drawn beside it, the hero's and stats' text is 6.45:1 at the lowest. The
+plugin's landing page, explorer and quick look, inside GSL's header and footer,
+report the same and nothing more.
 
 ## Hosting
 
