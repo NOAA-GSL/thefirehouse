@@ -1278,6 +1278,16 @@ signed off on the frame.
     the block editor runs every attribute string through kses, which turns a `&` into
     `&amp;` (then shown as written) and can alter a `<`. Today's landing and About
     words have neither; the editing screens need to keep editors' text as typed.*
+    *Done 15 November (`includes/class-page-words.php`): a FireHouse page, or a
+    revision of one, saved with content that's nothing but FireHouse blocks, each with
+    only its declared attributes, keeps it as sent, before WordPress's filters on it,
+    in WordPress's own serialization; anything else keeps them. The security review
+    found that replacing the content skipped core's strip of a block's custom CSS too,
+    which let an editor publish CSS of their own: undeclared attributes now keep the
+    filters, and the blocks turn custom CSS, class names, locking and renaming off.
+    Tried on the local copy as a FireHouse Editor: "R&D <5 km>" in the About intro's
+    heading was kept and printed as text; with a core block added, kses ran as before
+    and left "R&amp;D", without the "<5 km>".*
 - *About page done 11 November: the Import screen creates the `about` page under
   `firehouse` from the bundle's about content, only when there's none, and only after
   the landing page has read back as planned, so deleting a misplaced landing page can't
@@ -1966,9 +1976,9 @@ marked below.
   as a read-only box of what the page stores in it. Every block saves its inner blocks,
   so a save keeps the page's blocks; a save that rebuilds the page leaves out values
   equal to a block's default, which render the same, and a FireHouse Editor's save
-  still runs the words through kses (Phase 4's landing page note). The Code editor can
-  still change anything stored, so the boxes aren't a control. The text fields replace
-  the boxes.*
+  keeps the words as typed (`Page_Words`, 15 November; Phase 4's landing page
+  note). The Code editor can still change anything stored, so the boxes aren't a
+  control. The text fields replace the boxes.*
 - Whether an editor can reword the cleared disclaimer. *Decided: no one can from
   WordPress. It stays the templates' own copy, and a cleared change comes as a pull
   request.*

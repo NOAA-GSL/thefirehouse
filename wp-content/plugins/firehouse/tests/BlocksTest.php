@@ -215,6 +215,11 @@ final class BlocksTest extends WordPressTestCase {
 		$this->assertSame( 'file:./render.php', $block['render'] );
 		$this->assertFileExists( $folder . 'render.php' );
 		$this->assertFalse( $block['supports']['inserter'] );
+		// No custom CSS, class names, lock or name: they'd be attributes the block doesn't
+		// declare, which send an editor's words back through kses (Page_Words).
+		foreach ( array( 'className', 'customClassName', 'customCSS', 'lock', 'renaming' ) as $support ) {
+			$this->assertFalse( $block['supports'][ $support ] ?? null, $support );
+		}
 
 		if ( isset( $block['viewScriptModule'] ) ) {
 			$this->assertSame( 'file:./view.js', $block['viewScriptModule'] );

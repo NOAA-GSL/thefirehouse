@@ -65,14 +65,25 @@ final class Blocks {
 			VERSION . '-' . (int) filemtime( $root . '/assets/js/block-editor.js' ),
 			false
 		);
-		$manifest = include $root . '/blocks/blocks-manifest.php';
+		wp_add_inline_script( self::EDITOR_SCRIPT, 'window.firehouseBlocks = ' . wp_json_encode( self::attributes() ) . ';', 'before' );
+		wp_set_script_translations( self::EDITOR_SCRIPT, 'firehouse' );
+	}
+
+	/**
+	 * Each block's name and the attributes its block.json declares, from the manifest:
+	 * what a page may store in it. WordPress adds others to every block (`lock`,
+	 * `metadata`), which no FireHouse block uses.
+	 *
+	 * @return array<string, list<string>>
+	 */
+	public static function attributes(): array {
+		$manifest = include dirname( __DIR__ ) . '/blocks/blocks-manifest.php';
 		$blocks   = array();
 		foreach ( self::NAMES as $name ) {
 			$attributes                     = is_array( $manifest ) ? ( $manifest[ $name ]['attributes'] ?? array() ) : array();
-			$blocks[ 'firehouse/' . $name ] = array_keys( is_array( $attributes ) ? $attributes : array() );
+			$blocks[ 'firehouse/' . $name ] = array_map( 'strval', array_keys( is_array( $attributes ) ? $attributes : array() ) );
 		}
-		wp_add_inline_script( self::EDITOR_SCRIPT, 'window.firehouseBlocks = ' . wp_json_encode( $blocks ) . ';', 'before' );
-		wp_set_script_translations( self::EDITOR_SCRIPT, 'firehouse' );
+		return $blocks;
 	}
 
 	/**

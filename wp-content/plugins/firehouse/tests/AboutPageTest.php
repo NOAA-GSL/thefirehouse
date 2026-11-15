@@ -143,6 +143,26 @@ final class AboutPageTest extends WordPressTestCase {
 	}
 
 	/**
+	 * The import's blocks hold only attributes their block.json declares, so an editor's
+	 * save of the page keeps their words as typed (Page_Words); a portrait's ID among
+	 * them.
+	 */
+	public function test_the_blocks_hold_only_declared_attributes(): void {
+		$built = null;
+		Functions\when( 'serialize_blocks' )->alias(
+			static function ( array $blocks ) use ( &$built ): string {
+				$built = $blocks;
+				return '';
+			}
+		);
+
+		About_Page::blocks( self::about(), self::SURVEY, array( 'stephanie-hoekstra' => 77 ) );
+
+		$this->assertNotEmpty( $built );
+		$this->assertTrue( \Firehouse\Page_Words::only_firehouse( $built ) );
+	}
+
+	/**
 	 * The page's blocks are the site's sections in its order, the four in the middle
 	 * inside the body; a link to the survey address is stored empty, so it follows the
 	 * settings, and nothing in them holds markup.

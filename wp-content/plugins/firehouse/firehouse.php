@@ -73,6 +73,7 @@ require_once __DIR__ . '/includes/class-icons.php';
 require_once __DIR__ . '/includes/class-markup.php';
 require_once __DIR__ . '/includes/class-not-found.php';
 require_once __DIR__ . '/includes/class-page-blocks.php';
+require_once __DIR__ . '/includes/class-page-words.php';
 require_once __DIR__ . '/includes/class-landing-page.php';
 require_once __DIR__ . '/includes/class-about-page.php';
 require_once __DIR__ . '/includes/class-project-page.php';
@@ -210,6 +211,13 @@ require_once __DIR__ . '/includes/class-head.php';
  *   `title_save_pre` filter (kses or another plugin's), and kept escaped, without
  *   control characters; one that would show nothing or isn't valid UTF-8 keeps the
  *   label it had.
+ * - Every save of any post also passes through Page_Words::keep_as_typed
+ *   (`wp_insert_post_data`, late): only while kses runs on the content, and only for
+ *   a page in the Firehouse tree that stays there, or a revision of one, whose content
+ *   as sent is nothing but FireHouse blocks with only their declared attributes, is
+ *   the content kept as sent, before any `content_save_pre` filter (kses, core's
+ *   custom CSS strip, another plugin's), in WordPress's own serialization. Anything
+ *   else is stored as WordPress would store it.
  * - Every check of a meta capability (edit_post_meta, add_post_meta,
  *   delete_post_meta) on a key starting fh_, in any case, is refused on a project, a
  *   topic or a revision of either. Any other meta check is left as it is.
@@ -238,6 +246,7 @@ Import_Screen::hook();
 Project_Screen::hook();
 Project_Rules::hook();
 Topic_Screen::hook();
+Page_Words::hook();
 Frame::hook();
 Visibility::hook();
 Blocks::hook();

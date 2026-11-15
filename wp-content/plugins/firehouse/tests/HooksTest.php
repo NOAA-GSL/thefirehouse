@@ -95,6 +95,15 @@ final class HooksTest extends WordPressTestCase {
 	}
 
 	/**
+	 * Keeping the FireHouse pages' words as typed runs late, with the content as sent.
+	 */
+	public function test_page_words_get_the_content_as_sent(): void {
+		Filters\expectAdded( 'wp_insert_post_data' )->once()->with( array( \Firehouse\Page_Words::class, 'keep_as_typed' ), PHP_INT_MAX - 10, 3 );
+
+		\Firehouse\Page_Words::hook();
+	}
+
+	/**
 	 * The settings register in the admin, and save with Firehouse's capability.
 	 */
 	public function test_settings_hooks(): void {
