@@ -781,7 +781,9 @@ nothing from the database. Each class's docblock has the detail; this is the map
   else keeps WordPress's filters: a core block, markup anywhere among them, an
   undeclared attribute such as a block's custom CSS (`style`), whose strip for those
   who may not edit CSS is one of those filters, or a page being moved. The blocks also
-  turn off custom CSS, class names, locking and renaming in their block.json.
+  turn off custom CSS, class names, locking and renaming in their block.json. A
+  WordPress feature that adds `metadata` to a block, such as a note on it, sends the
+  page's words back through kses until it's gone.
 - `Head` gives each Firehouse page its title, the site's title for it then GSL's
   suffix ("About — The FireHouse – Global Systems Laboratory"; decided by Eric, 12
   November, with Stephanie and Emily's spelling), and the description and Open Graph and

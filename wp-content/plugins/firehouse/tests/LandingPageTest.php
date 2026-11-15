@@ -210,6 +210,25 @@ final class LandingPageTest extends WordPressTestCase {
 	}
 
 	/**
+	 * The import's blocks hold only attributes their block.json declares, so an editor's
+	 * save of the page keeps their words as typed (Page_Words).
+	 */
+	public function test_the_blocks_hold_only_declared_attributes(): void {
+		$built = null;
+		Functions\when( 'serialize_blocks' )->alias(
+			static function ( array $blocks ) use ( &$built ): string {
+				$built = $blocks;
+				return '';
+			}
+		);
+
+		Landing_Page::blocks( self::landing(), self::SURVEY );
+
+		$this->assertNotEmpty( $built );
+		$this->assertTrue( \Firehouse\Page_Words::only_firehouse( $built ) );
+	}
+
+	/**
 	 * The page's blocks: the hero with the counts inside it, the top needs, the coverage
 	 * map, and the submit band, each with its words as attributes (the map has none). A
 	 * link to the bundle's survey address is stored empty, so it follows the settings;

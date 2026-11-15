@@ -32,7 +32,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Anything else keeps WordPress's filters: content with markup or text between the
  * blocks or inside one, a block that isn't FireHouse's, an attribute its block.json
  * doesn't declare (`style`, `className`, `lock`, `metadata`), a page outside the
- * tree or being moved. The hero and the About sections print what's inside them raw,
+ * tree or being moved. So a WordPress feature that adds `metadata` to a block, such
+ * as a note on it, sends the whole page's words back through kses until it's gone;
+ * the blocks turn off renaming, the commonest one. The hero and the About sections print what's inside them raw,
  * their inner blocks, so a block may hold only other FireHouse blocks, with nothing
  * but spaces around them.
  */
@@ -99,12 +101,20 @@ final class Page_Words {
 	 * nothing but spaces around it or inside it, and holding only FireHouse blocks.
 	 * Content with no block at all isn't.
 	 *
-	 * @param array<int, mixed>                $blocks   The blocks, as parse_blocks() gives them.
-	 * @param array<string, list<string>>|null $declared Each block's declared attributes; read from the manifest if not given.
+	 * @param array<int, mixed> $blocks The blocks, as parse_blocks() gives them.
 	 */
-	public static function only_firehouse( array $blocks, ?array $declared = null ): bool {
-		$declared ??= Blocks::attributes();
-		$found      = false;
+	public static function only_firehouse( array $blocks ): bool {
+		return self::of_firehouse_blocks( $blocks, Blocks::attributes() );
+	}
+
+	/**
+	 * only_firehouse(), with each block's declared attributes read once.
+	 *
+	 * @param array<int, mixed>           $blocks   The blocks, as parse_blocks() gives them.
+	 * @param array<string, list<string>> $declared Each block's declared attributes.
+	 */
+	private static function of_firehouse_blocks( array $blocks, array $declared ): bool {
+		$found = false;
 		foreach ( $blocks as $block ) {
 			if ( ! is_array( $block ) ) {
 				return false;
@@ -133,7 +143,7 @@ final class Page_Words {
 				}
 			}
 			$inner = is_array( $block['innerBlocks'] ?? null ) ? $block['innerBlocks'] : array();
-			if ( array() !== $inner && ! self::only_firehouse( $inner, $declared ) ) {
+			if ( array() !== $inner && ! self::of_firehouse_blocks( $inner, $declared ) ) {
 				return false;
 			}
 			$found = true;
@@ -155,11 +165,16 @@ final class Page_Words {
 		if ( ! is_object( $wpdb ) || ! method_exists( $wpdb, 'get_col_charset' ) || ! in_array( $wpdb->get_col_charset( $wpdb->posts, 'post_content' ), array( 'utf8', 'utf8mb3' ), true ) ) {
 			return $content;
 		}
-		return (string) preg_replace_callback(
+		// Content that failed, which a parse of valid JSON can't give, is stored as it is,
+		// for the database to refuse, rather than emptied.
+		return preg_replace_callback(
 			'/[\x{10000}-\x{10FFFF}]/u',
-			static fn( array $emoji ): string => substr( (string) wp_json_encode( $emoji[0] ), 1, -1 ),
+			static function ( array $emoji ): string {
+				$json = wp_json_encode( $emoji[0] );
+				return is_string( $json ) ? substr( $json, 1, -1 ) : $emoji[0];
+			},
 			$content
-		);
+		) ?? $content;
 	}
 
 	/**
