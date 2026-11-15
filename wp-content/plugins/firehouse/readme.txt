@@ -43,10 +43,14 @@ With JavaScript, a choice on the map or in the list changes the page in place;
 without it, the list works on its own and the map isn't shown.
 
 The coverage map is the plugin's one outside service. Its basemap tiles come from
-Esri (server.arcgisonline.com). On the landing page, and only with JavaScript, the
-visitor's browser loads them straight from Esri: when the map is drawn, and again as
-the visitor moves or zooms it, picks a region, or switches between light and dark. As
-with any image a page loads from another site, each request gives Esri the visitor's
+Esri (server.arcgisonline.com). On every view of the landing page with JavaScript (or
+of any page the coverage map block is placed on), without the visitor scrolling to
+the map or using it, the page's script has the browser connect to Esri as it starts
+loading the map. That connection carries no request: it shows Esri the visitor's IP
+address and nothing more, even if the map then fails to load. The browser then loads
+the tiles straight from Esri when the map is drawn, and again as the visitor moves or
+zooms the map, picks a region, or switches between light and dark. As with any image
+a page loads from another site, each tile request gives Esri the visitor's
 IP address, the browser's usual headers (such as its name and version and its
 preferred languages), any cookies the browser keeps for Esri where it allows them,
 and, through the tiles it asks for, the part of the map in view. The plugin sends no
@@ -54,7 +58,12 @@ Referer with them, so Esri isn't told which site or page the visitor is reading,
 the server never calls Esri. Esri's terms require its attribution, which is printed
 under the map. Without the tiles, the map still draws the regions on a blank
 background. A site with a Content Security Policy must allow images from
-https://server.arcgisonline.com.
+https://server.arcgisonline.com for the tiles to show; blocking them there doesn't
+stop the early connection, which a Content Security Policy doesn't govern. The plugin
+has no setting to change the tiles' host or turn them off. Another host means changing
+the basemap in shared/coverage-map.json and rebuilding the map's script; no tiles at
+all also means changing the map's drawing code and its early connection. The source
+repository's README describes both.
 
 The fonts in assets/fonts/, Archivo and Public Sans, are third-party, under the SIL
 Open Font License 1.1, whose text is beside them. assets/fonts/SOURCES.json records

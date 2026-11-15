@@ -82,8 +82,9 @@ wp-content/plugins/firehouse/
                     every Firehouse page sits in; blocks/, the server-rendered
                     blocks the templates and pages place (so far the Firehouse
                     bar, the not-found page, the project pages, the topic
-                    pages, the landing page and the About page); the shared
-                    vocabularies and test cases; and the PHP tests.
+                    pages, the landing page, the About page, the explorer and
+                    the coverage map); the shared vocabularies and test cases;
+                    and the PHP tests.
                     assets/css/firehouse.min.css, coverage-map.min.css and their
                     readable copies are generated from src/, and
                     assets/css/frame.css is written by hand;
@@ -272,6 +273,21 @@ overrides are isolated so a re-sync doesn't lose them.
         offers "Press Enter to search." in its place, and, on both sites, naming what
         the search covers in the site's own words (organizations, takeaways, methods,
         end-user needs and recommendations).
+- [ ] **Settle the rest of the wording Phases 4 and 5 left open,** when Stephanie
+      and Emily review those pages (the explorer's button and search hint are in the
+      item above). The words are the same on both sites:
+      - the phase and status pills in the quick look, and the phase pills on the
+        explorer's tiles, which a screen reader hears as a run of words ("Before
+        During Published"): a visually hidden "Fire phases:" and "Status:" would need
+        their wording;
+      - the coverage map's hint, "Select a GACC on the map or in the list to see the
+        research filed there.", and its "Not on the map" heading, which speak of a
+        map that a visitor without JavaScript doesn't get on the plugin's page (the
+        site shows nothing at all without it). "Not on the map" also names a group in
+        the explorer's region filter, where no map is shown;
+      - the need cards' names for screen readers: "Need and recommendation —
+        scrollable" for a recommendation alone, and the same name for every card
+        without a lead.
 - [ ] **Bring in the team's synthesis prompt.** Their "FireHouse Prompt (Final)", which
       Stephanie describes as being in their Gemini notebook, orders needs by project
       count with that tie-break. It assigns an entry that spans several topic areas by
@@ -557,8 +573,11 @@ nothing from the database. Each class's docblock has the detail; this is the map
   defines a project a visitor may see: published, without a password, and with IRB
   approval or exemption, as the site's normalize step keeps them.
   `Store::is_public()` is the test for a post already loaded. The plugin's own lookups
-  use both: the project pages' previous and next links, the topic pages' links and
-  project total, and the not-found guess.
+  use both: the explorer's projects (`Explorer_Page::projects()`), which the coverage
+  map reuses, and which both carry in their page state; the landing page's counts and
+  need cards (`Landing_Page::content()`), which keep a project the explorer leaves out
+  for want of a slug, a title or a year; the project pages' previous and next links;
+  the topic pages' links and project total; and the not-found guess.
 - `Visibility` keeps every other project off the public side of the site. It drops
   one from what a query finds, outside the admin's own screens, so its address,
   `?p=`, the archive, the feed, embeds and the sitemap leave it out. It refuses one
@@ -746,7 +765,8 @@ The traps, for whoever changes this code next:
   whitespace, or as a number, and how `Math.round()` takes a tie.
 - `Map_Colors` is the coverage map's colours, from the two ramps in
   `shared/coverage-map.json`, which the site's `src/design-system/heat.ts` reads too,
-  and the basemap's attribution for the credit under the map, from the same file.
+  and, from the same file, the basemap's attribution for the credit under the map and
+  the tiles' host, which the view script connects to before the map loads.
 - `Json::decode()` reads JSON as the TypeScript sees it: an empty or numbered object
   (`{}`, `{"0": …}`) stays an object, a `Json_Object`, instead of passing for a list.
   `Normalize` turns every one back into an array on the way out, so pages and post meta
@@ -886,14 +906,23 @@ the top needs, built to `FirehouseFormAdditions.pdf`.
 
 **The one runtime third-party request FireHouse makes is the basemap tiles**
 (`server.arcgisonline.com`, Esri — attribution is rendered under the map and is
-required by their terms). The browser asks for them with no Referer, so Esri isn't
-told which page is open. If a federal review objects to the external call, the map
-degrades to boundaries on a blank canvas rather than failing. To use another tile host,
-change the `basemap` in `wp-content/plugins/firehouse/shared/coverage-map.json` (its
-tile addresses and attribution), which both sites read, then run `npm run
-plugin:assets`: the plugin's map module carries the tile addresses, and CI fails until
-it's rewritten. Dropping the tiles altogether also means changing `drawTiles()` in
-`mapCanvas.ts` and the credit's wording.
+required by their terms), and only with JavaScript. The browser asks for them with
+no Referer, so Esri isn't told which page is open. On the plugin's landing page, the
+browser connects to Esri as soon as the view script starts loading the map, before any
+tile, so Esri sees the visitor's IP address even if the map then fails to load. The
+plugin's `readme.txt` says what each request carries. If the tiles can't load, the map
+draws the boundaries on a blank canvas rather than failing. Blocking only the tile
+requests, with a Content Security Policy for instance, still leaves the early
+connection; a firewall that refuses Esri's host stops both. To use
+another tile host, change the `basemap` in
+`wp-content/plugins/firehouse/shared/coverage-map.json` (its tile addresses and
+attribution), which both sites read, then run `npm run plugin:assets`: the plugin's
+map module carries the tile addresses, and CI fails until it's rewritten. Update the
+host and the Content Security Policy line in the plugin's `readme.txt` with it.
+Dropping the tiles altogether also means changing `drawTiles()` in `mapCanvas.ts`, the
+view script's early connection (`callbacks.draw` in `blocks/coverage-map/view.js`,
+whose host is `tileHost` in `Coverage_Map::state()`, from `Map_Colors::tile_origin()`),
+and the credit's wording.
 
 Accessibility: the region list beside the map is not a fallback. It is the operable
 surface — real buttons, real counts, driving the same state the polygons do — and
