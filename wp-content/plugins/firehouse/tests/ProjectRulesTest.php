@@ -88,7 +88,8 @@ final class ProjectRulesTest extends WordPressTestCase {
 		Functions\when( 'sanitize_title' )->alias( static fn( string $value ): string => strtolower( trim( $value ) ) );
 		$this->holders = array();
 		Functions\when( 'wp_unique_post_slug' )->alias( fn( string $slug ): string => isset( $this->holders[ $slug ] ) ? $slug . '-2' : $slug );
-		Functions\when( 'get_posts' )->alias( fn( array $args ): array => isset( $this->holders[ $args['name'] ?? '' ] ) && ! in_array( $this->holders[ $args['name'] ]->ID, $args['post__not_in'] ?? array(), true ) ? array( $this->holders[ $args['name'] ] ) : array() );
+		// The project asking is found too, as WordPress would find it by its own slug.
+		Functions\when( 'get_posts' )->alias( fn( array $args ): array => array_values( array_filter( array( $this->posts[41], $this->posts[42], $this->holders[ $args['name'] ?? '' ] ?? null ), static fn( ?\WP_Post $post ): bool => null !== $post && ( $args['name'] ?? '' ) === $post->post_name ) ) );
 		Functions\when( 'get_current_user_id' )->justReturn( 6 );
 		Functions\when( 'current_user_can' )->justReturn( true );
 		Functions\when( 'wp_specialchars_decode' )->returnArg();
@@ -335,10 +336,10 @@ final class ProjectRulesTest extends WordPressTestCase {
 	 * didn't ask for.
 	 */
 	public function test_a_draft_holding_the_address_doesnt_take_it(): void {
-		$this->holders['smoke-study'] = $this->posts[42];
+		$this->holders['smoke-study'] = self::post( 45, 'draft', 'smoke-study', '0000-00-00 00:00:00' );
 		$this->assertSame( 'smoke-study', $this->save( 41, array( 'post_name' => 'smoke-study-2' ) )['post_name'] );
 
-		$this->meta[42]['_firehouse_published'] = '1';
+		$this->meta[45]['_firehouse_published'] = '1';
 		$this->assertSame( 'smoke-study', $this->save( 41, array( 'post_name' => 'smoke-study-2' ) )['post_name'] );
 		$this->assertSame( array(), $this->kinds() );
 	}

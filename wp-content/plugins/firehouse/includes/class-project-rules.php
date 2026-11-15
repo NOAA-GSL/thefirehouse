@@ -170,16 +170,21 @@ final class Project_Rules {
 		if ( '' === $slug ) {
 			return null;
 		}
+		// Two at most: the project asking may be one of them.
 		$found = get_posts(
 			array(
-				'post_type'    => Post_Types::PROJECT,
-				'name'         => $slug,
-				'post_status'  => array( 'publish', 'future', 'private', 'draft', 'pending' ),
-				'post__not_in' => array( $id ),
-				'numberposts'  => 1,
+				'post_type'   => Post_Types::PROJECT,
+				'name'        => $slug,
+				'post_status' => array( 'publish', 'future', 'private', 'draft', 'pending' ),
+				'numberposts' => 2,
 			)
 		);
-		return $found[0] ?? null;
+		foreach ( $found as $post ) {
+			if ( $post instanceof \WP_Post && $post->ID !== $id ) {
+				return $post;
+			}
+		}
+		return null;
 	}
 
 	/**
