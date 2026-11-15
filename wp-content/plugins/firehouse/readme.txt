@@ -60,8 +60,10 @@ under the map. Without the tiles, the map still draws the regions on a blank
 background. A site with a Content Security Policy must allow images from
 https://server.arcgisonline.com for the tiles to show; blocking them there doesn't
 stop the early connection, which a Content Security Policy doesn't govern. The plugin
-has no setting to turn the tiles off: only changing the basemap in
-shared/coverage-map.json and rebuilding the map's script does.
+has no setting to change the tiles' host or turn them off. Another host means changing
+the basemap in shared/coverage-map.json and rebuilding the map's script; no tiles at
+all also means changing the map's drawing code and its early connection. The source
+repository's README describes both.
 
 The fonts in assets/fonts/, Archivo and Public Sans, are third-party, under the SIL
 Open Font License 1.1, whose text is beside them. assets/fonts/SOURCES.json records

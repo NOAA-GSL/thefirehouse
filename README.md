@@ -911,8 +911,9 @@ no Referer, so Esri isn't told which page is open. On the plugin's landing page,
 browser connects to Esri as soon as the view script starts loading the map, before any
 tile, so Esri sees the visitor's IP address even if the map then fails to load. The
 plugin's `readme.txt` says what each request carries. If the tiles can't load, the map
-draws the boundaries on a blank canvas rather than failing, but blocking them, with a
-Content Security Policy or at the network, still leaves the early connection. To use
+draws the boundaries on a blank canvas rather than failing. Blocking only the tile
+requests, with a Content Security Policy for instance, still leaves the early
+connection; a firewall that refuses Esri's host stops both. To use
 another tile host, change the `basemap` in
 `wp-content/plugins/firehouse/shared/coverage-map.json` (its tile addresses and
 attribution), which both sites read, then run `npm run plugin:assets`: the plugin's
