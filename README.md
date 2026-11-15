@@ -602,6 +602,27 @@ nothing from the database. Each class's docblock has the detail; this is the map
   rewrite rules rebuilt, on activation and after `Installer::REVISION` changes.
 - `Settings` is FireHouse → Settings: the site name, the Submit a Finding label and
   address, and the three navigation labels, read with `Settings::get()`.
+- `Project_Screen` adds a project's fields to WordPress's own edit screen, in two
+  boxes. **Editorial fields** (the summary, publication status, geography note and
+  full-record link) are the team's: saved whenever the screen saves the post (Save
+  Draft, Publish or Update, or a draft's Preview, which saves the draft), through
+  `Store::update_fields()`, kept as typed (line endings aside, and the link trimmed),
+  and never touched by a re-import (rule 4). The geography is written only when its
+  note changes, so a save never stands or falls on the survey's regions.
+  **From the survey** shows the researcher's answers read-only, as stored. A save
+  checks every editorial field first (`Project_Screen::check()`, with `Meta`'s schema
+  check) and saves none if any is wrong; the input and problems wait in a transient for
+  the screen WordPress redirects to, which marks each field and lists them at the top.
+  WordPress has saved the post's own fields, such as its status, by then. Only the
+  screen's own form saves the editorial fields, besides a restore of a revision,
+  which puts back the ones it holds (below): not Quick Edit, an autosave, or the
+  plugin's writes. A request with the screen's nonce but without its fields, or with
+  one that isn't text, saves none. A good save clears any refusal still waiting. The
+  screen's nonce is the project's own, refreshed with WordPress's through the
+  heartbeat (`Project_Screen::refresh_nonce()`), as after signing in again in the
+  session-expired dialog; if it has gone stale anyway, WordPress's save of the post
+  still goes through, and the screen says the editorial fields weren't saved and shows
+  what was typed.
 - `Seed_Bundle` reads a seed bundle and checks it; `Importer` plans the import and
   writes it through `Store`; `Import_Screen` is FireHouse → Import, for
   administrators. `npm run seed` writes the bundle from `src/content/data/` to
@@ -721,6 +742,18 @@ The traps, for whoever changes this code next:
   ("2025", "1") as that type, so a restored revision still saves; but its refusal is
   only a `false` from WordPress's function, with no message. No one may change a
   field through WordPress's custom-field routes.
+- **Revisions hold every field; a restore puts back only the team's.** A re-import that
+  changes a researcher's words leaves the old ones in a revision. Restoring a revision
+  puts back only a project's summary, publication status and full-record link
+  (`Meta::restored()`, applied by `Meta::revision_keys()` while WordPress restores),
+  never a survey field, IRB approval included; a topic's restore puts back all its
+  fields. An autosave takes nothing from the request (`Meta::revision_keys()`):
+  WordPress would copy any revisioned field sent with it into the autosave, for a
+  restore to write. A new autosave still copies the post's own fields, as any revision
+  does. No one may change, add or delete a FireHouse field through WordPress's
+  custom-field routes, in any case, on a project, a topic or a revision of either
+  (`Capabilities::map_meta_cap()`): the fields' own refusal covers only the exact key
+  on the post itself, and the database compares keys ignoring case.
 - **The plugin checks the bundle itself.** It refuses fields it doesn't store in a
   project, topic or synthesis (the landing and About pages keep only the text their
   blocks use, and drop the rest), and anything shaped like an email address but a team

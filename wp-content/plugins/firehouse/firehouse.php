@@ -64,6 +64,7 @@ require_once __DIR__ . '/includes/class-visibility.php';
 require_once __DIR__ . '/includes/class-seed-bundle.php';
 require_once __DIR__ . '/includes/class-importer.php';
 require_once __DIR__ . '/includes/class-import-screen.php';
+require_once __DIR__ . '/includes/class-project-screen.php';
 require_once __DIR__ . '/includes/class-frame.php';
 require_once __DIR__ . '/includes/class-icons.php';
 require_once __DIR__ . '/includes/class-markup.php';
@@ -182,6 +183,14 @@ require_once __DIR__ . '/includes/class-head.php';
  *   Firehouse landing page is refused, while pages outside the trash are under it, and
  *   only on the Pages screens does the refusal stop the request to say why. Any other
  *   deletion is WordPress's to decide.
+ * - Every list of a post type's revisioned meta (`wp_post_revision_meta_keys`) passes
+ *   through Meta::revision_keys: only for a project or topic, and only while WordPress
+ *   makes an autosave (it leaves the Firehouse fields out) or restores a revision (it
+ *   leaves a project's survey fields out), does it change. Other post types' lists,
+ *   and every list anywhere else, are left as they are.
+ * - Every check of a meta capability (edit_post_meta, add_post_meta,
+ *   delete_post_meta) on a key starting fh_, in any case, is refused on a project, a
+ *   topic or a revision of either. Any other meta check is left as it is.
  * - A Firehouse field is checked whenever it's added or updated through add_post_meta
  *   or update_post_meta, meta_input included. WordPress's by-ID route for custom
  *   fields isn't checked; the fields' edit_post_meta check refuses it to everyone but
@@ -191,7 +200,8 @@ require_once __DIR__ . '/includes/class-head.php';
  *   page capabilities are lent is narrowed.
  *
  * Beyond that, these change only Firehouse content and what Firehouse editors may do.
- * Settings and Import_Screen hook only the admin.
+ * Settings, Import_Screen and Project_Screen hook only the admin. Project_Screen saves
+ * a project's editorial fields only from its own form, on the project's edit screen.
  */
 Post_Types::hook();
 Meta::hook();
@@ -200,6 +210,7 @@ Capabilities::hook();
 Installer::hook( __FILE__ );
 Settings::hook();
 Import_Screen::hook();
+Project_Screen::hook();
 Frame::hook();
 Visibility::hook();
 Blocks::hook();

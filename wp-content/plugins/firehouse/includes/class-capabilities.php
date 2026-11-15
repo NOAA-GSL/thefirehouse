@@ -23,7 +23,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * the trash, can't change a page's parent or slug, which are its address, and can't
  * use XML-RPC. Administrators get the Firehouse capabilities too, and they alone can
  * import. No one can delete or trash a topic, or change its key or status, except the
- * plugin's own code writing through Store (Store::writing()).
+ * plugin's own code writing through Store (Store::writing()), and no one can change a
+ * Firehouse field through WordPress's custom-field routes, on a project, a topic or a
+ * revision of either.
  *
  * The role stores `read` and Firehouse's own capabilities. WordPress's page
  * capabilities are lent to it while the plugin runs (lend_page_caps()) and narrowed to
@@ -68,6 +70,11 @@ final class Capabilities {
 	 * The meta capabilities that act on one page or post.
 	 */
 	private const POST_CHECKS = array( 'edit_post', 'edit_page', 'delete_post', 'delete_page', 'publish_post' );
+
+	/**
+	 * The meta capabilities that act on one field of a post.
+	 */
+	private const META_CHECKS = array( 'edit_post_meta', 'add_post_meta', 'delete_post_meta' );
 
 	/**
 	 * Hooks the filters.
@@ -192,9 +199,10 @@ final class Capabilities {
 	}
 
 	/**
-	 * Refuses deleting a topic to everyone, and refuses a page outside the Firehouse
-	 * tree to anyone whose page capabilities are lent, unless what WordPress asks for
-	 * is theirs anyway.
+	 * Refuses deleting a topic to everyone, and changing, adding or deleting a
+	 * Firehouse field through WordPress's custom-field routes (is_firehouse_field()),
+	 * and refuses a page outside the Firehouse tree to anyone whose page capabilities
+	 * are lent, unless what WordPress asks for is theirs anyway.
 	 *
 	 * @param string[] $caps    The primitive capabilities WordPress requires.
 	 * @param string   $cap     The capability asked about.
@@ -203,6 +211,9 @@ final class Capabilities {
 	 * @return string[]
 	 */
 	public static function map_meta_cap( array $caps, string $cap, int $user_id, array $args ): array {
+		if ( in_array( $cap, self::META_CHECKS, true ) && self::is_firehouse_field( $args ) ) {
+			return array( 'do_not_allow' );
+		}
 		if ( ! in_array( $cap, self::POST_CHECKS, true ) || ! isset( $args[0] ) ) {
 			return $caps;
 		}
@@ -225,6 +236,34 @@ final class Capabilities {
 			return $caps;
 		}
 		return array( 'do_not_allow' );
+	}
+
+	/**
+	 * Whether a field check is for a Firehouse field, in any case, on a project or
+	 * topic or on one of their revisions (an autosave is one). The plugin writes these
+	 * itself, and WordPress's own revision copies and restores ask no capability, so
+	 * only WordPress's custom-field routes ask, and they're refused. The fields' own
+	 * refusal, Meta's auth_callback, covers the exact key on the post itself, and
+	 * misses two ways in:
+	 *
+	 * - A revision: WordPress checks a revision's field against what may be done to
+	 *   its post, so anyone who may edit a topic could rewrite a field on one of its
+	 *   revisions, which a restore then writes back (a synthesis's wording, sources or
+	 *   reviewer); adding one even passes on to the post itself.
+	 * - Another case, such as FH_irbApproved: the database compares meta keys
+	 *   ignoring case, so a query for public projects would find it.
+	 *
+	 * @param mixed[] $args The capability's arguments: the post, then the meta key.
+	 */
+	private static function is_firehouse_field( array $args ): bool {
+		if ( ! isset( $args[0], $args[1] ) || ! is_string( $args[1] ) || ! str_starts_with( strtolower( $args[1] ), Meta::PREFIX ) ) {
+			return false;
+		}
+		$post = get_post( $args[0] );
+		if ( $post instanceof \WP_Post && 'revision' === $post->post_type ) {
+			$post = get_post( $post->post_parent );
+		}
+		return $post instanceof \WP_Post && in_array( $post->post_type, array( Post_Types::PROJECT, Post_Types::TOPIC ), true );
 	}
 
 	/**

@@ -24,9 +24,21 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Only the plugin's own code writes these fields, through Store. WordPress's custom
  * field screens and requests can't: they ask for edit_post_meta, which no one is
- * given, so they can't change a survey field around rule 4. Neither post type is in
- * the REST API, so WordPress would never check a value against its schema on its own;
- * refuse_invalid() checks every write with validate() instead.
+ * given, so they can't change a survey field around rule 4. Capabilities::map_meta_cap()
+ * refuses them too, for a key in any case and on a revision, where the auth_callback
+ * registered here doesn't reach. Neither post type is in the REST API, so WordPress
+ * would never check a value against its schema on its own; refuse_invalid() checks
+ * every write with validate() instead.
+ *
+ * Revisions hold every field, so a re-import that changes a researcher's words leaves
+ * a record of the old ones. A restore puts back only the fields the team owns
+ * (restored(), through revision_keys()): a survey field comes from the survey record,
+ * so a restore must never roll one back, not the researcher's words (rules 1 and 4),
+ * and not the IRB approval that decides whether visitors see the project. A topic's
+ * fields are all the team's and the synthesis's, and a restore puts them all back.
+ * An autosave takes nothing from the request (revision_keys()): WordPress would copy
+ * any revisioned field sent with it into the autosave, for a restore to write. A new
+ * autosave still copies the post's own fields, as any revision does.
  */
 final class Meta {
 
@@ -60,6 +72,13 @@ final class Meta {
 	);
 
 	/**
+	 * A project's fields a restore puts back: the editorial ones its edit screen saves,
+	 * which are Importer::EDITORIAL's that are meta. Its geography isn't one, since it
+	 * holds the survey's regions beside the note.
+	 */
+	public const PROJECT_RESTORED = array( 'summary', 'publicationStatus', 'fullRecordUrl' );
+
+	/**
 	 * The schemas, read once per request.
 	 *
 	 * @var array<string, array<string, array<string, mixed>>>
@@ -75,6 +94,48 @@ final class Meta {
 	public static function hook(): void {
 		add_filter( 'add_post_metadata', array( self::class, 'refuse_add' ), 10, 4 );
 		add_filter( 'update_post_metadata', array( self::class, 'refuse_invalid' ), 10, 4 );
+		add_filter( 'wp_post_revision_meta_keys', array( self::class, 'revision_keys' ), 10, 2 );
+	}
+
+	/**
+	 * Whether a restore puts a field back from a revision.
+	 *
+	 * @param string $post_type Post_Types::PROJECT or Post_Types::TOPIC.
+	 * @param string $name      The field's name in types.ts.
+	 */
+	public static function restored( string $post_type, string $name ): bool {
+		return Post_Types::TOPIC === $post_type || in_array( $name, self::PROJECT_RESTORED, true );
+	}
+
+	/**
+	 * The revisioned keys of a project or topic, narrowed where WordPress would write
+	 * them back:
+	 *
+	 * - While it makes an autosave, none, so it copies none from the request into the
+	 *   autosave. The edit screen's own form never sends a field under its meta key,
+	 *   so a real autosave loses nothing; only a forged one, which a restore would then
+	 *   write, is stopped.
+	 * - While it restores a revision, only the fields restored() names, so a restore
+	 *   never rolls back a survey field.
+	 *
+	 * Everywhere else, saving a revision included, every field is kept.
+	 *
+	 * @param string[] $keys      The meta keys WordPress keeps in revisions.
+	 * @param string   $post_type The post type.
+	 * @return string[]
+	 */
+	public static function revision_keys( array $keys, string $post_type ): array {
+		if ( ! in_array( $post_type, array( Post_Types::PROJECT, Post_Types::TOPIC ), true ) ) {
+			return $keys;
+		}
+		$ours = static fn( mixed $key ): bool => is_string( $key ) && str_starts_with( $key, self::PREFIX );
+		if ( doing_action( 'wp_creating_autosave' ) ) {
+			return array_values( array_filter( $keys, static fn( mixed $key ): bool => ! $ours( $key ) ) );
+		}
+		if ( doing_action( 'wp_restore_post_revision' ) ) {
+			return array_values( array_filter( $keys, static fn( mixed $key ): bool => ! $ours( $key ) || self::restored( $post_type, substr( $key, strlen( self::PREFIX ) ) ) ) );
+		}
+		return $keys;
 	}
 
 	/**
@@ -97,7 +158,9 @@ final class Meta {
 	/**
 	 * Refuses to store a field of a project or topic that validate() rejects, so no
 	 * route can put a value of the wrong kind into a field. A valid value is stored as
-	 * given; a revision's copy isn't checked, since its post was.
+	 * given. A revision's copy isn't checked: WordPress copies it from its post, which
+	 * was, and no one may change it (Capabilities::map_meta_cap()). A restore, which
+	 * writes it back to the post, is checked here.
 	 *
 	 * A number or true or false may arrive as WordPress stores it, as text ("2025",
 	 * "1"), as it does when a revision is restored; it is read the way Store reads it
