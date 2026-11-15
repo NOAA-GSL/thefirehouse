@@ -24,7 +24,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Only the plugin's own code writes these fields, through Store. WordPress's custom
  * field screens and requests can't: they ask for edit_post_meta, which no one is
- * given, so they can't change a survey field around rule 4. Neither post type is in
+ * given, so they can't change a survey field around rule 4. On a revision, where the
+ * auth_callback registered here doesn't apply, Capabilities::map_meta_cap() refuses
+ * them instead. Neither post type is in
  * the REST API, so WordPress would never check a value against its schema on its own;
  * refuse_invalid() checks every write with validate() instead.
  *
@@ -33,8 +35,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  * the revisions hold, must never roll one back: not the researcher's words (rules 1
  * and 4), and not the IRB approval that decides whether visitors see the project. A
  * topic's fields are all the team's and the synthesis's, and stay in its revisions.
- * An autosave carries no field at all (revision_keys()): WordPress would copy any
- * revisioned field from the request into it, for a restore to write.
+ * An autosave takes nothing from the request (revision_keys()): WordPress would copy
+ * any revisioned field sent with it into the autosave, for a restore to write. A new
+ * autosave still copies the post's own revisioned fields, as any revision does, so
+ * restoring an old one puts back those fields as they were then.
  */
 final class Meta {
 
@@ -140,7 +144,9 @@ final class Meta {
 	/**
 	 * Refuses to store a field of a project or topic that validate() rejects, so no
 	 * route can put a value of the wrong kind into a field. A valid value is stored as
-	 * given; a revision's copy isn't checked, since its post was.
+	 * given. A revision's copy isn't checked: WordPress copies it from its post, which
+	 * was, and no one may change it (Capabilities::map_meta_cap()). A restore, which
+	 * writes it back to the post, is checked here.
 	 *
 	 * A number or true or false may arrive as WordPress stores it, as text ("2025",
 	 * "1"), as it does when a revision is restored; it is read the way Store reads it

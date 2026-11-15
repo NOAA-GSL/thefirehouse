@@ -161,7 +161,8 @@ one is.
   project's other changes, such as publishing it, are still saved.
 * A project's revisions keep only the FireHouse team's fields, so restoring one never
   changes the researcher's answers or the project's IRB approval. An autosave of a
-  project or topic keeps no FireHouse field.
+  project or topic takes no FireHouse field from the request, and no one can change a
+  FireHouse field stored on a revision, which a restore would write back.
 * The name the plugin prints is FireHouse: the plugin's name, the role, the admin
   menu, the block titles, and the pages' titles and words. A site that imported its
   content before keeps the old spelling in its settings and in the landing and About

@@ -1865,10 +1865,20 @@ marked below.
     IRB approval included, and a forged autosave could hold any field for a restore
     to write. Now a project's revisions hold its editorial fields only (summary,
     publication status, full-record link), not its geography, which holds the
-    survey's regions, and an autosave of a project or topic holds no field. A topic's
+    survey's regions, and an autosave of a project or topic takes no field from the
+    request (a new one still copies the post's own, as any revision does). A topic's
     revisions still hold all its fields; the synthesis screen decides what restoring
     one may do. Tried on the local copy: the forged autosave carried nothing, and an
     older revision with other survey answers restored only the summary.*
+  - *The security re-check (15 November) confirmed that, on every route, and found
+    one more, older still: the fields' refusal (`auth_callback`) is registered for
+    projects and topics, not their revisions, and WordPress checks a revision's field
+    against its post. So WordPress's custom-field routes let anyone who may edit a
+    topic rewrite a field on one of its revisions, for a restore to write back: a
+    synthesis's wording, sources or reviewer. `Capabilities::map_meta_cap()` now
+    refuses changing, adding or deleting a FireHouse field on any revision.*
+  - *Left for Eric and the team: WordPress's revisions screen compares only the
+    title, so an editor restoring the team's fields can't see their history first.*
   - *Next: the slug's lock, and refusing to publish a project without IRB approval
     (decided by Eric, 14 November: the edit screen says why in place of the Publish
     button, and a status change by any route, Quick Edit and bulk edit included, is

@@ -59,6 +59,8 @@ final class CapabilitiesTest extends WordPressTestCase {
 			31 => self::post( 31, 'revision', 20, '' ),
 			40 => self::post( 40, 'fh_topic', 0, 'observe' ),
 			50 => self::post( 50, 'fh_project', 0, 'a-project' ),
+			41 => self::post( 41, 'revision', 40, '40-revision-v1', 'inherit' ),
+			51 => self::post( 51, 'revision', 50, '50-autosave-v1', 'inherit' ),
 		);
 		$posts       = $this->posts;
 		Functions\when( 'get_post' )->alias( static fn( mixed $id ): ?\WP_Post => $id instanceof \WP_Post ? $id : ( $posts[ (int) $id ] ?? null ) );
@@ -254,6 +256,28 @@ final class CapabilitiesTest extends WordPressTestCase {
 		$this->assertSame( array( 'do_not_allow' ), $this->caps_for( 'delete_post', 40 ) );
 		$this->assertSame( array( 'do_not_allow' ), $this->caps_for( 'delete_page', 40 ) );
 		$this->assertSame( array( 'edit_others_pages' ), $this->caps_for( 'edit_post', 40 ) );
+	}
+
+	/**
+	 * No one may change, add or delete a Firehouse field stored on a revision, which a
+	 * restore would write back, whatever its case; other fields on a revision, and a
+	 * Firehouse field on the post itself (which Meta's auth_callback decides), are left
+	 * as WordPress asks.
+	 */
+	public function test_no_one_changes_a_field_on_a_revision(): void {
+		$this->as_user( array( 'administrator' ), array() );
+		foreach ( array( 'edit_post_meta', 'add_post_meta', 'delete_post_meta' ) as $cap ) {
+			foreach ( array(
+				41 => 'fh_reviewedBy',
+				51 => 'fh_irbApproved',
+			) as $revision => $key ) {
+				$this->assertSame( array( 'do_not_allow' ), Capabilities::map_meta_cap( array( 'edit_posts' ), $cap, 7, array( $revision, $key ) ), $cap . ' ' . $key );
+			}
+			$this->assertSame( array( 'do_not_allow' ), Capabilities::map_meta_cap( array( 'edit_posts' ), $cap, 7, array( 41, 'FH_topNeeds' ) ), $cap . ' upper case' );
+			$this->assertSame( array( 'edit_posts' ), Capabilities::map_meta_cap( array( 'edit_posts' ), $cap, 7, array( 41, '_edit_lock' ) ), $cap . ' other field' );
+			$this->assertSame( array( 'edit_posts' ), Capabilities::map_meta_cap( array( 'edit_posts' ), $cap, 7, array( 40, 'fh_reviewedBy' ) ), $cap . ' on the topic' );
+			$this->assertSame( array( 'edit_posts' ), Capabilities::map_meta_cap( array( 'edit_posts' ), $cap, 7, array( 41 ) ), $cap . ' no key' );
+		}
 	}
 
 	/**

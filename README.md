@@ -738,9 +738,14 @@ The traps, for whoever changes this code next:
 - **Revisions hold a project's editorial fields only** (`Meta::revisioned()`): its
   summary, publication status and full-record link. Restoring a revision puts back
   every field the revisions hold, so a survey field in them could be rolled back,
-  IRB approval included. A topic's revisions hold all its fields. An autosave holds
-  none (`Meta::revision_keys()`): WordPress copies any revisioned field from the
-  request into an autosave, for a restore to write.
+  IRB approval included. A topic's revisions hold all its fields. An autosave takes
+  nothing from the request (`Meta::revision_keys()`): WordPress would copy any
+  revisioned field sent with it into the autosave, for a restore to write. A new
+  autosave still copies the post's own revisioned fields, as any revision does. No
+  one may change a FireHouse field stored on a revision
+  (`Capabilities::map_meta_cap()`): the fields' own refusal doesn't reach revisions,
+  and WordPress's custom-field routes would otherwise let an editor rewrite one for a
+  restore to write back.
 - **The plugin checks the bundle itself.** It refuses fields it doesn't store in a
   project, topic or synthesis (the landing and About pages keep only the text their
   blocks use, and drop the rest), and anything shaped like an email address but a team
