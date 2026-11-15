@@ -428,7 +428,7 @@ final class ProjectScreenTest extends WordPressTestCase {
 		Project_Screen::editorial_box( self::post() );
 		$html = (string) ob_get_clean();
 
-		$this->assertStringContainsString( '>R&amp;amp;D summary</textarea>', $html );
+		$this->assertStringContainsString( ">\nR&amp;amp;D summary</textarea>", $html );
 		$this->assertStringContainsString( 'value="https://example.org/?a=1&amp;amp;b=2"', $html );
 		$this->assertStringContainsString( '<option value="in-review" selected=\'selected\'>', $html );
 		$this->assertStringContainsString( '<option value="">', $html );
@@ -472,7 +472,7 @@ final class ProjectScreenTest extends WordPressTestCase {
 		$this->assertNotFalse( has_filter( 'admin_title', array( Project_Screen::class, 'title' ) ) );
 		$this->assertNotFalse( has_filter( 'postbox_classes_fh_project_firehouse-editorial', array( Project_Screen::class, 'open_box' ) ) );
 		$this->assertNotFalse( has_filter( 'hidden_meta_boxes', array( Project_Screen::class, 'show_box' ) ) );
-		$this->assertStringContainsString( '>Typed &lt;i&gt;summary&lt;/i&gt;</textarea>', $html );
+		$this->assertStringContainsString( ">\nTyped &lt;i&gt;summary&lt;/i&gt;</textarea>", $html );
 		$this->assertStringContainsString( '<input type="text" inputmode="url" id="fh-project-fullRecordUrl" name="firehouse[fullRecordUrl]" value="javascript:alert(1)" spellcheck="false" autocomplete="off" aria-invalid="true" aria-describedby="fh-project-fullRecordUrl-error fh-project-fullRecordUrl-description"', $html );
 		$this->assertStringContainsString( '<p class="fh-project-field__error" id="fh-project-fullRecordUrl-error"><strong>Error:</strong> The full record link has to be a web address.</p>', $html );
 	}
@@ -590,6 +590,17 @@ final class ProjectScreenTest extends WordPressTestCase {
 			),
 			$messages['post']
 		);
+	}
+
+	/**
+	 * A summary that starts with a line break keeps it: the browser drops the one
+	 * printed straight after <textarea>, not the summary's own.
+	 */
+	public function test_a_leading_line_break_survives_the_textarea(): void {
+		$this->stored['fh_summary'] = "\nStudy";
+		ob_start();
+		Project_Screen::editorial_box( self::post() );
+		$this->assertStringContainsString( "rows=\"3\" aria-describedby=\"fh-project-summary-description\">\n\nStudy</textarea>", (string) ob_get_clean() );
 	}
 
 	/**

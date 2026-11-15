@@ -241,10 +241,12 @@ final class Project_Screen {
 		echo '<div class="fh-project-screen">';
 		echo '<p>' . esc_html__( 'The FireHouse team’s own fields. Saving the project saves them; a new import of the survey never changes them.', 'firehouse' ) . '</p>';
 
+		// A browser drops a line break straight after <textarea>, so one is printed for it
+		// to drop, and a summary that starts with its own line break keeps it.
 		self::field(
 			'summary',
 			__( 'Summary', 'firehouse' ),
-			static fn( string $attributes ): string => '<textarea id="fh-project-summary" name="' . esc_attr( self::INPUT ) . '[summary]" rows="3"' . $attributes . '>' . Markup::text( $values['summary'] ) . '</textarea>',
+			static fn( string $attributes ): string => '<textarea id="fh-project-summary" name="' . esc_attr( self::INPUT ) . '[summary]" rows="3"' . $attributes . ">\n" . Markup::text( $values['summary'] ) . '</textarea>',
 			__( 'One or two lines under the title on the explorer’s tiles. The import starts it with the abstract’s first sentence.', 'firehouse' ),
 			$errors
 		);
