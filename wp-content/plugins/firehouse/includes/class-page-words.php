@@ -108,7 +108,7 @@ final class Page_Words {
 	}
 
 	/**
-	 * only_firehouse(), with each block's declared attributes read once.
+	 * The check only_firehouse() makes, with each block's declared attributes read once.
 	 *
 	 * @param array<int, mixed>           $blocks   The blocks, as parse_blocks() gives them.
 	 * @param array<string, list<string>> $declared Each block's declared attributes.

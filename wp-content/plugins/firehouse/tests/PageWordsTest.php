@@ -49,14 +49,14 @@ final class PageWordsTest extends WordPressTestCase {
 	 */
 	protected function setUp(): void {
 		parent::setUp();
-		$page        = static fn( int $id, int $parent_id ): \WP_Post => new \WP_Post(
+		$page         = static fn( int $id, int $parent_id ): \WP_Post => new \WP_Post(
 			array(
 				'ID'          => $id,
 				'post_type'   => 'page',
 				'post_parent' => $parent_id,
 			)
 		);
-		$this->posts = array(
+		$this->posts  = array(
 			10 => $page( 10, 0 ),
 			11 => $page( 11, 10 ),
 			20 => $page( 20, 0 ),
@@ -211,7 +211,7 @@ final class PageWordsTest extends WordPressTestCase {
 	 * which read back as the emoji, not as an entity the page would show as written.
 	 */
 	public function test_an_emoji_is_stored_as_json_escapes_on_an_older_table(): void {
-		$GLOBALS['wpdb'] = new class() {
+		$GLOBALS['wpdb'] = new class() { // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- a stand-in for the database, removed in tearDown().
 			/**
 			 * The posts table's name.
 			 *
