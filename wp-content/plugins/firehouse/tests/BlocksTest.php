@@ -115,7 +115,7 @@ final class BlocksTest extends WordPressTestCase {
 				array(
 					Blocks::EDITOR_SCRIPT,
 					'https://example.test/wp-content/plugins/firehouse/assets/js/block-editor.js',
-					array( 'wp-blocks', 'wp-block-editor', 'wp-components', 'wp-element', 'wp-i18n' ),
+					array( 'wp-blocks', 'wp-block-editor', 'wp-components', 'wp-data', 'wp-element', 'wp-i18n' ),
 					\Firehouse\VERSION . '-' . filemtime( $file ),
 					false,
 				),

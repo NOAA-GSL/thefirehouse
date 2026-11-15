@@ -50,18 +50,18 @@ final class Blocks {
 	/**
 	 * Loads assets/js/block-editor.js in every block editor on the site, with each
 	 * block's name and the attributes its block.json declares, from the manifest. It
-	 * shows each block read-only, listing what the page stores in it, until Phase 6 lets
-	 * editors change that (WORDPRESS-PLAN.md), and adds nothing to the inserter. Plain
-	 * JavaScript with no build step: its dependencies are WordPress's own packages, and
-	 * it is versioned by the plugin's version and the file's modified time, as the
-	 * stylesheets are.
+	 * shows the landing and About pages' words as text fields in place, and adds nothing
+	 * to the inserter. Plain JavaScript with no build step: its dependencies are
+	 * WordPress's own packages (`wp-data` for holding a save while a required word is
+	 * empty), and it is versioned by the plugin's version and the file's modified time,
+	 * as the stylesheets are.
 	 */
 	public static function enqueue_editor(): void {
 		$root = dirname( __DIR__ );
 		wp_enqueue_script(
 			self::EDITOR_SCRIPT,
 			plugins_url( 'assets/js/block-editor.js', $root . '/firehouse.php' ),
-			array( 'wp-blocks', 'wp-block-editor', 'wp-components', 'wp-element', 'wp-i18n' ),
+			array( 'wp-blocks', 'wp-block-editor', 'wp-components', 'wp-data', 'wp-element', 'wp-i18n' ),
 			VERSION . '-' . (int) filemtime( $root . '/assets/js/block-editor.js' ),
 			false
 		);
