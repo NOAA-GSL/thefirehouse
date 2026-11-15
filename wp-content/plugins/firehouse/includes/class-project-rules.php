@@ -123,8 +123,7 @@ final class Project_Rules {
 		$name  = (string) ( $data['post_name'] ?? '' );
 		$asked = sanitize_title( (string) ( $postarr['post_name'] ?? '' ) );
 		if ( self::locked( $stored ) && $name !== $stored->post_name ) {
-			$holder = self::holder( $stored->post_name, $id );
-			if ( $holder instanceof \WP_Post && in_array( $holder->post_status, self::PUBLISHED, true ) ) {
+			if ( null !== self::holder( $stored->post_name, $id, self::PUBLISHED ) ) {
 				// Another published project has the address, as when one took it while
 				// this was in the trash: this one takes the next free one, not one the
 				// request names. A draft that holds it doesn't count: WordPress makes the
@@ -157,16 +156,20 @@ final class Project_Rules {
 	 * @param \WP_Post $post The project.
 	 */
 	private static function free( string $slug, \WP_Post $post ): string {
-		return null === self::holder( $slug, $post->ID ) ? $slug : wp_unique_post_slug( $slug, $post->ID, 'publish', $post->post_type, (int) $post->post_parent );
+		$held = null !== self::holder( $slug, $post->ID, self::PUBLISHED ) || null !== self::holder( $slug, $post->ID, array( 'draft', 'pending' ) );
+		return $held ? wp_unique_post_slug( $slug, $post->ID, 'publish', $post->post_type, (int) $post->post_parent ) : $slug;
 	}
 
 	/**
-	 * Another project, not in the trash, that has a slug, if any.
+	 * Another project in one of $statuses that has a slug, if any. Each group of
+	 * statuses is asked for on its own, so a newer draft holding the slug can't come
+	 * back in place of the published project that has it.
 	 *
-	 * @param string $slug The slug.
-	 * @param int    $id   The project asking, which doesn't count.
+	 * @param string   $slug     The slug.
+	 * @param int      $id       The project asking, which doesn't count.
+	 * @param string[] $statuses The statuses to look in.
 	 */
-	private static function holder( string $slug, int $id ): ?\WP_Post {
+	private static function holder( string $slug, int $id, array $statuses ): ?\WP_Post {
 		if ( '' === $slug ) {
 			return null;
 		}
@@ -175,7 +178,7 @@ final class Project_Rules {
 			array(
 				'post_type'   => Post_Types::PROJECT,
 				'name'        => $slug,
-				'post_status' => array( 'publish', 'future', 'private', 'draft', 'pending' ),
+				'post_status' => $statuses,
 				'numberposts' => 2,
 			)
 		);

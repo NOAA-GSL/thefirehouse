@@ -40,9 +40,9 @@ final class ProjectRulesTest extends WordPressTestCase {
 	private array $kept = array();
 
 	/**
-	 * Which other project holds a slug, by slug.
+	 * The other projects that hold a slug, by slug, newest first.
 	 *
-	 * @var array<string, \WP_Post>
+	 * @var array<string, list<\WP_Post>>
 	 */
 	private array $holders = array();
 
@@ -88,8 +88,20 @@ final class ProjectRulesTest extends WordPressTestCase {
 		Functions\when( 'sanitize_title' )->alias( static fn( string $value ): string => strtolower( trim( $value ) ) );
 		$this->holders = array();
 		Functions\when( 'wp_unique_post_slug' )->alias( fn( string $slug ): string => isset( $this->holders[ $slug ] ) ? $slug . '-2' : $slug );
-		// The project asking is found too, as WordPress would find it by its own slug.
-		Functions\when( 'get_posts' )->alias( fn( array $args ): array => array_values( array_filter( array( $this->posts[41], $this->posts[42], $this->holders[ $args['name'] ?? '' ] ?? null ), static fn( ?\WP_Post $post ): bool => null !== $post && ( $args['name'] ?? '' ) === $post->post_name ) ) );
+		// As WordPress's get_posts(): projects with the slug in the statuses asked for,
+		// newest first, the project asking among them, no more than asked for.
+		Functions\when( 'get_posts' )->alias(
+			function ( array $args ): array {
+				$name  = (string) ( $args['name'] ?? '' );
+				$found = array_values(
+					array_filter(
+						array_merge( $this->holders[ $name ] ?? array(), array( $this->posts[41], $this->posts[42] ) ),
+						static fn( \WP_Post $post ): bool => 'fh_project' === $post->post_type && $name === $post->post_name && in_array( $post->post_status, (array) ( $args['post_status'] ?? array() ), true )
+					)
+				);
+				return array_slice( $found, 0, (int) ( $args['numberposts'] ?? 5 ) );
+			}
+		);
 		Functions\when( 'get_current_user_id' )->justReturn( 6 );
 		Functions\when( 'current_user_can' )->justReturn( true );
 		Functions\when( 'wp_specialchars_decode' )->returnArg();
@@ -325,8 +337,32 @@ final class ProjectRulesTest extends WordPressTestCase {
 	 * request names, rather than two sharing it; and the editor is told.
 	 */
 	public function test_a_taken_address_isnt_shared(): void {
-		$this->holders['smoke-study'] = self::post( 44, 'publish', 'smoke-study', '2024-05-01 10:00:00' );
+		$this->holders['smoke-study'] = array( self::post( 44, 'publish', 'smoke-study', '2024-05-01 10:00:00' ) );
 		$this->assertSame( 'smoke-study-2', $this->save( 41, array( 'post_name' => 'forged-name' ) )['post_name'] );
+		$this->assertSame( array( '41:taken' ), $this->kinds() );
+	}
+
+	/**
+	 * Copilot's case: a project published once and restored as a draft is published
+	 * again while a newer draft and an older published project both hold its address.
+	 * The published one is found, however many drafts come first, so the restored one
+	 * takes the next free address rather than sharing.
+	 */
+	public function test_a_newer_draft_doesnt_hide_the_published_holder(): void {
+		$this->posts[41]->post_status = 'draft';
+		$this->holders['smoke-study'] = array(
+			self::post( 46, 'draft', 'smoke-study', '0000-00-00 00:00:00' ),
+			self::post( 47, 'draft', 'smoke-study', '0000-00-00 00:00:00' ),
+			self::post( 44, 'publish', 'smoke-study', '2024-05-01 10:00:00' ),
+		);
+		$saved                        = $this->save(
+			41,
+			array(
+				'post_status' => 'publish',
+				'post_name'   => 'smoke-study-2',
+			)
+		);
+		$this->assertSame( 'smoke-study-2', $saved['post_name'] );
 		$this->assertSame( array( '41:taken' ), $this->kinds() );
 	}
 
@@ -336,7 +372,7 @@ final class ProjectRulesTest extends WordPressTestCase {
 	 * didn't ask for.
 	 */
 	public function test_a_draft_holding_the_address_doesnt_take_it(): void {
-		$this->holders['smoke-study'] = self::post( 45, 'draft', 'smoke-study', '0000-00-00 00:00:00' );
+		$this->holders['smoke-study'] = array( self::post( 45, 'draft', 'smoke-study', '0000-00-00 00:00:00' ) );
 		$this->assertSame( 'smoke-study', $this->save( 41, array( 'post_name' => 'smoke-study-2' ) )['post_name'] );
 
 		$this->meta[45]['_firehouse_published'] = '1';
@@ -349,7 +385,7 @@ final class ProjectRulesTest extends WordPressTestCase {
 	 * publish: it gets the next free one, and the editor is told.
 	 */
 	public function test_a_draft_cant_take_another_projects_address(): void {
-		$this->holders['smoke-study'] = $this->posts[41];
+		$this->holders['smoke-study'] = array();
 		$this->assertSame( 'smoke-study-2', $this->save( 42, array( 'post_name' => 'smoke-study' ) )['post_name'] );
 		$this->assertSame( array( '42:taken' ), $this->kinds() );
 
@@ -501,7 +537,7 @@ final class ProjectRulesTest extends WordPressTestCase {
 		$this->meta[41]['fh_irbApproved'] = '';
 		$this->save( 41, array() );
 		$this->meta[41]['fh_irbApproved'] = '1';
-		$this->holders['smoke-study']     = self::post( 44, 'publish', 'smoke-study', '2024-05-01 10:00:00' );
+		$this->holders['smoke-study']     = array( self::post( 44, 'publish', 'smoke-study', '2024-05-01 10:00:00' ) );
 		$this->save( 41, array( 'post_name' => 'smoke-study-2' ) );
 		ob_start();
 		Project_Rules::list_notices();
