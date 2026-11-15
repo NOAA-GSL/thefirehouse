@@ -98,7 +98,7 @@ abstract class Edit_Screen {
 		. '.fh-edit-readonly dd ul,.fh-edit-readonly dd ol{margin:0 0 0 1.5em;white-space:normal}'
 		. '.fh-edit-readonly dd li{margin:0 0 .5em;white-space:pre-wrap}'
 		. '.fh-edit-note{color:#50575e;font-style:italic}'
-		. '.fh-edit-errors:focus{outline:2px solid var(--wp-admin-theme-color,#2271b1);outline-offset:2px}';
+		. '.fh-edit-errors:focus-visible{outline:2px solid var(--wp-admin-theme-color,#2271b1);outline-offset:2px}';
 
 	/**
 	 * A refused save's input and problems, for the screen that shows it, by screen.
@@ -249,7 +249,10 @@ abstract class Edit_Screen {
 			if ( ! is_string( $value ) ) {
 				$errors[ $name ] = __( 'This field didn’t arrive as text. Reload the screen and enter it again.', 'firehouse' );
 			} elseif ( ! self::is_utf8( $value ) ) {
-				$errors[ $name ] = __( 'This field has characters that can’t be stored. Retype it, then save again.', 'firehouse' );
+				$errors[ $name ] = __( 'This field has characters that can’t be stored. Retype it.', 'firehouse' );
+				// Shown back with each bad byte as �, so the refusal can be kept for the next
+				// screen at all: the database would refuse to store it too.
+				$values[ $name ] = htmlspecialchars_decode( htmlspecialchars( $values[ $name ], ENT_NOQUOTES | ENT_SUBSTITUTE, 'UTF-8' ), ENT_NOQUOTES );
 			}
 		}
 		return array(
@@ -268,15 +271,15 @@ abstract class Edit_Screen {
 	}
 
 	/**
-	 * Whether text would show nothing: only spaces, line breaks and invisible
-	 * characters, such as a no-break or zero-width space, written as characters or as
-	 * entities, since pages print text escaped without escaping an entity again. Text
+	 * Whether text would show nothing: only spaces, line breaks, control characters
+	 * and invisible ones such as a no-break or zero-width space, written as characters
+	 * or as entities, since pages print text escaped without escaping an entity again. Text
 	 * that isn't valid UTF-8 shows nothing either.
 	 *
 	 * @param string $text The text.
 	 */
 	protected static function blank( string $text ): bool {
-		return 1 !== preg_match( '/[^\p{Z}\p{C}]/u', html_entity_decode( $text, ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
+		return 1 !== preg_match( '/[^\p{Z}\p{Cc}\p{Cf}]/u', html_entity_decode( $text, ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
 	}
 
 	/**
@@ -564,7 +567,7 @@ abstract class Edit_Screen {
 		$count  = count( $refused['errors'] );
 		$labels = static::field_labels();
 		$id     = 'firehouse-' . static::KIND . '-errors';
-		echo '<div id="' . esc_attr( $id ) . '" class="notice notice-error inline fh-edit-errors" tabindex="-1" autofocus aria-labelledby="' . esc_attr( $id . '-heading' ) . '"><h2 id="' . esc_attr( $id . '-heading' ) . '">';
+		echo '<div id="' . esc_attr( $id ) . '" class="notice notice-error inline fh-edit-errors" role="group" tabindex="-1" autofocus aria-labelledby="' . esc_attr( $id . '-heading' ) . '"><h2 id="' . esc_attr( $id . '-heading' ) . '">';
 		echo esc_html( static::problems_heading( $count ) );
 		$marked = array() !== array_diff_key( $refused['errors'], array( self::FORM => true ) );
 		$saved  = static::saved_hint( $refused['errors'] );

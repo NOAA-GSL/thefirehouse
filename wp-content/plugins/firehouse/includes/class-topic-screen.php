@@ -129,8 +129,9 @@ final class Topic_Screen extends Edit_Screen {
 			return $data;
 		}
 		unset( self::$kept[ $id ] );
-		$sent  = $unsanitized_postarr['post_title'] ?? $data['post_title'] ?? '';
-		$label = is_string( $sent ) ? trim( wp_specialchars_decode( wp_unslash( $sent ), ENT_QUOTES ) ) : '';
+		$sent = $unsanitized_postarr['post_title'] ?? $data['post_title'] ?? '';
+		// The control characters kses would have dropped go too: a feed's XML can't hold them.
+		$label = is_string( $sent ) ? trim( (string) preg_replace( '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', wp_specialchars_decode( wp_unslash( $sent ), ENT_QUOTES ) ) ) : '';
 		if ( self::blank( $label ) ) {
 			self::$kept[ $id ]  = self::is_utf8( $label ) ? 'empty' : 'invalid';
 			$data['post_title'] = wp_slash( $stored->post_title );
@@ -161,11 +162,12 @@ final class Topic_Screen extends Edit_Screen {
 	 * The title box's name on a topic's screen, which the refusal's list uses too:
 	 * "Label", not WordPress's "Add title".
 	 *
-	 * @param string   $text The title box's prompt.
-	 * @param \WP_Post $post The post being edited.
+	 * @param mixed $text The title box's prompt.
+	 * @param mixed $post The post being edited.
+	 * @return mixed
 	 */
-	public static function title_prompt( string $text, \WP_Post $post ): string {
-		return Post_Types::TOPIC === $post->post_type ? __( 'Label', 'firehouse' ) : $text;
+	public static function title_prompt( mixed $text, mixed $post = null ): mixed {
+		return $post instanceof \WP_Post && Post_Types::TOPIC === $post->post_type ? __( 'Label', 'firehouse' ) : $text;
 	}
 
 	/**

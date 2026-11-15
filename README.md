@@ -593,7 +593,9 @@ nothing from the database. Each class's docblock has the detail; this is the map
   settings and the `firehouse` page tree, and nothing else on the site. The role
   stores `read` and Firehouse's own capabilities; WordPress's page capabilities are
   lent only while the plugin runs, so with the plugin off its users can only sign
-  in. Only administrators have `firehouse_import`. No one can delete the landing page
+  in. Only administrators have `firehouse_import`. A project or topic keeps its author,
+  none from the import, whoever saves it, so no editor's name or sign-in name is
+  published as its author through oEmbed or the feeds. No one can delete the landing page
   for good while pages outside the trash are under it: WordPress would move them to the
   top of the site, the About page beside the site's own `/about/`. The Pages screens
   say why.
@@ -636,7 +638,8 @@ nothing from the database. Each class's docblock has the detail; this is the map
   synthesis replaces it. The label is kept escaped, as `Store::label()` writes it, by
   any route that saves it (`Topic_Screen::keep_label()`, on `wp_insert_post_data`,
   late). It's read as it was sent, before kses, which would strip anything that looks
-  like a tag from a FireHouse Editor's save. One that's blank or isn't valid UTF-8
+  like a tag from a FireHouse Editor's save; the control characters kses would drop
+  are dropped. One that's blank or isn't valid UTF-8
   keeps the label the topic had, and the screen refuses its fields with it and says
   why, under the title box. The title box shows the label as text (`edit_label()`)
   and is named "Label". The

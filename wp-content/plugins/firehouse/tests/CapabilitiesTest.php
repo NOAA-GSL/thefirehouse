@@ -383,6 +383,23 @@ final class CapabilitiesTest extends WordPressTestCase {
 	}
 
 	/**
+	 * A project or topic keeps the author it has, none from the import, whoever saves
+	 * it, so no editor's name is published as its author; the plugin's own writes set
+	 * theirs.
+	 */
+	public function test_a_project_or_topic_keeps_its_author(): void {
+		$this->as_user( array( 'firehouse_editor' ), array() );
+		$saved = array(
+			'post_author' => 10,
+			'post_title'  => 'A label',
+		);
+
+		$this->assertSame( '0', Capabilities::keep_in_place( $saved, array( 'ID' => 40 ) )['post_author'] );
+		$this->assertSame( '0', Capabilities::keep_in_place( $saved, array( 'ID' => 50 ) )['post_author'] );
+		$this->assertSame( 10, Capabilities::keep_in_place( $saved, array( 'ID' => 60 ) )['post_author'], 'Not a project or topic.' );
+	}
+
+	/**
 	 * The landing page isn't deleted for good while pages are under it, in any status:
 	 * WordPress would move them to the top of the site, the About page beside the
 	 * site's own. In the trash, it's still the landing page. With nothing under it, or
@@ -458,7 +475,7 @@ final class CapabilitiesTest extends WordPressTestCase {
 	}
 
 	/**
-	 * New posts, projects and others' pages are saved as given.
+	 * New posts, projects (but for their author) and others' pages are saved as given.
 	 */
 	public function test_others_saves_are_left_alone(): void {
 		$moved = array(
@@ -468,7 +485,7 @@ final class CapabilitiesTest extends WordPressTestCase {
 		);
 		$this->assertSame( $moved, Capabilities::keep_in_place( $moved, array() ), 'A new post has no ID.' );
 		$project = array( 'post_type' => 'fh_project' ) + $moved;
-		$this->assertSame( $project, Capabilities::keep_in_place( $project, array( 'ID' => 50 ) ) );
+		$this->assertSame( $project + array( 'post_author' => '0' ), Capabilities::keep_in_place( $project, array( 'ID' => 50 ) ) );
 
 		$this->as_user( array( 'administrator' ), array() );
 		$this->assertSame( $moved, Capabilities::keep_in_place( $moved, array( 'ID' => 11 ) ) );

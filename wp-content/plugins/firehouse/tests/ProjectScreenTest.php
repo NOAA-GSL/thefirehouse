@@ -230,7 +230,7 @@ final class ProjectScreenTest extends WordPressTestCase {
 	public function test_text_that_isnt_utf8_is_refused(): void {
 		$checked = Project_Screen::check( self::fields(), self::input( array( 'geoNote' => "Front \xC3( Range" ) ) );
 
-		$this->assertSame( array( 'geoNote' => 'This field has characters that can’t be stored. Retype it, then save again.' ), $checked['errors'] );
+		$this->assertSame( array( 'geoNote' => 'This field has characters that can’t be stored. Retype it.' ), $checked['errors'] );
 	}
 
 	/**
@@ -477,7 +477,7 @@ final class ProjectScreenTest extends WordPressTestCase {
 		Project_Screen::editorial_box( self::post() );
 		$html = (string) ob_get_clean();
 
-		$this->assertStringContainsString( '<div id="firehouse-project-errors" class="notice notice-error inline fh-edit-errors" tabindex="-1" autofocus aria-labelledby="firehouse-project-errors-heading"><h2 id="firehouse-project-errors-heading">Editorial fields not saved: 1 problem</h2><p>Fix what’s marked, then save the project again. The project’s other changes, such as its status, were saved.</p>', $html );
+		$this->assertStringContainsString( '<div id="firehouse-project-errors" class="notice notice-error inline fh-edit-errors" role="group" tabindex="-1" autofocus aria-labelledby="firehouse-project-errors-heading"><h2 id="firehouse-project-errors-heading">Editorial fields not saved: 1 problem</h2><p>Fix what’s marked, then save the project again. The project’s other changes, such as its status, were saved.</p>', $html );
 		$this->assertStringContainsString( '<a href="#fh-project-fullRecordUrl">Full record link</a>: The full record link has to be a web address.', $html );
 		$this->assertNotFalse( has_filter( 'admin_title', array( Project_Screen::class, 'title' ) ) );
 		$this->assertNotFalse( has_filter( 'postbox_classes_fh_project_firehouse-editorial', array( Project_Screen::class, 'open_box' ) ) );

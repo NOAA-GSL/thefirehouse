@@ -1944,8 +1944,11 @@ marked below.
     shown "&amp;" for "&". So the label is read as it was sent, before kses, which
     would otherwise strip tag-like text such as "<PM2.5>" from a label an editor never
     touched (the code and security reviews). Both screens now refuse text that isn't
-    valid UTF-8, which the database had refused after the other fields were saved,
-    and treat invisible characters as blank.*
+    valid UTF-8, which the database had refused after the other fields were saved;
+    the topic screen treats invisible characters as blank. And a project or topic now
+    keeps its author, none from the import: WordPress made whoever saved one from its
+    screen the author, whose name and sign-in name oEmbed and the feeds publish (the
+    security re-check).*
   - *Next: the landing and About pages' words.*
 - Landing and About layouts locked to text-only edits. Their sections are custom
   blocks whose words are attributes, which `contentOnly` locking doesn't show to

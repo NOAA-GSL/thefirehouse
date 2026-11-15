@@ -259,13 +259,33 @@ final class TopicScreenTest extends WordPressTestCase {
 	}
 
 	/**
-	 * Text that isn't valid UTF-8 is refused before anything is saved.
+	 * Text that isn't valid UTF-8 is refused before anything is saved, and shown back
+	 * with each bad byte as �, which the refusal's transient can store; the rest stays
+	 * as typed.
 	 */
 	public function test_text_that_isnt_utf8_is_refused(): void {
-		$checked = Topic_Screen::check( array(), self::input( array( 'short' => "Fore\xC3(cast" ) ) );
+		$checked = Topic_Screen::check( array(), self::input( array( 'short' => "Fore\xC3(cast & <b>" ) ) );
 
-		$this->assertSame( array( 'short' => 'This field has characters that can’t be stored. Retype it, then save again.' ), $checked['errors'] );
-		$this->assertArrayNotHasKey( 'short', $checked['set'] );
+		$this->assertSame( array( 'short' => 'This field has characters that can’t be stored. Retype it.' ), $checked['errors'] );
+		$this->assertSame( "Fore\u{FFFD}(cast & <b>", $checked['values']['short'] );
+	}
+
+	/**
+	 * A label's control characters are dropped, as kses would have dropped them, since
+	 * a feed's XML can't hold them; a label of nothing else keeps the old one.
+	 */
+	public function test_a_labels_control_characters_are_dropped(): void {
+		$this->assertSame( 'Forecast', Topic_Screen::keep_label( array( 'post_title' => "Fore\x1B\x08\x00cast" ), array( 'ID' => 40 ) )['post_title'] );
+		$this->assertSame( 'Observations &amp; Monitoring', Topic_Screen::keep_label( array( 'post_title' => "\x07\x1F" ), array( 'ID' => 40 ) )['post_title'] );
+	}
+
+	/**
+	 * Characters that show something aren't blank, however new or private: an emoji
+	 * newer than the server's tables, or a private-use character.
+	 */
+	public function test_new_or_private_characters_arent_blank(): void {
+		$this->assertSame( array(), Topic_Screen::check( array(), self::input( array( 'short' => "\u{1FAE8}" ) ) )['errors'] );
+		$this->assertSame( array(), Topic_Screen::check( array(), self::input( array( 'short' => "\u{E000}" ) ) )['errors'] );
 	}
 
 	/**
@@ -582,7 +602,7 @@ final class TopicScreenTest extends WordPressTestCase {
 		Topic_Screen::editorial_box( self::post() );
 		$html = (string) ob_get_clean();
 
-		$this->assertStringContainsString( '<div id="firehouse-topic-errors" class="notice notice-error inline fh-edit-errors" tabindex="-1" autofocus aria-labelledby="firehouse-topic-errors-heading"><h2 id="firehouse-topic-errors-heading">Topic fields not saved: 2 problems</h2><p>Fix what’s marked, then update the topic again.</p>', $html );
+		$this->assertStringContainsString( '<div id="firehouse-topic-errors" class="notice notice-error inline fh-edit-errors" role="group" tabindex="-1" autofocus aria-labelledby="firehouse-topic-errors-heading"><h2 id="firehouse-topic-errors-heading">Topic fields not saved: 2 problems</h2><p>Fix what’s marked, then update the topic again.</p>', $html );
 		$this->assertStringContainsString( '<li><a href="#title">Label</a>: A topic needs a label.</li>', $html );
 		$this->assertStringContainsString( '<li><a href="#fh-topic-short">Short label</a>: A topic needs a short label.</li>', $html );
 		$this->assertStringContainsString( '<div class="fh-edit-screen"><p class="fh-edit-field__error" id="fh-topic-label-error"><strong>Error:</strong> A topic needs a label.</p></div>', $html );

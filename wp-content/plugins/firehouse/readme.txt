@@ -183,6 +183,8 @@ one is.
   screen says so.
 * The project and topic screens refuse text with characters that can't be stored,
   rather than saving the other fields without it.
+* Saving a project or topic no longer makes the editor its author, so no editor's name
+  is published as its author in link previews or feeds.
 * The name the plugin prints is FireHouse: the plugin's name, the role, the admin
   menu, the block titles, and the pages' titles and words. A site that imported its
   content before keeps the old spelling in its settings and in the landing and About

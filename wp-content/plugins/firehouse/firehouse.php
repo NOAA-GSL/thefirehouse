@@ -191,6 +191,10 @@ require_once __DIR__ . '/includes/class-head.php';
  *   makes an autosave (it leaves the Firehouse fields out) or restores a revision (it
  *   leaves a project's survey fields out), does it change. Other post types' lists,
  *   and every list anywhere else, are left as they are.
+ * - Every save of any post passes through Capabilities::keep_in_place
+ *   (`wp_insert_post_data`): a topic keeps its key and status, a project or topic its
+ *   author, and a limited editor's page its parent and slug. The plugin's own writes
+ *   aside, nothing else is changed.
  * - Every save of any post passes through Project_Rules::enforce
  *   (`wp_insert_post_data`, late): only a project's, and not the plugin's own, is
  *   changed. Its title is set from the researcher's; a publish, schedule or private
@@ -202,7 +206,9 @@ require_once __DIR__ . '/includes/class-head.php';
  *   Anything else is passed through as it is.
  * - Every save of any post also passes through Topic_Screen::keep_label
  *   (`wp_insert_post_data`, late): only a topic's, and not the plugin's own, is
- *   changed. Its title, the topic's label, is kept escaped, and an empty one keeps the
+ *   changed. Its title, the topic's label, is read as it was sent, before any
+ *   `title_save_pre` filter (kses or another plugin's), and kept escaped, without
+ *   control characters; one that would show nothing or isn't valid UTF-8 keeps the
  *   label it had.
  * - Every check of a meta capability (edit_post_meta, add_post_meta,
  *   delete_post_meta) on a key starting fh_, in any case, is refused on a project, a
