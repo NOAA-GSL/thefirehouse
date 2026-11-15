@@ -474,7 +474,7 @@ final class ProjectScreenTest extends WordPressTestCase {
 		$this->assertNotFalse( has_filter( 'hidden_meta_boxes', array( Project_Screen::class, 'show_box' ) ) );
 		$this->assertStringContainsString( ">\nTyped &lt;i&gt;summary&lt;/i&gt;</textarea>", $html );
 		$this->assertStringContainsString( '<input type="text" inputmode="url" id="fh-project-fullRecordUrl" name="firehouse[fullRecordUrl]" value="javascript:alert(1)" spellcheck="false" autocomplete="off" aria-invalid="true" aria-describedby="fh-project-fullRecordUrl-error fh-project-fullRecordUrl-description"', $html );
-		$this->assertStringContainsString( '<p class="fh-project-field__error" id="fh-project-fullRecordUrl-error"><strong>Error:</strong> The full record link has to be a web address.</p>', $html );
+		$this->assertStringContainsString( '<p class="fh-edit-field__error" id="fh-project-fullRecordUrl-error"><strong>Error:</strong> The full record link has to be a web address.</p>', $html );
 	}
 
 	/**
@@ -505,12 +505,12 @@ final class ProjectScreenTest extends WordPressTestCase {
 		$this->assertStringContainsString( '<li>Ana &lt;Ruiz&gt; &amp; co (CIRA)</li>', $html );
 		$this->assertStringContainsString( '<dt>Year completed</dt><dd>2024</dd>', $html );
 		$this->assertStringContainsString( '<li>made-up</li>', $html );
-		$this->assertStringContainsString( '<dt>IRB approval</dt><dd><span class="fh-survey__note">Approved, exempt, or not required</span></dd>', $html );
+		$this->assertStringContainsString( '<dt>IRB approval</dt><dd><span class="fh-edit-note">Approved, exempt, or not required</span></dd>', $html );
 		$this->assertStringContainsString( "<ol><li>First line\nsecond line</li></ol>", $html );
 		$this->assertStringContainsString( "<strong>Need:</strong> A need\n<strong>Recommendation:</strong> A recommendation", $html );
 		$this->assertStringContainsString( 'Address: javascript:alert(1)', $html );
 		$this->assertStringNotContainsString( 'href=', $html );
-		$this->assertStringContainsString( '<dt>Organization</dt><dd><span class="fh-survey__note">(No answer)</span></dd>', $html );
+		$this->assertStringContainsString( '<dt>Organization</dt><dd><span class="fh-edit-note">(No answer)</span></dd>', $html );
 		$this->assertStringContainsString( '<dt>Response ID</dt><dd>R_test</dd>', $html );
 	}
 
@@ -521,7 +521,7 @@ final class ProjectScreenTest extends WordPressTestCase {
 		$this->stored['fh_irbApproved'] = '';
 		ob_start();
 		Project_Screen::survey_box( self::post() );
-		$this->assertStringContainsString( '<dt>IRB approval</dt><dd><span class="fh-survey__note">Not recorded. Visitors can’t see a project without it.</span></dd>', (string) ob_get_clean() );
+		$this->assertStringContainsString( '<dt>IRB approval</dt><dd><span class="fh-edit-note">Not recorded. Visitors can’t see a project without it.</span></dd>', (string) ob_get_clean() );
 	}
 
 	/**
