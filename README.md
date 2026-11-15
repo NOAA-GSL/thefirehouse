@@ -641,8 +641,8 @@ nothing from the database. Each class's docblock has the detail; this is the map
   like a tag from a FireHouse Editor's save; the control characters kses would drop
   are dropped. An unchanged label is kept exactly as stored. One that's blank, judged
   on what the topic page prints, or isn't valid UTF-8 keeps the label the topic had,
-  and the screen refuses its fields with it and says why, under the title box. The title box shows the label as text (`edit_label()`)
-  and is named "Label". The
+  and the screen refuses its fields with it and says why, under the title box. The
+  title box shows the label as text (`edit_label()`) and is named "Label". The
   topic's introduction, which no page shows, and its order aren't on the screen, and
   no one can change its key or status (`Capabilities`).
 - `Project_Rules` holds three rules on every save of a project through WordPress's
