@@ -10,6 +10,7 @@ declare( strict_types = 1 );
 namespace Firehouse\Tests;
 
 use Brain\Monkey\Functions;
+use Firehouse\Importer;
 use Firehouse\Meta;
 use PHPUnit\Framework\Attributes\DataProvider;
 
@@ -52,18 +53,17 @@ final class MetaTest extends WordPressTestCase {
 	}
 
 	/**
-	 * Each field is a single value, out of the REST API and stored as given, and no
-	 * one may change it through WordPress's custom-field routes. Revisions hold a
-	 * topic's fields and a project's editorial ones only.
+	 * Each field is a single value, out of the REST API, kept in revisions and stored
+	 * as given, and no one may change it through WordPress's custom-field routes.
 	 */
-	public function test_fields_are_single_stored_as_given_and_closed(): void {
+	public function test_fields_are_single_revisioned_stored_as_given_and_closed(): void {
 		foreach ( array( 'fh_project', 'fh_topic' ) as $post_type ) {
 			foreach ( Meta::fields( $post_type ) as $name => $schema ) {
-				$args = Meta::args( $schema, Meta::revisioned( $post_type, $name ) );
+				$args = Meta::args( $schema );
 				$this->assertSame( $schema['type'], $args['type'], $name );
 				$this->assertTrue( $args['single'], $name );
 				$this->assertFalse( $args['show_in_rest'], $name );
-				$this->assertSame( Meta::revisioned( $post_type, $name ), $args['revisions_enabled'], $name );
+				$this->assertTrue( $args['revisions_enabled'], $name );
 				$this->assertArrayNotHasKey( 'sanitize_callback', $args, $name );
 				$this->assertSame( '__return_false', $args['auth_callback'], $name );
 			}
@@ -71,47 +71,62 @@ final class MetaTest extends WordPressTestCase {
 	}
 
 	/**
-	 * A project's revisions hold its editorial fields and none of the survey's, so a
-	 * restore can't roll back a researcher's words or the IRB approval (rules 1 and 4);
-	 * a topic's hold all of its fields.
+	 * A restore puts back a project's editorial fields and none of the survey's, so it
+	 * can't roll back a researcher's words or the IRB approval (rules 1 and 4); it puts
+	 * back all of a topic's fields.
 	 */
-	public function test_a_projects_revisions_hold_only_its_editorial_fields(): void {
-		$revisioned = array_keys( array_filter( Meta::fields( 'fh_project' ), static fn( array $schema, string $name ): bool => Meta::revisioned( 'fh_project', $name ), ARRAY_FILTER_USE_BOTH ) );
-		$this->assertSame( array( 'summary', 'publicationStatus', 'fullRecordUrl' ), $revisioned );
+	public function test_a_restore_puts_back_only_a_projects_editorial_fields(): void {
+		$restored = array_keys( array_filter( Meta::fields( 'fh_project' ), static fn( array $schema, string $name ): bool => Meta::restored( 'fh_project', $name ), ARRAY_FILTER_USE_BOTH ) );
+		$this->assertSame( array( 'summary', 'publicationStatus', 'fullRecordUrl' ), $restored );
 		foreach ( array( 'irbApproved', 'title', 'abstract', 'needs', 'org', 'geo', 'id' ) as $name ) {
-			$this->assertFalse( Meta::revisioned( 'fh_project', $name ), $name );
+			$this->assertFalse( Meta::restored( 'fh_project', $name ), $name );
 		}
 		foreach ( array_keys( Meta::fields( 'fh_topic' ) ) as $name ) {
-			$this->assertTrue( Meta::revisioned( 'fh_topic', $name ), $name );
+			$this->assertTrue( Meta::restored( 'fh_topic', $name ), $name );
 		}
 	}
 
 	/**
-	 * While an autosave of a project or topic is made, no field is among the revisioned
-	 * keys, so WordPress copies none from the request; anywhere else the list is kept.
+	 * The fields a restore puts back are the importer's editorial fields that are
+	 * meta, so a new editorial field can't be kept by the import and missed by a
+	 * restore.
+	 */
+	public function test_the_restored_fields_are_the_imports_editorial_ones(): void {
+		$this->assertSame( array_values( array_diff( Importer::EDITORIAL, array( 'slug', 'published' ) ) ), Meta::PROJECT_RESTORED );
+	}
+
+	/**
+	 * The revisioned keys: none of the fields while an autosave of a project or topic
+	 * is made, so WordPress copies none from the request; a project's editorial ones
+	 * only while a revision is restored; every field anywhere else, a revision's own
+	 * copy included; and other post types' lists as they are.
 	 *
 	 * @dataProvider revision_key_cases
 	 *
-	 * @param bool     $autosaving Whether an autosave is being made.
-	 * @param string   $post_type  The post type.
-	 * @param string[] $expected   The keys left.
+	 * @param string   $doing     The action under way, or ''.
+	 * @param string   $post_type The post type.
+	 * @param string[] $expected  The keys left.
 	 */
-	public function test_an_autosave_carries_no_field( bool $autosaving, string $post_type, array $expected ): void {
-		Functions\when( 'doing_action' )->alias( static fn( string $action ): bool => $autosaving && 'wp_creating_autosave' === $action );
-		$this->assertSame( $expected, Meta::revision_keys( array( 'fh_summary', 'other_key', 'fh_reviewedBy' ), $post_type ) );
+	public function test_the_revisioned_keys_are_narrowed_where_written_back( string $doing, string $post_type, array $expected ): void {
+		Functions\when( 'doing_action' )->alias( static fn( string $action ): bool => $doing === $action );
+		$this->assertSame( $expected, Meta::revision_keys( array( 'fh_summary', 'other_key', 'fh_org', 'fh_reviewedBy' ), $post_type ) );
 	}
 
 	/**
-	 * Whether an autosave is being made, the post type, and the keys left.
+	 * The action under way, the post type, and the keys left.
 	 *
-	 * @return array<string, array{0: bool, 1: string, 2: string[]}>
+	 * @return array<string, array{0: string, 1: string, 2: string[]}>
 	 */
 	public static function revision_key_cases(): array {
+		$all = array( 'fh_summary', 'other_key', 'fh_org', 'fh_reviewedBy' );
 		return array(
-			'project autosave' => array( true, 'fh_project', array( 'other_key' ) ),
-			'topic autosave'   => array( true, 'fh_topic', array( 'other_key' ) ),
-			'post autosave'    => array( true, 'post', array( 'fh_summary', 'other_key', 'fh_reviewedBy' ) ),
-			'project restore'  => array( false, 'fh_project', array( 'fh_summary', 'other_key', 'fh_reviewedBy' ) ),
+			'project autosave' => array( 'wp_creating_autosave', 'fh_project', array( 'other_key' ) ),
+			'topic autosave'   => array( 'wp_creating_autosave', 'fh_topic', array( 'other_key' ) ),
+			'post autosave'    => array( 'wp_creating_autosave', 'post', $all ),
+			'project restore'  => array( 'wp_restore_post_revision', 'fh_project', array( 'fh_summary', 'other_key' ) ),
+			'topic restore'    => array( 'wp_restore_post_revision', 'fh_topic', $all ),
+			'post restore'     => array( 'wp_restore_post_revision', 'post', $all ),
+			'project revision' => array( '', 'fh_project', $all ),
 		);
 	}
 

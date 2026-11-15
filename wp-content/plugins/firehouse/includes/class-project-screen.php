@@ -51,6 +51,11 @@ final class Project_Screen {
 	public const INPUT = 'firehouse';
 
 	/**
+	 * The key of a problem with the whole form, not one field.
+	 */
+	public const FORM = '_form';
+
+	/**
 	 * The editorial fields the screen edits, in the order it shows them. geoNote is
 	 * the note in the project's geography.
 	 */
@@ -98,6 +103,7 @@ final class Project_Screen {
 		add_action( 'load-post.php', array( self::class, 'load' ) );
 		add_action( 'edit_form_top', array( self::class, 'notice' ) );
 		add_filter( 'post_updated_messages', array( self::class, 'messages' ) );
+		add_filter( 'wp_refresh_nonces', array( self::class, 'refresh_nonce' ), 11, 2 );
 	}
 
 	/**
@@ -230,7 +236,7 @@ final class Project_Screen {
 	public static function editorial_box( \WP_Post $post ): void {
 		$values = self::$refused['values'] ?? self::values( Store::project( $post )['fields'] );
 		$errors = self::$refused['errors'] ?? array();
-		wp_nonce_field( self::NONCE . '_' . $post->ID, self::NONCE_FIELD );
+		wp_nonce_field( self::NONCE . '_' . $post->ID, self::NONCE_FIELD, false );
 
 		echo '<div class="fh-project-screen">';
 		echo '<p>' . esc_html__( 'The FireHouse team’s own fields. Saving the project saves them; a new import of the survey never changes them.', 'firehouse' ) . '</p>';
@@ -469,6 +475,30 @@ final class Project_Screen {
 	}
 
 	/**
+	 * Refreshes the screen's nonce when WordPress refreshes its own, through the
+	 * heartbeat: as a nonce ages, and after signing in again in the session-expired
+	 * dialog, when every nonce the page holds is stale. WordPress's script sets each
+	 * value it's sent by the element's ID, which wp_nonce_field() gives the name.
+	 * Without it, the screen's form would go stale while WordPress's own nonce stayed
+	 * fresh, and the save would drop the editorial fields.
+	 *
+	 * @param array<string, mixed> $response The heartbeat's response.
+	 * @param array<string, mixed> $data     What the heartbeat sent.
+	 * @return array<string, mixed>
+	 */
+	public static function refresh_nonce( array $response, array $data ): array {
+		$id = isset( $data['wp-refresh-post-nonces']['post_id'] ) && is_scalar( $data['wp-refresh-post-nonces']['post_id'] ) ? absint( $data['wp-refresh-post-nonces']['post_id'] ) : 0;
+		if ( 0 === $id || ! isset( $response['wp-refresh-post-nonces']['replace'] ) || ! is_array( $response['wp-refresh-post-nonces']['replace'] ) ) {
+			return $response;
+		}
+		if ( Post_Types::PROJECT !== get_post_type( $id ) || ! current_user_can( 'edit_post', $id ) ) {
+			return $response;
+		}
+		$response['wp-refresh-post-nonces']['replace'][ self::NONCE_FIELD ] = wp_create_nonce( self::NONCE . '_' . $id );
+		return $response;
+	}
+
+	/**
 	 * Saves the editorial fields with the post, from the screen's own form only (Save
 	 * Draft, Publish, Update, or a draft's Preview, which saves the draft): not from
 	 * Quick Edit, an autosave, or the plugin's own writes. Nothing is saved if any
@@ -483,7 +513,12 @@ final class Project_Screen {
 		if ( Store::writing() || ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || Post_Types::PROJECT !== $post->post_type ) {
 			return;
 		}
-		if ( ! isset( $_POST[ self::NONCE_FIELD ] ) || ! is_string( $_POST[ self::NONCE_FIELD ] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST[ self::NONCE_FIELD ] ) ), self::NONCE . '_' . $post_id ) ) {
+		if ( ! isset( $_POST[ self::NONCE_FIELD ] ) || ! is_string( $_POST[ self::NONCE_FIELD ] ) ) {
+			return;
+		}
+		$fresh = wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST[ self::NONCE_FIELD ] ) ), self::NONCE . '_' . $post_id );
+		if ( ! $fresh ) {
+			self::refuse_stale( $post_id, $post );
 			return;
 		}
 		if ( ! current_user_can( 'edit_post', $post_id ) ) {
@@ -511,6 +546,34 @@ final class Project_Screen {
 		}
 		delete_transient( self::transient( $post_id ) );
 		Store::update_fields( $post_id, $checked['set'], $checked['delete'] );
+	}
+
+	/**
+	 * When the screen's nonce has gone stale but WordPress's own save of the post went
+	 * through (post.php's editpost, which checks WordPress's nonce first), the editorial
+	 * fields aren't saved, and the screen says so and shows what was typed, rather than
+	 * dropping it quietly under WordPress's "Project updated." Anything else with a
+	 * stale nonce changes nothing and says nothing.
+	 *
+	 * @param int      $post_id The post.
+	 * @param \WP_Post $post    The post as saved.
+	 */
+	private static function refuse_stale( int $post_id, \WP_Post $post ): void {
+		$action = isset( $_POST['action'] ) && is_string( $_POST['action'] ) ? sanitize_key( wp_unslash( $_POST['action'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- WordPress checked its own nonce for editpost before saving the post; this only decides whether to say so.
+		if ( 'editpost' !== $action || ! isset( $_POST[ self::INPUT ] ) || ! is_array( $_POST[ self::INPUT ] ) || ! current_user_can( 'edit_post', $post_id ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- As above.
+			return;
+		}
+		$input = wp_unslash( $_POST[ self::INPUT ] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Shown back to the same user, escaped; nothing is saved.
+		$typed = self::check( Store::project( $post )['fields'], is_array( $input ) ? $input : array() )['values'];
+		set_transient(
+			self::transient( $post_id ),
+			array(
+				'values' => $typed,
+				'errors' => array( self::FORM => __( 'The screen had been open too long, so they weren’t saved. They’re below as you typed them: save the project again.', 'firehouse' ) ),
+			),
+			self::KEEP
+		);
+		add_filter( 'redirect_post_location', array( self::class, 'without_message' ) );
 	}
 
 	/**
@@ -560,9 +623,12 @@ final class Project_Screen {
 			$errors['fullRecordUrl'] ??= __( 'The full record link has to be a web address starting with https:// or http://.', 'firehouse' );
 		}
 
-		$geo  = is_array( $fields['geo'] ?? null ) ? $fields['geo'] : null;
-		$note = $values['geoNote'];
-		if ( null !== $geo || '' !== $note ) {
+		// The geography is written only when its note changes, so a save never stands
+		// or falls on the survey's regions, which the editor can't change.
+		$geo    = is_array( $fields['geo'] ?? null ) ? $fields['geo'] : null;
+		$note   = $values['geoNote'];
+		$stored = is_string( $geo['note'] ?? null ) ? $geo['note'] : '';
+		if ( $note !== $stored ) {
 			$geo = $geo ?? array( 'regions' => array() );
 			unset( $geo['note'] );
 			if ( '' !== $note ) {
@@ -620,9 +686,12 @@ final class Project_Screen {
 		echo '<div id="firehouse-project-errors" class="notice notice-error inline" tabindex="-1" autofocus><h2>';
 		/* translators: %d: how many problems. */
 		echo esc_html( sprintf( _n( 'Editorial fields not saved: %d problem', 'Editorial fields not saved: %d problems', $count, 'firehouse' ), $count ) );
-		echo '</h2><p>' . esc_html__( 'Fix what’s marked, then save the project again. The project’s other changes, such as its status, were saved.', 'firehouse' ) . '</p><ul>';
+		$marked = array() !== array_diff_key( self::$refused['errors'], array( self::FORM => true ) );
+		echo '</h2><p>' . ( $marked ? esc_html__( 'Fix what’s marked, then save the project again.', 'firehouse' ) . ' ' : '' ) . esc_html__( 'The project’s other changes, such as its status, were saved.', 'firehouse' ) . '</p><ul>';
 		foreach ( self::$refused['errors'] as $name => $message ) {
-			echo '<li><a href="#fh-project-' . esc_attr( $name ) . '">' . esc_html( $labels[ $name ] ?? $name ) . '</a>: ' . esc_html( $message ) . '</li>';
+			echo self::FORM === $name
+				? '<li>' . esc_html( $message ) . '</li>'
+				: '<li><a href="#fh-project-' . esc_attr( $name ) . '">' . esc_html( $labels[ $name ] ?? $name ) . '</a>: ' . esc_html( $message ) . '</li>';
 		}
 		echo '</ul></div>';
 	}

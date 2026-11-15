@@ -353,18 +353,28 @@ final class ProjectScreenTest extends WordPressTestCase {
 	}
 
 	/**
-	 * A good save writes each field slashed, so WordPress stores it as typed, removes the
-	 * empty ones, and clears any refusal still waiting, such as one from a preview.
+	 * A good save stores each field exactly as typed through WordPress's slashing and
+	 * unslashing, removes the empty ones, and clears any refusal still waiting, such
+	 * as one from a preview.
 	 */
 	public function test_a_good_save_writes_each_field_slashed(): void {
 		Functions\when( 'wp_verify_nonce' )->justReturn( 1 );
 		Functions\when( 'current_user_can' )->justReturn( true );
-		Functions\when( 'wp_slash' )->alias( static fn( mixed $value ): mixed => is_string( $value ) ? addslashes( $value ) : $value );
+		// As WordPress does: the request arrives slashed, wp_unslash() and
+		// update_post_meta() each strip one level, and wp_slash() adds one.
+		$strip = static function ( mixed $value ) use ( &$strip ): mixed {
+			return is_array( $value ) ? array_map( $strip, $value ) : ( is_string( $value ) ? stripslashes( $value ) : $value );
+		};
+		$add   = static function ( mixed $value ) use ( &$add ): mixed {
+			return is_array( $value ) ? array_map( $add, $value ) : ( is_string( $value ) ? addslashes( $value ) : $value );
+		};
+		Functions\when( 'wp_unslash' )->alias( $strip );
+		Functions\when( 'wp_slash' )->alias( $add );
 		Functions\expect( 'delete_transient' )->once()->with( 'firehouse_project_41_6' );
 		$written = array();
 		Functions\when( 'update_post_meta' )->alias(
-			static function ( int $id, string $key, mixed $value ) use ( &$written ): bool {
-				$written[ $key ] = $value;
+			static function ( int $id, string $key, mixed $value ) use ( &$written, $strip ): bool {
+				$written[ $key ] = $strip( $value );
 				return true;
 			}
 		);
@@ -375,27 +385,43 @@ final class ProjectScreenTest extends WordPressTestCase {
 				return true;
 			}
 		);
-		$_POST = array(
-			'firehouse_project_nonce' => 'good',
-			'firehouse'               => array(
-				'summary'           => 'It\'s a \\ summary',
-				'publicationStatus' => 'published',
-				'geoNote'           => '',
-				'fullRecordUrl'     => '',
-			),
+		$typed = 'It\'s a \\ summary, "quoted"';
+		$_POST = $add(
+			array(
+				'firehouse_project_nonce' => 'good',
+				'firehouse'               => array(
+					'summary'           => $typed,
+					'publicationStatus' => 'published',
+					'geoNote'           => 'Front Range',
+					'fullRecordUrl'     => '',
+				),
+			)
 		);
 		Project_Screen::save( 41, self::post() );
 
 		$this->assertSame( array( 'fh_fullRecordUrl' ), $deleted );
-		$this->assertSame( 'It\\\'s a \\\\ summary', $written['fh_summary'] );
+		$this->assertSame( $typed, $written['fh_summary'] );
 		$this->assertSame( 'published', $written['fh_publicationStatus'] );
-		$this->assertSame( array( 'regions' => array( 'GBCC' ) ), $written['fh_geo'] );
+		$this->assertSame(
+			array(
+				'regions' => array( 'GBCC' ),
+				'note'    => 'Front Range',
+			),
+			$written['fh_geo']
+		);
 	}
 
 	/**
 	 * The form shows each stored value exactly, entities included, each control labelled and described.
 	 */
 	public function test_the_form_shows_each_value_exactly_as_stored(): void {
+		$nonce = null;
+		Functions\when( 'wp_nonce_field' )->alias(
+			static function ( mixed ...$args ) use ( &$nonce ): string {
+				$nonce = $args;
+				return '';
+			}
+		);
 		$this->stored['fh_publicationStatus'] = 'in-review';
 		$this->stored['fh_fullRecordUrl']     = 'https://example.org/?a=1&amp;b=2';
 		ob_start();
@@ -412,6 +438,7 @@ final class ProjectScreenTest extends WordPressTestCase {
 			$this->assertStringContainsString( 'aria-describedby="fh-project-' . $name . '-description"', $html );
 		}
 		$this->assertStringNotContainsString( 'aria-invalid', $html );
+		$this->assertSame( array( 'firehouse_project_fields_41', 'firehouse_project_nonce', false ), $nonce, 'The project’s nonce, with no second referer field.' );
 	}
 
 	/**
@@ -563,6 +590,98 @@ final class ProjectScreenTest extends WordPressTestCase {
 			),
 			$messages['post']
 		);
+	}
+
+	/**
+	 * The geography is written only when its note changes, so a save never stands or
+	 * falls on the survey's regions.
+	 */
+	public function test_the_geography_is_written_only_when_its_note_changes(): void {
+		Functions\when( 'rest_validate_value_from_schema' )->alias( static fn( mixed $value, array $schema, string $name ): mixed => 'geo' === $name ? new \WP_Error( 'x', 'geo[regions][0] is not one of the regions.' ) : true );
+		$same = Project_Screen::check( self::fields(), self::input( array( 'geoNote' => 'Old note' ) ) );
+		$this->assertSame( array(), $same['errors'] );
+		$this->assertArrayNotHasKey( 'geo', $same['set'] );
+
+		$changed = Project_Screen::check( self::fields(), self::input( array( 'geoNote' => 'New note' ) ) );
+		$this->assertSame( array( 'geoNote' ), array_keys( $changed['errors'] ) );
+	}
+
+	/**
+	 * WordPress's heartbeat refreshes the screen's nonce with its own, for a project
+	 * the user may edit, and adds nothing anywhere else.
+	 */
+	public function test_the_nonce_is_refreshed_with_wordpresss(): void {
+		Functions\when( 'get_post_type' )->alias( static fn( int $id ): string => 41 === $id ? 'fh_project' : 'post' );
+		Functions\when( 'current_user_can' )->alias( static fn( string $cap, int $id ): bool => 7 !== $id );
+		Functions\when( 'wp_create_nonce' )->alias( static fn( string $action ): string => 'nonce-for-' . $action );
+		$response = array( 'wp-refresh-post-nonces' => array( 'replace' => array( '_wpnonce' => 'core' ) ) );
+		$asked    = static fn( mixed $id ): array => array( 'wp-refresh-post-nonces' => array( 'post_id' => $id ) );
+
+		$refreshed = Project_Screen::refresh_nonce( $response, $asked( '41' ) );
+		$this->assertSame( 'nonce-for-firehouse_project_fields_41', $refreshed['wp-refresh-post-nonces']['replace']['firehouse_project_nonce'] );
+		$this->assertSame( 'core', $refreshed['wp-refresh-post-nonces']['replace']['_wpnonce'] );
+
+		$this->assertSame( $response, Project_Screen::refresh_nonce( $response, $asked( '12' ) ), 'not a project' );
+		$this->assertSame( $response, Project_Screen::refresh_nonce( $response, $asked( array( 41 ) ) ), 'not an ID' );
+		$this->assertSame( $response, Project_Screen::refresh_nonce( $response, array() ), 'nothing asked' );
+		$checked = array( 'wp-refresh-post-nonces' => array( 'check' => 1 ) );
+		$this->assertSame( $checked, Project_Screen::refresh_nonce( $checked, $asked( '41' ) ), 'WordPress refused its own' );
+		Functions\when( 'get_post_type' )->justReturn( 'fh_project' );
+		$this->assertSame( $response, Project_Screen::refresh_nonce( $response, $asked( '7' ) ), 'may not edit' );
+	}
+
+	/**
+	 * When the screen's nonce has gone stale on WordPress's own save of the post, the
+	 * fields aren't saved, and the screen says so with what was typed; a stale nonce
+	 * anywhere else changes and says nothing.
+	 */
+	public function test_a_stale_nonce_on_wordpresss_save_is_refused_out_loud(): void {
+		Functions\when( 'wp_verify_nonce' )->justReturn( false );
+		Functions\when( 'current_user_can' )->justReturn( true );
+		Functions\when( 'sanitize_key' )->returnArg();
+		Functions\expect( 'update_post_meta' )->never();
+		$kept = null;
+		Functions\when( 'set_transient' )->alias(
+			static function ( string $key, mixed $value ) use ( &$kept ): bool {
+				$kept = $value;
+				return true;
+			}
+		);
+		$_POST = array(
+			'action'                  => 'inline-save',
+			'firehouse_project_nonce' => 'stale',
+			'firehouse'               => self::input( array( 'summary' => 'Typed' ) ),
+		);
+		Project_Screen::save( 41, self::post() );
+		$this->assertNull( $kept, 'not WordPress’s save of the post' );
+
+		$_POST['action'] = 'editpost';
+		Project_Screen::save( 41, self::post() );
+		$this->assertSame( 'Typed', $kept['values']['summary'] );
+		$this->assertSame( array( Project_Screen::FORM ), array_keys( $kept['errors'] ) );
+		$this->assertNotFalse( has_filter( 'redirect_post_location', array( Project_Screen::class, 'without_message' ) ) );
+	}
+
+	/**
+	 * A problem with the whole form is listed without a link to a field.
+	 */
+	public function test_a_form_wide_problem_has_no_field_link(): void {
+		$_GET = array( 'post' => '41' );
+		Functions\when( 'get_post' )->justReturn( self::post() );
+		Functions\when( 'wp_add_inline_style' )->justReturn( true );
+		Functions\when( 'delete_transient' )->justReturn( true );
+		Functions\when( 'get_transient' )->justReturn(
+			array(
+				'values' => array_fill_keys( Project_Screen::FIELDS, '' ),
+				'errors' => array( Project_Screen::FORM => 'Open too long.' ),
+			)
+		);
+		Project_Screen::load();
+		ob_start();
+		Project_Screen::notice( self::post() );
+		$html = (string) ob_get_clean();
+		$this->assertStringContainsString( '<ul><li>Open too long.</li></ul>', $html );
+		$this->assertStringNotContainsString( 'Fix what’s marked', $html, 'Nothing is marked.' );
 	}
 
 	/**

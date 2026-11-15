@@ -24,21 +24,21 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Only the plugin's own code writes these fields, through Store. WordPress's custom
  * field screens and requests can't: they ask for edit_post_meta, which no one is
- * given, so they can't change a survey field around rule 4. On a revision, where the
- * auth_callback registered here doesn't apply, Capabilities::map_meta_cap() refuses
- * them instead. Neither post type is in
- * the REST API, so WordPress would never check a value against its schema on its own;
- * refuse_invalid() checks every write with validate() instead.
+ * given, so they can't change a survey field around rule 4. Capabilities::map_meta_cap()
+ * refuses them too, for a key in any case and on a revision, where the auth_callback
+ * registered here doesn't reach. Neither post type is in the REST API, so WordPress
+ * would never check a value against its schema on its own; refuse_invalid() checks
+ * every write with validate() instead.
  *
- * Revisions hold a project's own editorial fields only (revisioned()). A survey field
- * comes from the survey record, so restoring a revision, which puts back every field
- * the revisions hold, must never roll one back: not the researcher's words (rules 1
- * and 4), and not the IRB approval that decides whether visitors see the project. A
- * topic's fields are all the team's and the synthesis's, and stay in its revisions.
+ * Revisions hold every field, so a re-import that changes a researcher's words leaves
+ * a record of the old ones. A restore puts back only the fields the team owns
+ * (restored(), through revision_keys()): a survey field comes from the survey record,
+ * so a restore must never roll one back, not the researcher's words (rules 1 and 4),
+ * and not the IRB approval that decides whether visitors see the project. A topic's
+ * fields are all the team's and the synthesis's, and a restore puts them all back.
  * An autosave takes nothing from the request (revision_keys()): WordPress would copy
  * any revisioned field sent with it into the autosave, for a restore to write. A new
- * autosave still copies the post's own revisioned fields, as any revision does, so
- * restoring an old one puts back those fields as they were then.
+ * autosave still copies the post's own fields, as any revision does.
  */
 final class Meta {
 
@@ -72,10 +72,11 @@ final class Meta {
 	);
 
 	/**
-	 * A project's fields its revisions hold: the editorial ones its edit screen saves.
-	 * Its geography isn't one, since it holds the survey's regions beside the note.
+	 * A project's fields a restore puts back: the editorial ones its edit screen saves,
+	 * which are Importer::EDITORIAL's that are meta. Its geography isn't one, since it
+	 * holds the survey's regions beside the note.
 	 */
-	public const PROJECT_REVISIONED = array( 'summary', 'publicationStatus', 'fullRecordUrl' );
+	public const PROJECT_RESTORED = array( 'summary', 'publicationStatus', 'fullRecordUrl' );
 
 	/**
 	 * The schemas, read once per request.
@@ -97,31 +98,44 @@ final class Meta {
 	}
 
 	/**
-	 * Whether a field is kept in its post's revisions, and so put back by a restore.
+	 * Whether a restore puts a field back from a revision.
 	 *
 	 * @param string $post_type Post_Types::PROJECT or Post_Types::TOPIC.
 	 * @param string $name      The field's name in types.ts.
 	 */
-	public static function revisioned( string $post_type, string $name ): bool {
-		return Post_Types::TOPIC === $post_type || in_array( $name, self::PROJECT_REVISIONED, true );
+	public static function restored( string $post_type, string $name ): bool {
+		return Post_Types::TOPIC === $post_type || in_array( $name, self::PROJECT_RESTORED, true );
 	}
 
 	/**
-	 * Leaves the fields out of the revisioned keys while WordPress makes an autosave of
-	 * a project or topic, so it copies none from the request into the autosave. The
-	 * edit screen's own form never sends a field under its meta key, so a real autosave
-	 * loses nothing; only a forged one, which a restore would then write, is stopped.
-	 * The list is left as it is everywhere else.
+	 * The revisioned keys of a project or topic, narrowed where WordPress would write
+	 * them back:
+	 *
+	 * - While it makes an autosave, none, so it copies none from the request into the
+	 *   autosave. The edit screen's own form never sends a field under its meta key,
+	 *   so a real autosave loses nothing; only a forged one, which a restore would then
+	 *   write, is stopped.
+	 * - While it restores a revision, only the fields restored() names, so a restore
+	 *   never rolls back a survey field.
+	 *
+	 * Everywhere else, saving a revision included, every field is kept.
 	 *
 	 * @param string[] $keys      The meta keys WordPress keeps in revisions.
 	 * @param string   $post_type The post type.
 	 * @return string[]
 	 */
 	public static function revision_keys( array $keys, string $post_type ): array {
-		if ( ! doing_action( 'wp_creating_autosave' ) || ! in_array( $post_type, array( Post_Types::PROJECT, Post_Types::TOPIC ), true ) ) {
+		if ( ! in_array( $post_type, array( Post_Types::PROJECT, Post_Types::TOPIC ), true ) ) {
 			return $keys;
 		}
-		return array_values( array_filter( $keys, static fn( mixed $key ): bool => ! is_string( $key ) || ! str_starts_with( $key, self::PREFIX ) ) );
+		$ours = static fn( mixed $key ): bool => is_string( $key ) && str_starts_with( $key, self::PREFIX );
+		if ( doing_action( 'wp_creating_autosave' ) ) {
+			return array_values( array_filter( $keys, static fn( mixed $key ): bool => ! $ours( $key ) ) );
+		}
+		if ( doing_action( 'wp_restore_post_revision' ) ) {
+			return array_values( array_filter( $keys, static fn( mixed $key ): bool => ! $ours( $key ) || self::restored( $post_type, substr( $key, strlen( self::PREFIX ) ) ) ) );
+		}
+		return $keys;
 	}
 
 	/**
@@ -216,7 +230,7 @@ final class Meta {
 	public static function register(): void {
 		foreach ( array( Post_Types::PROJECT, Post_Types::TOPIC ) as $post_type ) {
 			foreach ( self::fields( $post_type ) as $name => $schema ) {
-				register_post_meta( $post_type, self::key( $name ), self::args( $schema, self::revisioned( $post_type, $name ) ) );
+				register_post_meta( $post_type, self::key( $name ), self::args( $schema ) );
 			}
 		}
 	}
@@ -341,17 +355,16 @@ final class Meta {
 	/**
 	 * The arguments a field is registered with.
 	 *
-	 * @param array<string, mixed> $schema     The field's schema.
-	 * @param bool                 $revisioned Whether its post's revisions hold it.
+	 * @param array<string, mixed> $schema The field's schema.
 	 * @return array<string, mixed>
 	 */
-	public static function args( array $schema, bool $revisioned ): array {
+	public static function args( array $schema ): array {
 		return array(
 			'type'              => $schema['type'],
 			'description'       => $schema['description'] ?? '',
 			'single'            => true,
 			'show_in_rest'      => false,
-			'revisions_enabled' => $revisioned,
+			'revisions_enabled' => true,
 			'auth_callback'     => '__return_false',
 		);
 	}

@@ -1863,20 +1863,32 @@ marked below.
     had been kept in revisions since Phase 1, and a restore puts back every field the
     revisions hold. So restoring an older revision rolled back the survey's answers,
     IRB approval included, and a forged autosave could hold any field for a restore
-    to write. Now a project's revisions hold its editorial fields only (summary,
-    publication status, full-record link), not its geography, which holds the
-    survey's regions, and an autosave of a project or topic takes no field from the
-    request (a new one still copies the post's own, as any revision does). A topic's
-    revisions still hold all its fields; the synthesis screen decides what restoring
-    one may do. Tried on the local copy: the forged autosave carried nothing, and an
-    older revision with other survey answers restored only the summary.*
+    to write. Now revisions still hold every field, so a re-import that changes a
+    researcher's words keeps the old ones on record (the code review, 15 November,
+    asked for that history), but a restore puts back only a project's editorial
+    fields (summary, publication status, full-record link), not its geography, which
+    holds the survey's regions. An autosave of a project or topic takes no field from
+    the request (a new one still copies the post's own, as any revision does). A
+    topic's restore puts back all its fields; the synthesis screen decides what
+    restoring one may do. Tried on the local copy: the forged autosave carried
+    nothing, and an older revision with other survey answers restored only the
+    summary.*
   - *The security re-check (15 November) confirmed that, on every route, and found
     one more, older still: the fields' refusal (`auth_callback`) is registered for
     projects and topics, not their revisions, and WordPress checks a revision's field
     against its post. So WordPress's custom-field routes let anyone who may edit a
     topic rewrite a field on one of its revisions, for a restore to write back: a
-    synthesis's wording, sources or reviewer. `Capabilities::map_meta_cap()` now
-    refuses changing, adding or deleting a FireHouse field on any revision.*
+    synthesis's wording, sources or reviewer; adding a field there even passed on to
+    the topic itself. And a key in another case (`FH_irbApproved`) escaped the refusal
+    on the post itself, though the database matches keys ignoring case, so the topic
+    pages' count of public projects would have counted it. `Capabilities::map_meta_cap()`
+    now refuses changing, adding or deleting a FireHouse field, in any case, on a
+    project, a topic or a revision of either.*
+  - *From the code review (15 November): the screen's nonce is refreshed with
+    WordPress's through the heartbeat, as after signing in again in the
+    session-expired dialog, and a stale one on WordPress's own save says so and keeps
+    what was typed, where the editorial fields had been dropped quietly under "Project
+    updated." The geography is written only when its note changes.*
   - *Left for Eric and the team: WordPress's revisions screen compares only the
     title, so an editor restoring the team's fields can't see their history first.*
   - *Next: the slug's lock, and refusing to publish a project without IRB approval

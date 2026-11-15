@@ -159,10 +159,14 @@ one is.
   with a field that's wrong, such as a link that isn't a web address, saves none of
   them, and the screen comes back with what was typed and each problem marked. The
   project's other changes, such as publishing it, are still saved.
-* A project's revisions keep only the FireHouse team's fields, so restoring one never
-  changes the researcher's answers or the project's IRB approval. An autosave of a
-  project or topic takes no FireHouse field from the request, and no one can change a
-  FireHouse field stored on a revision, which a restore would write back.
+* Restoring a project's revision puts back only the FireHouse team's summary,
+  publication status and full-record link, never the researcher's answers or the
+  project's IRB approval, which the revisions still record. An autosave of a project
+  or topic takes no FireHouse field from the request, and WordPress's custom-fields
+  tools can't change a FireHouse field on a project, a topic or a revision of either.
+* A project's edit screen keeps its security token fresh along with WordPress's, as
+  after signing in again, and if it goes stale anyway, says the editorial fields
+  weren't saved rather than dropping them quietly.
 * The name the plugin prints is FireHouse: the plugin's name, the role, the admin
   menu, the block titles, and the pages' titles and words. A site that imported its
   content before keeps the old spelling in its settings and in the landing and About
