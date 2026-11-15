@@ -81,6 +81,15 @@ abstract class Edit_Screen {
 	private const KEEP = 5 * MINUTE_IN_SECONDS;
 
 	/**
+	 * Characters that show nothing on their own, beyond spaces, controls and format
+	 * characters, as a regular expression's class: the combining grapheme joiner, the
+	 * Hangul and Mongolian fillers and selectors, the variation selectors, the blank
+	 * Braille pattern. Beside a visible character, as in an emoji's variation, they
+	 * don't make text blank.
+	 */
+	private const INVISIBLE = '\x{034F}\x{115F}\x{1160}\x{17B4}\x{17B5}\x{180B}-\x{180F}\x{2800}\x{3164}\x{FE00}-\x{FE0F}\x{FFA0}\x{E0100}-\x{E01EF}';
+
+	/**
 	 * The styles every screen shares, for its fields and its read-only boxes.
 	 */
 	private const STYLE = '.fh-edit-screen .fh-edit-field{margin:0 0 1.5em}'
@@ -272,14 +281,14 @@ abstract class Edit_Screen {
 
 	/**
 	 * Whether text would show nothing: only spaces, line breaks, control characters
-	 * and invisible ones such as a no-break or zero-width space, written as characters
-	 * or as entities, since pages print text escaped without escaping an entity again. Text
+	 * and invisible ones such as a no-break or zero-width space or a variation
+	 * selector (INVISIBLE), written as characters or as entities, since pages print text escaped without escaping an entity again. Text
 	 * that isn't valid UTF-8 shows nothing either.
 	 *
 	 * @param string $text The text.
 	 */
 	protected static function blank( string $text ): bool {
-		return 1 !== preg_match( '/[^\p{Z}\p{Cc}\p{Cf}]/u', html_entity_decode( $text, ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
+		return 1 !== preg_match( '/[^\p{Z}\p{Cc}\p{Cf}' . self::INVISIBLE . ']/u', html_entity_decode( $text, ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
 	}
 
 	/**

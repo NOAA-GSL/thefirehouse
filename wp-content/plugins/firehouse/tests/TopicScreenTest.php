@@ -236,6 +236,10 @@ final class TopicScreenTest extends WordPressTestCase {
 			'entities'           => array( '&nbsp;&#8203; &#32;' ),
 			'a line break'       => array( "\n" ),
 			'nothing'            => array( '' ),
+			'a grapheme joiner'  => array( "\u{034F}" ),
+			'variation selector' => array( "\u{FE0F}\u{E0100}" ),
+			'fillers'            => array( "\u{3164}\u{FFA0}\u{115F}" ),
+			'a blank Braille'    => array( "\u{2800}" ),
 		);
 	}
 
@@ -286,6 +290,33 @@ final class TopicScreenTest extends WordPressTestCase {
 	public function test_new_or_private_characters_arent_blank(): void {
 		$this->assertSame( array(), Topic_Screen::check( array(), self::input( array( 'short' => "\u{1FAE8}" ) ) )['errors'] );
 		$this->assertSame( array(), Topic_Screen::check( array(), self::input( array( 'short' => "\u{E000}" ) ) )['errors'] );
+		$this->assertSame( array(), Topic_Screen::check( array(), self::input( array( 'short' => "\u{2764}\u{FE0F}" ) ) )['errors'], 'An emoji with its variation selector.' );
+	}
+
+	/**
+	 * A label is blank by what the topic page shows: an entity escaped once more, which
+	 * the page prints as the entity, shows nothing, and keeps the old label; one escaped
+	 * twice more shows as text.
+	 */
+	public function test_a_label_is_blank_by_what_the_page_shows(): void {
+		// As WordPress's: an entity isn't escaped again, where Brain Monkey's would be.
+		Functions\when( 'esc_html' )->alias( static fn( string $text ): string => htmlspecialchars( $text, ENT_QUOTES, 'UTF-8', false ) );
+		$this->assertSame( 'Observations &amp; Monitoring', Topic_Screen::keep_label( array( 'post_title' => '&amp;amp;nbsp;' ), array( 'ID' => 40 ) )['post_title'] );
+		$this->assertSame( '&amp;amp;nbsp;', Topic_Screen::keep_label( array( 'post_title' => '&amp;amp;amp;nbsp;' ), array( 'ID' => 40 ) )['post_title'] );
+	}
+
+	/**
+	 * An unchanged label is kept exactly as stored, sent as the title box shows it or
+	 * as Quick Edit does, even one holding literal entity text, which a change can't
+	 * keep.
+	 */
+	public function test_an_unchanged_label_is_kept_as_stored(): void {
+		$this->posts[40]->post_title = 'Fire &amp;amp; Smoke';
+		$kept                        = static fn( string $sent ): mixed => Topic_Screen::keep_label( array( 'post_title' => $sent ), array( 'ID' => 40 ) )['post_title'];
+
+		$this->assertSame( 'Fire &amp;amp; Smoke', $kept( ' Fire &amp; Smoke ' ), 'As the title box shows it.' );
+		$this->assertSame( 'Fire &amp;amp; Smoke', $kept( 'Fire &amp;amp; Smoke' ), 'As Quick Edit sends it.' );
+		$this->assertSame( 'Fire &amp; Smoke 2', $kept( 'Fire &amp; Smoke 2' ), 'Changed, it’s read back to text.' );
 	}
 
 	/**

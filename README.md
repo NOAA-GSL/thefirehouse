@@ -639,9 +639,9 @@ nothing from the database. Each class's docblock has the detail; this is the map
   any route that saves it (`Topic_Screen::keep_label()`, on `wp_insert_post_data`,
   late). It's read as it was sent, before kses, which would strip anything that looks
   like a tag from a FireHouse Editor's save; the control characters kses would drop
-  are dropped. One that's blank or isn't valid UTF-8
-  keeps the label the topic had, and the screen refuses its fields with it and says
-  why, under the title box. The title box shows the label as text (`edit_label()`)
+  are dropped. An unchanged label is kept exactly as stored. One that's blank, judged
+  on what the topic page prints, or isn't valid UTF-8 keeps the label the topic had,
+  and the screen refuses its fields with it and says why, under the title box. The title box shows the label as text (`edit_label()`)
   and is named "Label". The
   topic's introduction, which no page shows, and its order aren't on the screen, and
   no one can change its key or status (`Capabilities`).

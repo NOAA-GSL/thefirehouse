@@ -109,8 +109,16 @@ final class Topic_Screen extends Edit_Screen {
 	 * of anyone who may not post unfiltered HTML, such as a FireHouse Editor: the
 	 * title box shows the label as text (edit_label()), so kses would strip whatever
 	 * looks like a tag, such as "<PM2.5>", from a label no one changed. It's escaped
-	 * here instead. Quick Edit sends the label escaped, as stored, so the title is read
-	 * back to text first, as Store::topic() reads it.
+	 * here instead. Quick Edit sends the label escaped, as stored, so a changed title
+	 * is read back to text first, as Store::topic() reads it. Store::label() never
+	 * escapes an entity twice, so a label can't hold literal entity text such as
+	 * "&amp;", which shows as "&", from any route, the import's included.
+	 *
+	 * An unchanged label, sent as the title box shows it or as Quick Edit does, is kept
+	 * exactly as stored, so a save that doesn't touch it can't change it.
+	 *
+	 * Whether a label shows nothing is judged on what the topic page prints: the stored
+	 * title read back (Store::topic()), whose entities the browser decodes once more.
 	 *
 	 * WordPress passes the titles slashed, so they're unslashed to read them and
 	 * slashed going back, with their emoji encoded on an older table
@@ -130,22 +138,27 @@ final class Topic_Screen extends Edit_Screen {
 		}
 		unset( self::$kept[ $id ] );
 		$sent = $unsanitized_postarr['post_title'] ?? $data['post_title'] ?? '';
+		$sent = is_string( $sent ) ? trim( wp_unslash( $sent ) ) : '';
+		if ( in_array( $sent, array( $stored->post_title, trim( wp_specialchars_decode( $stored->post_title, ENT_QUOTES ) ) ), true ) && '' !== $sent ) {
+			$data['post_title'] = wp_slash( $stored->post_title );
+			return $data;
+		}
 		// The control characters kses would have dropped go too: a feed's XML can't hold them.
-		$label = is_string( $sent ) ? trim( (string) preg_replace( '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', wp_specialchars_decode( wp_unslash( $sent ), ENT_QUOTES ) ) ) : '';
-		if ( self::blank( $label ) ) {
+		$label = trim( (string) preg_replace( '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', wp_specialchars_decode( $sent, ENT_QUOTES ) ) );
+		$title = Store::post_title( $label );
+		if ( self::blank( wp_specialchars_decode( $title, ENT_QUOTES ) ) ) {
 			self::$kept[ $id ]  = self::is_utf8( $label ) ? 'empty' : 'invalid';
 			$data['post_title'] = wp_slash( $stored->post_title );
 			return $data;
 		}
-		$data['post_title'] = wp_slash( Store::post_title( $label ) );
+		$data['post_title'] = wp_slash( $title );
 		return $data;
 	}
 
 	/**
 	 * A topic's label as WordPress's title box shows it: as text. The label is stored
 	 * escaped (keep_label()), and the box escapes what it's given again, so without
-	 * this it would show "&amp;" for "&". Saved, the text is escaped once more, so the
-	 * label stays as it was.
+	 * this it would show "&amp;" for "&". Saved unchanged, it's kept as stored.
 	 *
 	 * @param mixed $title   The stored title.
 	 * @param mixed $post_id The post.
