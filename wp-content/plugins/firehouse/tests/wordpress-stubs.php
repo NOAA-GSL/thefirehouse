@@ -91,6 +91,13 @@ if ( ! class_exists( 'WP_Post' ) ) {
 		public string $post_date = '0000-00-00 00:00:00';
 
 		/**
+		 * The same in GMT, which stays zero for a draft that has never been published.
+		 *
+		 * @var string
+		 */
+		public string $post_date_gmt = '0000-00-00 00:00:00';
+
+		/**
 		 * Sets the fields given.
 		 *
 		 * @param array<string, mixed> $fields The fields.
@@ -99,6 +106,39 @@ if ( ! class_exists( 'WP_Post' ) ) {
 			foreach ( $fields as $name => $value ) {
 				$this->$name = $value;
 			}
+		}
+	}
+}
+
+if ( ! class_exists( 'WP_Screen' ) ) {
+	/**
+	 * An admin screen: what kind it is, and the post type it's for.
+	 */
+	final class WP_Screen {
+
+		/**
+		 * The kind of screen, such as "edit" for a list or "post" for an edit screen.
+		 *
+		 * @var string
+		 */
+		public string $base = '';
+
+		/**
+		 * The post type it's for, or "".
+		 *
+		 * @var string
+		 */
+		public string $post_type = '';
+
+		/**
+		 * Sets the fields given.
+		 *
+		 * @param string $base      The kind of screen.
+		 * @param string $post_type The post type.
+		 */
+		public function __construct( string $base = '', string $post_type = '' ) {
+			$this->base      = $base;
+			$this->post_type = $post_type;
 		}
 	}
 }

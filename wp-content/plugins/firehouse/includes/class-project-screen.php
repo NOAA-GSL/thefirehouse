@@ -30,8 +30,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * and listed at the top. WordPress has saved the post's own fields by then, such as
  * its status.
  *
- * The slug and the Publish box are WordPress's; what they may do is Phase 6's next
- * change.
+ * The slug, the Publish box and the post's own title follow Project_Rules: no project
+ * without IRB approval is published, and a published one keeps its address.
  */
 final class Project_Screen {
 

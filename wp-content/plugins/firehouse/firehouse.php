@@ -65,6 +65,7 @@ require_once __DIR__ . '/includes/class-seed-bundle.php';
 require_once __DIR__ . '/includes/class-importer.php';
 require_once __DIR__ . '/includes/class-import-screen.php';
 require_once __DIR__ . '/includes/class-project-screen.php';
+require_once __DIR__ . '/includes/class-project-rules.php';
 require_once __DIR__ . '/includes/class-frame.php';
 require_once __DIR__ . '/includes/class-icons.php';
 require_once __DIR__ . '/includes/class-markup.php';
@@ -188,6 +189,11 @@ require_once __DIR__ . '/includes/class-head.php';
  *   makes an autosave (it leaves the Firehouse fields out) or restores a revision (it
  *   leaves a project's survey fields out), does it change. Other post types' lists,
  *   and every list anywhere else, are left as they are.
+ * - Every save of any post passes through Project_Rules::enforce
+ *   (`wp_insert_post_data`): only a project's, and not the plugin's own, is changed.
+ *   Its title is set from the researcher's, a publish or schedule without IRB
+ *   approval keeps its old status and dates, and a published project's slug is
+ *   kept. Anything else is passed through as it is.
  * - Every check of a meta capability (edit_post_meta, add_post_meta,
  *   delete_post_meta) on a key starting fh_, in any case, is refused on a project, a
  *   topic or a revision of either. Any other meta check is left as it is.
@@ -211,6 +217,7 @@ Installer::hook( __FILE__ );
 Settings::hook();
 Import_Screen::hook();
 Project_Screen::hook();
+Project_Rules::hook();
 Frame::hook();
 Visibility::hook();
 Blocks::hook();

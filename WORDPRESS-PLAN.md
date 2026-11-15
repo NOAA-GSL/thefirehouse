@@ -1891,10 +1891,27 @@ marked below.
     updated." The geography is written only when its note changes.*
   - *Left for Eric and the team: WordPress's revisions screen compares only the
     title, so an editor restoring the team's fields can't see their history first.*
-  - *Next: the slug's lock, and refusing to publish a project without IRB approval
-    (decided by Eric, 14 November: the edit screen says why in place of the Publish
-    button, and a status change by any route, Quick Edit and bulk edit included, is
-    refused on the server with a notice). Then the topic screen.*
+  - *The publishing rules done 15 November (`includes/class-project-rules.php`), on
+    every save of a project by any route, the plugin's own writes aside:*
+    - *No project without IRB approval is published or scheduled (decided by Eric, 14
+      November). The save keeps the status it had, or makes it a draft if it was
+      public, and keeps its dates, so a refused publish leaves no publish date behind.
+      The edit screen says why in place of the Publish button; Quick Edit and bulk
+      edit say it on the next projects screen.*
+    - *A project's slug is fixed once it has been published (rule 5), which WordPress
+      records as a status or a date in GMT; the Publish box shows the address in place
+      of the Slug box. WordPress's Quick Edit has no slug field for projects, which
+      have no title box, but a forged request is refused all the same. Trashing and
+      restoring, which rename a slug for WordPress's own reasons, are left alone.*
+    - *The post's own title is the researcher's, set as WordPress saves the post, not
+      by saving it again inside a restore (the code review's advice), so a restore or
+      a forged Quick Edit can't relabel a project in WordPress's lists.*
+    - *Tried on the local copy as a FireHouse Editor, with a test draft without
+      approval: a forced publish from its screen and a forged Quick Edit both left it
+      a draft with no publish date; a forged Quick Edit of a published project's slug
+      kept it; trashing and restoring renamed and restored the slug as WordPress does;
+      and restoring a revision with another title kept the researcher's.*
+  - *Next: the topic screen.*
 - Landing and About layouts locked to text-only edits. Their sections are custom
   blocks whose words are attributes, which `contentOnly` locking doesn't show to
   editors. *Decided: they keep their blocks and markup, and in the block editor each
