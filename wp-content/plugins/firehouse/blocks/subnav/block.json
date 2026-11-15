@@ -11,7 +11,12 @@
 		"inserter": false,
 		"multiple": false,
 		"reusable": false,
-		"interactivity": true
+		"interactivity": true,
+		"className": false,
+		"customClassName": false,
+		"customCSS": false,
+		"lock": false,
+		"renaming": false
 	},
 	"render": "file:./render.php",
 	"viewScriptModule": "file:./view.js"

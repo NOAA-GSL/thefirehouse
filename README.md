@@ -772,12 +772,16 @@ nothing from the database. Each class's docblock has the detail; this is the map
   typed. A FireHouse Editor may not post unfiltered HTML, so WordPress runs kses over
   every attribute string of a page they save, turning "R&D" into "R&amp;D", which the
   page shows as written, and dropping "<5 km>". When a page in the FireHouse tree, or
-  a revision of one, is saved with content that's nothing but FireHouse blocks, with
-  only spaces between and inside them, the content is kept as sent
-  (`Page_Words::keep_as_typed()`, on `wp_insert_post_data`, late). Every FireHouse
-  block prints its words escaped and checks its links, and saves no markup of its own.
-  Anything else, a core block or markup anywhere among them included, keeps
-  WordPress's kses.
+  a revision of one, is saved with content that's nothing but FireHouse blocks, each
+  holding only the attributes its block.json declares (`Blocks::attributes()`), with
+  only spaces between and inside them, the content is kept as sent, before any of
+  WordPress's filters on it (`Page_Words::keep_as_typed()`, on `wp_insert_post_data`,
+  late), and stored as WordPress's serializer writes it. Every FireHouse block prints
+  its words escaped and checks its links, and saves no markup of its own. Anything
+  else keeps WordPress's filters: a core block, markup anywhere among them, an
+  undeclared attribute such as a block's custom CSS (`style`), whose strip for those
+  who may not edit CSS is one of those filters, or a page being moved. The blocks also
+  turn off custom CSS, class names, locking and renaming in their block.json.
 - `Head` gives each Firehouse page its title, the site's title for it then GSL's
   suffix ("About — The FireHouse – Global Systems Laboratory"; decided by Eric, 12
   November, with Stephanie and Emily's spelling), and the description and Open Graph and

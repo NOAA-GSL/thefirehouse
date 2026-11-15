@@ -19,7 +19,12 @@
 		"html": false,
 		"inserter": false,
 		"multiple": false,
-		"reusable": false
+		"reusable": false,
+		"className": false,
+		"customClassName": false,
+		"customCSS": false,
+		"lock": false,
+		"renaming": false
 	},
 	"render": "file:./render.php"
 }

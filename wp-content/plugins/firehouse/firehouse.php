@@ -213,9 +213,11 @@ require_once __DIR__ . '/includes/class-head.php';
  *   label it had.
  * - Every save of any post also passes through Page_Words::keep_as_typed
  *   (`wp_insert_post_data`, late): only while kses runs on the content, and only for
- *   a page in the Firehouse tree or a revision of one whose content as sent is nothing
- *   but FireHouse blocks, is the content kept as sent. Anything else is stored as
- *   WordPress would store it.
+ *   a page in the Firehouse tree that stays there, or a revision of one, whose content
+ *   as sent is nothing but FireHouse blocks with only their declared attributes, is
+ *   the content kept as sent, before any `content_save_pre` filter (kses, core's
+ *   custom CSS strip, another plugin's), in WordPress's own serialization. Anything
+ *   else is stored as WordPress would store it.
  * - Every check of a meta capability (edit_post_meta, add_post_meta,
  *   delete_post_meta) on a key starting fh_, in any case, is refused on a project, a
  *   topic or a revision of either. Any other meta check is left as it is.
