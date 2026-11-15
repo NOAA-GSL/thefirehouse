@@ -146,8 +146,11 @@ final class Project_Screen extends Edit_Screen {
 
 	/**
 	 * What to do when a field is marked.
+	 *
+	 * @param array<string, string> $errors The problems, by field.
 	 */
-	protected static function fix_hint(): string {
+	protected static function fix_hint( array $errors ): string {
+		unset( $errors );
 		return __( 'Fix what’s marked, then save the project again.', 'firehouse' );
 	}
 
@@ -394,24 +397,17 @@ final class Project_Screen extends Edit_Screen {
 	 *
 	 * Text is kept as typed, but for the line breaks a browser sends (CRLF), which
 	 * become LF; an address is trimmed. An empty status, note or address removes it.
-	 * The geography keeps its regions, which are the survey's. A field that's missing
-	 * or isn't text is refused, rather than taken as empty: the form always sends each
-	 * as text.
+	 * The geography keeps its regions, which are the survey's. A field that's missing,
+	 * isn't text or isn't valid UTF-8 is refused (texts()).
 	 *
 	 * @param array<string, mixed> $fields The project's stored fields.
 	 * @param array<string, mixed> $input  The form's input, unslashed.
 	 * @return array{set: array<string, mixed>, delete: list<string>, errors: array<string, string>, values: array<string, string>}
 	 */
 	public static function check( array $fields, array $input ): array {
-		$values = array();
-		$errors = array();
-		foreach ( self::FIELDS as $name ) {
-			$value           = $input[ $name ] ?? null;
-			$values[ $name ] = is_string( $value ) ? str_replace( "\r\n", "\n", $value ) : '';
-			if ( ! is_string( $value ) ) {
-				$errors[ $name ] = __( 'This field didn’t arrive as text. Reload the screen and enter it again.', 'firehouse' );
-			}
-		}
+		$texts                   = self::texts( $input );
+		$values                  = $texts['values'];
+		$errors                  = $texts['errors'];
 		$values['fullRecordUrl'] = trim( $values['fullRecordUrl'] );
 
 		$set    = array( 'summary' => $values['summary'] );

@@ -176,10 +176,13 @@ one is.
 * A project's edit screen keeps its security token fresh along with WordPress's, as
   after signing in again, and if it goes stale anyway, says the editorial fields
   weren't saved rather than dropping them quietly.
-* A topic's edit screen: the FireHouse team's words for the area (its label, short
-  label, description and what it covers, one item a line), saved together, all or
-  none, and the synthesis of its needs, read-only. A topic always keeps a label: an
-  empty one leaves the old one in place, and the screen says so.
+* A topic's edit screen: the FireHouse team's words for the area (its short label,
+  description and what it covers, one item a line), saved together, all or none, under
+  its label, and the synthesis of its needs, read-only. A topic always keeps a label:
+  an empty one leaves the old one in place, saves none of the other fields, and the
+  screen says so.
+* The project and topic screens refuse text with characters that can't be stored,
+  rather than saving the other fields without it.
 * The name the plugin prints is FireHouse: the plugin's name, the role, the admin
   menu, the block titles, and the pages' titles and words. A site that imported its
   content before keeps the old spelling in its settings and in the landing and About

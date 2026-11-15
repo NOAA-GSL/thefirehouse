@@ -612,7 +612,9 @@ nothing from the database. Each class's docblock has the detail; this is the map
   the fields, besides a restore of a revision, which puts back the ones it holds
   (below): not Quick Edit, an autosave, or the plugin's writes. A request with the
   screen's nonce but without its fields, or with one that isn't text, saves none. A
-  good save clears any refusal still waiting. The screen's nonce is the post's own,
+  good save clears any refusal still waiting. Text that isn't valid UTF-8 is refused
+  too (`texts()`), since the database would refuse it after the other fields were
+  written. The screen's nonce is the post's own,
   refreshed with WordPress's through the heartbeat (`refresh_nonce()`), as after
   signing in again in the session-expired dialog; if it has gone stale anyway,
   WordPress's save of the post still goes through, and the screen says the fields
@@ -625,15 +627,19 @@ nothing from the database. Each class's docblock has the detail; this is the map
   saved the project's status by the time a save is refused.
 - `Topic_Screen` is a topic's, in two boxes under its label, WordPress's title box.
   **Topic fields** are the team's words for the area: its short label, which can't be
-  blank, its description, and what it covers, one item a line (each trimmed, blank
-  lines dropped). **Synthesis of needs** shows the synthesis read-only: who reviewed
+  blank (spaces and invisible characters such as a zero-width space count as blank:
+  `blank()`), its description, and what it covers, one item a line (each trimmed,
+  blank lines dropped). **Synthesis of needs** shows the synthesis read-only: who reviewed
   it, or that the topic page calls it a draft, its date, how many projects it read and
   what made it, and each need with its project count and its projects by title,
   linked to their edit screens and marked when visitors can't see one. A new
   synthesis replaces it. The label is kept escaped, as `Store::label()` writes it, by
   any route that saves it (`Topic_Screen::keep_label()`, on `wp_insert_post_data`,
-  late); an empty one keeps the label the topic had, and the screen refuses its fields
-  with it and says why. The title box shows the label as text (`edit_label()`). The
+  late). It's read as it was sent, before kses, which would strip anything that looks
+  like a tag from a FireHouse Editor's save. One that's blank or isn't valid UTF-8
+  keeps the label the topic had, and the screen refuses its fields with it and says
+  why, under the title box. The title box shows the label as text (`edit_label()`)
+  and is named "Label". The
   topic's introduction, which no page shows, and its order aren't on the screen, and
   no one can change its key or status (`Capabilities`).
 - `Project_Rules` holds three rules on every save of a project through WordPress's

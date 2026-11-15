@@ -52,14 +52,32 @@ final class Store {
 	}
 
 	/**
-	 * A project post's title: the researcher's, escaped for WordPress's lists, and
-	 * trimmed, as WordPress trims every title it saves, so the label it stores is this
-	 * one exactly. The researcher's own title, in meta, keeps its spaces.
+	 * A project or topic post's title: a project's is the researcher's title, a
+	 * topic's its label, escaped for WordPress's lists, and trimmed, as WordPress trims
+	 * every title it saves, so the title it stores is this one exactly. The
+	 * researcher's own title, in meta, keeps its spaces.
 	 *
-	 * @param string $title The project's title, as the researcher wrote it.
+	 * @param string $title The project's title, as the researcher wrote it, or the topic's label.
 	 */
 	public static function label( string $title ): string {
 		return esc_html( trim( $title ) );
+	}
+
+	/**
+	 * A title as WordPress would store it in the posts table from a filter on
+	 * wp_insert_post_data: label(), and on a table whose character set can't hold an
+	 * emoji, its emoji encoded, as wp_insert_post() does before the filter, or the
+	 * whole save would fail.
+	 *
+	 * @param string $title The title, as text.
+	 */
+	public static function post_title( string $title ): string {
+		global $wpdb;
+		$label = self::label( $title );
+		if ( is_object( $wpdb ) && method_exists( $wpdb, 'get_col_charset' ) && in_array( $wpdb->get_col_charset( $wpdb->posts, 'post_title' ), array( 'utf8', 'utf8mb3' ), true ) ) {
+			return wp_encode_emoji( $label );
+		}
+		return $label;
 	}
 
 	/**

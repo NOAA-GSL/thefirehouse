@@ -224,6 +224,16 @@ final class ProjectScreenTest extends WordPressTestCase {
 	}
 
 	/**
+	 * Text that isn't valid UTF-8 is refused before anything is saved: the database
+	 * would refuse it after the other fields were written.
+	 */
+	public function test_text_that_isnt_utf8_is_refused(): void {
+		$checked = Project_Screen::check( self::fields(), self::input( array( 'geoNote' => "Front \xC3( Range" ) ) );
+
+		$this->assertSame( array( 'geoNote' => 'This field has characters that can’t be stored. Retype it, then save again.' ), $checked['errors'] );
+	}
+
+	/**
 	 * Wrong input is refused for its field, and kept to show again.
 	 *
 	 * @dataProvider bad_input
@@ -467,7 +477,7 @@ final class ProjectScreenTest extends WordPressTestCase {
 		Project_Screen::editorial_box( self::post() );
 		$html = (string) ob_get_clean();
 
-		$this->assertStringContainsString( '<div id="firehouse-project-errors" class="notice notice-error inline" tabindex="-1" autofocus><h2>Editorial fields not saved: 1 problem</h2>', $html );
+		$this->assertStringContainsString( '<div id="firehouse-project-errors" class="notice notice-error inline fh-edit-errors" tabindex="-1" autofocus aria-labelledby="firehouse-project-errors-heading"><h2 id="firehouse-project-errors-heading">Editorial fields not saved: 1 problem</h2><p>Fix what’s marked, then save the project again. The project’s other changes, such as its status, were saved.</p>', $html );
 		$this->assertStringContainsString( '<a href="#fh-project-fullRecordUrl">Full record link</a>: The full record link has to be a web address.', $html );
 		$this->assertNotFalse( has_filter( 'admin_title', array( Project_Screen::class, 'title' ) ) );
 		$this->assertNotFalse( has_filter( 'postbox_classes_fh_project_firehouse-editorial', array( Project_Screen::class, 'open_box' ) ) );
@@ -560,7 +570,7 @@ final class ProjectScreenTest extends WordPressTestCase {
 		$this->assertSame( '', ob_get_clean() );
 		ob_start();
 		Project_Screen::notice( self::post() );
-		$this->assertStringContainsString( '<h2>Editorial fields not saved: 2 problems</h2>', (string) ob_get_clean() );
+		$this->assertStringContainsString( '<h2 id="firehouse-project-errors-heading">Editorial fields not saved: 2 problems</h2>', (string) ob_get_clean() );
 	}
 
 	/**
@@ -669,7 +679,7 @@ final class ProjectScreenTest extends WordPressTestCase {
 		$_POST['action'] = 'editpost';
 		Project_Screen::save( 41, self::post() );
 		$this->assertSame( 'Typed', $kept['values']['summary'] );
-		$this->assertSame( array( Project_Screen::FORM ), array_keys( $kept['errors'] ) );
+		$this->assertSame( array( Project_Screen::FORM => 'The screen had been open too long, so they weren’t saved. They’re below as you typed them: save the project again.' ), $kept['errors'] );
 		$this->assertNotFalse( has_filter( 'redirect_post_location', array( Project_Screen::class, 'without_message' ) ) );
 	}
 
@@ -691,8 +701,7 @@ final class ProjectScreenTest extends WordPressTestCase {
 		ob_start();
 		Project_Screen::notice( self::post() );
 		$html = (string) ob_get_clean();
-		$this->assertStringContainsString( '<ul><li>Open too long.</li></ul>', $html );
-		$this->assertStringNotContainsString( 'Fix what’s marked', $html, 'Nothing is marked.' );
+		$this->assertStringContainsString( '<p>The project’s other changes, such as its status, were saved.</p><ul><li>Open too long.</li></ul>', $html, 'Nothing is marked, so there is nothing to fix.' );
 	}
 
 	/**

@@ -1941,7 +1941,11 @@ marked below.
     is kept escaped as the import writes it, by every route, and never left empty,
     since every topic page's heading is its label: an empty one keeps the old one and
     the screen says so. The title box shows it as text, where WordPress's own box had
-    shown "&amp;" for "&".*
+    shown "&amp;" for "&". So the label is read as it was sent, before kses, which
+    would otherwise strip tag-like text such as "<PM2.5>" from a label an editor never
+    touched (the code and security reviews). Both screens now refuse text that isn't
+    valid UTF-8, which the database had refused after the other fields were saved,
+    and treat invisible characters as blank.*
   - *Next: the landing and About pages' words.*
 - Landing and About layouts locked to text-only edits. Their sections are custom
   blocks whose words are attributes, which `contentOnly` locking doesn't show to

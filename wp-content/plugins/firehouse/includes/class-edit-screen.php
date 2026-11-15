@@ -97,7 +97,8 @@ abstract class Edit_Screen {
 		. '.fh-edit-readonly dd{margin:0;max-width:48em;white-space:pre-wrap;overflow-wrap:anywhere}'
 		. '.fh-edit-readonly dd ul,.fh-edit-readonly dd ol{margin:0 0 0 1.5em;white-space:normal}'
 		. '.fh-edit-readonly dd li{margin:0 0 .5em;white-space:pre-wrap}'
-		. '.fh-edit-note{color:#50575e;font-style:italic}';
+		. '.fh-edit-note{color:#50575e;font-style:italic}'
+		. '.fh-edit-errors:focus{outline:2px solid var(--wp-admin-theme-color,#2271b1);outline-offset:2px}';
 
 	/**
 	 * A refused save's input and problems, for the screen that shows it, by screen.
@@ -108,8 +109,14 @@ abstract class Edit_Screen {
 
 	/**
 	 * Hooks the screen.
+	 *
+	 * @throws \LogicException When a screen hasn't named its post type, kind or nonce,
+	 *                         which would hook nothing it means to, or this class.
 	 */
 	public static function hook(): void {
+		if ( '' === static::POST_TYPE || '' === static::KIND || '' === static::NONCE || '' === static::NONCE_FIELD ) {
+			throw new \LogicException( 'An edit screen names its post type, kind and nonce.' );
+		}
 		add_action( 'add_meta_boxes_' . static::POST_TYPE, array( static::class, 'boxes' ) );
 		add_action( 'save_post_' . static::POST_TYPE, array( static::class, 'save' ), 10, 2 );
 		add_action( 'load-post.php', array( static::class, 'load' ) );
@@ -178,8 +185,10 @@ abstract class Edit_Screen {
 
 	/**
 	 * What to do when a field is marked.
+	 *
+	 * @param array<string, string> $errors The problems, by field.
 	 */
-	abstract protected static function fix_hint(): string;
+	abstract protected static function fix_hint( array $errors ): string;
 
 	/**
 	 * What WordPress saved anyway, or "".
@@ -219,6 +228,55 @@ abstract class Edit_Screen {
 	 */
 	protected static function anchor( string $name ): string {
 		return '#fh-' . static::KIND . '-' . $name;
+	}
+
+	/**
+	 * Each field of the form's input, as the form shows it back, and the problems: a
+	 * field that's missing or isn't text is refused, rather than taken as empty, since
+	 * the form always sends each as text, and so is one that isn't valid UTF-8, which
+	 * the database would refuse after the others were saved. A browser's line breaks
+	 * (CRLF) become LF.
+	 *
+	 * @param array<string, mixed> $input The form's input, unslashed.
+	 * @return array{values: array<string, string>, errors: array<string, string>}
+	 */
+	protected static function texts( array $input ): array {
+		$values = array();
+		$errors = array();
+		foreach ( static::FIELDS as $name ) {
+			$value           = $input[ $name ] ?? null;
+			$values[ $name ] = is_string( $value ) ? str_replace( "\r\n", "\n", $value ) : '';
+			if ( ! is_string( $value ) ) {
+				$errors[ $name ] = __( 'This field didn’t arrive as text. Reload the screen and enter it again.', 'firehouse' );
+			} elseif ( ! self::is_utf8( $value ) ) {
+				$errors[ $name ] = __( 'This field has characters that can’t be stored. Retype it, then save again.', 'firehouse' );
+			}
+		}
+		return array(
+			'values' => $values,
+			'errors' => $errors,
+		);
+	}
+
+	/**
+	 * Whether text is valid UTF-8.
+	 *
+	 * @param string $text The text.
+	 */
+	protected static function is_utf8( string $text ): bool {
+		return 1 === preg_match( '//u', $text );
+	}
+
+	/**
+	 * Whether text would show nothing: only spaces, line breaks and invisible
+	 * characters, such as a no-break or zero-width space, written as characters or as
+	 * entities, since pages print text escaped without escaping an entity again. Text
+	 * that isn't valid UTF-8 shows nothing either.
+	 *
+	 * @param string $text The text.
+	 */
+	protected static function blank( string $text ): bool {
+		return 1 !== preg_match( '/[^\p{Z}\p{C}]/u', html_entity_decode( $text, ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
 	}
 
 	/**
@@ -425,7 +483,7 @@ abstract class Edit_Screen {
 		}
 		$fresh = wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST[ static::NONCE_FIELD ] ) ), static::NONCE . '_' . $post_id );
 		if ( ! $fresh ) {
-			static::refuse_stale( $post_id, $post );
+			self::refuse_stale( $post_id, $post );
 			return;
 		}
 		if ( ! current_user_can( 'edit_post', $post_id ) ) {
@@ -439,9 +497,11 @@ abstract class Edit_Screen {
 		$input = wp_unslash( $_POST[ self::INPUT ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Kept as typed (rule 1's spirit for the team's words); check() validates each field, and pages escape them.
 
 		$checked = static::check( static::stored( $post ), is_array( $input ) ? $input : array() );
-		$errors  = $checked['errors'] + static::post_errors( $post_id );
+		// The post's own fields' problems first, as the post's own fields come first on
+		// the screen.
+		$errors = static::post_errors( $post_id ) + $checked['errors'];
 		if ( array() !== $errors ) {
-			static::keep( $post_id, $checked['values'], $errors );
+			self::keep( $post_id, $checked['values'], $errors );
 			return;
 		}
 		delete_transient( static::transient( $post_id ) );
@@ -465,7 +525,7 @@ abstract class Edit_Screen {
 		}
 		$input = wp_unslash( $_POST[ self::INPUT ] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Shown back to the same user, escaped; nothing is saved.
 		$typed = static::check( static::stored( $post ), is_array( $input ) ? $input : array() )['values'];
-		static::keep( $post_id, $typed, array( self::FORM => static::stale_message() ) + static::post_errors( $post_id ) );
+		self::keep( $post_id, $typed, array( self::FORM => static::stale_message() ) + static::post_errors( $post_id ) );
 	}
 
 	/**
@@ -490,9 +550,9 @@ abstract class Edit_Screen {
 
 	/**
 	 * After a refused save, a summary at the top of the form naming each problem, each
-	 * a link to its field. It takes the focus when the page loads, and is `inline` so
-	 * WordPress's script doesn't move it, which would drop the focus, as the Import
-	 * screen's summary does.
+	 * a link to its field. It takes the focus when the page loads, named by its heading
+	 * and outlined, and is `inline` so WordPress's script doesn't move it, which would
+	 * drop the focus, as the Import screen's summary does.
 	 *
 	 * @param \WP_Post|null $post The post being edited.
 	 */
@@ -503,11 +563,12 @@ abstract class Edit_Screen {
 		}
 		$count  = count( $refused['errors'] );
 		$labels = static::field_labels();
-		echo '<div id="' . esc_attr( 'firehouse-' . static::KIND . '-errors' ) . '" class="notice notice-error inline" tabindex="-1" autofocus><h2>';
+		$id     = 'firehouse-' . static::KIND . '-errors';
+		echo '<div id="' . esc_attr( $id ) . '" class="notice notice-error inline fh-edit-errors" tabindex="-1" autofocus aria-labelledby="' . esc_attr( $id . '-heading' ) . '"><h2 id="' . esc_attr( $id . '-heading' ) . '">';
 		echo esc_html( static::problems_heading( $count ) );
 		$marked = array() !== array_diff_key( $refused['errors'], array( self::FORM => true ) );
 		$saved  = static::saved_hint( $refused['errors'] );
-		echo '</h2><p>' . ( $marked ? esc_html( static::fix_hint() ) . ( '' !== $saved ? ' ' : '' ) : '' ) . esc_html( $saved ) . '</p><ul>';
+		echo '</h2><p>' . ( $marked ? esc_html( static::fix_hint( $refused['errors'] ) ) . ( '' !== $saved ? ' ' : '' ) : '' ) . esc_html( $saved ) . '</p><ul>';
 		foreach ( $refused['errors'] as $name => $message ) {
 			echo self::FORM === $name
 				? '<li>' . esc_html( $message ) . '</li>'
