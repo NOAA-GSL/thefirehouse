@@ -604,14 +604,18 @@ nothing from the database. Each class's docblock has the detail; this is the map
   address, and the three navigation labels, read with `Settings::get()`.
 - `Project_Screen` adds a project's fields to WordPress's own edit screen, in two
   boxes. **Editorial fields** (the summary, publication status, geography note and
-  full-record link) are the team's: saved with the post by Publish or Update, through
-  `Store::update_fields()`, kept as typed, and never touched by a re-import (rule 4).
+  full-record link) are the team's: saved whenever the screen saves the post (Save
+  Draft, Publish or Update), through `Store::update_fields()`, kept as typed (line
+  endings aside, and the link trimmed), and never touched by a re-import (rule 4).
   **From the survey** shows the researcher's answers read-only, as stored. A save
   checks every editorial field first (`Project_Screen::check()`, with `Meta`'s schema
   check) and saves none if any is wrong; the input and problems wait in a transient for
   the screen WordPress redirects to, which marks each field and lists them at the top.
   WordPress has saved the post's own fields, such as its status, by then. Only the
-  screen's own form saves them: not Quick Edit, an autosave, or the plugin's writes.
+  screen's own form saves the editorial fields, besides a restore of a revision,
+  which puts back the ones it holds (below): not Quick Edit, an autosave, or the
+  plugin's writes. A request with the screen's nonce but without its fields, or with
+  one that isn't text, saves none. A good save clears any refusal still waiting.
 - `Seed_Bundle` reads a seed bundle and checks it; `Importer` plans the import and
   writes it through `Store`; `Import_Screen` is FireHouse → Import, for
   administrators. `npm run seed` writes the bundle from `src/content/data/` to
@@ -731,6 +735,12 @@ The traps, for whoever changes this code next:
   ("2025", "1") as that type, so a restored revision still saves; but its refusal is
   only a `false` from WordPress's function, with no message. No one may change a
   field through WordPress's custom-field routes.
+- **Revisions hold a project's editorial fields only** (`Meta::revisioned()`): its
+  summary, publication status and full-record link. Restoring a revision puts back
+  every field the revisions hold, so a survey field in them could be rolled back,
+  IRB approval included. A topic's revisions hold all its fields. An autosave holds
+  none (`Meta::revision_keys()`): WordPress copies any revisioned field from the
+  request into an autosave, for a restore to write.
 - **The plugin checks the bundle itself.** It refuses fields it doesn't store in a
   project, topic or synthesis (the landing and About pages keep only the text their
   blocks use, and drop the rest), and anything shaped like an email address but a team

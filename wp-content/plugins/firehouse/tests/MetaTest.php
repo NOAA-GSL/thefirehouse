@@ -52,21 +52,67 @@ final class MetaTest extends WordPressTestCase {
 	}
 
 	/**
-	 * Each field is a single value, out of the REST API, kept in revisions and stored
-	 * as given, and no one may change it through WordPress's custom-field routes.
+	 * Each field is a single value, out of the REST API and stored as given, and no
+	 * one may change it through WordPress's custom-field routes. Revisions hold a
+	 * topic's fields and a project's editorial ones only.
 	 */
-	public function test_fields_are_single_revisioned_stored_as_given_and_closed(): void {
+	public function test_fields_are_single_stored_as_given_and_closed(): void {
 		foreach ( array( 'fh_project', 'fh_topic' ) as $post_type ) {
 			foreach ( Meta::fields( $post_type ) as $name => $schema ) {
-				$args = Meta::args( $schema );
+				$args = Meta::args( $schema, Meta::revisioned( $post_type, $name ) );
 				$this->assertSame( $schema['type'], $args['type'], $name );
 				$this->assertTrue( $args['single'], $name );
 				$this->assertFalse( $args['show_in_rest'], $name );
-				$this->assertTrue( $args['revisions_enabled'], $name );
+				$this->assertSame( Meta::revisioned( $post_type, $name ), $args['revisions_enabled'], $name );
 				$this->assertArrayNotHasKey( 'sanitize_callback', $args, $name );
 				$this->assertSame( '__return_false', $args['auth_callback'], $name );
 			}
 		}
+	}
+
+	/**
+	 * A project's revisions hold its editorial fields and none of the survey's, so a
+	 * restore can't roll back a researcher's words or the IRB approval (rules 1 and 4);
+	 * a topic's hold all of its fields.
+	 */
+	public function test_a_projects_revisions_hold_only_its_editorial_fields(): void {
+		$revisioned = array_keys( array_filter( Meta::fields( 'fh_project' ), static fn( array $schema, string $name ): bool => Meta::revisioned( 'fh_project', $name ), ARRAY_FILTER_USE_BOTH ) );
+		$this->assertSame( array( 'summary', 'publicationStatus', 'fullRecordUrl' ), $revisioned );
+		foreach ( array( 'irbApproved', 'title', 'abstract', 'needs', 'org', 'geo', 'id' ) as $name ) {
+			$this->assertFalse( Meta::revisioned( 'fh_project', $name ), $name );
+		}
+		foreach ( array_keys( Meta::fields( 'fh_topic' ) ) as $name ) {
+			$this->assertTrue( Meta::revisioned( 'fh_topic', $name ), $name );
+		}
+	}
+
+	/**
+	 * While an autosave of a project or topic is made, no field is among the revisioned
+	 * keys, so WordPress copies none from the request; anywhere else the list is kept.
+	 *
+	 * @dataProvider revision_key_cases
+	 *
+	 * @param bool     $autosaving Whether an autosave is being made.
+	 * @param string   $post_type  The post type.
+	 * @param string[] $expected   The keys left.
+	 */
+	public function test_an_autosave_carries_no_field( bool $autosaving, string $post_type, array $expected ): void {
+		Functions\when( 'doing_action' )->alias( static fn( string $action ): bool => $autosaving && 'wp_creating_autosave' === $action );
+		$this->assertSame( $expected, Meta::revision_keys( array( 'fh_summary', 'other_key', 'fh_reviewedBy' ), $post_type ) );
+	}
+
+	/**
+	 * Whether an autosave is being made, the post type, and the keys left.
+	 *
+	 * @return array<string, array{0: bool, 1: string, 2: string[]}>
+	 */
+	public static function revision_key_cases(): array {
+		return array(
+			'project autosave' => array( true, 'fh_project', array( 'other_key' ) ),
+			'topic autosave'   => array( true, 'fh_topic', array( 'other_key' ) ),
+			'post autosave'    => array( true, 'post', array( 'fh_summary', 'other_key', 'fh_reviewedBy' ) ),
+			'project restore'  => array( false, 'fh_project', array( 'fh_summary', 'other_key', 'fh_reviewedBy' ) ),
+		);
 	}
 
 	/**

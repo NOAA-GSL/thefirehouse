@@ -108,6 +108,21 @@ final class ProjectScreenTest extends WordPressTestCase {
 	}
 
 	/**
+	 * The form's input: every field, as the form sends it, with $changes.
+	 *
+	 * @param array<string, mixed> $changes The fields to change.
+	 * @return array<string, mixed>
+	 */
+	private static function input( array $changes ): array {
+		return $changes + array(
+			'summary'           => 'S',
+			'publicationStatus' => '',
+			'geoNote'           => '',
+			'fullRecordUrl'     => '',
+		);
+	}
+
+	/**
 	 * The project's fields, as Store reads them back.
 	 *
 	 * @return array<string, mixed>
@@ -181,7 +196,7 @@ final class ProjectScreenTest extends WordPressTestCase {
 	 * A note on a project with no geography starts one with no regions; no note adds none.
 	 */
 	public function test_a_note_without_a_geography_starts_one_without_regions(): void {
-		$without = Project_Screen::check( array( 'summary' => 'Old' ), array( 'geoNote' => 'Front Range' ) );
+		$without = Project_Screen::check( array( 'summary' => 'Old' ), self::input( array( 'geoNote' => 'Front Range' ) ) );
 		$this->assertSame(
 			array(
 				'regions' => array(),
@@ -190,17 +205,22 @@ final class ProjectScreenTest extends WordPressTestCase {
 			$without['set']['geo']
 		);
 
-		$none = Project_Screen::check( array( 'summary' => 'Old' ), array( 'geoNote' => '' ) );
+		$none = Project_Screen::check( array( 'summary' => 'Old' ), self::input( array() ) );
 		$this->assertArrayNotHasKey( 'geo', $none['set'] );
 	}
 
 	/**
-	 * Input that isn't text counts as empty.
+	 * A field that's missing or isn't text is refused, not taken as empty, so a
+	 * malformed request can't clear the fields (rule 6).
 	 */
-	public function test_input_that_is_not_text_counts_as_empty(): void {
+	public function test_input_that_is_missing_or_not_text_is_refused(): void {
 		$checked = Project_Screen::check( self::fields(), array( 'summary' => array( 'x' ) ) );
-		$this->assertSame( '', $checked['set']['summary'] );
+		$this->assertSame( Project_Screen::FIELDS, array_keys( $checked['errors'] ) );
 		$this->assertSame( '', $checked['values']['summary'] );
+
+		$checked = Project_Screen::check( self::fields(), self::input( array( 'publicationStatus' => array( 'published' ) ) ) );
+		$this->assertSame( array( 'publicationStatus' ), array_keys( $checked['errors'] ) );
+		$this->assertStringContainsString( 'didn’t arrive as text', $checked['errors']['publicationStatus'] );
 	}
 
 	/**
@@ -212,7 +232,7 @@ final class ProjectScreenTest extends WordPressTestCase {
 	 * @param string                $field The field refused.
 	 */
 	public function test_a_wrong_field_is_refused( array $input, string $field ): void {
-		$checked = Project_Screen::check( self::fields(), $input + array( 'summary' => 'S' ) );
+		$checked = Project_Screen::check( self::fields(), self::input( $input ) );
 		$this->assertSame( array( $field ), array_keys( $checked['errors'] ) );
 		$this->assertSame( $input[ $field ], $checked['values'][ $field ] );
 	}
@@ -239,7 +259,7 @@ final class ProjectScreenTest extends WordPressTestCase {
 	 */
 	public function test_a_field_its_schema_refuses_is_refused(): void {
 		Functions\when( 'rest_validate_value_from_schema' )->alias( static fn( mixed $value, array $schema, string $name ): mixed => 'summary' === $name ? new \WP_Error( 'x', 'summary is too long.' ) : true );
-		$checked = Project_Screen::check( self::fields(), array( 'summary' => 'S' ) );
+		$checked = Project_Screen::check( self::fields(), self::input( array() ) );
 		$this->assertSame( array( 'summary' => 'summary is too long.' ), $checked['errors'] );
 	}
 
@@ -258,11 +278,29 @@ final class ProjectScreenTest extends WordPressTestCase {
 	 * A save whose nonce doesn't check writes nothing.
 	 */
 	public function test_a_save_with_a_wrong_nonce_writes_nothing(): void {
-		Functions\expect( 'wp_verify_nonce' )->once()->with( 'forged', 'firehouse_project_fields' )->andReturn( false );
+		Functions\expect( 'wp_verify_nonce' )->once()->with( 'forged', 'firehouse_project_fields_41' )->andReturn( false );
 		Functions\expect( 'update_post_meta' )->never();
 		$_POST = array(
 			'firehouse_project_nonce' => 'forged',
 			'firehouse'               => array( 'summary' => 'Forged' ),
+		);
+		Project_Screen::save( 41, self::post() );
+	}
+
+	/**
+	 * A request with the screen's nonce but none of its fields changes nothing.
+	 */
+	public function test_a_save_without_the_fields_writes_nothing(): void {
+		Functions\when( 'wp_verify_nonce' )->justReturn( 1 );
+		Functions\when( 'current_user_can' )->justReturn( true );
+		Functions\expect( 'update_post_meta' )->never();
+		Functions\expect( 'delete_post_meta' )->never();
+		Functions\expect( 'set_transient' )->never();
+		$_POST = array( 'firehouse_project_nonce' => 'good' );
+		Project_Screen::save( 41, self::post() );
+		$_POST = array(
+			'firehouse_project_nonce' => 'good',
+			'firehouse'               => 'not a list',
 		);
 		Project_Screen::save( 41, self::post() );
 	}
@@ -298,13 +336,16 @@ final class ProjectScreenTest extends WordPressTestCase {
 		);
 		$_POST = array(
 			'firehouse_project_nonce' => 'good',
-			'firehouse'               => array(
-				'summary'       => 'A good summary',
-				'fullRecordUrl' => 'javascript:alert(1)',
+			'firehouse'               => self::input(
+				array(
+					'summary'       => 'A good summary',
+					'fullRecordUrl' => 'javascript:alert(1)',
+				)
 			),
 		);
 		Project_Screen::save( 41, self::post() );
 
+		$this->assertNotFalse( has_filter( 'redirect_post_location', array( Project_Screen::class, 'without_message' ) ) );
 		$this->assertSame( 'firehouse_project_41_6', $kept[0] );
 		$this->assertSame( 'A good summary', $kept[1]['values']['summary'] );
 		$this->assertSame( 'javascript:alert(1)', $kept[1]['values']['fullRecordUrl'] );
@@ -312,12 +353,14 @@ final class ProjectScreenTest extends WordPressTestCase {
 	}
 
 	/**
-	 * A good save writes each field slashed, so WordPress stores it as typed, and removes the empty ones.
+	 * A good save writes each field slashed, so WordPress stores it as typed, removes the
+	 * empty ones, and clears any refusal still waiting, such as one from a preview.
 	 */
 	public function test_a_good_save_writes_each_field_slashed(): void {
 		Functions\when( 'wp_verify_nonce' )->justReturn( 1 );
 		Functions\when( 'current_user_can' )->justReturn( true );
 		Functions\when( 'wp_slash' )->alias( static fn( mixed $value ): mixed => is_string( $value ) ? addslashes( $value ) : $value );
+		Functions\expect( 'delete_transient' )->once()->with( 'firehouse_project_41_6' );
 		$written = array();
 		Functions\when( 'update_post_meta' )->alias(
 			static function ( int $id, string $key, mixed $value ) use ( &$written ): bool {
@@ -397,11 +440,14 @@ final class ProjectScreenTest extends WordPressTestCase {
 		Project_Screen::editorial_box( self::post() );
 		$html = (string) ob_get_clean();
 
-		$this->assertStringContainsString( '<div class="notice notice-error">', $html );
+		$this->assertStringContainsString( '<div id="firehouse-project-errors" class="notice notice-error inline" tabindex="-1" autofocus><h2>Editorial fields not saved: 1 problem</h2>', $html );
 		$this->assertStringContainsString( '<a href="#fh-field-fullRecordUrl">Full record link</a>: The full record link has to be a web address.', $html );
+		$this->assertNotFalse( has_filter( 'admin_title', array( Project_Screen::class, 'title' ) ) );
+		$this->assertNotFalse( has_filter( 'postbox_classes_fh_project_firehouse-editorial', array( Project_Screen::class, 'open_box' ) ) );
+		$this->assertNotFalse( has_filter( 'hidden_meta_boxes', array( Project_Screen::class, 'show_box' ) ) );
 		$this->assertStringContainsString( '>Typed &lt;i&gt;summary&lt;/i&gt;</textarea>', $html );
-		$this->assertStringContainsString( 'value="javascript:alert(1)" spellcheck="false" aria-invalid="true" aria-describedby="fh-field-fullRecordUrl-error fh-field-fullRecordUrl-description"', $html );
-		$this->assertStringContainsString( '<p class="fh-field__error" id="fh-field-fullRecordUrl-error">The full record link has to be a web address.</p>', $html );
+		$this->assertStringContainsString( '<input type="text" inputmode="url" id="fh-field-fullRecordUrl" name="firehouse[fullRecordUrl]" value="javascript:alert(1)" spellcheck="false" autocomplete="off" aria-invalid="true" aria-describedby="fh-field-fullRecordUrl-error fh-field-fullRecordUrl-description"', $html );
+		$this->assertStringContainsString( '<p class="fh-field__error" id="fh-field-fullRecordUrl-error"><strong>Error:</strong> The full record link has to be a web address.</p>', $html );
 	}
 
 	/**
@@ -432,12 +478,12 @@ final class ProjectScreenTest extends WordPressTestCase {
 		$this->assertStringContainsString( '<li>Ana &lt;Ruiz&gt; &amp; co (CIRA)</li>', $html );
 		$this->assertStringContainsString( '<dt>Year completed</dt><dd>2024</dd>', $html );
 		$this->assertStringContainsString( '<li>made-up</li>', $html );
-		$this->assertStringContainsString( '<dt>IRB approval</dt><dd>Approved, exempt, or not required</dd>', $html );
+		$this->assertStringContainsString( '<dt>IRB approval</dt><dd><span class="fh-survey__note">Approved, exempt, or not required</span></dd>', $html );
 		$this->assertStringContainsString( "<ol><li>First line\nsecond line</li></ol>", $html );
 		$this->assertStringContainsString( "<strong>Need:</strong> A need\n<strong>Recommendation:</strong> A recommendation", $html );
 		$this->assertStringContainsString( 'Address: javascript:alert(1)', $html );
 		$this->assertStringNotContainsString( 'href=', $html );
-		$this->assertStringContainsString( '<dt>Organization</dt><dd><span class="fh-survey__none">No answer</span></dd>', $html );
+		$this->assertStringContainsString( '<dt>Organization</dt><dd><span class="fh-survey__note">(No answer)</span></dd>', $html );
 		$this->assertStringContainsString( '<dt>Response ID</dt><dd>R_test</dd>', $html );
 	}
 
@@ -448,7 +494,75 @@ final class ProjectScreenTest extends WordPressTestCase {
 		$this->stored['fh_irbApproved'] = '';
 		ob_start();
 		Project_Screen::survey_box( self::post() );
-		$this->assertStringContainsString( '<dt>IRB approval</dt><dd>Not recorded. Visitors can’t see a project without it.</dd>', (string) ob_get_clean() );
+		$this->assertStringContainsString( '<dt>IRB approval</dt><dd><span class="fh-survey__note">Not recorded. Visitors can’t see a project without it.</span></dd>', (string) ob_get_clean() );
+	}
+
+	/**
+	 * A refusal's title, box and redirect: the title says so, the box opens and shows,
+	 * and WordPress's own message is dropped from the address.
+	 */
+	public function test_a_refusal_opens_the_box_and_says_so(): void {
+		Functions\when( 'remove_query_arg' )->alias( static fn( string $key, string $url ): string => (string) preg_replace( '/[?&]' . $key . '=[^&]*/', '', $url ) );
+		$this->assertSame( 'Editorial fields not saved: Edit project', Project_Screen::title( 'Edit project' ) );
+		$this->assertSame( array( 'postbox' ), Project_Screen::open_box( array( 'postbox', 'closed' ) ) );
+		$this->assertSame( array( 'postexcerpt' ), Project_Screen::show_box( array( 'firehouse-editorial', 'postexcerpt' ) ) );
+		$this->assertSame( 'post.php?post=41&action=edit', Project_Screen::without_message( 'post.php?post=41&action=edit&message=1' ) );
+	}
+
+	/**
+	 * The refusal's summary is drawn on a project's screen only.
+	 */
+	public function test_the_summary_is_drawn_on_a_projects_screen_only(): void {
+		$_GET = array( 'post' => '41' );
+		Functions\when( 'get_post' )->justReturn( self::post() );
+		Functions\when( 'wp_add_inline_style' )->justReturn( true );
+		Functions\when( 'delete_transient' )->justReturn( true );
+		Functions\when( 'get_transient' )->justReturn(
+			array(
+				'values' => array_fill_keys( Project_Screen::FIELDS, '' ),
+				'errors' => array(
+					'publicationStatus' => 'Choose one.',
+					'fullRecordUrl'     => 'Not a web address.',
+				),
+			)
+		);
+		Project_Screen::load();
+
+		ob_start();
+		Project_Screen::notice( new \WP_Post( array( 'post_type' => 'page' ) ) );
+		$this->assertSame( '', ob_get_clean() );
+		ob_start();
+		Project_Screen::notice( self::post() );
+		$this->assertStringContainsString( '<h2>Editorial fields not saved: 2 problems</h2>', (string) ob_get_clean() );
+	}
+
+	/**
+	 * WordPress's notices after a save speak of a project, with a link to it, and
+	 * leave other post types' alone.
+	 */
+	public function test_the_save_notices_speak_of_a_project(): void {
+		Functions\when( 'get_post' )->justReturn( self::post() );
+		Functions\when( 'get_permalink' )->justReturn( 'https://example.org/firehouse/projects/smoke-study/' );
+		$messages = Project_Screen::messages(
+			array(
+				'post' => array(
+					5 => 'Post restored.',
+					9 => 'Post scheduled.',
+				),
+			)
+		);
+
+		$this->assertSame( 'Project updated. <a href="https://example.org/firehouse/projects/smoke-study/">View project</a>', $messages['fh_project'][1] );
+		$this->assertSame( 'Project published. <a href="https://example.org/firehouse/projects/smoke-study/">View project</a>', $messages['fh_project'][6] );
+		$this->assertSame( 'Project saved.', $messages['fh_project'][7] );
+		$this->assertSame( 'Post restored.', $messages['fh_project'][5] );
+		$this->assertSame(
+			array(
+				5 => 'Post restored.',
+				9 => 'Post scheduled.',
+			),
+			$messages['post']
+		);
 	}
 
 	/**

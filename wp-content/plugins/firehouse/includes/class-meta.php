@@ -27,6 +27,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  * given, so they can't change a survey field around rule 4. Neither post type is in
  * the REST API, so WordPress would never check a value against its schema on its own;
  * refuse_invalid() checks every write with validate() instead.
+ *
+ * Revisions hold a project's own editorial fields only (revisioned()). A survey field
+ * comes from the survey record, so restoring a revision, which puts back every field
+ * the revisions hold, must never roll one back: not the researcher's words (rules 1
+ * and 4), and not the IRB approval that decides whether visitors see the project. A
+ * topic's fields are all the team's and the synthesis's, and stay in its revisions.
+ * An autosave carries no field at all (revision_keys()): WordPress would copy any
+ * revisioned field from the request into it, for a restore to write.
  */
 final class Meta {
 
@@ -60,6 +68,12 @@ final class Meta {
 	);
 
 	/**
+	 * A project's fields its revisions hold: the editorial ones its edit screen saves.
+	 * Its geography isn't one, since it holds the survey's regions beside the note.
+	 */
+	public const PROJECT_REVISIONED = array( 'summary', 'publicationStatus', 'fullRecordUrl' );
+
+	/**
 	 * The schemas, read once per request.
 	 *
 	 * @var array<string, array<string, array<string, mixed>>>
@@ -75,6 +89,35 @@ final class Meta {
 	public static function hook(): void {
 		add_filter( 'add_post_metadata', array( self::class, 'refuse_add' ), 10, 4 );
 		add_filter( 'update_post_metadata', array( self::class, 'refuse_invalid' ), 10, 4 );
+		add_filter( 'wp_post_revision_meta_keys', array( self::class, 'revision_keys' ), 10, 2 );
+	}
+
+	/**
+	 * Whether a field is kept in its post's revisions, and so put back by a restore.
+	 *
+	 * @param string $post_type Post_Types::PROJECT or Post_Types::TOPIC.
+	 * @param string $name      The field's name in types.ts.
+	 */
+	public static function revisioned( string $post_type, string $name ): bool {
+		return Post_Types::TOPIC === $post_type || in_array( $name, self::PROJECT_REVISIONED, true );
+	}
+
+	/**
+	 * Leaves the fields out of the revisioned keys while WordPress makes an autosave of
+	 * a project or topic, so it copies none from the request into the autosave. The
+	 * edit screen's own form never sends a field under its meta key, so a real autosave
+	 * loses nothing; only a forged one, which a restore would then write, is stopped.
+	 * The list is left as it is everywhere else.
+	 *
+	 * @param string[] $keys      The meta keys WordPress keeps in revisions.
+	 * @param string   $post_type The post type.
+	 * @return string[]
+	 */
+	public static function revision_keys( array $keys, string $post_type ): array {
+		if ( ! doing_action( 'wp_creating_autosave' ) || ! in_array( $post_type, array( Post_Types::PROJECT, Post_Types::TOPIC ), true ) ) {
+			return $keys;
+		}
+		return array_values( array_filter( $keys, static fn( mixed $key ): bool => ! is_string( $key ) || ! str_starts_with( $key, self::PREFIX ) ) );
 	}
 
 	/**
@@ -167,7 +210,7 @@ final class Meta {
 	public static function register(): void {
 		foreach ( array( Post_Types::PROJECT, Post_Types::TOPIC ) as $post_type ) {
 			foreach ( self::fields( $post_type ) as $name => $schema ) {
-				register_post_meta( $post_type, self::key( $name ), self::args( $schema ) );
+				register_post_meta( $post_type, self::key( $name ), self::args( $schema, self::revisioned( $post_type, $name ) ) );
 			}
 		}
 	}
@@ -292,16 +335,17 @@ final class Meta {
 	/**
 	 * The arguments a field is registered with.
 	 *
-	 * @param array<string, mixed> $schema The field's schema.
+	 * @param array<string, mixed> $schema     The field's schema.
+	 * @param bool                 $revisioned Whether its post's revisions hold it.
 	 * @return array<string, mixed>
 	 */
-	public static function args( array $schema ): array {
+	public static function args( array $schema, bool $revisioned ): array {
 		return array(
 			'type'              => $schema['type'],
 			'description'       => $schema['description'] ?? '',
 			'single'            => true,
 			'show_in_rest'      => false,
-			'revisions_enabled' => true,
+			'revisions_enabled' => $revisioned,
 			'auth_callback'     => '__return_false',
 		);
 	}

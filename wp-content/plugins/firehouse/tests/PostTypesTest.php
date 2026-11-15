@@ -44,7 +44,7 @@ final class PostTypesTest extends WordPressTestCase {
 		foreach ( array( 'fh_project', 'fh_topic' ) as $type ) {
 			$expected = array();
 			foreach ( Meta::fields( $type ) as $name => $schema ) {
-				$expected[ Meta::key( $name ) ] = Meta::args( $schema );
+				$expected[ Meta::key( $name ) ] = Meta::args( $schema, Meta::revisioned( $type, $name ) );
 			}
 			$this->assertSame( $expected, $meta[ $type ] );
 		}

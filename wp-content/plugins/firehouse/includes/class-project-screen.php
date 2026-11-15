@@ -64,20 +64,22 @@ final class Project_Screen {
 	/**
 	 * The screen's styles, added inline on the project screen only.
 	 */
-	private const STYLE = '.fh-project-screen__title{margin:1em 0 0;font-size:1.3em;line-height:1.4}'
+	private const STYLE = '#poststuff .fh-project-screen__title{margin:1em 0 0;padding:0;font-size:1.3em;line-height:1.4}'
 		. '.fh-project-screen .fh-field{margin:0 0 1.5em}'
 		. '.fh-project-screen .fh-field label{display:block;font-weight:600;margin:0 0 .25em}'
-		. '.fh-project-screen .fh-field textarea,.fh-project-screen .fh-field input[type=text],.fh-project-screen .fh-field input[type=url]{width:100%;max-width:48em}'
+		. '.fh-project-screen .fh-field textarea,.fh-project-screen .fh-field input[type=text]{width:100%;max-width:48em}'
+		. '.fh-project-screen .fh-field :is(input,select,textarea){scroll-margin-top:3em}'
 		. '.fh-project-screen .fh-field .description{margin:.25em 0 0;max-width:48em}'
 		. '.fh-project-screen .fh-field__error{margin:.25em 0 0;color:#b32d2e;font-weight:600}'
 		. '.fh-project-screen [aria-invalid=true]{border-color:#b32d2e;box-shadow:0 0 0 1px #b32d2e}'
+		. '.fh-project-screen [aria-invalid=true]:focus{border-color:var(--wp-admin-theme-color,#2271b1);box-shadow:0 0 0 2px var(--wp-admin-theme-color,#2271b1)}'
 		. '.fh-survey{margin:0}'
 		. '.fh-survey dt{font-weight:600;margin:1em 0 .25em}'
 		. '.fh-survey dt:first-child{margin-top:0}'
 		. '.fh-survey dd{margin:0;max-width:48em;white-space:pre-wrap;overflow-wrap:anywhere}'
 		. '.fh-survey dd ul,.fh-survey dd ol{margin:0 0 0 1.5em;white-space:normal}'
 		. '.fh-survey dd li{margin:0 0 .5em;white-space:pre-wrap}'
-		. '.fh-survey__none{color:#50575e;font-style:normal}';
+		. '.fh-survey__note{color:#50575e;font-style:italic}';
 
 	/**
 	 * A refused save's input and problems, for the screen that shows it.
@@ -94,12 +96,16 @@ final class Project_Screen {
 		add_action( 'edit_form_after_title', array( self::class, 'heading' ) );
 		add_action( 'save_post_' . Post_Types::PROJECT, array( self::class, 'save' ), 10, 2 );
 		add_action( 'load-post.php', array( self::class, 'load' ) );
-		add_action( 'admin_notices', array( self::class, 'notice' ) );
+		add_action( 'edit_form_top', array( self::class, 'notice' ) );
+		add_filter( 'post_updated_messages', array( self::class, 'messages' ) );
 	}
 
 	/**
 	 * On a project's edit screen, before anything is drawn: adds the styles, and takes
-	 * back a refused save's input, once.
+	 * back a refused save's input, once. After a refusal, the browser's title says so,
+	 * so a screen reader's first words do, and the editorial box is open and shown
+	 * even if the editor had collapsed or hidden it, so the notice's links reach its
+	 * fields.
 	 */
 	public static function load(): void {
 		self::$refused = null;
@@ -116,7 +122,70 @@ final class Project_Screen {
 				'values' => array_map( 'strval', $refused['values'] ),
 				'errors' => array_map( 'strval', $refused['errors'] ),
 			);
+			add_filter( 'admin_title', array( self::class, 'title' ) );
+			add_filter( 'postbox_classes_' . Post_Types::PROJECT . '_firehouse-editorial', array( self::class, 'open_box' ) );
+			add_filter( 'hidden_meta_boxes', array( self::class, 'show_box' ) );
 		}
+	}
+
+	/**
+	 * The browser's title after a refused save.
+	 *
+	 * @param string $title The admin page's title.
+	 */
+	public static function title( string $title ): string {
+		return __( 'Editorial fields not saved:', 'firehouse' ) . ' ' . $title;
+	}
+
+	/**
+	 * The editorial box's classes, without the one that collapses it.
+	 *
+	 * @param string[] $classes The box's classes.
+	 * @return string[]
+	 */
+	public static function open_box( array $classes ): array {
+		return array_values( array_diff( $classes, array( 'closed' ) ) );
+	}
+
+	/**
+	 * The boxes the editor has hidden, without the editorial box.
+	 *
+	 * @param string[] $hidden The hidden boxes' IDs.
+	 * @return string[]
+	 */
+	public static function show_box( array $hidden ): array {
+		return array_values( array_diff( $hidden, array( 'firehouse-editorial' ) ) );
+	}
+
+	/**
+	 * Leaves WordPress's own "updated" notice off the screen a refused save redirects
+	 * to, where it would say the opposite of the refusal's.
+	 *
+	 * @param string $location The address WordPress redirects to.
+	 */
+	public static function without_message( string $location ): string {
+		return remove_query_arg( 'message', $location );
+	}
+
+	/**
+	 * WordPress's notices after saving, in a project's words. The editorial fields'
+	 * refusal has its own notice.
+	 *
+	 * @param array<string, array<int, string>> $messages The notices, by post type.
+	 * @return array<string, array<int, string>>
+	 */
+	public static function messages( array $messages ): array {
+		$post                            = get_post();
+		$view                            = $post instanceof \WP_Post ? ' <a href="' . esc_url( (string) get_permalink( $post ) ) . '">' . esc_html__( 'View project', 'firehouse' ) . '</a>' : '';
+		$messages[ Post_Types::PROJECT ] = array(
+			0  => '',
+			1  => esc_html__( 'Project updated.', 'firehouse' ) . $view,
+			4  => esc_html__( 'Project updated.', 'firehouse' ),
+			6  => esc_html__( 'Project published.', 'firehouse' ) . $view,
+			7  => esc_html__( 'Project saved.', 'firehouse' ),
+			10 => esc_html__( 'Project draft updated.', 'firehouse' ) . $view,
+		) + ( $messages['post'] ?? array() );
+		return $messages;
 	}
 
 	/**
@@ -161,10 +230,10 @@ final class Project_Screen {
 	public static function editorial_box( \WP_Post $post ): void {
 		$values = self::$refused['values'] ?? self::values( Store::project( $post )['fields'] );
 		$errors = self::$refused['errors'] ?? array();
-		wp_nonce_field( self::NONCE, self::NONCE_FIELD );
+		wp_nonce_field( self::NONCE . '_' . $post->ID, self::NONCE_FIELD );
 
 		echo '<div class="fh-project-screen">';
-		echo '<p>' . esc_html__( 'The FireHouse team’s own fields. Updating the project saves them; a new import of the survey never changes them.', 'firehouse' ) . '</p>';
+		echo '<p>' . esc_html__( 'The FireHouse team’s own fields. Saving the project saves them; a new import of the survey never changes them.', 'firehouse' ) . '</p>';
 
 		self::field(
 			'summary',
@@ -197,8 +266,8 @@ final class Project_Screen {
 		self::field(
 			'fullRecordUrl',
 			__( 'Full record link', 'firehouse' ),
-			static fn( string $attributes ): string => '<input type="url" id="fh-field-fullRecordUrl" name="' . esc_attr( self::INPUT ) . '[fullRecordUrl]" value="' . Markup::text( $values['fullRecordUrl'] ) . '" spellcheck="false"' . $attributes . '>',
-			__( 'A web address where the full record is kept, starting with https://. The project’s page links to it as “View full record”.', 'firehouse' ),
+			static fn( string $attributes ): string => '<input type="text" inputmode="url" id="fh-field-fullRecordUrl" name="' . esc_attr( self::INPUT ) . '[fullRecordUrl]" value="' . Markup::text( $values['fullRecordUrl'] ) . '" spellcheck="false" autocomplete="off"' . $attributes . '>',
+			__( 'A web address where the full record is kept, starting with https:// or http://. The project’s page links to it as “View full record”.', 'firehouse' ),
 			$errors
 		);
 		echo '</div>';
@@ -225,7 +294,7 @@ final class Project_Screen {
 		echo '<label for="' . esc_attr( $id ) . '">' . esc_html( $label ) . '</label>';
 		echo $control( $attributes ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- the control and its attributes are escaped where they're built.
 		if ( null !== $error ) {
-			echo '<p class="fh-field__error" id="' . esc_attr( $id . '-error' ) . '">' . esc_html( $error ) . '</p>';
+			echo '<p class="fh-field__error" id="' . esc_attr( $id . '-error' ) . '"><strong>' . esc_html__( 'Error:', 'firehouse' ) . '</strong> ' . esc_html( $error ) . '</p>';
 		}
 		echo '<p class="description" id="' . esc_attr( $described ) . '">' . esc_html( $description ) . '</p>';
 		echo '</div>';
@@ -270,11 +339,11 @@ final class Project_Screen {
 		self::row( __( 'Methods', 'firehouse' ), self::items( array_map( array( self::class, 'plain' ), $list( 'methods' ) ) ) );
 		self::row(
 			__( 'IRB approval', 'firehouse' ),
-			esc_html(
+			'<span class="fh-survey__note">' . esc_html(
 				true === ( $fields['irbApproved'] ?? null )
 					? __( 'Approved, exempt, or not required', 'firehouse' )
 					: __( 'Not recorded. Visitors can’t see a project without it.', 'firehouse' )
-			)
+			) . '</span>'
 		);
 		self::row( __( 'Geographic areas', 'firehouse' ), self::labels( is_array( $geo['regions'] ?? null ) ? array_values( $geo['regions'] ) : array(), Vocabulary::items( 'regions' ) ) );
 		self::row( __( 'Abstract', 'firehouse' ), Markup::text( $text( 'abstract' ) ) );
@@ -286,14 +355,15 @@ final class Project_Screen {
 	}
 
 	/**
-	 * One answer: its question's label, and the answer, or a note that there's none.
+	 * One answer: its question's label, and the answer, or a note that there's none,
+	 * set in italics, as the screen's own words are, apart from the researcher's.
 	 *
 	 * @param string $label The label.
 	 * @param string $value The answer's markup, escaped; '' for none.
 	 */
 	private static function row( string $label, string $value ): void {
 		echo '<dt>' . esc_html( $label ) . '</dt>';
-		echo '<dd>' . ( '' === $value ? '<span class="fh-survey__none">' . esc_html__( 'No answer', 'firehouse' ) . '</span>' : $value ) . '</dd>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- the value is escaped where it's built.
+		echo '<dd>' . ( '' === $value ? '<span class="fh-survey__note">' . esc_html__( '(No answer)', 'firehouse' ) . '</span>' : $value ) . '</dd>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- the value is escaped where it's built.
 	}
 
 	/**
@@ -399,10 +469,12 @@ final class Project_Screen {
 	}
 
 	/**
-	 * Saves the editorial fields with the post, from the screen's own form only: not
-	 * from Quick Edit, an autosave, or the plugin's own writes. Nothing is saved if
-	 * any field is wrong; the input and problems wait for the screen WordPress
-	 * redirects to.
+	 * Saves the editorial fields with the post, from the screen's own form only (Save
+	 * Draft, Publish, Update, or a draft's Preview, which saves the draft): not from
+	 * Quick Edit, an autosave, or the plugin's own writes. Nothing is saved if any
+	 * field is wrong; the input and problems wait for the screen WordPress redirects
+	 * to. A good save clears any refusal still waiting, such as one from a preview,
+	 * whose window never shows the edit screen.
 	 *
 	 * @param int      $post_id The post.
 	 * @param \WP_Post $post    The post as saved.
@@ -411,13 +483,18 @@ final class Project_Screen {
 		if ( Store::writing() || ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || Post_Types::PROJECT !== $post->post_type ) {
 			return;
 		}
-		if ( ! isset( $_POST[ self::NONCE_FIELD ] ) || ! is_string( $_POST[ self::NONCE_FIELD ] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST[ self::NONCE_FIELD ] ) ), self::NONCE ) ) {
+		if ( ! isset( $_POST[ self::NONCE_FIELD ] ) || ! is_string( $_POST[ self::NONCE_FIELD ] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST[ self::NONCE_FIELD ] ) ), self::NONCE . '_' . $post_id ) ) {
 			return;
 		}
 		if ( ! current_user_can( 'edit_post', $post_id ) ) {
 			return;
 		}
-		$input = isset( $_POST[ self::INPUT ] ) && is_array( $_POST[ self::INPUT ] ) ? wp_unslash( $_POST[ self::INPUT ] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Kept as typed (rule 1's spirit for the team's words); check() validates each field, and pages escape them.
+		// A request with the screen's nonce but without its fields didn't come from the
+		// screen's form, which always sends all of them: it changes nothing.
+		if ( ! isset( $_POST[ self::INPUT ] ) || ! is_array( $_POST[ self::INPUT ] ) ) {
+			return;
+		}
+		$input = wp_unslash( $_POST[ self::INPUT ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Kept as typed (rule 1's spirit for the team's words); check() validates each field, and pages escape them.
 
 		$checked = self::check( Store::project( $post )['fields'], is_array( $input ) ? $input : array() );
 		if ( array() !== $checked['errors'] ) {
@@ -429,8 +506,10 @@ final class Project_Screen {
 				),
 				self::KEEP
 			);
+			add_filter( 'redirect_post_location', array( self::class, 'without_message' ) );
 			return;
 		}
+		delete_transient( self::transient( $post_id ) );
 		Store::update_fields( $post_id, $checked['set'], $checked['delete'] );
 	}
 
@@ -440,7 +519,9 @@ final class Project_Screen {
 	 *
 	 * Text is kept as typed, but for the line breaks a browser sends (CRLF), which
 	 * become LF; an address is trimmed. An empty status, note or address removes it.
-	 * The geography keeps its regions, which are the survey's.
+	 * The geography keeps its regions, which are the survey's. A field that's missing
+	 * or isn't text is refused, rather than taken as empty: the form always sends each
+	 * as text.
 	 *
 	 * @param array<string, mixed> $fields The project's stored fields.
 	 * @param array<string, mixed> $input  The form's input, unslashed.
@@ -448,15 +529,18 @@ final class Project_Screen {
 	 */
 	public static function check( array $fields, array $input ): array {
 		$values = array();
+		$errors = array();
 		foreach ( self::FIELDS as $name ) {
-			$value           = $input[ $name ] ?? '';
+			$value           = $input[ $name ] ?? null;
 			$values[ $name ] = is_string( $value ) ? str_replace( "\r\n", "\n", $value ) : '';
+			if ( ! is_string( $value ) ) {
+				$errors[ $name ] = __( 'This field didn’t arrive as text. Reload the screen and enter it again.', 'firehouse' );
+			}
 		}
 		$values['fullRecordUrl'] = trim( $values['fullRecordUrl'] );
 
 		$set    = array( 'summary' => $values['summary'] );
 		$delete = array();
-		$errors = array();
 
 		$status = $values['publicationStatus'];
 		if ( '' === $status ) {
@@ -464,7 +548,7 @@ final class Project_Screen {
 		} elseif ( Vocabulary::is_one_of( $status, Vocabulary::publication_statuses() ) ) {
 			$set['publicationStatus'] = $status;
 		} else {
-			$errors['publicationStatus'] = __( 'Choose one of the listed publication statuses.', 'firehouse' );
+			$errors['publicationStatus'] ??= __( 'Choose one of the listed publication statuses.', 'firehouse' );
 		}
 
 		$url = $values['fullRecordUrl'];
@@ -473,7 +557,7 @@ final class Project_Screen {
 		} elseif ( self::is_web_address( $url ) ) {
 			$set['fullRecordUrl'] = $url;
 		} else {
-			$errors['fullRecordUrl'] = __( 'The full record link has to be a web address starting with https:// or http://.', 'firehouse' );
+			$errors['fullRecordUrl'] ??= __( 'The full record link has to be a web address starting with https:// or http://.', 'firehouse' );
 		}
 
 		$geo  = is_array( $fields['geo'] ?? null ) ? $fields['geo'] : null;
@@ -515,20 +599,28 @@ final class Project_Screen {
 	}
 
 	/**
-	 * After a refused save, a notice at the top of the screen naming each problem,
-	 * each a link to its field.
+	 * After a refused save, a summary at the top of the form naming each problem, each
+	 * a link to its field. It takes the focus when the page loads, and is `inline` so
+	 * WordPress's script doesn't move it, which would drop the focus, as the Import
+	 * screen's summary does.
+	 *
+	 * @param \WP_Post|null $post The post being edited.
 	 */
-	public static function notice(): void {
-		if ( null === self::$refused ) {
+	public static function notice( ?\WP_Post $post = null ): void {
+		if ( null === self::$refused || ( null !== $post && Post_Types::PROJECT !== $post->post_type ) ) {
 			return;
 		}
+		$count  = count( self::$refused['errors'] );
 		$labels = array(
 			'summary'           => __( 'Summary', 'firehouse' ),
 			'publicationStatus' => __( 'Publication status', 'firehouse' ),
 			'geoNote'           => __( 'Geography note', 'firehouse' ),
 			'fullRecordUrl'     => __( 'Full record link', 'firehouse' ),
 		);
-		echo '<div class="notice notice-error"><p><strong>' . esc_html__( 'The editorial fields weren’t saved.', 'firehouse' ) . '</strong> ' . esc_html__( 'Fix what’s marked, then update the project again. The project’s other changes, such as its status, were saved.', 'firehouse' ) . '</p><ul>';
+		echo '<div id="firehouse-project-errors" class="notice notice-error inline" tabindex="-1" autofocus><h2>';
+		/* translators: %d: how many problems. */
+		echo esc_html( sprintf( _n( 'Editorial fields not saved: %d problem', 'Editorial fields not saved: %d problems', $count, 'firehouse' ), $count ) );
+		echo '</h2><p>' . esc_html__( 'Fix what’s marked, then save the project again. The project’s other changes, such as its status, were saved.', 'firehouse' ) . '</p><ul>';
 		foreach ( self::$refused['errors'] as $name => $message ) {
 			echo '<li><a href="#fh-field-' . esc_attr( $name ) . '">' . esc_html( $labels[ $name ] ?? $name ) . '</a>: ' . esc_html( $message ) . '</li>';
 		}

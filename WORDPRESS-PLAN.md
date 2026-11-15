@@ -928,7 +928,8 @@ empty plugin passes PHPCS and Plugin Check.
 ### Phase 1 — Content model and first data load (2 weeks)
 
 - The `fh_project` and `fh_topic` post types.
-- Meta registered from the schemas, with revisions enabled.
+- Meta registered from the schemas, with revisions enabled. *A project's survey
+  fields left its revisions in Phase 6 (see there).*
 - The URL map and rewrites.
 - The fix for the `year` query variable.
 - The FireHouse Editor role, with the permission filter that limits page editing to
@@ -1853,9 +1854,21 @@ marked below.
     editorial fields in a box of their own, saved with the post and kept as typed,
     and the survey's answers read-only below, as stored. A save checks every editorial
     field and saves none if one is wrong (rule 6), and the screen comes back with what
-    was typed and each problem beside its field and listed at the top. A full-record
-    link has to be http or https, with a host. The geography's states have no field:
-    nothing shows them.*
+    was typed and each problem beside its field and listed at the top. WordPress has
+    saved the post's own fields by then, its status included, so a project published
+    in the same save is published. A full-record link has to be http or https, with a
+    host. The geography's states have no field, since nothing shows them; a save
+    keeps them.*
+  - *Revisions, from the security review of the screen (14 November): every field
+    had been kept in revisions since Phase 1, and a restore puts back every field the
+    revisions hold. So restoring an older revision rolled back the survey's answers,
+    IRB approval included, and a forged autosave could hold any field for a restore
+    to write. Now a project's revisions hold its editorial fields only (summary,
+    publication status, full-record link), not its geography, which holds the
+    survey's regions, and an autosave of a project or topic holds no field. A topic's
+    revisions still hold all its fields; the synthesis screen decides what restoring
+    one may do. Tried on the local copy: the forged autosave carried nothing, and an
+    older revision with other survey answers restored only the summary.*
   - *Next: the slug's lock, and refusing to publish a project without IRB approval
     (decided by Eric, 14 November: the edit screen says why in place of the Publish
     button, and a status change by any route, Quick Edit and bulk edit included, is
