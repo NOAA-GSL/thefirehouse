@@ -768,6 +768,16 @@ nothing from the database. Each class's docblock has the detail; this is the map
   as more than the address encoded.
 - `Page_Blocks` is what the two share: building their blocks from the bundle's text,
   where a stored link goes, and its button, left out when it leads nowhere.
+- `Page_Words` keeps the words an editor types into the FireHouse pages' blocks as
+  typed. A FireHouse Editor may not post unfiltered HTML, so WordPress runs kses over
+  every attribute string of a page they save, turning "R&D" into "R&amp;D", which the
+  page shows as written, and dropping "<5 km>". When a page in the FireHouse tree, or
+  a revision of one, is saved with content that's nothing but FireHouse blocks, with
+  only spaces between and inside them, the content is kept as sent
+  (`Page_Words::keep_as_typed()`, on `wp_insert_post_data`, late). Every FireHouse
+  block prints its words escaped and checks its links, and saves no markup of its own.
+  Anything else, a core block or markup anywhere among them included, keeps
+  WordPress's kses.
 - `Head` gives each Firehouse page its title, the site's title for it then GSL's
   suffix ("About — The FireHouse – Global Systems Laboratory"; decided by Eric, 12
   November, with Stephanie and Emily's spelling), and the description and Open Graph and
