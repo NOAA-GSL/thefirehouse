@@ -1816,18 +1816,21 @@ its own (`DEFERRED`), loaded only on a page with the map.
   - *The controls the plugin prints as links where the site has buttons (clearing
     the search, removing a filter, Clear all, and the empty state's action) differ
     only in a button's browser defaults (centred text, its font, the clear button's
-    padding), which change no box. Their screenshots match the site's within a
-    pixel's shift, focused or not.*
-  - *The quick look's dialog has the site's overlay styles, its own backdrop is
-    transparent, and the panel is in the same place at the same size.*
+    padding). Their boxes are the same size, and their screenshots match the site's
+    within a pixel's shift, focused or not.*
+  - *The quick look's dialog has the site's overlay styles, the dialog's own
+    `::backdrop` is transparent, and the panel is in the same place at the same size.*
   - *Contrast. The token check passes. Inside GSL's header and footer, the live
-    audit passes for the explorer, the quick look and the coverage section in both
-    themes, and for the landing page and the explorer without JavaScript, "Update
-    results" included. On the landing page in light, it reports what it reports on
-    the site, and nothing more: the hero and stats band, whose dark background is an
-    image it can't see, and the map's codes, drawn with a halo over the tiles, which
-    it can't see either. Measured against the pixels drawn beside it, the hero's and
-    stats' text is 6.45:1 at the lowest, on both sites.*
+    audit passes for the explorer and the quick look in both themes, and for the
+    coverage section in dark; in light it flags only the section's GACC codes.
+    Without JavaScript it passes for the coverage section and the explorer, "Update
+    results" included, in both themes. Elsewhere on the landing page, in light, it
+    flags the hero and stats band. It flags the same on the site, and nothing more
+    here: it can't see the hero's dark background image, or the halo and tiles the
+    codes are drawn on. Measured against the background pixels as drawn, the hero's
+    and stats' text is 6.45:1 at the lowest on both sites (AA needs 4.5:1). The
+    codes' contrast against their halo wasn't measured. The fallback states were
+    audited on the site only (README, "Accessibility").*
 
 **Done when:** it reaches feature parity with the React site, every URL parameter
 behaves the same, and the accessibility snapshots match.

@@ -1031,13 +1031,16 @@ walk reads computed styles off real DOM nodes and catches what a token audit can
 both; they have caught different things.
 
 Current state (14 November): the token audit passes. The live walk passes on every
-route in dark, at rest and in both fallback states. In light it reports the landing
-page only: the coverage map's GACC codes, drawn with a halo over the basemap tiles,
-which the walk can't see, and, except with reduced transparency, the hero and stats
-band, whose dark background is an image it can't see either. Measured against the
-pixels drawn beside it, the hero's and stats' text is 6.45:1 at the lowest. The
-plugin's landing page, explorer and quick look, inside GSL's header and footer,
-report the same and nothing more.
+route in dark, at rest and with `prefers-contrast: more` or
+`prefers-reduced-transparency: reduce`. In light it flags the landing page only: the
+coverage map's GACC codes, drawn with a halo over the basemap tiles, and, except with
+reduced transparency, the hero and stats band, whose dark background is an image. The
+walk can't see the halo and tiles, or the image (the known limitation at the top of
+`scripts/audit-contrast-live.js`). Measured against the background pixels as drawn,
+the hero's and stats' text is 6.45:1 at the lowest (AA needs 4.5:1); the codes'
+contrast against their halo wasn't measured. The walk flags the same on the plugin's
+landing page, explorer and quick look, inside GSL's header and footer, and nothing
+more.
 
 ## Hosting
 
