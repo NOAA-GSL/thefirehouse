@@ -1946,9 +1946,11 @@ marked below.
     touched (the code and security reviews). Both screens now refuse text that isn't
     valid UTF-8, which the database had refused after the other fields were saved;
     the topic screen treats invisible characters as blank. And a project or topic now
-    keeps its author, none from the import: WordPress made whoever saved one from its
-    screen the author, whose name and sign-in name oEmbed and the feeds publish (the
-    security re-check).*
+    has no author, whoever saves it: WordPress made whoever saved one from its screen
+    the author, whose name and sign-in name oEmbed, the feeds and the users sitemap
+    publish (the security re-check). So a draft's Preview is an autosave, which
+    WordPress saves into the draft only for its author, and shows the fields as last
+    saved.*
   - *Next: the landing and About pages' words.*
 - Landing and About layouts locked to text-only edits. Their sections are custom
   blocks whose words are attributes, which `contentOnly` locking doesn't show to

@@ -192,9 +192,9 @@ require_once __DIR__ . '/includes/class-head.php';
  *   leaves a project's survey fields out), does it change. Other post types' lists,
  *   and every list anywhere else, are left as they are.
  * - Every save of any post passes through Capabilities::keep_in_place
- *   (`wp_insert_post_data`): a topic keeps its key and status, a project or topic its
- *   author, and a limited editor's page its parent and slug. The plugin's own writes
- *   aside, nothing else is changed.
+ *   (`wp_insert_post_data`): a topic keeps its key and status, and a project or topic
+ *   has no author, except in the plugin's own writes; a limited editor's page keeps
+ *   its parent and slug. Nothing else is changed.
  * - Every save of any post passes through Project_Rules::enforce
  *   (`wp_insert_post_data`, late): only a project's, and not the plugin's own, is
  *   changed. Its title is set from the researcher's; a publish, schedule or private

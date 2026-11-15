@@ -467,12 +467,13 @@ abstract class Edit_Screen {
 
 	/**
 	 * Saves the fields with the post, from the screen's own form only (Save Draft,
-	 * Publish, Update, or a draft's Preview, which saves the draft): not from Quick
-	 * Edit, an autosave, or the plugin's own writes. Nothing is saved if any field is
-	 * wrong, or if the post's own fields had a problem (post_errors()); the input and
-	 * problems wait for the screen WordPress redirects to. A good save clears any
-	 * refusal still waiting, such as one from a preview, whose window never shows the
-	 * edit screen.
+	 * Publish or Update): not from Quick Edit, an autosave, or the plugin's own writes.
+	 * A draft's Preview is an autosave, since no one is a project's author
+	 * (Capabilities::keep_in_place()), and WordPress saves the draft itself on a
+	 * preview only for its author: the preview shows the fields as last saved. Nothing
+	 * is saved if any field is wrong, or if the post's own fields had a problem
+	 * (post_errors()); the input and problems wait for the screen WordPress redirects
+	 * to. A good save clears any refusal still waiting.
 	 *
 	 * @param int      $post_id The post.
 	 * @param \WP_Post $post    The post as saved.

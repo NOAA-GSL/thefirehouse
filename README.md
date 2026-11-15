@@ -593,9 +593,10 @@ nothing from the database. Each class's docblock has the detail; this is the map
   settings and the `firehouse` page tree, and nothing else on the site. The role
   stores `read` and Firehouse's own capabilities; WordPress's page capabilities are
   lent only while the plugin runs, so with the plugin off its users can only sign
-  in. Only administrators have `firehouse_import`. A project or topic keeps its author,
-  none from the import, whoever saves it, so no editor's name or sign-in name is
-  published as its author through oEmbed or the feeds. No one can delete the landing page
+  in. Only administrators have `firehouse_import`. A project or topic has no author,
+  whoever saves it and by whatever route (the plugin's own writes aside), so no
+  editor's name or sign-in name is published as its author through oEmbed, the feeds
+  or the users sitemap. No one can delete the landing page
   for good while pages outside the trash are under it: WordPress would move them to the
   top of the site, the About page beside the site's own `/about/`. The Pages screens
   say why.
@@ -605,8 +606,7 @@ nothing from the database. Each class's docblock has the detail; this is the map
   address, and the three navigation labels, read with `Settings::get()`.
 - `Edit_Screen` is what the project and topic edit screens share. Each adds a box of
   the team's fields to WordPress's own edit screen, saved whenever the screen saves
-  the post (Save Draft, Publish or Update, or a draft's Preview, which saves the
-  draft), through `Store::update_fields()`, kept as typed (line endings aside). A save
+  the post (Save Draft, Publish or Update), through `Store::update_fields()`, kept as typed (line endings aside). A save
   checks every field first (the screen's `check()`, with `Meta`'s schema check) and
   saves none if any is wrong; the input and problems wait in a transient for the
   screen WordPress redirects to, which marks each field and lists them at the top.
