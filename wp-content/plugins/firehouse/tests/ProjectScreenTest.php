@@ -224,6 +224,16 @@ final class ProjectScreenTest extends WordPressTestCase {
 	}
 
 	/**
+	 * Text that isn't valid UTF-8 is refused before anything is saved: the database
+	 * would refuse it after the other fields were written.
+	 */
+	public function test_text_that_isnt_utf8_is_refused(): void {
+		$checked = Project_Screen::check( self::fields(), self::input( array( 'geoNote' => "Front \xC3( Range" ) ) );
+
+		$this->assertSame( array( 'geoNote' => 'This field has characters that can’t be stored. Retype it.' ), $checked['errors'] );
+	}
+
+	/**
 	 * Wrong input is refused for its field, and kept to show again.
 	 *
 	 * @dataProvider bad_input
@@ -467,14 +477,14 @@ final class ProjectScreenTest extends WordPressTestCase {
 		Project_Screen::editorial_box( self::post() );
 		$html = (string) ob_get_clean();
 
-		$this->assertStringContainsString( '<div id="firehouse-project-errors" class="notice notice-error inline" tabindex="-1" autofocus><h2>Editorial fields not saved: 1 problem</h2>', $html );
+		$this->assertStringContainsString( '<div id="firehouse-project-errors" class="notice notice-error inline fh-edit-errors" role="group" tabindex="-1" autofocus aria-labelledby="firehouse-project-errors-heading"><h2 id="firehouse-project-errors-heading">Editorial fields not saved: 1 problem</h2><p>Fix what’s marked, then save the project again. The project’s other changes, such as its status, were saved.</p>', $html );
 		$this->assertStringContainsString( '<a href="#fh-project-fullRecordUrl">Full record link</a>: The full record link has to be a web address.', $html );
 		$this->assertNotFalse( has_filter( 'admin_title', array( Project_Screen::class, 'title' ) ) );
 		$this->assertNotFalse( has_filter( 'postbox_classes_fh_project_firehouse-editorial', array( Project_Screen::class, 'open_box' ) ) );
 		$this->assertNotFalse( has_filter( 'hidden_meta_boxes', array( Project_Screen::class, 'show_box' ) ) );
 		$this->assertStringContainsString( ">\nTyped &lt;i&gt;summary&lt;/i&gt;</textarea>", $html );
 		$this->assertStringContainsString( '<input type="text" inputmode="url" id="fh-project-fullRecordUrl" name="firehouse[fullRecordUrl]" value="javascript:alert(1)" spellcheck="false" autocomplete="off" aria-invalid="true" aria-describedby="fh-project-fullRecordUrl-error fh-project-fullRecordUrl-description"', $html );
-		$this->assertStringContainsString( '<p class="fh-project-field__error" id="fh-project-fullRecordUrl-error"><strong>Error:</strong> The full record link has to be a web address.</p>', $html );
+		$this->assertStringContainsString( '<p class="fh-edit-field__error" id="fh-project-fullRecordUrl-error"><strong>Error:</strong> The full record link has to be a web address.</p>', $html );
 	}
 
 	/**
@@ -505,12 +515,12 @@ final class ProjectScreenTest extends WordPressTestCase {
 		$this->assertStringContainsString( '<li>Ana &lt;Ruiz&gt; &amp; co (CIRA)</li>', $html );
 		$this->assertStringContainsString( '<dt>Year completed</dt><dd>2024</dd>', $html );
 		$this->assertStringContainsString( '<li>made-up</li>', $html );
-		$this->assertStringContainsString( '<dt>IRB approval</dt><dd><span class="fh-survey__note">Approved, exempt, or not required</span></dd>', $html );
+		$this->assertStringContainsString( '<dt>IRB approval</dt><dd><span class="fh-edit-note">Approved, exempt, or not required</span></dd>', $html );
 		$this->assertStringContainsString( "<ol><li>First line\nsecond line</li></ol>", $html );
 		$this->assertStringContainsString( "<strong>Need:</strong> A need\n<strong>Recommendation:</strong> A recommendation", $html );
 		$this->assertStringContainsString( 'Address: javascript:alert(1)', $html );
 		$this->assertStringNotContainsString( 'href=', $html );
-		$this->assertStringContainsString( '<dt>Organization</dt><dd><span class="fh-survey__note">(No answer)</span></dd>', $html );
+		$this->assertStringContainsString( '<dt>Organization</dt><dd><span class="fh-edit-note">(No answer)</span></dd>', $html );
 		$this->assertStringContainsString( '<dt>Response ID</dt><dd>R_test</dd>', $html );
 	}
 
@@ -521,7 +531,7 @@ final class ProjectScreenTest extends WordPressTestCase {
 		$this->stored['fh_irbApproved'] = '';
 		ob_start();
 		Project_Screen::survey_box( self::post() );
-		$this->assertStringContainsString( '<dt>IRB approval</dt><dd><span class="fh-survey__note">Not recorded. Visitors can’t see a project without it.</span></dd>', (string) ob_get_clean() );
+		$this->assertStringContainsString( '<dt>IRB approval</dt><dd><span class="fh-edit-note">Not recorded. Visitors can’t see a project without it.</span></dd>', (string) ob_get_clean() );
 	}
 
 	/**
@@ -560,7 +570,7 @@ final class ProjectScreenTest extends WordPressTestCase {
 		$this->assertSame( '', ob_get_clean() );
 		ob_start();
 		Project_Screen::notice( self::post() );
-		$this->assertStringContainsString( '<h2>Editorial fields not saved: 2 problems</h2>', (string) ob_get_clean() );
+		$this->assertStringContainsString( '<h2 id="firehouse-project-errors-heading">Editorial fields not saved: 2 problems</h2>', (string) ob_get_clean() );
 	}
 
 	/**
@@ -669,7 +679,7 @@ final class ProjectScreenTest extends WordPressTestCase {
 		$_POST['action'] = 'editpost';
 		Project_Screen::save( 41, self::post() );
 		$this->assertSame( 'Typed', $kept['values']['summary'] );
-		$this->assertSame( array( Project_Screen::FORM ), array_keys( $kept['errors'] ) );
+		$this->assertSame( array( Project_Screen::FORM => 'The screen had been open too long, so they weren’t saved. They’re below as you typed them: save the project again.' ), $kept['errors'] );
 		$this->assertNotFalse( has_filter( 'redirect_post_location', array( Project_Screen::class, 'without_message' ) ) );
 	}
 
@@ -691,8 +701,7 @@ final class ProjectScreenTest extends WordPressTestCase {
 		ob_start();
 		Project_Screen::notice( self::post() );
 		$html = (string) ob_get_clean();
-		$this->assertStringContainsString( '<ul><li>Open too long.</li></ul>', $html );
-		$this->assertStringNotContainsString( 'Fix what’s marked', $html, 'Nothing is marked.' );
+		$this->assertStringContainsString( '<p>The project’s other changes, such as its status, were saved.</p><ul><li>Open too long.</li></ul>', $html, 'Nothing is marked, so there is nothing to fix.' );
 	}
 
 	/**

@@ -64,8 +64,10 @@ require_once __DIR__ . '/includes/class-visibility.php';
 require_once __DIR__ . '/includes/class-seed-bundle.php';
 require_once __DIR__ . '/includes/class-importer.php';
 require_once __DIR__ . '/includes/class-import-screen.php';
+require_once __DIR__ . '/includes/class-edit-screen.php';
 require_once __DIR__ . '/includes/class-project-screen.php';
 require_once __DIR__ . '/includes/class-project-rules.php';
+require_once __DIR__ . '/includes/class-topic-screen.php';
 require_once __DIR__ . '/includes/class-frame.php';
 require_once __DIR__ . '/includes/class-icons.php';
 require_once __DIR__ . '/includes/class-markup.php';
@@ -189,6 +191,10 @@ require_once __DIR__ . '/includes/class-head.php';
  *   makes an autosave (it leaves the Firehouse fields out) or restores a revision (it
  *   leaves a project's survey fields out), does it change. Other post types' lists,
  *   and every list anywhere else, are left as they are.
+ * - Every save of any post passes through Capabilities::keep_in_place
+ *   (`wp_insert_post_data`): a topic keeps its key and status, and a project or topic
+ *   has no author, except in the plugin's own writes; a limited editor's page keeps
+ *   its parent and slug. Nothing else is changed.
  * - Every save of any post passes through Project_Rules::enforce
  *   (`wp_insert_post_data`, late): only a project's, and not the plugin's own, is
  *   changed. Its title is set from the researcher's; a publish, schedule or private
@@ -198,6 +204,12 @@ require_once __DIR__ . '/includes/class-head.php';
  *   status change of any post passes through Project_Rules::mark_published
  *   (`transition_post_status`), which records only a project's first publication.
  *   Anything else is passed through as it is.
+ * - Every save of any post also passes through Topic_Screen::keep_label
+ *   (`wp_insert_post_data`, late): only a topic's, and not the plugin's own, is
+ *   changed. Its title, the topic's label, is read as it was sent, before any
+ *   `title_save_pre` filter (kses or another plugin's), and kept escaped, without
+ *   control characters; one that would show nothing or isn't valid UTF-8 keeps the
+ *   label it had.
  * - Every check of a meta capability (edit_post_meta, add_post_meta,
  *   delete_post_meta) on a key starting fh_, in any case, is refused on a project, a
  *   topic or a revision of either. Any other meta check is left as it is.
@@ -210,11 +222,11 @@ require_once __DIR__ . '/includes/class-head.php';
  *   page capabilities are lent is narrowed.
  *
  * Beyond that, these change only Firehouse content and what Firehouse editors may do.
- * Settings, Import_Screen, Project_Screen and Project_Rules's screens hook only the
- * admin: Project_Rules's admin notices run on every admin screen and print only on
- * the projects list, and its Quick Edit check runs on every Quick Edit and acts only
- * on a project. Project_Screen saves a project's editorial fields only from its own
- * form, on the project's edit screen.
+ * Settings, Import_Screen, Project_Screen, Topic_Screen and Project_Rules's screens
+ * hook only the admin: Project_Rules's admin notices run on every admin screen and
+ * print only on the projects list, and its Quick Edit check runs on every Quick Edit
+ * and acts only on a project. Project_Screen and Topic_Screen save a project's or a
+ * topic's fields only from their own form, on its edit screen.
  */
 Post_Types::hook();
 Meta::hook();
@@ -225,6 +237,7 @@ Settings::hook();
 Import_Screen::hook();
 Project_Screen::hook();
 Project_Rules::hook();
+Topic_Screen::hook();
 Frame::hook();
 Visibility::hook();
 Blocks::hook();

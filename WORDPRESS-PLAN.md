@@ -1931,7 +1931,27 @@ marked below.
     - *Later, when anything but the import can clear a project's approval (the survey
       form): WordPress's scheduler publishes a scheduled post without this filter
       (`wp_publish_post()`), so unschedule an unapproved project there too.*
-  - *Next: the topic screen.*
+  - *The topic screen done 15 November (`includes/class-topic-screen.php`), sharing
+    the project screen's nonce, all-or-nothing save and refusal
+    (`includes/class-edit-screen.php`). The team's words for the area are editable:
+    its label (WordPress's title box), short label, description and what it covers,
+    one item a line. The synthesis is shown read-only, each need with its project
+    count and its projects by title, since the synthesis screen replaces it whole. The
+    introduction, which no page shows, and the order aren't on the screen. The label
+    is kept escaped as the import writes it, by every route, and never left empty,
+    since every topic page's heading is its label: an empty one keeps the old one and
+    the screen says so. The title box shows it as text, where WordPress's own box had
+    shown "&amp;" for "&". So the label is read as it was sent, before kses, which
+    would otherwise strip tag-like text such as "<PM2.5>" from a label an editor never
+    touched (the code and security reviews). Both screens now refuse text that isn't
+    valid UTF-8, which the database had refused after the other fields were saved;
+    the topic screen treats invisible characters as blank. And a project or topic now
+    has no author, whoever saves it: WordPress made whoever saved one from its screen
+    the author, whose name and sign-in name oEmbed, the feeds and the users sitemap
+    publish (the security re-check). So a draft's Preview is an autosave, which
+    WordPress saves into the draft only for its author, and shows the fields as last
+    saved.*
+  - *Next: the landing and About pages' words.*
 - Landing and About layouts locked to text-only edits. Their sections are custom
   blocks whose words are attributes, which `contentOnly` locking doesn't show to
   editors. *Decided: they keep their blocks and markup, and in the block editor each

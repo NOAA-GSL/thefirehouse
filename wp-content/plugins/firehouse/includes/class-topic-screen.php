@@ -1,0 +1,503 @@
+<?php
+/**
+ * The topic edit screen.
+ *
+ * @package Firehouse
+ */
+
+declare( strict_types = 1 );
+
+namespace Firehouse;
+
+use Firehouse\Domain\Format;
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Adds a topic's fields to WordPress's own edit screen, below its label, which is the
+ * post's title, in two boxes:
+ *
+ * - **Topic fields**, the FireHouse team's words for the area: its short label, its
+ *   description and what it covers. They're saved with the post, all or nothing,
+ *   as Edit_Screen saves a project's editorial fields.
+ * - **Synthesis of needs**, shown read-only: the needs the last synthesis found, who
+ *   reviewed it, and when. A new synthesis replaces it; it isn't edited here.
+ *
+ * The topic's introduction isn't on the screen: no page shows it (types.ts). Nor is
+ * its order, which places it among the four, or its key and status, which no one
+ * changes (Capabilities).
+ *
+ * Its label is kept as Store keeps it, escaped and trimmed, whichever route saves it,
+ * and is never left empty: one that would show nothing keeps the label the topic
+ * had, and the screen says so as one of its problems.
+ */
+final class Topic_Screen extends Edit_Screen {
+
+	/**
+	 * The post type the screen edits.
+	 */
+	public const POST_TYPE = Post_Types::TOPIC;
+
+	/**
+	 * The word in the fields' IDs, the refusal's transient and its notice.
+	 */
+	public const KIND = 'topic';
+
+	/**
+	 * The nonce's action.
+	 */
+	public const NONCE = 'firehouse_topic_fields';
+
+	/**
+	 * The nonce's field.
+	 */
+	public const NONCE_FIELD = 'firehouse_topic_nonce';
+
+	/**
+	 * The fields the screen edits, in the order it shows them.
+	 */
+	public const FIELDS = array( 'short', 'description', 'covers' );
+
+	/**
+	 * The problems' key for the label, the post's title.
+	 */
+	public const LABEL = 'label';
+
+	/**
+	 * The screen's own styles: room above the title box when the refusal's list
+	 * links to it, below WordPress's admin bar.
+	 */
+	private const STYLE = '#title{scroll-margin-top:3em}';
+
+	/**
+	 * The topics whose label this request kept, by ID, and why: "empty" or "invalid".
+	 *
+	 * @var array<int, string>
+	 */
+	private static array $kept = array();
+
+	/**
+	 * Hooks the screen, the label's rule, the title box's words, and the label's
+	 * problem under the title box.
+	 */
+	public static function hook(): void {
+		parent::hook();
+		// Late, as Project_Rules's rules are, so another plugin's filter can't undo it.
+		add_filter( 'wp_insert_post_data', array( self::class, 'keep_label' ), PHP_INT_MAX - 10, 3 );
+		add_filter( 'title_edit_pre', array( self::class, 'edit_label' ), 10, 2 );
+		add_filter( 'enter_title_here', array( self::class, 'title_prompt' ), 10, 2 );
+		add_action( 'edit_form_before_permalink', array( self::class, 'label_error' ) );
+	}
+
+	/**
+	 * The screen's own styles.
+	 */
+	protected static function own_style(): string {
+		return self::STYLE;
+	}
+
+	/**
+	 * Keeps a topic's label, its post's title, as Store writes it (Store::label()),
+	 * escaped and trimmed, by any route that saves it: this screen, Quick Edit, a
+	 * restore. One that would show nothing, or isn't valid UTF-8, keeps the label the
+	 * topic had: every topic page's heading is its label. The plugin's own writes, the
+	 * Import screen's, are left alone.
+	 *
+	 * The title is read as it was sent, before kses, which WordPress runs on the saves
+	 * of anyone who may not post unfiltered HTML, such as a FireHouse Editor: the
+	 * title box shows the label as text (edit_label()), so kses would strip whatever
+	 * looks like a tag, such as "<PM2.5>", from a label no one changed. It's escaped
+	 * here instead. Quick Edit sends the label escaped, as stored, so a changed title
+	 * is read back to text first, as Store::topic() reads it. Store::label() never
+	 * escapes an entity twice, so a label can't hold literal entity text such as
+	 * "&amp;", which shows as "&", from any route, the import's included.
+	 *
+	 * An unchanged label, sent as the title box shows it or as Quick Edit does, is kept
+	 * exactly as stored, so a save that doesn't touch it can't change it.
+	 *
+	 * Whether a label shows nothing is judged on what the topic page prints: the stored
+	 * title read back (Store::topic()), whose entities the browser decodes once more.
+	 *
+	 * WordPress passes the titles slashed, so they're unslashed to read them and
+	 * slashed going back, with their emoji encoded on an older table
+	 * (Store::post_title()).
+	 *
+	 * @param array<string, mixed> $data                The post's fields as they will be saved, slashed.
+	 * @param array<string, mixed> $postarr             The post as given, sanitized.
+	 * @param array<string, mixed> $unsanitized_postarr The post as given, before kses.
+	 * @return array<string, mixed>
+	 */
+	public static function keep_label( array $data, array $postarr, array $unsanitized_postarr = array() ): array {
+		// The ID decides, not $update: get_post( 0 ) would be whatever post is current.
+		$id     = (int) ( $postarr['ID'] ?? 0 );
+		$stored = 0 === $id ? null : get_post( $id );
+		if ( Store::writing() || ! $stored instanceof \WP_Post || Post_Types::TOPIC !== $stored->post_type ) {
+			return $data;
+		}
+		unset( self::$kept[ $id ] );
+		$sent = $unsanitized_postarr['post_title'] ?? $data['post_title'] ?? '';
+		$sent = is_string( $sent ) ? trim( wp_unslash( $sent ) ) : '';
+		if ( in_array( $sent, array( $stored->post_title, trim( wp_specialchars_decode( $stored->post_title, ENT_QUOTES ) ) ), true ) && '' !== $sent ) {
+			$data['post_title'] = wp_slash( $stored->post_title );
+			return $data;
+		}
+		// The control characters kses would have dropped go too: a feed's XML can't hold them.
+		$label = trim( (string) preg_replace( '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', wp_specialchars_decode( $sent, ENT_QUOTES ) ) );
+		$title = Store::post_title( $label );
+		if ( self::blank( wp_specialchars_decode( $title, ENT_QUOTES ) ) ) {
+			self::$kept[ $id ]  = self::is_utf8( $label ) ? 'empty' : 'invalid';
+			$data['post_title'] = wp_slash( $stored->post_title );
+			return $data;
+		}
+		$data['post_title'] = wp_slash( $title );
+		return $data;
+	}
+
+	/**
+	 * A topic's label as WordPress's title box shows it: as text. The label is stored
+	 * escaped (keep_label()), and the box escapes what it's given again, so without
+	 * this it would show "&amp;" for "&". Saved unchanged, it's kept as stored.
+	 *
+	 * @param mixed $title   The stored title.
+	 * @param mixed $post_id The post.
+	 * @return mixed
+	 */
+	public static function edit_label( mixed $title, mixed $post_id ): mixed {
+		if ( ! is_string( $title ) || ! is_numeric( $post_id ) || Post_Types::TOPIC !== get_post_type( (int) $post_id ) ) {
+			return $title;
+		}
+		return wp_specialchars_decode( $title, ENT_QUOTES );
+	}
+
+	/**
+	 * The title box's name on a topic's screen, which the refusal's list uses too:
+	 * "Label", not WordPress's "Add title".
+	 *
+	 * @param mixed $text The title box's prompt.
+	 * @param mixed $post The post being edited.
+	 * @return mixed
+	 */
+	public static function title_prompt( mixed $text, mixed $post = null ): mixed {
+		return $post instanceof \WP_Post && Post_Types::TOPIC === $post->post_type ? __( 'Label', 'firehouse' ) : $text;
+	}
+
+	/**
+	 * A kept label is a problem with the save, so the screen's fields aren't saved
+	 * either, and the screen says why. The reason is read once, for the save it's from.
+	 *
+	 * @param int $post_id The topic.
+	 * @return array<string, string>
+	 */
+	protected static function post_errors( int $post_id ): array {
+		$why = self::$kept[ $post_id ] ?? null;
+		unset( self::$kept[ $post_id ] );
+		if ( null === $why ) {
+			return array();
+		}
+		$post  = get_post( $post_id );
+		$label = $post instanceof \WP_Post ? wp_specialchars_decode( $post->post_title, ENT_QUOTES ) : '';
+		return array(
+			self::LABEL => 'invalid' === $why
+				/* translators: %s: the topic's label. */
+				? sprintf( __( 'The label had characters that can’t be stored, so it’s still “%s”.', 'firehouse' ), $label )
+				/* translators: %s: the topic's label. */
+				: sprintf( __( 'A topic needs a label, so it’s still “%s”.', 'firehouse' ), $label ),
+		);
+	}
+
+	/**
+	 * The label's problem, straight under the label, which is WordPress's own field.
+	 *
+	 * @param \WP_Post $post The post being edited.
+	 */
+	public static function label_error( \WP_Post $post ): void {
+		$message = self::refused()['errors'][ self::LABEL ] ?? null;
+		if ( Post_Types::TOPIC !== $post->post_type || ! is_string( $message ) ) {
+			return;
+		}
+		echo '<div class="fh-edit-screen">';
+		self::error( 'fh-topic-' . self::LABEL, $message );
+		echo '</div>';
+	}
+
+	/**
+	 * Where the refusal's list links a problem to: the label's is WordPress's title box.
+	 *
+	 * @param string $name The field.
+	 */
+	protected static function anchor( string $name ): string {
+		return self::LABEL === $name ? '#title' : parent::anchor( $name );
+	}
+
+	/**
+	 * Adds the two boxes.
+	 */
+	public static function boxes(): void {
+		add_meta_box( self::BOX, __( 'Topic fields', 'firehouse' ), array( self::class, 'editorial_box' ), Post_Types::TOPIC, 'normal', 'high' );
+		add_meta_box( 'firehouse-synthesis', __( 'Synthesis of needs', 'firehouse' ), array( self::class, 'synthesis_box' ), Post_Types::TOPIC, 'normal', 'high' );
+	}
+
+	/**
+	 * The topic's fields, as a form inside WordPress's.
+	 *
+	 * @param \WP_Post $post The post being edited.
+	 */
+	public static function editorial_box( \WP_Post $post ): void {
+		$values = self::refused()['values'] ?? self::values( self::stored( $post ) );
+		$errors = self::refused()['errors'] ?? array();
+		self::nonce_field( $post->ID );
+
+		echo '<div class="fh-edit-screen">';
+		echo '<p>' . esc_html__( 'The FireHouse team’s words for this topic area. Updating the topic saves them, with its label above.', 'firehouse' ) . '</p>';
+
+		self::field(
+			'short',
+			__( 'Short label (required)', 'firehouse' ),
+			static fn( string $attributes ): string => '<input type="text" id="fh-topic-short" name="' . esc_attr( self::INPUT ) . '[short]" value="' . Markup::text( $values['short'] ) . '" aria-required="true"' . $attributes . '>',
+			__( 'The area’s name on its tags and in the topic page’s breadcrumb, such as “Observations”. A word or two.', 'firehouse' ),
+			$errors
+		);
+
+		// A browser drops a line break straight after <textarea>, so one is printed for it
+		// to drop, and text that starts with its own line break keeps it.
+		self::field(
+			'description',
+			__( 'Description', 'firehouse' ),
+			static fn( string $attributes ): string => '<textarea id="fh-topic-description" name="' . esc_attr( self::INPUT ) . '[description]" rows="2"' . $attributes . ">\n" . Markup::text( $values['description'] ) . '</textarea>',
+			__( 'One sentence on what the area is about. It isn’t shown on the site: the synthesis reads it as the area’s description.', 'firehouse' ),
+			$errors
+		);
+
+		self::field(
+			'covers',
+			__( 'What this area covers', 'firehouse' ),
+			static fn( string $attributes ): string => '<textarea id="fh-topic-covers" name="' . esc_attr( self::INPUT ) . '[covers]" rows="5"' . $attributes . ">\n" . Markup::text( $values['covers'] ) . '</textarea>',
+			__( 'One item per line, such as “Surface observation networks”. The topic page lists them beside the needs, under “What this area covers”, and leaves that box out when there are none.', 'firehouse' ),
+			$errors
+		);
+		echo '</div>';
+	}
+
+	/**
+	 * The topic's stored fields, as the form shows them: '' for none, and what it
+	 * covers one per line.
+	 *
+	 * @param array<string, mixed> $fields The topic's fields (Store::topic()).
+	 * @return array<string, string>
+	 */
+	public static function values( array $fields ): array {
+		$covers = is_array( $fields['covers'] ?? null ) ? array_filter( $fields['covers'], 'is_string' ) : array();
+		return array(
+			'short'       => is_string( $fields['short'] ?? null ) ? $fields['short'] : '',
+			'description' => is_string( $fields['description'] ?? null ) ? $fields['description'] : '',
+			'covers'      => implode( "\n", $covers ),
+		);
+	}
+
+	/**
+	 * The synthesis, read-only, as stored: who reviewed it, when, how many projects it
+	 * read and what made it, and its needs, each with its project count and the
+	 * projects it names.
+	 *
+	 * @param \WP_Post $post The post being edited.
+	 */
+	public static function synthesis_box( \WP_Post $post ): void {
+		$fields = self::stored( $post );
+		$text   = static fn( string $name ): string => is_string( $fields[ $name ] ?? null ) ? $fields[ $name ] : '';
+		$none   = __( '(Not recorded)', 'firehouse' );
+		$count  = $fields['sourceCount'] ?? null;
+		$needs  = is_array( $fields['topNeeds'] ?? null ) ? array_values( $fields['topNeeds'] ) : array();
+
+		echo '<p>' . esc_html__( 'The needs this area’s projects raise, as the last synthesis found them. They can’t be edited here: a new synthesis replaces them. Each project’s title links to its edit screen.', 'firehouse' ) . '</p>';
+		echo '<dl class="fh-edit-readonly">';
+		self::row( __( 'Reviewed by', 'firehouse' ), Markup::text( $text( 'reviewedBy' ) ), __( 'No one yet. The topic page marks the needs “Draft, pending team review”.', 'firehouse' ) );
+		self::row( __( 'Last updated', 'firehouse' ), '' === $text( 'updatedAt' ) ? '' : Markup::text( Format::review_date( $text( 'updatedAt' ) ) ), $none );
+		self::row( __( 'Projects it read', 'firehouse' ), is_int( $count ) || is_float( $count ) ? esc_html( (string) $count ) : '', $none );
+		self::row( __( 'Made with', 'firehouse' ), Markup::text( $text( 'model' ) ), $none );
+		self::row( __( 'Top needs', 'firehouse' ), self::items( array_map( array( self::class, 'need' ), $needs ), 'ol' ), __( '(None)', 'firehouse' ) );
+		echo '</dl>';
+	}
+
+	/**
+	 * A need: its text, its project count as stored (or the number of projects it
+	 * names), each on a line of its own, and those projects, each by its title, marked
+	 * if visitors can't see it.
+	 *
+	 * @param mixed $need The need, its projects as post IDs.
+	 */
+	private static function need( mixed $need ): string {
+		if ( ! is_array( $need ) || ! is_string( $need['text'] ?? null ) ) {
+			return '';
+		}
+		$ids      = is_array( $need['projects'] ?? null ) ? array_values( array_filter( $need['projects'], 'is_int' ) ) : array();
+		$mentions = is_int( $need['mentions'] ?? null ) || is_float( $need['mentions'] ?? null ) ? (int) $need['mentions'] : count( $ids );
+		/* translators: %d: how many projects raise the need. */
+		$markup = '<div>' . Markup::text( $need['text'] ) . '</div><div>' . esc_html( sprintf( __( 'Project count: %d', 'firehouse' ), $mentions ) ) . '</div>';
+		return $markup . self::items( array_map( array( self::class, 'source' ), $ids ) );
+	}
+
+	/**
+	 * A project a need names: its title, linked to its edit screen for someone who may
+	 * edit it, and a note if visitors can't see it.
+	 *
+	 * @param int $id The project's post ID.
+	 */
+	private static function source( int $id ): string {
+		$post = get_post( $id );
+		if ( ! $post instanceof \WP_Post || Post_Types::PROJECT !== $post->post_type ) {
+			/* translators: %d: a post ID. */
+			return '<span class="fh-edit-note">' . esc_html( sprintf( __( 'A project that’s gone (ID %d)', 'firehouse' ), $id ) ) . '</span>';
+		}
+		$title = get_post_meta( $id, Meta::key( 'title' ), true );
+		$title = Markup::text( is_string( $title ) && '' !== $title ? $title : wp_specialchars_decode( $post->post_title, ENT_QUOTES ) );
+		$link  = current_user_can( 'edit_post', $id ) ? get_edit_post_link( $id ) : null;
+		$name  = is_string( $link ) && '' !== $link ? '<a href="' . esc_url( $link ) . '">' . $title . '</a>' : $title;
+		return $name . ( Store::is_public( $post ) ? '' : ' <span class="fh-edit-note">' . esc_html__( '(not on the site)', 'firehouse' ) . '</span>' );
+	}
+
+	/**
+	 * WordPress's notices after saving, in a topic's words. The fields' refusal has its
+	 * own notice.
+	 *
+	 * @param array<string, array<int, string>> $messages The notices, by post type.
+	 * @return array<string, array<int, string>>
+	 */
+	public static function messages( array $messages ): array {
+		$post                          = get_post();
+		$view                          = $post instanceof \WP_Post ? ' <a href="' . esc_url( (string) get_permalink( $post ) ) . '">' . esc_html__( 'View topic', 'firehouse' ) . '</a>' : '';
+		$messages[ Post_Types::TOPIC ] = array(
+			0 => '',
+			1 => esc_html__( 'Topic updated.', 'firehouse' ) . $view,
+			4 => esc_html__( 'Topic updated.', 'firehouse' ),
+		) + ( $messages['post'] ?? array() );
+		return $messages;
+	}
+
+	/**
+	 * Checks the form's input: what to save, what to remove, and what's wrong, by
+	 * field. Every field is the team's, so the stored ones don't decide anything.
+	 *
+	 * Text is kept as typed, but for the line breaks a browser sends (CRLF), which
+	 * become LF. A field that's missing, isn't text or isn't valid UTF-8 is refused
+	 * (texts()). The short label can't be blank: only spaces or invisible characters
+	 * (blank()). A blank description removes it. What the area covers is one item a
+	 * line, each trimmed, blank lines dropped; none removes it. An item stored with a
+	 * line break of its own would become two.
+	 *
+	 * @param array<string, mixed> $fields The topic's stored fields.
+	 * @param array<string, mixed> $input  The form's input, unslashed.
+	 * @return array{set: array<string, mixed>, delete: list<string>, errors: array<string, string>, values: array<string, string>}
+	 */
+	public static function check( array $fields, array $input ): array {
+		unset( $fields );
+		$texts  = self::texts( $input );
+		$values = $texts['values'];
+		$errors = $texts['errors'];
+		$set    = array();
+		$delete = array();
+
+		if ( self::blank( $values['short'] ) ) {
+			$errors['short'] ??= __( 'A topic needs a short label.', 'firehouse' );
+		} else {
+			$set['short'] = $values['short'];
+		}
+
+		if ( self::blank( $values['description'] ) ) {
+			$delete[] = 'description';
+		} else {
+			$set['description'] = $values['description'];
+		}
+
+		$covers = array_values( array_filter( array_map( 'trim', explode( "\n", $values['covers'] ) ), static fn( string $line ): bool => ! self::blank( $line ) ) );
+		if ( array() === $covers ) {
+			$delete[] = 'covers';
+		} else {
+			$set['covers'] = $covers;
+		}
+
+		foreach ( $set as $name => $value ) {
+			$valid = Meta::validate( Post_Types::TOPIC, $name, $value );
+			if ( true !== $valid ) {
+				$errors[ $name ] ??= $valid->get_error_message();
+			}
+		}
+
+		return array(
+			'set'    => $set,
+			'delete' => $delete,
+			'errors' => $errors,
+			'values' => $values,
+		);
+	}
+
+	/**
+	 * The topic's stored fields, its label among them.
+	 *
+	 * @param \WP_Post $post The topic.
+	 * @return array<string, mixed>
+	 */
+	protected static function stored( \WP_Post $post ): array {
+		return Store::topic( $post )['fields'];
+	}
+
+	/**
+	 * Each field's label, for the refusal's list of problems.
+	 *
+	 * @return array<string, string>
+	 */
+	protected static function field_labels(): array {
+		return array(
+			self::LABEL   => __( 'Label', 'firehouse' ),
+			'short'       => __( 'Short label', 'firehouse' ),
+			'description' => __( 'Description', 'firehouse' ),
+			'covers'      => __( 'What this area covers', 'firehouse' ),
+		);
+	}
+
+	/**
+	 * The words before the browser's title after a refused save.
+	 */
+	protected static function refused_title(): string {
+		return __( 'Topic fields not saved:', 'firehouse' );
+	}
+
+	/**
+	 * The refusal's heading.
+	 *
+	 * @param int $count How many problems.
+	 */
+	protected static function problems_heading( int $count ): string {
+		/* translators: %d: how many problems. */
+		return sprintf( _n( 'Topic fields not saved: %d problem', 'Topic fields not saved: %d problems', $count, 'firehouse' ), $count );
+	}
+
+	/**
+	 * What to do when a field is marked. When only the label is, it's back as it was,
+	 * so there's nothing to fix: the other changes just need saving again.
+	 *
+	 * @param array<string, string> $errors The problems, by field.
+	 */
+	protected static function fix_hint( array $errors ): string {
+		return array() === array_diff_key( $errors, array_flip( array( self::LABEL, self::FORM ) ) )
+			? __( 'Your other changes are below as you typed them: update the topic again to save them.', 'firehouse' )
+			: __( 'Fix what’s marked, then update the topic again.', 'firehouse' );
+	}
+
+	/**
+	 * What WordPress saved anyway: the label, unless it was kept.
+	 *
+	 * @param array<string, string> $errors The problems, by field.
+	 */
+	protected static function saved_hint( array $errors ): string {
+		return isset( $errors[ self::LABEL ] ) ? '' : __( 'The topic’s label was saved.', 'firehouse' );
+	}
+
+	/**
+	 * The problem when the screen's nonce had gone stale.
+	 */
+	protected static function stale_message(): string {
+		return __( 'The screen had been open too long, so they weren’t saved. They’re below as you typed them: update the topic again.', 'firehouse' );
+	}
+}

@@ -560,8 +560,7 @@ nothing from the database. Each class's docblock has the detail; this is the map
   error.
 - `Post_Types` registers `fh_project` and `fh_topic` at the React site's addresses:
   `/firehouse/projects/`, `/firehouse/projects/{slug}/` and `/firehouse/topics/{key}/`
-  (no topic archive). Neither is in the REST API, and their edit screens have no form
-  for the fields yet (Phase 6). No one adds either in the admin.
+  (no topic archive). Neither is in the REST API. No one adds either in the admin.
 - `Meta` registers every field in `shared/project.schema.json` and
   `shared/topic.schema.json` (`npm run schema` writes them from `types.ts`) as post
   meta named as in `types.ts` with an `fh_` prefix, except what the post holds: a
@@ -594,7 +593,10 @@ nothing from the database. Each class's docblock has the detail; this is the map
   settings and the `firehouse` page tree, and nothing else on the site. The role
   stores `read` and Firehouse's own capabilities; WordPress's page capabilities are
   lent only while the plugin runs, so with the plugin off its users can only sign
-  in. Only administrators have `firehouse_import`. No one can delete the landing page
+  in. Only administrators have `firehouse_import`. A project or topic has no author,
+  whoever saves it and by whatever route (the plugin's own writes aside), so no
+  editor's name or sign-in name is published as its author through oEmbed, the feeds
+  or the users sitemap. No one can delete the landing page
   for good while pages outside the trash are under it: WordPress would move them to the
   top of the site, the About page beside the site's own `/about/`. The Pages screens
   say why.
@@ -602,27 +604,47 @@ nothing from the database. Each class's docblock has the detail; this is the map
   rewrite rules rebuilt, on activation and after `Installer::REVISION` changes.
 - `Settings` is FireHouse → Settings: the site name, the Submit a Finding label and
   address, and the three navigation labels, read with `Settings::get()`.
-- `Project_Screen` adds a project's fields to WordPress's own edit screen, in two
-  boxes. **Editorial fields** (the summary, publication status, geography note and
-  full-record link) are the team's: saved whenever the screen saves the post (Save
-  Draft, Publish or Update, or a draft's Preview, which saves the draft), through
-  `Store::update_fields()`, kept as typed (line endings aside, and the link trimmed),
-  and never touched by a re-import (rule 4). The geography is written only when its
-  note changes, so a save never stands or falls on the survey's regions.
-  **From the survey** shows the researcher's answers read-only, as stored. A save
-  checks every editorial field first (`Project_Screen::check()`, with `Meta`'s schema
-  check) and saves none if any is wrong; the input and problems wait in a transient for
-  the screen WordPress redirects to, which marks each field and lists them at the top.
-  WordPress has saved the post's own fields, such as its status, by then. Only the
-  screen's own form saves the editorial fields, besides a restore of a revision,
-  which puts back the ones it holds (below): not Quick Edit, an autosave, or the
-  plugin's writes. A request with the screen's nonce but without its fields, or with
-  one that isn't text, saves none. A good save clears any refusal still waiting. The
-  screen's nonce is the project's own, refreshed with WordPress's through the
-  heartbeat (`Project_Screen::refresh_nonce()`), as after signing in again in the
-  session-expired dialog; if it has gone stale anyway, WordPress's save of the post
-  still goes through, and the screen says the editorial fields weren't saved and shows
-  what was typed.
+- `Edit_Screen` is what the project and topic edit screens share. Each adds a box of
+  the team's fields to WordPress's own edit screen, saved whenever the screen saves
+  the post (Save Draft, Publish or Update), through `Store::update_fields()`, kept as typed (line endings aside). A save
+  checks every field first (the screen's `check()`, with `Meta`'s schema check) and
+  saves none if any is wrong; the input and problems wait in a transient for the
+  screen WordPress redirects to, which marks each field and lists them at the top.
+  WordPress has saved the post's own fields by then. Only the screen's own form saves
+  the fields, besides a restore of a revision, which puts back the ones it holds
+  (below): not Quick Edit, an autosave, or the plugin's writes. A request with the
+  screen's nonce but without its fields, or with one that isn't text, saves none. A
+  good save clears any refusal still waiting. Text that isn't valid UTF-8 is refused
+  too (`texts()`), since the database would refuse it after the other fields were
+  written. The screen's nonce is the post's own,
+  refreshed with WordPress's through the heartbeat (`refresh_nonce()`), as after
+  signing in again in the session-expired dialog; if it has gone stale anyway,
+  WordPress's save of the post still goes through, and the screen says the fields
+  weren't saved and shows what was typed.
+- `Project_Screen` is a project's, in two boxes. **Editorial fields** (the summary,
+  publication status, geography note and full-record link, which is trimmed) are the
+  team's, never touched by a re-import (rule 4). The geography is written only when
+  its note changes, so a save never stands or falls on the survey's regions. **From
+  the survey** shows the researcher's answers read-only, as stored. WordPress has
+  saved the project's status by the time a save is refused.
+- `Topic_Screen` is a topic's, in two boxes under its label, WordPress's title box.
+  **Topic fields** are the team's words for the area: its short label, which can't be
+  blank (spaces and invisible characters such as a zero-width space count as blank:
+  `blank()`), its description, and what it covers, one item a line (each trimmed,
+  blank lines dropped). **Synthesis of needs** shows the synthesis read-only: who reviewed
+  it, or that the topic page calls it a draft, its date, how many projects it read and
+  what made it, and each need with its project count and its projects by title,
+  linked to their edit screens and marked when visitors can't see one. A new
+  synthesis replaces it. The label is kept escaped, as `Store::label()` writes it, by
+  any route that saves it (`Topic_Screen::keep_label()`, on `wp_insert_post_data`,
+  late). It's read as it was sent, before kses, which would strip anything that looks
+  like a tag from a FireHouse Editor's save; the control characters kses would drop
+  are dropped. An unchanged label is kept exactly as stored. One that's blank, judged
+  on what the topic page prints, or isn't valid UTF-8 keeps the label the topic had,
+  and the screen refuses its fields with it and says why, under the title box. The
+  title box shows the label as text (`edit_label()`) and is named "Label". The
+  topic's introduction, which no page shows, and its order aren't on the screen, and
+  no one can change its key or status (`Capabilities`).
 - `Project_Rules` holds three rules on every save of a project through WordPress's
   editing routes (the edit screen, Quick Edit, bulk edit, a restore, XML-RPC), on
   `wp_insert_post_data`, late, so another plugin's filter can't undo them. The

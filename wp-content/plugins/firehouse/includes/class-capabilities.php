@@ -306,6 +306,11 @@ final class Capabilities {
 	 *
 	 * - A topic's key and status, unless the plugin itself is writing: there are four
 	 *   topics, each always published, at its key.
+	 * - A project or topic has no author, unless the plugin itself is writing, whoever
+	 *   saves it and by whatever route. The import gives them none, and WordPress would
+	 *   make whoever saves one from its screen the author, whose name and sign-in name
+	 *   oEmbed, the feeds and the users sitemap would then publish. One an earlier save
+	 *   made an author loses it on its next save.
 	 * - A limited editor's page's parent and slug, which are its address, whatever the
 	 *   page's status. A draft that has no slug yet gets one as usual, and a page in the
 	 *   trash, whose slug WordPress has changed, gets its old one back as WordPress
@@ -328,6 +333,9 @@ final class Capabilities {
 		if ( Post_Types::TOPIC === $stored->post_type && ! Store::writing() ) {
 			$data['post_name']   = $stored->post_name;
 			$data['post_status'] = $stored->post_status;
+		}
+		if ( in_array( $stored->post_type, array( Post_Types::PROJECT, Post_Types::TOPIC ), true ) && ! Store::writing() ) {
+			$data['post_author'] = 0;
 		}
 		if ( 'page' === $stored->post_type && self::is_limited( wp_get_current_user() ) ) {
 			$data['post_parent'] = $stored->post_parent;

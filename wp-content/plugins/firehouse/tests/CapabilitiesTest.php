@@ -11,6 +11,7 @@ namespace Firehouse\Tests;
 
 use Brain\Monkey\Functions;
 use Firehouse\Capabilities;
+use Firehouse\Store;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
@@ -383,6 +384,45 @@ final class CapabilitiesTest extends WordPressTestCase {
 	}
 
 	/**
+	 * A project or topic has no author, whoever saves it, so no editor's name is
+	 * published as its author, and one an earlier save made an author loses it; a
+	 * page keeps its own.
+	 */
+	public function test_a_project_or_topic_has_no_author(): void {
+		$this->as_user( array( 'firehouse_editor' ), array() );
+		$this->posts[50]->post_author = '10';
+		$saved                        = array(
+			'post_author' => 10,
+			'post_title'  => 'A label',
+		);
+
+		$this->assertSame( 0, Capabilities::keep_in_place( $saved, array( 'ID' => 40 ) )['post_author'] );
+		$this->assertSame( 0, Capabilities::keep_in_place( $saved, array( 'ID' => 50 ) )['post_author'], 'Made an author by an earlier save.' );
+		$this->assertSame( 10, Capabilities::keep_in_place( $saved, array( 'ID' => 11 ) )['post_author'], 'A page.' );
+	}
+
+	/**
+	 * The plugin's own writes set a project's author as they give it: the import gives
+	 * none.
+	 */
+	public function test_the_plugins_own_writes_set_the_author(): void {
+		Functions\when( 'wp_slash' )->returnArg();
+		Functions\when( 'has_filter' )->justReturn( false );
+		Functions\when( 'kses_remove_filters' )->justReturn();
+		$author = null;
+		Functions\when( 'wp_update_post' )->alias(
+			static function ( array $postarr ) use ( &$author ): int {
+				$author = Capabilities::keep_in_place( $postarr, $postarr )['post_author'];
+				return 50;
+			}
+		);
+
+		Store::save( 'fh_project', 50, array( 'post_author' => 7 ), array(), array() );
+
+		$this->assertSame( 7, $author );
+	}
+
+	/**
 	 * The landing page isn't deleted for good while pages are under it, in any status:
 	 * WordPress would move them to the top of the site, the About page beside the
 	 * site's own. In the trash, it's still the landing page. With nothing under it, or
@@ -458,7 +498,7 @@ final class CapabilitiesTest extends WordPressTestCase {
 	}
 
 	/**
-	 * New posts, projects and others' pages are saved as given.
+	 * New posts, projects (but for their author) and others' pages are saved as given.
 	 */
 	public function test_others_saves_are_left_alone(): void {
 		$moved = array(
@@ -468,7 +508,7 @@ final class CapabilitiesTest extends WordPressTestCase {
 		);
 		$this->assertSame( $moved, Capabilities::keep_in_place( $moved, array() ), 'A new post has no ID.' );
 		$project = array( 'post_type' => 'fh_project' ) + $moved;
-		$this->assertSame( $project, Capabilities::keep_in_place( $project, array( 'ID' => 50 ) ) );
+		$this->assertSame( $project + array( 'post_author' => 0 ), Capabilities::keep_in_place( $project, array( 'ID' => 50 ) ) );
 
 		$this->as_user( array( 'administrator' ), array() );
 		$this->assertSame( $moved, Capabilities::keep_in_place( $moved, array( 'ID' => 11 ) ) );

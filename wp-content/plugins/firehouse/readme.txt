@@ -16,8 +16,9 @@ phases; WORDPRESS-PLAN.md in https://github.com/NOAA-GSL/thefirehouse describes 
 It registers the project and topic post types and their fields. Projects are at
 /firehouse/projects/ and topics at /firehouse/topics/{key}/. It adds the FireHouse
 Editor role, a FireHouse settings screen, an Import screen that loads the site's
-content from a seed bundle, and an edit screen for each project, where editors
-change the FireHouse team's fields and see the survey's answers read-only. Every
+content from a seed bundle, and edit screens for projects and topics, where editors
+change the FireHouse team's fields and see the survey's answers and the synthesis
+read-only. Every
 FireHouse address (projects, topics and pages under /firehouse/) gets the plugin's
 frame: the theme's header and footer, with the
 FireHouse area between them in the plugin's own stylesheets and fonts. A FireHouse
@@ -175,6 +176,15 @@ one is.
 * A project's edit screen keeps its security token fresh along with WordPress's, as
   after signing in again, and if it goes stale anyway, says the editorial fields
   weren't saved rather than dropping them quietly.
+* A topic's edit screen: the FireHouse team's words for the area (its short label,
+  description and what it covers, one item a line), saved together, all or none, under
+  its label, and the synthesis of its needs, read-only. A topic always keeps a label:
+  an empty one leaves the old one in place, saves none of the other fields, and the
+  screen says so.
+* The project and topic screens refuse text with characters that can't be stored,
+  rather than saving the other fields without it.
+* Saving a project or topic no longer makes the editor its author, so no editor's name
+  is published as its author in link previews or feeds.
 * The name the plugin prints is FireHouse: the plugin's name, the role, the admin
   menu, the block titles, and the pages' titles and words. A site that imported its
   content before keeps the old spelling in its settings and in the landing and About

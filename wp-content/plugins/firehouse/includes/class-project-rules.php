@@ -98,7 +98,7 @@ final class Project_Rules {
 
 		$title = get_post_meta( $id, Meta::key( 'title' ), true );
 		if ( is_string( $title ) && '' !== $title ) {
-			$data['post_title'] = wp_slash( self::encoded( Store::label( $title ) ) );
+			$data['post_title'] = wp_slash( Store::post_title( $title ) );
 		}
 
 		$status = (string) ( $data['post_status'] ?? '' );
@@ -188,21 +188,6 @@ final class Project_Rules {
 			}
 		}
 		return null;
-	}
-
-	/**
-	 * A title as WordPress would store it in the posts table: on a table whose
-	 * character set can't hold an emoji, encoded, as wp_insert_post() does before the
-	 * filter, or the whole save would fail.
-	 *
-	 * @param string $title The title.
-	 */
-	private static function encoded( string $title ): string {
-		global $wpdb;
-		if ( is_object( $wpdb ) && method_exists( $wpdb, 'get_col_charset' ) && in_array( $wpdb->get_col_charset( $wpdb->posts, 'post_title' ), array( 'utf8', 'utf8mb3' ), true ) ) {
-			return wp_encode_emoji( $title );
-		}
-		return $title;
 	}
 
 	/**
