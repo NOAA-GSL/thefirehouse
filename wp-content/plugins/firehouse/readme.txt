@@ -164,11 +164,13 @@ one is.
   project's IRB approval, which the revisions still record. An autosave of a project
   or topic takes no FireHouse field from the request, and WordPress's custom-fields
   tools can't change a FireHouse field on a project, a topic or a revision of either.
-* A project without IRB approval can't be published or scheduled, by any route: its
-  edit screen says why in place of the Publish button, and Quick Edit and bulk edit
-  leave its status as it was and say so. A project's address can't change once it has
-  been published, since links to it may have been shared. WordPress's own title for a
-  project is always the researcher's.
+* A project without IRB approval can't be published, scheduled or made private
+  through WordPress's editing screens: its edit screen says why, Quick Edit refuses
+  with the reason, bulk edit keeps it a draft and says so, and the projects list marks
+  it "No IRB approval". Saving a published project without approval makes it a draft.
+  A project's address can't change once it has been published, since links to it may
+  have been shared, unless another project has taken it meanwhile. WordPress's own
+  title for a project is always the researcher's.
 * A project's edit screen keeps its security token fresh along with WordPress's, as
   after signing in again, and if it goes stale anyway, says the editorial fields
   weren't saved rather than dropping them quietly.

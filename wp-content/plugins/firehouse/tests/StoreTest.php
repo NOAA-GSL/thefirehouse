@@ -213,6 +213,7 @@ final class StoreTest extends WordPressTestCase {
 	 */
 	public function test_the_post_title_is_an_escaped_label(): void {
 		$this->assertSame( 'Smoke &amp; Fire: &lt;5 km&gt;', Store::label( 'Smoke & Fire: <5 km>' ) );
+		$this->assertSame( 'Spaced', Store::label( "  Spaced \n" ), 'Trimmed, as WordPress stores titles.' );
 	}
 
 	/**

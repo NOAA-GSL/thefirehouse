@@ -623,21 +623,30 @@ nothing from the database. Each class's docblock has the detail; this is the map
   session-expired dialog; if it has gone stale anyway, WordPress's save of the post
   still goes through, and the screen says the editorial fields weren't saved and shows
   what was typed.
-- `Project_Rules` holds three rules on every save of a project, by any route (the edit
-  screen, Quick Edit, bulk edit, a restore, XML-RPC), on `wp_insert_post_data`; the
-  plugin's own writes through `Store` are left alone:
-  - a project without IRB approval isn't published or scheduled: the save keeps the
-    status it had, or makes it a draft if it was public, and keeps its dates. On its
-    edit screen, the Publish box says why in place of the Publish button;
-  - a project's slug, its address, is fixed once it has been published (its status,
-    or a date in GMT, which a draft that has never been published doesn't have).
-    Trashing and restoring, which rename a slug for WordPress's own reasons, are left
-    alone; the Publish box shows the fixed address in place of the Slug box;
-  - the post's own title is `Store::label()` of the researcher's, so a restore or a
-    forged Quick Edit can't relabel a project in WordPress's lists.
+- `Project_Rules` holds three rules on every save of a project through WordPress's
+  editing routes (the edit screen, Quick Edit, bulk edit, a restore, XML-RPC), on
+  `wp_insert_post_data`, late, so another plugin's filter can't undo them. The
+  plugin's own writes through `Store` are left alone: the importer and, later, the
+  survey form set a project's status themselves.
+  - A project without IRB approval isn't published, scheduled or made private: it stays
+    a draft or pending, or becomes a draft if it was public, with its dates and the
+    slug it asked for. Its edit screen says why at the top and in the Publish box,
+    which hides the Publish button and the visibility and date settings; Quick Edit
+    refuses with the reason in its own panel, which screen readers hear; and the
+    projects list marks it "No IRB approval".
+  - A project's slug, its address, is fixed once it has been published, which
+    `Project_Rules::mark_published()` records (`_firehouse_published`) the first time it
+    enters or leaves a published status, by any route; a date set on a draft doesn't
+    count. Trashing and restoring, which rename a slug for WordPress's own reasons, are
+    left alone. If another project has taken the address meanwhile, WordPress's new one
+    stands, rather than two projects sharing it. The Publish box shows the fixed
+    address in place of the Slug box.
+  - The post's own title is `Store::label()` of the researcher's (escaped and
+    trimmed, as WordPress stores titles), so a restore or a forged Quick Edit can't
+    relabel a project in WordPress's lists.
 
-  A refusal is said on the next projects list or project screen the editor opens,
-  since Quick Edit and bulk edit have nowhere to say it at once.
+  A refusal from bulk edit or a forged request is said on the next projects list or
+  project screen the editor opens, within an hour.
 - `Seed_Bundle` reads a seed bundle and checks it; `Importer` plans the import and
   writes it through `Store`; `Import_Screen` is FireHouse → Import, for
   administrators. `npm run seed` writes the bundle from `src/content/data/` to
