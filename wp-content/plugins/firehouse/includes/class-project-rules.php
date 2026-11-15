@@ -33,8 +33,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   time the project enters or leaves a public or private status (mark_published()),
  *   so a date set on a draft doesn't count. While it's a draft that has never been
  *   published, its slug can change. Trashing and restoring, which rename a slug for
- *   WordPress's own reasons, are left alone. If another project has taken the address
- *   meanwhile, WordPress's new one stands, rather than two projects sharing it.
+ *   WordPress's own reasons, are left alone. A draft can't take another project's
+ *   address (free()), and if another published project holds a project's address, as
+ *   when one took it while this one was in the trash, it takes the next free one,
+ *   rather than two projects sharing it.
  * - **The post's title is the researcher's**, as Store writes it (Store::label()), so
  *   a restore, Quick Edit or anything else can't make WordPress's lists name a
  *   project wrongly. It's set as WordPress saves the post, never by saving it again.
@@ -109,22 +111,75 @@ final class Project_Rules {
 			// of the trash, WordPress has already put back the slug it had before.
 			if ( 'trash' !== $stored->post_status ) {
 				$asked             = sanitize_title( (string) ( $postarr['post_name'] ?? '' ) );
-				$data['post_name'] = '' !== $asked && ! self::locked( $stored ) ? $asked : $stored->post_name;
+				$data['post_name'] = '' !== $asked && ! self::locked( $stored ) ? self::free( $asked, $stored ) : $stored->post_name;
 			}
 			self::note( $id, $was ? 'unpublished' : 'irb' );
 			return $data;
 		}
 
-		$trashing = 'trash' === $status || 'trash' === $stored->post_status;
-		if ( ! $trashing && self::locked( $stored ) && ( $data['post_name'] ?? '' ) !== $stored->post_name ) {
-			if ( wp_unique_post_slug( $stored->post_name, $id, $status, $stored->post_type, (int) $stored->post_parent ) === $stored->post_name ) {
-				$data['post_name'] = $stored->post_name;
-				self::note( $id, 'slug' );
+		if ( 'trash' === $status || 'trash' === $stored->post_status ) {
+			return $data;
+		}
+		$name  = (string) ( $data['post_name'] ?? '' );
+		$asked = sanitize_title( (string) ( $postarr['post_name'] ?? '' ) );
+		if ( self::locked( $stored ) && $name !== $stored->post_name ) {
+			$holder = self::holder( $stored->post_name, $id );
+			if ( $holder instanceof \WP_Post && in_array( $holder->post_status, self::PUBLISHED, true ) ) {
+				// Another published project has the address, as when one took it while
+				// this was in the trash: this one takes the next free one, not one the
+				// request names. A draft that holds it doesn't count: WordPress makes the
+				// draft's slug unique when it's published.
+				$data['post_name'] = wp_unique_post_slug( $stored->post_name, $id, 'publish', $stored->post_type, (int) $stored->post_parent );
+				self::note( $id, 'taken' );
 			} else {
+				$data['post_name'] = $stored->post_name;
+				if ( '' !== $asked && $asked !== $stored->post_name ) {
+					self::note( $id, 'slug' );
+				}
+			}
+		} elseif ( ! self::locked( $stored ) && '' !== $name && $name !== $stored->post_name ) {
+			$free = self::free( $name, $stored );
+			if ( $free !== $name ) {
+				$data['post_name'] = $free;
 				self::note( $id, 'taken' );
 			}
 		}
 		return $data;
+	}
+
+	/**
+	 * A slug a project that has never been published may take: the one it asks for, or,
+	 * if another project has it, the next free one, as if publishing. WordPress lets a
+	 * draft share a slug, so without this a draft could take a published project's
+	 * address, and win it when published.
+	 *
+	 * @param string   $slug The slug asked for.
+	 * @param \WP_Post $post The project.
+	 */
+	private static function free( string $slug, \WP_Post $post ): string {
+		return null === self::holder( $slug, $post->ID ) ? $slug : wp_unique_post_slug( $slug, $post->ID, 'publish', $post->post_type, (int) $post->post_parent );
+	}
+
+	/**
+	 * Another project, not in the trash, that has a slug, if any.
+	 *
+	 * @param string $slug The slug.
+	 * @param int    $id   The project asking, which doesn't count.
+	 */
+	private static function holder( string $slug, int $id ): ?\WP_Post {
+		if ( '' === $slug ) {
+			return null;
+		}
+		$found = get_posts(
+			array(
+				'post_type'    => Post_Types::PROJECT,
+				'name'         => $slug,
+				'post_status'  => array( 'publish', 'future', 'private', 'draft', 'pending' ),
+				'post__not_in' => array( $id ),
+				'numberposts'  => 1,
+			)
+		);
+		return $found[0] ?? null;
 	}
 
 	/**
@@ -196,7 +251,7 @@ final class Project_Rules {
 		$status  = isset( $_POST['_status'] ) && is_string( $_POST['_status'] ) ? sanitize_key( wp_unslash( $_POST['_status'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- As above.
 		$private = isset( $_POST['keep_private'] ) && 'private' === $_POST['keep_private']; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- As above.
 		if ( in_array( $status, self::PUBLISHED, true ) || $private ) {
-			wp_die( esc_html( self::reason() ) );
+			wp_die( esc_html( self::reason() . ' ' . __( 'Choose Draft or Pending Review to save its other changes.', 'firehouse' ) ) );
 		}
 	}
 
@@ -280,7 +335,7 @@ final class Project_Rules {
 				/* translators: 1: the project's title, 2: its address. */
 				'slug'        => sprintf( __( '“%1$s” keeps its address, %2$s. It can’t change now that the project has been published, since links to it may have been shared. Its other changes were saved.', 'firehouse' ), $name, self::address( $post ) ),
 				/* translators: 1: the project's title, 2: its new address. */
-				'taken'       => sprintf( __( '“%1$s” couldn’t keep its address: another project has it now. Its address is %2$s.', 'firehouse' ), $name, self::address( $post ) ),
+				'taken'       => sprintf( __( '“%1$s” can’t use that address: another project has it. Its address is %2$s.', 'firehouse' ), $name, self::address( $post ) ),
 				default       => '',
 			};
 			if ( '' !== $message ) {
@@ -301,8 +356,10 @@ final class Project_Rules {
 			return;
 		}
 		if ( ! self::approved( $post->ID ) ) {
-			$next = in_array( $post->post_status, self::PUBLISHED, true ) ? __( 'Updating it makes it a draft.', 'firehouse' ) : __( 'You can still save it as a draft.', 'firehouse' );
-			echo '<div class="misc-pub-section fh-publish-refused"><p><strong>' . esc_html__( 'This project can’t be published.', 'firehouse' ) . '</strong> ' . esc_html__( 'Its survey record has no IRB approval or exemption. Approval comes from the survey record, not this screen.', 'firehouse' ) . ' ' . esc_html( $next ) . '</p></div>';
+			$public = in_array( $post->post_status, self::PUBLISHED, true );
+			$head   = $public ? __( 'This project can’t stay published.', 'firehouse' ) : __( 'This project can’t be published.', 'firehouse' );
+			$next   = $public ? __( 'Updating it makes it a draft.', 'firehouse' ) : __( 'You can still save it as a draft.', 'firehouse' );
+			echo '<div class="misc-pub-section fh-publish-refused"><p><strong>' . esc_html( $head ) . '</strong> ' . esc_html__( 'Its survey record has no IRB approval or exemption. Approval comes from the survey record, not this screen.', 'firehouse' ) . ' ' . esc_html( $next ) . '</p></div>';
 		}
 		if ( self::locked( $post ) ) {
 			echo '<div class="misc-pub-section fh-publish-address">' . esc_html__( 'Address:', 'firehouse' ) . ' <code>' . esc_html( self::address( $post ) ) . '</code><br>' . esc_html__( 'It can’t change now that the project has been published, since links to it may have been shared.', 'firehouse' ) . '</div>';

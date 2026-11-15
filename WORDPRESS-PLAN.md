@@ -1910,9 +1910,13 @@ marked below.
       box shows the address in place of the Slug box. WordPress's Quick Edit has no
       slug field for projects, which have no title box, but a forged request is
       refused all the same. Trashing and restoring, which rename a slug for
-      WordPress's own reasons, are left alone. If another project took the address
-      while this one was in the trash, WordPress's new one stands, rather than two
-      projects sharing it (the security review found the lock could do that).*
+      WordPress's own reasons, are left alone. A draft can't take an address another
+      project holds (WordPress lets drafts share one, so one could have taken a
+      published project's address and won it when published): it gets the next free
+      one. If another published project holds this one's address, as when one took it
+      while this one was in the trash, this one gets the next free one, never one a
+      request names, rather than two sharing it. Both are from the security and code
+      reviews, which reproduced each way to a shared or stolen address.*
     - *The post's own title is the researcher's, set as WordPress saves the post, not
       by saving it again inside a restore (the code review's advice), so a restore or
       a forged Quick Edit can't relabel a project in WordPress's lists.*

@@ -169,7 +169,8 @@ one is.
   with the reason, bulk edit keeps it a draft and says so, and the projects list marks
   it "No IRB approval". Saving a published project without approval makes it a draft.
   A project's address can't change once it has been published, since links to it may
-  have been shared, unless another project has taken it meanwhile. WordPress's own
+  have been shared, unless another published project took it while it was in the
+  trash. A draft can't take another project's address. WordPress's own
   title for a project is always the researcher's.
 * A project's edit screen keeps its security token fresh along with WordPress's, as
   after signing in again, and if it goes stale anyway, says the editorial fields

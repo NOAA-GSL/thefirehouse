@@ -193,7 +193,8 @@ require_once __DIR__ . '/includes/class-head.php';
  *   (`wp_insert_post_data`, late): only a project's, and not the plugin's own, is
  *   changed. Its title is set from the researcher's; a publish, schedule or private
  *   status without IRB approval leaves it a draft or pending, with its dates; and a
- *   published project's slug is kept unless another project has taken it. Every
+ *   published project's slug is kept unless another published project holds it, and
+ *   a draft's isn't given another project's. Every
  *   status change of any post passes through Project_Rules::mark_published
  *   (`transition_post_status`), which records only a project's first publication.
  *   Anything else is passed through as it is.

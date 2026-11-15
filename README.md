@@ -638,8 +638,10 @@ nothing from the database. Each class's docblock has the detail; this is the map
     `Project_Rules::mark_published()` records (`_firehouse_published`) the first time it
     enters or leaves a published status, by any route; a date set on a draft doesn't
     count. Trashing and restoring, which rename a slug for WordPress's own reasons, are
-    left alone. If another project has taken the address meanwhile, WordPress's new one
-    stands, rather than two projects sharing it. The Publish box shows the fixed
+    left alone. A draft can't take an address another project holds: it gets the next
+    free one. If another published project holds this one's address, as when one took
+    it while this one was in the trash, this one gets the next free one, never one a
+    request names, rather than two sharing it. The Publish box shows the fixed
     address in place of the Slug box.
   - The post's own title is `Store::label()` of the researcher's (escaped and
     trimmed, as WordPress stores titles), so a restore or a forged Quick Edit can't

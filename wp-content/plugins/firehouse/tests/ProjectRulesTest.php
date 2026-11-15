@@ -40,6 +40,13 @@ final class ProjectRulesTest extends WordPressTestCase {
 	private array $kept = array();
 
 	/**
+	 * Which other project holds a slug, by slug.
+	 *
+	 * @var array<string, \WP_Post>
+	 */
+	private array $holders = array();
+
+	/**
 	 * Stubs what the rules read: an approved published project (41), a draft that has
 	 * never been published and has no approval (42), and a page (43).
 	 */
@@ -79,7 +86,9 @@ final class ProjectRulesTest extends WordPressTestCase {
 		);
 		Functions\when( 'wp_slash' )->alias( static fn( string $value ): string => addslashes( $value ) );
 		Functions\when( 'sanitize_title' )->alias( static fn( string $value ): string => strtolower( trim( $value ) ) );
-		Functions\when( 'wp_unique_post_slug' )->returnArg();
+		$this->holders = array();
+		Functions\when( 'wp_unique_post_slug' )->alias( fn( string $slug ): string => isset( $this->holders[ $slug ] ) ? $slug . '-2' : $slug );
+		Functions\when( 'get_posts' )->alias( fn( array $args ): array => isset( $this->holders[ $args['name'] ?? '' ] ) && ! in_array( $this->holders[ $args['name'] ]->ID, $args['post__not_in'] ?? array(), true ) ? array( $this->holders[ $args['name'] ] ) : array() );
 		Functions\when( 'get_current_user_id' )->justReturn( 6 );
 		Functions\when( 'current_user_can' )->justReturn( true );
 		Functions\when( 'wp_specialchars_decode' )->returnArg();
@@ -290,7 +299,7 @@ final class ProjectRulesTest extends WordPressTestCase {
 	 * been published can change its slug.
 	 */
 	public function test_a_published_projects_slug_stays(): void {
-		$this->assertSame( 'smoke-study', $this->save( 41, array( 'post_name' => 'new-name' ) )['post_name'] );
+		$this->assertSame( 'smoke-study', $this->save( 41, array( 'post_name' => 'new-name' ), array( 'post_name' => 'new-name' ) )['post_name'] );
 		$this->assertSame( array( '41:slug' ), $this->kinds() );
 
 		$this->assertSame( 'renamed-draft', $this->save( 42, array( 'post_name' => 'renamed-draft' ) )['post_name'] );
@@ -302,7 +311,7 @@ final class ProjectRulesTest extends WordPressTestCase {
 	 */
 	public function test_the_lock_follows_publication_not_the_date(): void {
 		$this->posts[41]->post_status = 'draft';
-		$this->assertSame( 'smoke-study', $this->save( 41, array( 'post_name' => 'new-name' ) )['post_name'] );
+		$this->assertSame( 'smoke-study', $this->save( 41, array( 'post_name' => 'new-name' ), array( 'post_name' => 'new-name' ) )['post_name'] );
 
 		$this->posts[42]->post_date_gmt = '2026-11-20 10:00:00';
 		$this->assertFalse( Project_Rules::locked( $this->posts[42] ) );
@@ -310,13 +319,50 @@ final class ProjectRulesTest extends WordPressTestCase {
 	}
 
 	/**
-	 * If another project has taken a locked project's address, WordPress's new one
-	 * stands, rather than two projects sharing it, and the editor is told.
+	 * If another published project holds a locked project's address, as when one took
+	 * it while this was in the trash, this one takes the next free one, never one the
+	 * request names, rather than two sharing it; and the editor is told.
 	 */
 	public function test_a_taken_address_isnt_shared(): void {
-		Functions\when( 'wp_unique_post_slug' )->justReturn( 'smoke-study-2' );
-		$this->assertSame( 'smoke-study-2', $this->save( 41, array( 'post_name' => 'smoke-study-2' ) )['post_name'] );
+		$this->holders['smoke-study'] = self::post( 44, 'publish', 'smoke-study', '2024-05-01 10:00:00' );
+		$this->assertSame( 'smoke-study-2', $this->save( 41, array( 'post_name' => 'forged-name' ) )['post_name'] );
 		$this->assertSame( array( '41:taken' ), $this->kinds() );
+	}
+
+	/**
+	 * A draft that holds a locked project's address doesn't take it, even one that was
+	 * published once: the published project keeps it, and isn't told of a change it
+	 * didn't ask for.
+	 */
+	public function test_a_draft_holding_the_address_doesnt_take_it(): void {
+		$this->holders['smoke-study'] = $this->posts[42];
+		$this->assertSame( 'smoke-study', $this->save( 41, array( 'post_name' => 'smoke-study-2' ) )['post_name'] );
+
+		$this->meta[42]['_firehouse_published'] = '1';
+		$this->assertSame( 'smoke-study', $this->save( 41, array( 'post_name' => 'smoke-study-2' ) )['post_name'] );
+		$this->assertSame( array(), $this->kinds() );
+	}
+
+	/**
+	 * A draft can't take another project's address, by its own save or a refused
+	 * publish: it gets the next free one, and the editor is told.
+	 */
+	public function test_a_draft_cant_take_another_projects_address(): void {
+		$this->holders['smoke-study'] = $this->posts[41];
+		$this->assertSame( 'smoke-study-2', $this->save( 42, array( 'post_name' => 'smoke-study' ) )['post_name'] );
+		$this->assertSame( array( '42:taken' ), $this->kinds() );
+
+		$this->kept = array();
+		$saved      = $this->save(
+			42,
+			array(
+				'post_status' => 'publish',
+				'post_name'   => 'smoke-study-2',
+			),
+			array( 'post_name' => 'smoke-study' )
+		);
+		$this->assertSame( 'smoke-study-2', $saved['post_name'] );
+		$this->assertSame( array( '42:irb' ), $this->kinds() );
 	}
 
 	/**
@@ -422,7 +468,7 @@ final class ProjectRulesTest extends WordPressTestCase {
 	 * screens, nor for a project the editor may not edit.
 	 */
 	public function test_refusals_are_said_once_on_the_list(): void {
-		$this->save( 41, array( 'post_name' => 'new-name' ) );
+		$this->save( 41, array( 'post_name' => 'new-name' ), array( 'post_name' => 'new-name' ) );
 		$this->save( 42, array( 'post_status' => 'publish' ) );
 
 		foreach ( array( new \WP_Screen( 'dashboard', '' ), new \WP_Screen( 'edit-tags', 'fh_project' ), new \WP_Screen( 'post', 'fh_project' ) ) as $screen ) {
@@ -454,13 +500,13 @@ final class ProjectRulesTest extends WordPressTestCase {
 		$this->meta[41]['fh_irbApproved'] = '';
 		$this->save( 41, array() );
 		$this->meta[41]['fh_irbApproved'] = '1';
-		Functions\when( 'wp_unique_post_slug' )->justReturn( 'smoke-study-2' );
+		$this->holders['smoke-study']     = self::post( 44, 'publish', 'smoke-study', '2024-05-01 10:00:00' );
 		$this->save( 41, array( 'post_name' => 'smoke-study-2' ) );
 		ob_start();
 		Project_Rules::list_notices();
 		$html = (string) ob_get_clean();
 		$this->assertStringContainsString( '” is now a draft. Its survey record has no IRB approval', $html );
-		$this->assertStringContainsString( '” couldn’t keep its address: another project has it now.', $html );
+		$this->assertStringContainsString( '” can’t use that address: another project has it. Its address is', $html );
 	}
 
 	/**
@@ -481,7 +527,7 @@ final class ProjectRulesTest extends WordPressTestCase {
 	 * at the top, where Tab meets it; other screens get nothing.
 	 */
 	public function test_the_project_screen_says_refusals_and_why(): void {
-		$this->save( 41, array( 'post_name' => 'new-name' ) );
+		$this->save( 41, array( 'post_name' => 'new-name' ), array( 'post_name' => 'new-name' ) );
 		ob_start();
 		Project_Rules::form_notices( $this->posts[41] );
 		$html = (string) ob_get_clean();
@@ -523,7 +569,9 @@ final class ProjectRulesTest extends WordPressTestCase {
 		$this->meta[41]['fh_irbApproved'] = '';
 		ob_start();
 		Project_Rules::publish_box( $this->posts[41] );
-		$this->assertStringContainsString( 'Updating it makes it a draft.', (string) ob_get_clean() );
+		$public = (string) ob_get_clean();
+		$this->assertStringContainsString( '<strong>This project can’t stay published.</strong>', $public );
+		$this->assertStringContainsString( 'Updating it makes it a draft.', $public );
 
 		ob_start();
 		Project_Rules::publish_box( $this->posts[43] );
