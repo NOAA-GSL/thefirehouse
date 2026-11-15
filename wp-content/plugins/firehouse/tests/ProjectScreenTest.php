@@ -407,9 +407,9 @@ final class ProjectScreenTest extends WordPressTestCase {
 		$this->assertStringContainsString( '<option value="in-review" selected=\'selected\'>', $html );
 		$this->assertStringContainsString( '<option value="">', $html );
 		foreach ( Project_Screen::FIELDS as $name ) {
-			$this->assertStringContainsString( '<label for="fh-field-' . $name . '">', $html );
-			$this->assertStringContainsString( 'id="fh-field-' . $name . '" name="firehouse[' . $name . ']"', $html );
-			$this->assertStringContainsString( 'aria-describedby="fh-field-' . $name . '-description"', $html );
+			$this->assertStringContainsString( '<label for="fh-project-' . $name . '">', $html );
+			$this->assertStringContainsString( 'id="fh-project-' . $name . '" name="firehouse[' . $name . ']"', $html );
+			$this->assertStringContainsString( 'aria-describedby="fh-project-' . $name . '-description"', $html );
 		}
 		$this->assertStringNotContainsString( 'aria-invalid', $html );
 	}
@@ -441,13 +441,13 @@ final class ProjectScreenTest extends WordPressTestCase {
 		$html = (string) ob_get_clean();
 
 		$this->assertStringContainsString( '<div id="firehouse-project-errors" class="notice notice-error inline" tabindex="-1" autofocus><h2>Editorial fields not saved: 1 problem</h2>', $html );
-		$this->assertStringContainsString( '<a href="#fh-field-fullRecordUrl">Full record link</a>: The full record link has to be a web address.', $html );
+		$this->assertStringContainsString( '<a href="#fh-project-fullRecordUrl">Full record link</a>: The full record link has to be a web address.', $html );
 		$this->assertNotFalse( has_filter( 'admin_title', array( Project_Screen::class, 'title' ) ) );
 		$this->assertNotFalse( has_filter( 'postbox_classes_fh_project_firehouse-editorial', array( Project_Screen::class, 'open_box' ) ) );
 		$this->assertNotFalse( has_filter( 'hidden_meta_boxes', array( Project_Screen::class, 'show_box' ) ) );
 		$this->assertStringContainsString( '>Typed &lt;i&gt;summary&lt;/i&gt;</textarea>', $html );
-		$this->assertStringContainsString( '<input type="text" inputmode="url" id="fh-field-fullRecordUrl" name="firehouse[fullRecordUrl]" value="javascript:alert(1)" spellcheck="false" autocomplete="off" aria-invalid="true" aria-describedby="fh-field-fullRecordUrl-error fh-field-fullRecordUrl-description"', $html );
-		$this->assertStringContainsString( '<p class="fh-field__error" id="fh-field-fullRecordUrl-error"><strong>Error:</strong> The full record link has to be a web address.</p>', $html );
+		$this->assertStringContainsString( '<input type="text" inputmode="url" id="fh-project-fullRecordUrl" name="firehouse[fullRecordUrl]" value="javascript:alert(1)" spellcheck="false" autocomplete="off" aria-invalid="true" aria-describedby="fh-project-fullRecordUrl-error fh-project-fullRecordUrl-description"', $html );
+		$this->assertStringContainsString( '<p class="fh-project-field__error" id="fh-project-fullRecordUrl-error"><strong>Error:</strong> The full record link has to be a web address.</p>', $html );
 	}
 
 	/**

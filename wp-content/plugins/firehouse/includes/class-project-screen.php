@@ -65,12 +65,12 @@ final class Project_Screen {
 	 * The screen's styles, added inline on the project screen only.
 	 */
 	private const STYLE = '#poststuff .fh-project-screen__title{margin:1em 0 0;padding:0;font-size:1.3em;line-height:1.4}'
-		. '.fh-project-screen .fh-field{margin:0 0 1.5em}'
-		. '.fh-project-screen .fh-field label{display:block;font-weight:600;margin:0 0 .25em}'
-		. '.fh-project-screen .fh-field textarea,.fh-project-screen .fh-field input[type=text]{width:100%;max-width:48em}'
-		. '.fh-project-screen .fh-field :is(input,select,textarea){scroll-margin-top:3em}'
-		. '.fh-project-screen .fh-field .description{margin:.25em 0 0;max-width:48em}'
-		. '.fh-project-screen .fh-field__error{margin:.25em 0 0;color:#b32d2e;font-weight:600}'
+		. '.fh-project-screen .fh-project-field{margin:0 0 1.5em}'
+		. '.fh-project-screen .fh-project-field label{display:block;font-weight:600;margin:0 0 .25em}'
+		. '.fh-project-screen .fh-project-field textarea,.fh-project-screen .fh-project-field input[type=text]{width:100%;max-width:48em}'
+		. '.fh-project-screen .fh-project-field :is(input,select,textarea){scroll-margin-top:3em}'
+		. '.fh-project-screen .fh-project-field .description{margin:.25em 0 0;max-width:48em}'
+		. '.fh-project-screen .fh-project-field__error{margin:.25em 0 0;color:#b32d2e;font-weight:600}'
 		. '.fh-project-screen [aria-invalid=true]{border-color:#b32d2e;box-shadow:0 0 0 1px #b32d2e}'
 		. '.fh-project-screen [aria-invalid=true]:focus{border-color:var(--wp-admin-theme-color,#2271b1);box-shadow:0 0 0 2px var(--wp-admin-theme-color,#2271b1)}'
 		. '.fh-survey{margin:0}'
@@ -238,7 +238,7 @@ final class Project_Screen {
 		self::field(
 			'summary',
 			__( 'Summary', 'firehouse' ),
-			static fn( string $attributes ): string => '<textarea id="fh-field-summary" name="' . esc_attr( self::INPUT ) . '[summary]" rows="3"' . $attributes . '>' . Markup::text( $values['summary'] ) . '</textarea>',
+			static fn( string $attributes ): string => '<textarea id="fh-project-summary" name="' . esc_attr( self::INPUT ) . '[summary]" rows="3"' . $attributes . '>' . Markup::text( $values['summary'] ) . '</textarea>',
 			__( 'One or two lines under the title on the explorer’s tiles. The import starts it with the abstract’s first sentence.', 'firehouse' ),
 			$errors
 		);
@@ -250,7 +250,7 @@ final class Project_Screen {
 		self::field(
 			'publicationStatus',
 			__( 'Publication status', 'firehouse' ),
-			static fn( string $attributes ): string => '<select id="fh-field-publicationStatus" name="' . esc_attr( self::INPUT ) . '[publicationStatus]"' . $attributes . '>' . $options . '</select>',
+			static fn( string $attributes ): string => '<select id="fh-project-publicationStatus" name="' . esc_attr( self::INPUT ) . '[publicationStatus]"' . $attributes . '>' . $options . '</select>',
 			__( 'Whether the research is published, shown at the top of the project’s page and in its quick look. The survey doesn’t ask.', 'firehouse' ),
 			$errors
 		);
@@ -258,7 +258,7 @@ final class Project_Screen {
 		self::field(
 			'geoNote',
 			__( 'Geography note', 'firehouse' ),
-			static fn( string $attributes ): string => '<input type="text" id="fh-field-geoNote" name="' . esc_attr( self::INPUT ) . '[geoNote]" value="' . Markup::text( $values['geoNote'] ) . '"' . $attributes . '>',
+			static fn( string $attributes ): string => '<input type="text" id="fh-project-geoNote" name="' . esc_attr( self::INPUT ) . '[geoNote]" value="' . Markup::text( $values['geoNote'] ) . '"' . $attributes . '>',
 			__( 'A few words shown beside the project’s regions on its page, such as “Front Range”. Not shown when the survey names no region.', 'firehouse' ),
 			$errors
 		);
@@ -266,7 +266,7 @@ final class Project_Screen {
 		self::field(
 			'fullRecordUrl',
 			__( 'Full record link', 'firehouse' ),
-			static fn( string $attributes ): string => '<input type="text" inputmode="url" id="fh-field-fullRecordUrl" name="' . esc_attr( self::INPUT ) . '[fullRecordUrl]" value="' . Markup::text( $values['fullRecordUrl'] ) . '" spellcheck="false" autocomplete="off"' . $attributes . '>',
+			static fn( string $attributes ): string => '<input type="text" inputmode="url" id="fh-project-fullRecordUrl" name="' . esc_attr( self::INPUT ) . '[fullRecordUrl]" value="' . Markup::text( $values['fullRecordUrl'] ) . '" spellcheck="false" autocomplete="off"' . $attributes . '>',
 			__( 'A web address where the full record is kept, starting with https:// or http://. The project’s page links to it as “View full record”.', 'firehouse' ),
 			$errors
 		);
@@ -284,17 +284,17 @@ final class Project_Screen {
 	 * @param array<string, string> $errors      The problems, by field.
 	 */
 	private static function field( string $name, string $label, callable $control, string $description, array $errors ): void {
-		$id          = 'fh-field-' . $name;
+		$id          = 'fh-project-' . $name;
 		$described   = $id . '-description';
 		$error       = $errors[ $name ] ?? null;
 		$attributes  = null === $error ? '' : ' aria-invalid="true"';
 		$attributes .= ' aria-describedby="' . esc_attr( ( null === $error ? '' : $id . '-error ' ) . $described ) . '"';
 
-		echo '<div class="fh-field">';
+		echo '<div class="fh-project-field">';
 		echo '<label for="' . esc_attr( $id ) . '">' . esc_html( $label ) . '</label>';
 		echo $control( $attributes ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- the control and its attributes are escaped where they're built.
 		if ( null !== $error ) {
-			echo '<p class="fh-field__error" id="' . esc_attr( $id . '-error' ) . '"><strong>' . esc_html__( 'Error:', 'firehouse' ) . '</strong> ' . esc_html( $error ) . '</p>';
+			echo '<p class="fh-project-field__error" id="' . esc_attr( $id . '-error' ) . '"><strong>' . esc_html__( 'Error:', 'firehouse' ) . '</strong> ' . esc_html( $error ) . '</p>';
 		}
 		echo '<p class="description" id="' . esc_attr( $described ) . '">' . esc_html( $description ) . '</p>';
 		echo '</div>';
@@ -622,7 +622,7 @@ final class Project_Screen {
 		echo esc_html( sprintf( _n( 'Editorial fields not saved: %d problem', 'Editorial fields not saved: %d problems', $count, 'firehouse' ), $count ) );
 		echo '</h2><p>' . esc_html__( 'Fix what’s marked, then save the project again. The project’s other changes, such as its status, were saved.', 'firehouse' ) . '</p><ul>';
 		foreach ( self::$refused['errors'] as $name => $message ) {
-			echo '<li><a href="#fh-field-' . esc_attr( $name ) . '">' . esc_html( $labels[ $name ] ?? $name ) . '</a>: ' . esc_html( $message ) . '</li>';
+			echo '<li><a href="#fh-project-' . esc_attr( $name ) . '">' . esc_html( $labels[ $name ] ?? $name ) . '</a>: ' . esc_html( $message ) . '</li>';
 		}
 		echo '</ul></div>';
 	}
