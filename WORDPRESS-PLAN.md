@@ -1849,6 +1849,17 @@ marked below.
 - Project and topic edit screens: survey fields read-only, editorial fields editable,
   publishing through WordPress's Publish button. *A project's slug is editable while
   it's a draft and read-only once it has been published (rule 5).*
+  - *The project screen done 14 November (`includes/class-project-screen.php`): the
+    editorial fields in a box of their own, saved with the post and kept as typed,
+    and the survey's answers read-only below, as stored. A save checks every editorial
+    field and saves none if one is wrong (rule 6), and the screen comes back with what
+    was typed and each problem beside its field and listed at the top. A full-record
+    link has to be http or https, with a host. The geography's states have no field:
+    nothing shows them.*
+  - *Next: the slug's lock, and refusing to publish a project without IRB approval
+    (decided by Eric, 14 November: the edit screen says why in place of the Publish
+    button, and a status change by any route, Quick Edit and bulk edit included, is
+    refused on the server with a notice). Then the topic screen.*
 - Landing and About layouts locked to text-only edits. Their sections are custom
   blocks whose words are attributes, which `contentOnly` locking doesn't show to
   editors. *Decided: they keep their blocks and markup, and in the block editor each

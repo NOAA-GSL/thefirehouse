@@ -15,8 +15,9 @@ phases; WORDPRESS-PLAN.md in https://github.com/NOAA-GSL/thefirehouse describes 
 
 It registers the project and topic post types and their fields. Projects are at
 /firehouse/projects/ and topics at /firehouse/topics/{key}/. It adds the FireHouse
-Editor role, a FireHouse settings screen, and an Import screen that loads the site's
-content from a seed bundle. Every FireHouse address (projects, topics and pages under
+Editor role, a FireHouse settings screen, an Import screen that loads the site's
+content from a seed bundle, and an edit screen for each project, where editors change
+the FireHouse team's fields and see the survey's answers read-only. Every FireHouse address (projects, topics and pages under
 /firehouse/) gets the plugin's frame: the theme's header and footer, with the
 FireHouse area between them in the plugin's own stylesheets and fonts. A FireHouse
 bar under the theme's header carries the FireHouse wordmark and links, and the Submit
@@ -151,6 +152,11 @@ one is.
 * In the block editor, each FireHouse block shows, read-only, what the page stores in
   it, so that can be told from what FireHouse adds. Changing it comes later. Opening
   and saving a page keeps its FireHouse blocks, the ones they hold included.
+* A project's edit screen: the FireHouse team's fields (its summary, publication
+  status, geography note and full-record link), saved with the project and kept as
+  typed, and the researcher's survey answers, read-only, as stored. A save with a
+  field that's wrong, such as a link that isn't a web address, saves none of them,
+  and the screen comes back with what was typed and each problem marked.
 * The name the plugin prints is FireHouse: the plugin's name, the role, the admin
   menu, the block titles, and the pages' titles and words. A site that imported its
   content before keeps the old spelling in its settings and in the landing and About

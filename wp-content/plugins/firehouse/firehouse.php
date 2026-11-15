@@ -64,6 +64,7 @@ require_once __DIR__ . '/includes/class-visibility.php';
 require_once __DIR__ . '/includes/class-seed-bundle.php';
 require_once __DIR__ . '/includes/class-importer.php';
 require_once __DIR__ . '/includes/class-import-screen.php';
+require_once __DIR__ . '/includes/class-project-screen.php';
 require_once __DIR__ . '/includes/class-frame.php';
 require_once __DIR__ . '/includes/class-icons.php';
 require_once __DIR__ . '/includes/class-markup.php';
@@ -191,7 +192,8 @@ require_once __DIR__ . '/includes/class-head.php';
  *   page capabilities are lent is narrowed.
  *
  * Beyond that, these change only Firehouse content and what Firehouse editors may do.
- * Settings and Import_Screen hook only the admin.
+ * Settings, Import_Screen and Project_Screen hook only the admin. Project_Screen saves
+ * a project's editorial fields only from its own form, on the project's edit screen.
  */
 Post_Types::hook();
 Meta::hook();
@@ -200,6 +202,7 @@ Capabilities::hook();
 Installer::hook( __FILE__ );
 Settings::hook();
 Import_Screen::hook();
+Project_Screen::hook();
 Frame::hook();
 Visibility::hook();
 Blocks::hook();

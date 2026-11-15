@@ -602,6 +602,16 @@ nothing from the database. Each class's docblock has the detail; this is the map
   rewrite rules rebuilt, on activation and after `Installer::REVISION` changes.
 - `Settings` is FireHouse → Settings: the site name, the Submit a Finding label and
   address, and the three navigation labels, read with `Settings::get()`.
+- `Project_Screen` adds a project's fields to WordPress's own edit screen, in two
+  boxes. **Editorial fields** (the summary, publication status, geography note and
+  full-record link) are the team's: saved with the post by Publish or Update, through
+  `Store::update_fields()`, kept as typed, and never touched by a re-import (rule 4).
+  **From the survey** shows the researcher's answers read-only, as stored. A save
+  checks every editorial field first (`Project_Screen::check()`, with `Meta`'s schema
+  check) and saves none if any is wrong; the input and problems wait in a transient for
+  the screen WordPress redirects to, which marks each field and lists them at the top.
+  WordPress has saved the post's own fields, such as its status, by then. Only the
+  screen's own form saves them: not Quick Edit, an autosave, or the plugin's writes.
 - `Seed_Bundle` reads a seed bundle and checks it; `Importer` plans the import and
   writes it through `Store`; `Import_Screen` is FireHouse → Import, for
   administrators. `npm run seed` writes the bundle from `src/content/data/` to

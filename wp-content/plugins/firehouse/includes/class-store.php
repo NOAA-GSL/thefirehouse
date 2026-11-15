@@ -222,6 +222,26 @@ final class Store {
 	}
 
 	/**
+	 * Saves fields of a post that WordPress has just saved, without saving the post
+	 * again: what the project screen does inside WordPress's own save, before the
+	 * revision WordPress makes after it. Fields in $delete are removed; fields in $set
+	 * are stored as given, slashed against WordPress's unslashing, and checked by Meta
+	 * as every write is. Meta isn't run through kses.
+	 *
+	 * @param int                  $post_id The post.
+	 * @param array<string, mixed> $set     Fields to save, by name.
+	 * @param string[]             $delete  Fields to remove, by name.
+	 */
+	public static function update_fields( int $post_id, array $set, array $delete ): void {
+		foreach ( $delete as $name ) {
+			delete_post_meta( $post_id, Meta::key( $name ) );
+		}
+		foreach ( $set as $name => $value ) {
+			update_post_meta( $post_id, Meta::key( $name ), wp_slash( $value ) );
+		}
+	}
+
+	/**
 	 * Inserts or updates the post itself, its fields with it.
 	 *
 	 * @param string               $post_type The post type.
