@@ -52,12 +52,14 @@ final class Store {
 	}
 
 	/**
-	 * A project post's title: the researcher's, escaped for WordPress's lists.
+	 * A project post's title: the researcher's, escaped for WordPress's lists, and
+	 * trimmed, as WordPress trims every title it saves, so the label it stores is this
+	 * one exactly. The researcher's own title, in meta, keeps its spaces.
 	 *
 	 * @param string $title The project's title, as the researcher wrote it.
 	 */
 	public static function label( string $title ): string {
-		return esc_html( $title );
+		return esc_html( trim( $title ) );
 	}
 
 	/**

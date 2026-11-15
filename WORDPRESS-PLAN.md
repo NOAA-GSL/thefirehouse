@@ -1891,10 +1891,47 @@ marked below.
     updated." The geography is written only when its note changes.*
   - *Left for Eric and the team: WordPress's revisions screen compares only the
     title, so an editor restoring the team's fields can't see their history first.*
-  - *Next: the slug's lock, and refusing to publish a project without IRB approval
-    (decided by Eric, 14 November: the edit screen says why in place of the Publish
-    button, and a status change by any route, Quick Edit and bulk edit included, is
-    refused on the server with a notice). Then the topic screen.*
+  - *The publishing rules done 15 November (`includes/class-project-rules.php`), on
+    every save of a project through WordPress's editing routes, the plugin's own
+    writes aside (the importer and the survey form set a project's status
+    themselves):*
+    - *No project without IRB approval is published, scheduled or made private
+      (decided by Eric, 14 November, for publishing; private is WordPress's "privately
+      published", and an unapproved one left the Publish box without a button, as the
+      reviews found). It stays a draft or pending, or becomes a draft if it was public,
+      with its dates and the slug it asked for, so a refused publish leaves no publish
+      date or renamed slug behind. Its screen says why at the top and in the Publish
+      box, which hides the Publish button and the visibility and date settings; Quick
+      Edit refuses with the reason in its panel, which screen readers hear, where it
+      said "Changes saved."; and the projects list marks it "No IRB approval".*
+    - *A project's slug is fixed once it has been published (rule 5), recorded the
+      first time it enters or leaves a published status (`_firehouse_published`), not
+      read from a date in GMT, which an editor's date on a draft also sets. The Publish
+      box shows the address in place of the Slug box. WordPress's Quick Edit has no
+      slug field for projects, which have no title box, but a forged request is
+      refused all the same. Trashing and restoring, which rename a slug for
+      WordPress's own reasons, are left alone. A draft can't take an address another
+      project holds (WordPress lets drafts share one, so one could have taken a
+      published project's address and won it when published): it gets the next free
+      one. If another published project holds this one's address, as when one took it
+      while this one was in the trash, this one gets the next free one, never one a
+      request names, rather than two sharing it. Both are from the security and code
+      reviews, which reproduced each way to a shared or stolen address.*
+    - *The post's own title is the researcher's, set as WordPress saves the post, not
+      by saving it again inside a restore (the code review's advice), so a restore or
+      a forged Quick Edit can't relabel a project in WordPress's lists.*
+    - *Tried on the local copy as a FireHouse Editor, with test projects (deleted
+      after): a forced publish from a draft's screen, a forged Quick Edit and Quick
+      Edit's own Published all left it a draft, Quick Edit showing and announcing the
+      reason; a forged Quick Edit of a published project's slug kept it; asking for
+      private left a draft; a date on a draft didn't lock its slug; trashing and
+      restoring renamed and restored the slug as WordPress does; the security review's
+      shared address came back as `-2`, with a notice; and restoring a revision with
+      another title kept the researcher's.*
+    - *Later, when anything but the import can clear a project's approval (the survey
+      form): WordPress's scheduler publishes a scheduled post without this filter
+      (`wp_publish_post()`), so unschedule an unapproved project there too.*
+  - *Next: the topic screen.*
 - Landing and About layouts locked to text-only edits. Their sections are custom
   blocks whose words are attributes, which `contentOnly` locking doesn't show to
   editors. *Decided: they keep their blocks and markup, and in the block editor each

@@ -65,6 +65,7 @@ require_once __DIR__ . '/includes/class-seed-bundle.php';
 require_once __DIR__ . '/includes/class-importer.php';
 require_once __DIR__ . '/includes/class-import-screen.php';
 require_once __DIR__ . '/includes/class-project-screen.php';
+require_once __DIR__ . '/includes/class-project-rules.php';
 require_once __DIR__ . '/includes/class-frame.php';
 require_once __DIR__ . '/includes/class-icons.php';
 require_once __DIR__ . '/includes/class-markup.php';
@@ -188,6 +189,15 @@ require_once __DIR__ . '/includes/class-head.php';
  *   makes an autosave (it leaves the Firehouse fields out) or restores a revision (it
  *   leaves a project's survey fields out), does it change. Other post types' lists,
  *   and every list anywhere else, are left as they are.
+ * - Every save of any post passes through Project_Rules::enforce
+ *   (`wp_insert_post_data`, late): only a project's, and not the plugin's own, is
+ *   changed. Its title is set from the researcher's; a publish, schedule or private
+ *   status without IRB approval leaves it a draft or pending, with its dates; and a
+ *   published project's slug is kept unless another published project holds it, and
+ *   a draft's isn't given another project's. Every
+ *   status change of any post passes through Project_Rules::mark_published
+ *   (`transition_post_status`), which records only a project's first publication.
+ *   Anything else is passed through as it is.
  * - Every check of a meta capability (edit_post_meta, add_post_meta,
  *   delete_post_meta) on a key starting fh_, in any case, is refused on a project, a
  *   topic or a revision of either. Any other meta check is left as it is.
@@ -200,8 +210,11 @@ require_once __DIR__ . '/includes/class-head.php';
  *   page capabilities are lent is narrowed.
  *
  * Beyond that, these change only Firehouse content and what Firehouse editors may do.
- * Settings, Import_Screen and Project_Screen hook only the admin. Project_Screen saves
- * a project's editorial fields only from its own form, on the project's edit screen.
+ * Settings, Import_Screen, Project_Screen and Project_Rules's screens hook only the
+ * admin: Project_Rules's admin notices run on every admin screen and print only on
+ * the projects list, and its Quick Edit check runs on every Quick Edit and acts only
+ * on a project. Project_Screen saves a project's editorial fields only from its own
+ * form, on the project's edit screen.
  */
 Post_Types::hook();
 Meta::hook();
@@ -211,6 +224,7 @@ Installer::hook( __FILE__ );
 Settings::hook();
 Import_Screen::hook();
 Project_Screen::hook();
+Project_Rules::hook();
 Frame::hook();
 Visibility::hook();
 Blocks::hook();
