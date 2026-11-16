@@ -87,9 +87,9 @@ final class BlocksTest extends WordPressTestCase {
 	public function test_a_firehouse_pages_layout_is_locked(): void {
 		Functions\when( 'get_posts' )->justReturn( array( 10 ) );
 		Functions\when( 'get_post_ancestors' )->alias( static fn( \WP_Post $post ): array => 0 === $post->post_parent ? array() : array( $post->post_parent ) );
-		$block    = static fn( string $name ): array => array(
+		$block    = static fn( string $name, array $attrs = array() ): array => array(
 			'blockName'    => $name,
-			'attrs'        => array(),
+			'attrs'        => $attrs,
 			'innerBlocks'  => array(),
 			'innerHTML'    => '',
 			'innerContent' => array(),
@@ -97,6 +97,7 @@ final class BlocksTest extends WordPressTestCase {
 		Functions\when( 'parse_blocks' )->alias(
 			static fn( string $content ): array => match ( $content ) {
 				'firehouse' => array( $block( 'firehouse/about-intro' ) ),
+				'noted'     => array( $block( 'firehouse/about-intro', array( 'metadata' => array( 'noteId' => 5 ) ) ) ),
 				'mixed'     => array( $block( 'firehouse/about-intro' ), $block( 'core/paragraph' ) ),
 				default     => array(),
 			}
@@ -114,6 +115,7 @@ final class BlocksTest extends WordPressTestCase {
 
 		$this->assertSame( 'all', Blocks::lock_layout( $settings, $editing( $page( 10, 0 ) ) )['templateLock'], 'The landing page.' );
 		$this->assertSame( 'all', Blocks::lock_layout( $settings, $editing( $page( 11, 10 ) ) )['templateLock'], 'The About page.' );
+		$this->assertSame( 'all', Blocks::lock_layout( $settings, $editing( $page( 11, 10, 'page', 'noted' ) ) )['templateLock'], 'A block with a note on it.' );
 		$this->assertSame( $settings, Blocks::lock_layout( $settings, $editing( $page( 12, 10, 'page', '' ) ) ), 'An empty page in the tree.' );
 		$this->assertSame( $settings, Blocks::lock_layout( $settings, $editing( $page( 13, 10, 'page', 'mixed' ) ) ), 'A page holding another block.' );
 		$this->assertSame( $settings, Blocks::lock_layout( $settings, $editing( $page( 20, 0 ) ) ), 'A page outside the tree.' );

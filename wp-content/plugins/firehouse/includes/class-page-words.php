@@ -104,16 +104,30 @@ final class Page_Words {
 	 * @param array<int, mixed> $blocks The blocks, as parse_blocks() gives them.
 	 */
 	public static function only_firehouse( array $blocks ): bool {
-		return self::of_firehouse_blocks( $blocks, Blocks::attributes() );
+		return self::of_firehouse_blocks( $blocks, Blocks::attributes(), true );
 	}
 
 	/**
-	 * The check only_firehouse() makes, with each block's declared attributes read once.
+	 * Whether parsed content is made of FireHouse blocks, whatever attributes they hold:
+	 * only_firehouse() without its check of each block's attributes. It decides whether
+	 * a page's layout is locked in the editor (Blocks::lock_layout()), which a block
+	 * that WordPress has added `metadata` to, such as a note, needs as much as any.
 	 *
-	 * @param array<int, mixed>           $blocks   The blocks, as parse_blocks() gives them.
-	 * @param array<string, list<string>> $declared Each block's declared attributes.
+	 * @param array<int, mixed> $blocks The blocks, as parse_blocks() gives them.
 	 */
-	private static function of_firehouse_blocks( array $blocks, array $declared ): bool {
+	public static function only_firehouse_blocks( array $blocks ): bool {
+		return self::of_firehouse_blocks( $blocks, Blocks::attributes(), false );
+	}
+
+	/**
+	 * The check only_firehouse() makes, with each block's declared attributes read once,
+	 * and whether to check its attributes against them.
+	 *
+	 * @param array<int, mixed>           $blocks     The blocks, as parse_blocks() gives them.
+	 * @param array<string, list<string>> $declared   Each block's declared attributes.
+	 * @param bool                        $attributes Whether a block may hold only those.
+	 */
+	private static function of_firehouse_blocks( array $blocks, array $declared, bool $attributes ): bool {
 		$found = false;
 		foreach ( $blocks as $block ) {
 			if ( ! is_array( $block ) ) {
@@ -131,7 +145,7 @@ final class Page_Words {
 				return false;
 			}
 			$attrs = $block['attrs'] ?? array();
-			if ( ! is_array( $attrs ) || array() !== array_diff( array_map( 'strval', array_keys( $attrs ) ), $declared[ $name ] ) ) {
+			if ( ! is_array( $attrs ) || ( $attributes && array() !== array_diff( array_map( 'strval', array_keys( $attrs ) ), $declared[ $name ] ) ) ) {
 				return false;
 			}
 			if ( ! self::blank( $block['innerHTML'] ?? '' ) ) {
@@ -143,7 +157,7 @@ final class Page_Words {
 				}
 			}
 			$inner = is_array( $block['innerBlocks'] ?? null ) ? $block['innerBlocks'] : array();
-			if ( array() !== $inner && ! self::of_firehouse_blocks( $inner, $declared ) ) {
+			if ( array() !== $inner && ! self::of_firehouse_blocks( $inner, $declared, $attributes ) ) {
 				return false;
 			}
 			$found = true;

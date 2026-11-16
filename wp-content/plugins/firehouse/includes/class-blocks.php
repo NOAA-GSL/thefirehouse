@@ -57,10 +57,11 @@ final class Blocks {
 	 * (Page_Words).
 	 *
 	 * Only a page in the FireHouse tree made of nothing but FireHouse blocks is locked
-	 * (Page_Words::only_firehouse()): an empty page there can still be written, and one
-	 * holding another block can have it taken out, which also lets Page_Words keep its
-	 * words as typed again; it's locked when the editor next opens it. Other posts are
-	 * left as they are.
+	 * (Page_Words::only_firehouse_blocks()), whatever attributes they hold, so a block
+	 * with a note on it doesn't unlock the page. An empty page there can still be
+	 * written, and one holding another block can have it taken out, which also lets
+	 * Page_Words keep its words as typed again; it's locked when the editor next opens
+	 * it. Other posts are left as they are.
 	 *
 	 * @param array<string, mixed> $settings The block editor's settings.
 	 * @param mixed                $context  What the editor edits: WP_Block_Editor_Context, its `post` the post.
@@ -68,7 +69,7 @@ final class Blocks {
 	 */
 	public static function lock_layout( array $settings, mixed $context ): array {
 		$post = is_object( $context ) && isset( $context->post ) ? $context->post : null;
-		if ( $post instanceof \WP_Post && 'page' === $post->post_type && Capabilities::in_tree( $post ) && Page_Words::only_firehouse( parse_blocks( $post->post_content ) ) ) {
+		if ( $post instanceof \WP_Post && 'page' === $post->post_type && Capabilities::in_tree( $post ) && Page_Words::only_firehouse_blocks( parse_blocks( $post->post_content ) ) ) {
 			$settings['templateLock'] = 'all';
 		}
 		return $settings;
