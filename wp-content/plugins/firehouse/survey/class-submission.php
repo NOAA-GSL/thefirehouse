@@ -44,7 +44,7 @@ final class Submission {
 	 * model reads (Phase 7b). Not every invisible character: a soft hyphen or a
 	 * zero-width joiner arrives in pasted text and does no harm.
 	 */
-	private const HIDDEN = '/[\x{0000}-\x{0008}\x{000B}\x{000C}\x{000E}-\x{001F}\x{007F}-\x{009F}\x{202A}-\x{202E}\x{2066}-\x{2069}\x{E0000}-\x{E007F}]/u';
+	public const HIDDEN = '/[\x{0000}-\x{0008}\x{000B}\x{000C}\x{000E}-\x{001F}\x{007F}-\x{009F}\x{202A}-\x{202E}\x{2066}-\x{2069}\x{E0000}-\x{E007F}]/u';
 
 	/**
 	 * The answers in a POST, by question: text as a string, a choice as its value, a

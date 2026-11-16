@@ -36,7 +36,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   private answers (rule 2) are kept apart, in one protected post meta field that's
  *   in no schema, so it's in no revision and no REST response, and left out of
  *   WordPress's export (Tools → Export). A submission without IRB approval is kept
- *   too, as a draft the publishing rules won't publish (Project_Rules).
+ *   too, as a draft the publishing rules won't publish (Project_Rules). Each paper
+ *   given by DOI gets its title from doi.org once the draft is saved, in a scheduled
+ *   event (Doi_Lookup); the team mailbox is told of the draft, in fixed text
+ *   (notify()).
  * - **Protections** (decided by Eric, 16 November): the form's nonce; a field people
  *   don't see, which a bot fills (a submission that fills it is thanked and
  *   dropped); a signed start time, refusing one sent within a few seconds; the
@@ -85,6 +88,17 @@ final class Survey {
 	public const CHANGE = 'firehouse_change';
 
 	/**
+	 * The team mailbox each submission is reported to: the one the About page gives.
+	 */
+	public const NOTIFY = 'gsl.firehouse@noaa.gov';
+
+	/**
+	 * How a response ID the form makes begins: never a Qualtrics `R_`, so an import
+	 * leaves the form's drafts alone.
+	 */
+	public const RESPONSE_PREFIX = 'W_';
+
+	/**
 	 * What the block shows on this request.
 	 *
 	 * @var array<string, mixed>|null
@@ -100,6 +114,7 @@ final class Survey {
 		add_action( 'update_option_' . Settings::OPTION, array( self::class, 'opened' ) );
 		add_filter( 'wxr_export_skip_postmeta', array( self::class, 'skip_in_export' ), 10, 2 );
 		add_filter( 'pre_get_document_title', array( self::class, 'document_title' ), 20 );
+		Doi_Lookup::hook();
 	}
 
 	/**
@@ -252,10 +267,12 @@ final class Survey {
 			self::$state = self::again( $values, $problems, '', $started );
 			return;
 		}
-		if ( ! self::save( $values ) ) {
+		$saved = self::save( $values );
+		if ( 0 === $saved ) {
 			self::$state = self::again( $values, array( 'form' => 'Your answers couldn’t be saved just now. Try sending them again in a few minutes.' ), '', $started );
 			return;
 		}
+		self::notify( $saved, 'no' !== $values['irb'] );
 		self::thank( 'no' === $values['irb'] ? 'no-irb' : 'yes' );
 	}
 
@@ -438,22 +455,38 @@ final class Survey {
 	}
 
 	/**
-	 * Saves a submission: a draft project with its fields, and its private answers
-	 * apart. False if WordPress or a field's check refused it, with nothing kept.
+	 * Saves a submission: a draft project with its fields and its private answers apart,
+	 * and its DOIs' lookups scheduled (Doi_Lookup) unless it has no IRB approval, since
+	 * it would never be published. The draft's ID, or 0 if WordPress or a field's check
+	 * refused it, with nothing kept.
 	 *
 	 * @param array<string, string|list<string>> $values The answers, with nothing wrong.
 	 */
-	private static function save( array $values ): bool {
-		$fields = Submission::project( $values, 'W_' . wp_generate_password( 16, false ) );
+	private static function save( array $values ): int {
+		$saved = self::draft( $values );
+		if ( 0 !== $saved && 'no' !== $values['irb'] ) {
+			Doi_Lookup::schedule( $saved, Submission::project( $values, '' )['papers'] );
+		}
+		return $saved;
+	}
+
+	/**
+	 * Writes a submission's draft and its private answers: the draft's ID, or 0 with
+	 * nothing kept.
+	 *
+	 * @param array<string, string|list<string>> $values The answers, with nothing wrong.
+	 */
+	private static function draft( array $values ): int {
+		$fields = Submission::project( $values, self::RESPONSE_PREFIX . wp_generate_password( 16, false ) );
 		foreach ( $fields as $name => $value ) {
 			if ( true !== Meta::validate( Post_Types::PROJECT, $name, $value ) ) {
-				return false;
+				return 0;
 			}
 		}
 		// Rule 2's backstop, as the import has: nothing shaped like an email address in
 		// what the site would show. Submission::check() has already said where one is.
 		if ( array() !== Email_Shape::find( array( 'project' => $fields ) ) ) {
-			return false;
+			return 0;
 		}
 		$saved = Store::save(
 			Post_Types::PROJECT,
@@ -470,19 +503,51 @@ final class Survey {
 			array()
 		);
 		if ( is_wp_error( $saved ) || 0 === $saved ) {
-			return false;
+			return 0;
 		}
 		$private = Submission::private_answers( $values );
 		if ( '' === $private['email'] && '' === $private['jobTitle'] && array() === $private['shared'] ) {
-			return true;
+			return $saved;
 		}
 		// Slashed, as WordPress unslashes what it's given: a job title's backslash is kept.
 		// A draft whose answers weren't kept is deleted, so the researcher sends it again.
 		if ( false === add_post_meta( $saved, self::PRIVATE_KEY, wp_slash( $private ), true ) ) {
 			wp_delete_post( $saved, true );
-			return false;
+			return 0;
 		}
-		return true;
+		return $saved;
+	}
+
+	/**
+	 * Tells the team mailbox a submission has arrived, with a link to its draft (decided
+	 * by Eric, 16 November). The message is fixed text: nothing a researcher typed is
+	 * in it, private or not, so the form can't be used to put a stranger's words in an
+	 * email from the site. The `firehouse_survey_notify` filter changes the address, or
+	 * with "" sends nothing, as a test site may want. A message that can't be sent is
+	 * let go: the draft is saved, and the projects list shows it.
+	 *
+	 * @param int  $post_id The draft.
+	 * @param bool $irb     Whether the submission says the project has IRB approval or exemption.
+	 */
+	public static function notify( int $post_id, bool $irb ): void {
+		$to = apply_filters( 'firehouse_survey_notify', self::NOTIFY );
+		if ( ! is_string( $to ) || '' === $to || ! is_email( $to ) ) {
+			return;
+		}
+		$lines = array(
+			'Someone has sent the FireHouse survey form. Their submission is a draft project, waiting for review:',
+			'',
+			admin_url( 'post.php?post=' . $post_id . '&action=edit' ),
+			'',
+		);
+		if ( ! $irb ) {
+			$lines[] = 'They said the project has no IRB approval or exemption, so it can’t be published.';
+			$lines[] = '';
+		}
+		$lines[] = 'Every draft: ' . admin_url( 'edit.php?post_type=' . Post_Types::PROJECT . '&post_status=draft' );
+		$lines[] = '';
+		$lines[] = 'This message holds nothing the submitter typed. Their answers, and the private ones, are on the project’s edit screen.';
+		wp_mail( $to, $irb ? 'New FireHouse submission' : 'New FireHouse submission, without IRB approval', implode( "\n", $lines ) );
 	}
 
 	/**

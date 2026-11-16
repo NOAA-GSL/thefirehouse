@@ -63,6 +63,20 @@ final class SurveyTest extends WordPressTestCase {
 	private array $deleted = array();
 
 	/**
+	 * What wp_mail() was given.
+	 *
+	 * @var list<array<int, mixed>>
+	 */
+	private array $mail = array();
+
+	/**
+	 * The addresses asked for over HTTP.
+	 *
+	 * @var list<string>
+	 */
+	private array $requests = array();
+
+	/**
 	 * A WordPress with the landing page (10) and the Submit page (20) under it.
 	 */
 	protected function setUp(): void {
@@ -130,6 +144,21 @@ final class SurveyTest extends WordPressTestCase {
 			function ( ...$args ): bool {
 				$this->meta[] = $args;
 				return true;
+			}
+		);
+		Functions\when( 'admin_url' )->alias( static fn( string $path = '' ): string => 'https://example.test/wp-admin/' . $path );
+		Functions\when( 'is_email' )->alias( static fn( string $email ): string|false => filter_var( $email, FILTER_VALIDATE_EMAIL ) );
+		Functions\when( 'wp_mail' )->alias(
+			function ( ...$args ): bool {
+				$this->mail[] = $args;
+				return true;
+			}
+		);
+		// No network: each lookup fails, and keeps nothing.
+		Functions\when( 'wp_safe_remote_get' )->alias(
+			function ( string $url ): \WP_Error {
+				$this->requests[] = $url;
+				return new \WP_Error( 'http_request_failed', 'No network in tests.' );
 			}
 		);
 		// The redirect ends the request; the test catches it where exit would come.
@@ -509,5 +538,83 @@ final class SurveyTest extends WordPressTestCase {
 		$this->unpublished = true;
 		Survey::opened();
 		$this->assertSame( array(), $this->inserted );
+	}
+
+	/**
+	 * Each submission saved is reported to the team mailbox with a link to its draft,
+	 * in fixed text: nothing the submitter typed, private or not, is in it. One
+	 * without IRB approval says so. A form drawn again sends nothing.
+	 */
+	public function test_the_team_mailbox_is_told(): void {
+		$sent = array(
+			'title'    => 'A smoke study about https://spam.example',
+			'jobTitle' => 'Hydrologist',
+		) + self::good();
+		self::send( $sent );
+
+		$this->assertCount( 1, $this->mail );
+		[ $to, $subject, $body ] = $this->mail[0];
+		$this->assertSame( 'gsl.firehouse@noaa.gov', $to );
+		$this->assertSame( 'New FireHouse submission', $subject );
+		$this->assertStringContainsString( 'https://example.test/wp-admin/post.php?post=30&action=edit', $body );
+		$this->assertStringContainsString( 'https://example.test/wp-admin/edit.php?post_type=fh_project&post_status=draft', $body );
+		foreach ( array( 'smoke', 'spam.example', 'jo@example.org', 'Hydrologist', 'Jo Smith', 'A university', 'What we studied' ) as $typed ) {
+			$this->assertStringNotContainsString( $typed, $subject . $body, 'Nothing typed reaches the email.' );
+		}
+
+		self::send( array( 'irb' => 'no' ) + self::good() );
+		$this->assertSame( 'New FireHouse submission, without IRB approval', $this->mail[1][1] );
+		$this->assertStringContainsString( 'no IRB approval or exemption, so it can’t be published', $this->mail[1][2] );
+
+		self::send( array( 'title' => '' ) + self::good() );
+		self::send( self::good(), array( Survey::CHANGE => 'add:needs' ) );
+		$this->assertCount( 2, $this->mail, 'Nothing saved: nothing sent.' );
+	}
+
+	/**
+	 * The `firehouse_survey_notify` filter changes where the report goes, or with ""
+	 * sends none; something that isn't an address sends none either.
+	 */
+	public function test_the_report_can_go_elsewhere_or_nowhere(): void {
+		\Brain\Monkey\Filters\expectApplied( 'firehouse_survey_notify' )->once()->with( Survey::NOTIFY )->andReturn( 'test-team@example.org' );
+		Survey::notify( 30, true );
+		$this->assertSame( 'test-team@example.org', $this->mail[0][0] );
+
+		foreach ( array( '', 'not an address', array( 'a@example.org' ) ) as $to ) {
+			\Brain\Monkey\Filters\expectApplied( 'firehouse_survey_notify' )->once()->andReturn( $to );
+			Survey::notify( 30, true );
+		}
+		$this->assertCount( 1, $this->mail );
+	}
+
+	/**
+	 * A draft with a paper given by its DOI has its lookups scheduled once it's saved:
+	 * nothing is fetched while the researcher waits, and a link without a DOI never is.
+	 * A submission without IRB approval, never published, isn't looked up.
+	 */
+	public function test_a_dois_lookup_is_scheduled_after_the_save(): void {
+		$scheduled = array();
+		Functions\when( 'wp_schedule_single_event' )->alias(
+			static function ( int $time, string $hook, array $args ) use ( &$scheduled ): bool {
+				$scheduled[] = array( $hook, $args );
+				return true;
+			}
+		);
+		$links = array( 'links' => array( 'https://example.org/report', 'https://doi.org/10.1175/WCAS-D-21-0042.1' ) );
+		self::send( $links + self::good() );
+
+		$this->assertSame( array(), $this->requests, 'Nothing fetched while the researcher waits.' );
+		$this->assertSame( array( array( \Firehouse\Survey\Doi_Lookup::EVENT, array( 30 ) ) ), $scheduled );
+		$this->assertSame(
+			array(
+				array( 'url' => 'https://example.org/report' ),
+				array( 'doi' => '10.1175/WCAS-D-21-0042.1' ),
+			),
+			$this->inserted[0]['meta_input']['fh_papers']
+		);
+
+		self::send( array( 'irb' => 'no' ) + $links + self::good() );
+		self::send( array( 'links' => array( 'https://example.org/report' ) ) + self::good() );
+		$this->assertCount( 1, $scheduled, 'No IRB approval, or no DOI: nothing scheduled.' );
 	}
 }

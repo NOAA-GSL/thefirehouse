@@ -74,6 +74,7 @@ require_once __DIR__ . '/includes/class-synthesis-screen.php';
 require_once __DIR__ . '/includes/class-help.php';
 require_once __DIR__ . '/survey/class-questions.php';
 require_once __DIR__ . '/survey/class-submission.php';
+require_once __DIR__ . '/survey/class-doi-lookup.php';
 require_once __DIR__ . '/survey/class-form.php';
 require_once __DIR__ . '/survey/class-survey.php';
 require_once __DIR__ . '/includes/class-edit-screen.php';
@@ -187,6 +188,9 @@ require_once __DIR__ . '/includes/class-head.php';
  *   out one field, the survey form's private answers, and every other as it was.
  * - Survey\Survey::opened runs whenever the FireHouse settings are added or updated:
  *   while the form is open and there's no Submit page, it makes one.
+ * - Survey\Doi_Lookup::run (the `firehouse_doi_lookup` scheduled event, which only the
+ *   survey form schedules) looks up the DOIs of a draft the form saved and adds their
+ *   titles to its papers; it leaves any other post alone.
  *
  * In every block editor on the site (for any post or page, the site editor and the
  * widgets), on enqueue_block_editor_assets:

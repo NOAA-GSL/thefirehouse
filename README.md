@@ -354,7 +354,17 @@ overrides are isolated so a re-sync doesn't lose them.
       nothing about visitors (Eric, 16 November). The plugin takes a submission at
       that exact address only. Adding or removing an entry's box is a POST to the
       same address, and a researcher filling in every box can send 20 or more in one
-      sitting, so the limit has to allow that.
+      sitting, so the limit has to allow that. Each submission saved costs a draft,
+      one email to the team mailbox, and up to ten seconds of DOI lookups in a
+      scheduled event.
+- [ ] **Check the survey form's background work on each site** before its form opens:
+      that WP-Cron runs (WordPress's own, or a system cron if `DISABLE_WP_CRON` is
+      set), or a draft's DOIs are never looked up; that the server can reach doi.org,
+      api.crossref.org and data.crosscite.org; that the site's mail reaches
+      gsl.firehouse@noaa.gov; and, on a local copy or the test site, whether the team
+      wants its test submissions emailed (the `firehouse_survey_notify` filter, set to
+      "" in a must-use plugin, stops them). Also confirm the site's address doesn't
+      come from the request's Host header, since the email's links use it.
 - [ ] **Check that deleting a transient reports whether it deleted one** on each
       WordPress site the plugin runs on, with whatever object cache it has. The
       synthesis screen's Mark reviewed relies on it to publish a check once
