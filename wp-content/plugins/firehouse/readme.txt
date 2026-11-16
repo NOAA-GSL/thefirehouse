@@ -213,6 +213,8 @@ one is.
   menu, the block titles, and the pages' titles and words. A site that imported its
   content before keeps the old spelling in its settings and in the landing and About
   pages until they are changed.
+* A project's Publish box says Preview shows the project as last saved, not the
+  changes on the screen. The topics list has no Quick Edit.
 
 = 0.2.0 =
 * Project and topic post types at the Firehouse addresses, with their fields as post

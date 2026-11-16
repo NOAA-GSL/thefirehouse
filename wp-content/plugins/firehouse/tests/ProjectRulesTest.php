@@ -620,9 +620,35 @@ final class ProjectRulesTest extends WordPressTestCase {
 	}
 
 	/**
+	 * Under the Preview button, a note says what it shows, naming the button as
+	 * WordPress does: Preview Changes only once published.
+	 */
+	public function test_the_preview_note_says_what_preview_shows(): void {
+		$note = static function ( \WP_Post $post ): string {
+			ob_start();
+			Project_Rules::preview_note( $post );
+			return (string) ob_get_clean();
+		};
+		$as   = static fn( string $status ): \WP_Post => new \WP_Post(
+			array(
+				'ID'          => 41,
+				'post_type'   => 'fh_project',
+				'post_status' => $status,
+			)
+		);
+
+		$this->assertSame( '<p class="fh-publish-preview">Preview shows the project as last saved, not the changes on this screen: save it first to see them.</p>', $note( $this->posts[42] ) );
+		$this->assertSame( '<p class="fh-publish-preview">Preview Changes shows the project as last updated, not the changes on this screen, which show once you update it.</p>', $note( $this->posts[41] ) );
+		$this->assertStringStartsWith( '<p class="fh-publish-preview">Preview shows the project as last updated', $note( $as( 'private' ) ), 'Private: the button says Preview.' );
+		$this->assertStringStartsWith( '<p class="fh-publish-preview">Preview shows the project as last updated', $note( $as( 'future' ) ), 'Scheduled.' );
+		$this->assertStringStartsWith( '<p class="fh-publish-preview">Preview shows the project as last saved', $note( $as( 'pending' ) ) );
+		$this->assertSame( '', $note( $this->posts[43] ), 'Not a project.' );
+	}
+
+	/**
 	 * The Publish button and the visibility and date settings are hidden only on the
 	 * screen of a draft or pending project that can't be published; a public one keeps
-	 * its Update button.
+	 * its Update button. The Preview note gets its line on every project's screen.
 	 */
 	public function test_what_would_publish_is_hidden_only_when_it_cant(): void {
 		Functions\when( 'absint' )->alias( static fn( mixed $value ): int => abs( (int) $value ) );
@@ -638,7 +664,8 @@ final class ProjectRulesTest extends WordPressTestCase {
 			$_GET = array( 'post' => $id );
 			Project_Rules::load();
 		}
-		$this->assertSame( array( '#publishing-action,#submitdiv .misc-pub-visibility,#submitdiv .misc-pub-curtime{display:none}' ), $styles );
+		$hide = '#publishing-action,#submitdiv .misc-pub-visibility,#submitdiv .misc-pub-curtime{display:none}';
+		$this->assertSame( array( Project_Rules::PREVIEW_STYLE, Project_Rules::PREVIEW_STYLE . $hide ), $styles, 'Every project gets the note\'s line; a page, nothing.' );
 	}
 
 	/**

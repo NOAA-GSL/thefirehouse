@@ -79,8 +79,8 @@ final class Topic_Screen extends Edit_Screen {
 	private static array $kept = array();
 
 	/**
-	 * Hooks the screen, the label's rule, the title box's words, and the label's
-	 * problem under the title box.
+	 * Hooks the screen, the label's rule, the title box's words, the label's problem
+	 * under the title box, and the topics list without Quick Edit.
 	 */
 	public static function hook(): void {
 		parent::hook();
@@ -89,6 +89,55 @@ final class Topic_Screen extends Edit_Screen {
 		add_filter( 'title_edit_pre', array( self::class, 'edit_label' ), 10, 2 );
 		add_filter( 'enter_title_here', array( self::class, 'title_prompt' ), 10, 2 );
 		add_action( 'edit_form_before_permalink', array( self::class, 'label_error' ) );
+		add_filter( 'post_row_actions', array( self::class, 'row_actions' ), 10, 2 );
+		add_filter( 'bulk_actions-edit-' . Post_Types::TOPIC, array( self::class, 'bulk_actions' ) );
+		add_filter( 'manage_' . Post_Types::TOPIC . '_posts_columns', array( self::class, 'columns' ) );
+	}
+
+	/**
+	 * The topics list's row links, without Quick Edit (decided by Eric, 15 November).
+	 * Its panel offers what a topic's own screen leaves out: its slug and status, which a
+	 * topic keeps whatever is sent (Capabilities::keep_in_place()), its date and a
+	 * password. Hiding it is a guide, not a control: a request sent by hand is saved as
+	 * any other, its label checked (keep_label()).
+	 *
+	 * @param mixed $actions The row's links, by name.
+	 * @param mixed $post    The row's post.
+	 * @return mixed
+	 */
+	public static function row_actions( mixed $actions, mixed $post ): mixed {
+		if ( is_array( $actions ) && $post instanceof \WP_Post && Post_Types::TOPIC === $post->post_type ) {
+			unset( $actions['inline hide-if-no-js'] );
+		}
+		return $actions;
+	}
+
+	/**
+	 * The topics list's bulk actions, without Edit, Quick Edit's panel for several.
+	 *
+	 * @param mixed $actions The bulk actions, by name.
+	 * @return mixed
+	 */
+	public static function bulk_actions( mixed $actions ): mixed {
+		if ( is_array( $actions ) ) {
+			unset( $actions['edit'] );
+		}
+		return $actions;
+	}
+
+	/**
+	 * The topics list's columns, without the checkboxes: with no bulk Edit and no
+	 * deleting a topic (Capabilities::map_meta_cap()), no bulk action is left for them
+	 * to choose rows for, and each would be a stop for Tab and screen readers.
+	 *
+	 * @param mixed $columns The columns, by name.
+	 * @return mixed
+	 */
+	public static function columns( mixed $columns ): mixed {
+		if ( is_array( $columns ) ) {
+			unset( $columns['cb'] );
+		}
+		return $columns;
 	}
 
 	/**
