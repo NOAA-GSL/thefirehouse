@@ -238,10 +238,15 @@ describe('the block editor script', () => {
     expect(calls.map((call) => call[1])).toEqual(['unlockPostSaving', 'removeNotice']);
   });
 
-  it('shows a button stored with only its text, which goes to the survey’s address', () => {
-    const { tree } = edit('firehouse/hero', { ...HERO, secondaryCta: { label: 'Explore' } });
-    expect(controls(tree)['Second button text'].props.value).toBe('Explore');
-    expect(text(tree)).toContain('The Submit a Finding address in FireHouse → Settings');
+  it('shows a button stored with only its text, which goes to the survey’s address, and keeps it while it’s emptied', () => {
+    const hero = edit('firehouse/hero', { ...HERO, secondaryCta: { label: 'Explore' } });
+    expect(controls(hero.tree)['Second button text'].props.value).toBe('Explore');
+    expect(text(hero.tree)).toContain('The Submit a Finding address in FireHouse → Settings');
+    // Emptied, the field stays, marked, and the save is held, rather than the button
+    // being left out of the page.
+    const emptied = hero.rerender({ ...HERO, secondaryCta: { label: '' } });
+    expect(controls(emptied)['Second button text'].props['aria-invalid']).toBe(true);
+    expect(hero.calls.filter((call) => call[1] === 'lockPostSaving')).toHaveLength(1);
   });
 
   it('goes to a field in the editor’s frame when there is one', () => {

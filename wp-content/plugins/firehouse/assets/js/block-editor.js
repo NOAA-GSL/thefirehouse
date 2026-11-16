@@ -191,10 +191,11 @@
 
 	/**
 	 * Whether a stored button exists: it has somewhere to go, a page or an address, or
-	 * its text, which goes to the survey's address (Page_Blocks::link()).
+	 * text, which goes to the survey's address (Page_Blocks::link()). Text emptied in
+	 * the editor still makes one, so its field stays, and holds the save.
 	 */
 	function exists( link ) {
-		return isEntry( link ) && ( 'string' === typeof link.to || 'string' === typeof link.href || ! blank( link.label ) );
+		return isEntry( link ) && ( 'string' === typeof link.to || 'string' === typeof link.href || 'string' === typeof link.label );
 	}
 
 	/**
@@ -425,7 +426,7 @@
 			editor.selectBlock( clientId );
 		}
 		window.setTimeout( () => {
-			const selector = '[data-firehouse-field="' + id + '"]';
+			const selector = '[data-firehouse-field="' + ( window.CSS && window.CSS.escape ? window.CSS.escape( id ) : id ) + '"]';
 			const frame = window.document.querySelector( 'iframe[name="editor-canvas"]' );
 			const inFrame = frame && frame.contentDocument ? frame.contentDocument.querySelector( selector ) : null;
 			const field = inFrame || window.document.querySelector( selector );
