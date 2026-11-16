@@ -49,12 +49,28 @@ final class SurveyTest extends WordPressTestCase {
 	private bool $page = true;
 
 	/**
+	 * Whether a Submit page that isn't published is there.
+	 *
+	 * @var bool
+	 */
+	private bool $unpublished = false;
+
+	/**
+	 * The drafts deleted for good.
+	 *
+	 * @var list<int>
+	 */
+	private array $deleted = array();
+
+	/**
 	 * A WordPress with the landing page (10) and the Submit page (20) under it.
 	 */
 	protected function setUp(): void {
 		parent::setUp();
-		$_POST = array();
-		$_GET  = array();
+		$_POST                     = array();
+		$_GET                      = array();
+		$_SERVER['REQUEST_METHOD'] = 'POST';
+		$_SERVER['REQUEST_URI']    = '/firehouse/submit/';
 		Functions\when( 'get_option' )->alias( fn( string $name ): mixed => Settings::OPTION === $name ? $this->settings : false );
 		Functions\when( 'get_posts' )->alias(
 			function ( array $args ): array {
@@ -62,6 +78,9 @@ final class SurveyTest extends WordPressTestCase {
 					return array( 10 );
 				}
 				if ( Survey::SLUG === ( $args['name'] ?? null ) ) {
+					if ( 'publish' !== $args['post_status'] ) {
+						return $this->page || $this->unpublished ? array( 20 ) : array();
+					}
 					return $this->page ? array( 20 ) : array();
 				}
 				return array();
@@ -75,16 +94,24 @@ final class SurveyTest extends WordPressTestCase {
 				)
 			) : null
 		);
-		Functions\when( 'is_page' )->alias( static fn( mixed $id = null ): bool => 20 === $id );
+		Functions\when( 'is_page' )->alias( static fn( mixed $id = null ): bool => null === $id || 20 === $id );
 		Functions\when( 'get_permalink' )->justReturn( 'https://example.test/firehouse/submit/' );
 		Functions\when( 'home_url' )->alias( static fn( string $path = '' ): string => 'https://example.test' . $path );
 		Functions\when( 'nocache_headers' )->justReturn( null );
+		Functions\when( 'esc_url_raw' )->returnArg();
+		Functions\when( 'wp_unique_post_slug' )->returnArg();
+		Functions\when( 'wp_delete_post' )->alias(
+			function ( int $id ): bool {
+				$this->deleted[] = $id;
+				return true;
+			}
+		);
 		Functions\when( 'sanitize_key' )->returnArg();
 		Functions\when( 'sanitize_text_field' )->alias( static fn( string $text ): string => trim( $text ) );
 		Functions\when( 'wp_unslash' )->returnArg();
 		Functions\when( 'wp_slash' )->returnArg();
 		Functions\when( 'wp_salt' )->justReturn( 'a salt' );
-		Functions\when( 'wp_parse_url' )->alias( static fn( string $url ): mixed => parse_url( $url ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url -- Standing in for wp_parse_url().
+		Functions\when( 'wp_parse_url' )->alias( static fn( string $url, int $part = -1 ): mixed => parse_url( $url, $part ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url -- Standing in for wp_parse_url().
 		Functions\when( 'wp_create_nonce' )->justReturn( 'a-nonce' );
 		Functions\when( 'wp_verify_nonce' )->alias( static fn( string $nonce ): bool => 'a-nonce' === $nonce );
 		Functions\when( 'wp_generate_password' )->justReturn( 'abcdefghijklmnop' );
@@ -120,6 +147,7 @@ final class SurveyTest extends WordPressTestCase {
 	protected function tearDown(): void {
 		$_POST = array();
 		$_GET  = array();
+		unset( $_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI'], $_SERVER['HTTP_ORIGIN'], $_SERVER['HTTP_SEC_FETCH_SITE'] );
 		( new \ReflectionProperty( Survey::class, 'state' ) )->setValue( null, null );
 		parent::tearDown();
 	}
@@ -286,6 +314,167 @@ final class SurveyTest extends WordPressTestCase {
 		Functions\when( 'is_page' )->justReturn( false );
 		Functions\expect( 'nocache_headers' )->never();
 		$this->assertSame( '', self::send( self::good() ) );
+		$this->assertSame( array(), $this->inserted );
+	}
+
+	/**
+	 * A form sent anywhere but the page's own address, as its permalink spells it,
+	 * writes nothing, though WordPress found the page from what the POST named: a rate
+	 * limit on the page's address would never see it. So does one a browser says came
+	 * from another site.
+	 *
+	 * @param array<string, string> $server What the request says of itself.
+	 */
+	#[\PHPUnit\Framework\Attributes\DataProvider( 'elsewhere' )]
+	public function test_a_form_sent_from_elsewhere_writes_nothing( array $server ): void {
+		Functions\expect( 'status_header' )->once()->with( 400 );
+		$_SERVER = $server + $_SERVER;
+		$this->assertSame( '', self::send( self::good() ) );
+
+		$state = Survey::state();
+		$this->assertSame( array( 'form' ), array_keys( $state['problems'] ) );
+		$this->assertSame( '', $state['values']['title'], 'Nothing sent from elsewhere is shown.' );
+		$this->assertSame( array(), $this->inserted );
+	}
+
+	/**
+	 * Requests that aren't a form sent from the Submit page itself.
+	 *
+	 * @return array<string, array{0: array<string, string>}>
+	 */
+	public static function elsewhere(): array {
+		return array(
+			'another page naming it'  => array( array( 'REQUEST_URI' => '/about/' ) ),
+			'the home page'           => array( array( 'REQUEST_URI' => '/' ) ),
+			'without its slash'       => array( array( 'REQUEST_URI' => '/firehouse/submit' ) ),
+			'in capitals'             => array( array( 'REQUEST_URI' => '/Firehouse/submit/' ) ),
+			'through index.php'       => array( array( 'REQUEST_URI' => '/index.php/firehouse/submit/' ) ),
+			'another site, by origin' => array( array( 'HTTP_ORIGIN' => 'https://elsewhere.example' ) ),
+			'another site, by fetch'  => array( array( 'HTTP_SEC_FETCH_SITE' => 'cross-site' ) ),
+			'an origin with no host'  => array( array( 'HTTP_ORIGIN' => 'null' ) ),
+			'not a POST'              => array( array( 'REQUEST_METHOD' => 'PUT' ) ),
+		);
+	}
+
+	/**
+	 * The site's own page, whatever the scheme it's reached by, and a request that names
+	 * no origin, as a script's may, go on to the rest of the checks.
+	 */
+	public function test_a_form_sent_from_the_page_is_taken(): void {
+		$_SERVER['HTTP_ORIGIN']         = 'http://EXAMPLE.test';
+		$_SERVER['HTTP_SEC_FETCH_SITE'] = 'same-origin';
+		$this->assertSame( '303 https://example.test/firehouse/submit/?firehouse_sent=yes', self::send( self::good() ) );
+		unset( $_SERVER['HTTP_ORIGIN'], $_SERVER['HTTP_SEC_FETCH_SITE'] );
+		$this->assertSame( '303 https://example.test/firehouse/submit/?firehouse_sent=yes', self::send( self::good() ) );
+		$this->assertCount( 2, $this->inserted );
+	}
+
+	/**
+	 * The wait counts from when the form was first drawn: adding a box, or a problem,
+	 * keeps the time it was sent with, so sending straight after isn't refused. A time
+	 * this site didn't sign starts the wait again.
+	 */
+	public function test_the_wait_counts_from_the_first_drawing(): void {
+		$first = Survey::stamp( time() - 60 );
+		self::send( self::good(), array( Survey::CHANGE => 'add:needs' ) );
+		$this->assertSame( $first, Survey::state()['started'] );
+		$this->assertSame( 'https://example.test/firehouse/submit/', Survey::state()['action'], 'Sent to the address with no fragment.' );
+
+		self::send( array( 'title' => '' ) + self::good() );
+		$this->assertSame( $first, Survey::state()['started'] );
+
+		self::send(
+			self::good(),
+			array(
+				Survey::CHANGE  => 'add:needs',
+				Survey::STARTED => time() - 60 . '.forged',
+			)
+		);
+		$this->assertNotSame( $first, Survey::state()['started'] );
+		$this->assertTrue( Survey::is_stamp( Survey::state()['started'] ) );
+
+		$this->assertNotSame( hash_hmac( 'sha256', (string) ( time() - 60 ), 'a salt' ), explode( '.', $first )[1], 'Signed under its own name, not as a bare time.' );
+	}
+
+	/**
+	 * The private answers are slashed for add_post_meta(), which unslashes them, so a
+	 * backslash is kept. If they can't be written, the draft is deleted and the form
+	 * asks for it again; with none given, nothing is written for them.
+	 */
+	public function test_the_private_answers_are_kept_or_the_draft_goes(): void {
+		Functions\when( 'wp_slash' )->alias( static fn( mixed $value ): mixed => is_array( $value ) ? array_map( static fn( mixed $item ): mixed => is_string( $item ) ? addslashes( $item ) : $item, $value ) : $value );
+		self::send( array( 'jobTitle' => 'Hydrologist \\ IMET' ) + self::good() );
+		$this->assertSame( 'Hydrologist \\\\ IMET', $this->meta[0][2]['jobTitle'] );
+
+		Functions\when( 'add_post_meta' )->justReturn( false );
+		$this->assertSame( '', self::send( self::good() ) );
+		$this->assertSame( array( 30 ), $this->deleted );
+		$this->assertStringStartsWith( 'Your answers couldn’t be saved just now.', Survey::state()['problems']['form'] );
+
+		Functions\when( 'add_post_meta' )->alias(
+			function ( ...$args ): bool {
+				$this->meta[] = $args;
+				return true;
+			}
+		);
+		$this->meta = array();
+		$this->assertStringEndsWith( 'firehouse_sent=yes', self::send( array_diff_key( self::good(), array( 'email' => true ) ) ) );
+		$this->assertSame( array(), $this->meta, 'No private answers given: none written.' );
+	}
+
+	/**
+	 * A link holding an email address is refused, as the other words the site shows
+	 * are, and nothing is saved (rule 2).
+	 */
+	public function test_nothing_shaped_like_an_email_is_saved(): void {
+		$this->assertSame( '', self::send( array( 'links' => array( 'https://example.org/report?contact=jo@example.org' ) ) + self::good() ) );
+		$this->assertArrayHasKey( 'links-1', Survey::state()['problems'] );
+		$this->assertSame( array(), $this->inserted );
+	}
+
+	/**
+	 * WordPress's export (Tools → Export) leaves the private answers out, and every other
+	 * field as it was. No Firehouse field's key is theirs, so they're in no schema, no
+	 * REST response and no revision.
+	 */
+	public function test_the_private_answers_are_left_out_of_the_export(): void {
+		$this->assertTrue( Survey::skip_in_export( false, Survey::PRIVATE_KEY ) );
+		$this->assertFalse( Survey::skip_in_export( false, 'fh_title' ) );
+		$this->assertTrue( Survey::skip_in_export( true, '_edit_lock' ), 'What another filter left out stays out.' );
+		foreach ( array_keys( \Firehouse\Meta::fields( 'fh_project' ) ) as $name ) {
+			$this->assertNotSame( Survey::PRIVATE_KEY, \Firehouse\Meta::key( $name ) );
+		}
+	}
+
+	/**
+	 * After a send, the page's title says what happened, so a screen reader says it as
+	 * the page loads; anywhere else, and before a send, it's left as it was.
+	 */
+	public function test_the_title_says_what_happened(): void {
+		Functions\stubTranslationFunctions();
+		$this->assertSame( 'Submit a Finding', Survey::document_title( 'Submit a Finding' ), 'Not the Submit page.' );
+
+		self::send( array( 'title' => '' ) + self::good() );
+		$this->assertSame( 'Error: Submit a Finding', Survey::document_title( 'Submit a Finding' ) );
+		$this->assertSame( '', Survey::document_title( '' ), 'No title of its own: left to WordPress.' );
+
+		self::send( self::good(), array( Survey::CHANGE => 'add:needs' ) );
+		$this->assertSame( 'Submit a Finding', Survey::document_title( 'Submit a Finding' ), 'A box added: no problem yet.' );
+
+		$_POST = array();
+		$_GET  = array( 'firehouse_sent' => 'yes' );
+		Survey::handle();
+		$this->assertSame( 'Thank you: Submit a Finding', Survey::document_title( 'Submit a Finding' ) );
+	}
+
+	/**
+	 * A Submit page that's there but not published (a draft, say) isn't made again
+	 * beside it at submit-2: it's left for an administrator to publish.
+	 */
+	public function test_an_unpublished_submit_page_is_not_made_again(): void {
+		$this->page        = false;
+		$this->unpublished = true;
+		Survey::opened();
 		$this->assertSame( array(), $this->inserted );
 	}
 }

@@ -57,7 +57,7 @@ final class SubmissionTest extends WordPressTestCase {
 			'methodsOther'     => 'Notes during evaluation',
 			'regions'          => array( 'NWCC', 'AICC' ),
 			'abstract'         => "Evacuation orders reach people late. We asked why.\nThe rest follows.",
-			'takeaways'        => array( 'First takeaway', '  ', 'Second takeaway' ),
+			'takeaways'        => array( "First  takeaway,\n on two lines", '  ', 'Second takeaway' ),
 			'needs'            => array( 'Need for clearer orders among residents: they arrive late. Recommend earlier notice.', 'Recommend only this.' ),
 			'links'            => array( 'https://doi.org/10.1000/xyz.', 'https://zenodo.org/records/123', 'https://example.org/report' ),
 		);
@@ -100,11 +100,11 @@ final class SubmissionTest extends WordPressTestCase {
 	public function test_a_missing_answer_is_named_where_it_is(): void {
 		$problems = Submission::check( Submission::read( array() ) );
 
-		$this->assertSame( array( 'submitter', 'org', 'title', 'completionYear', 'irb', 'firePhases', 'projectType', 'methods', 'regions', 'abstract', 'takeaways-1', 'needs-1' ), array_keys( $problems ) );
+		$this->assertSame( array( 'submitter', 'org', 'title', 'completionYear', 'irb', 'firePhases', 'projectType', 'methods', 'regions', 'abstract', 'takeaways', 'needs' ), array_keys( $problems ) );
 		$this->assertSame( 'Your name: this is required.', $problems['submitter'] );
 		$this->assertSame( 'IRB approval: choose one answer.', $problems['irb'] );
 		$this->assertSame( 'The fire cycle phases: choose at least one.', $problems['firePhases'] );
-		$this->assertSame( 'The takeaways: give at least 2.', $problems['takeaways-1'] );
+		$this->assertSame( 'The takeaways: give at least 2.', $problems['takeaways'] );
 	}
 
 	/**
@@ -132,11 +132,47 @@ final class SubmissionTest extends WordPressTestCase {
 		$this->assertSame( 'The GACCs: choose from the answers given.', $problems['regions'] );
 		$this->assertSame( 'The kind of project: say what “Other” is.', $problems['projectTypeOther'] );
 		$this->assertSame( 'The project’s title: it’s longer than 300 characters.', $problems['title'] );
-		$this->assertSame( 'The takeaways: give at least 2.', $problems['takeaways-1'] );
+		$this->assertSame( 'The takeaways: give at least 2.', $problems['takeaways'] );
 		$this->assertSame( 'Link 1 isn’t a web address or a DOI: start it with https:// or 10.', $problems['links-1'] );
-		$this->assertSame( 'The needs and recommendations: give no more than 8.', $problems['needs-1'] );
-		$this->assertSame( 'The abstract: holds an email address. Your email goes in its own question, which only the FireHouse team sees.', $problems['abstract'] );
+		$this->assertSame( 'The needs and recommendations: give no more than 8.', $problems['needs'] );
+		$this->assertSame( 'The abstract: holds an email address. Your email goes in its own question, and the site never shows it.', $problems['abstract'] );
 		$this->assertArrayNotHasKey( 'links-2', $problems );
+		$this->assertArrayNotHasKey( 'takeaways-1', $problems, 'How many there are is the group’s problem, not the filled box’s.' );
+	}
+
+	/**
+	 * A link is printed on the project's page, so one holding an email address is
+	 * refused, as the other words the site shows are (rule 2).
+	 */
+	public function test_a_link_holding_an_email_is_refused(): void {
+		$problems = Submission::check( array( 'links' => array( 'https://example.org/data', 'https://example.org/report?contact=jane.doe@noaa.gov' ) ) + self::good() );
+		$this->assertSame( array( 'links-2' ), array_keys( $problems ) );
+		$this->assertSame( 'The links: holds an email address. Your email goes in its own question, and the site never shows it.', $problems['links-2'] );
+	}
+
+	/**
+	 * A character no one would see is refused, wherever it's typed, and the researcher
+	 * asked to type that part again, rather than it being taken out (rule 1). A tab, a
+	 * line break, a soft hyphen or a zero-width joiner is fine.
+	 */
+	public function test_a_character_that_doesnt_show_is_refused(): void {
+		$hidden   = array(
+			'title'            => "A \u{202E}kooltuo study",
+			'abstract'         => "What we studied.\u{E0041}",
+			'takeaways'        => array( 'One', "Two\x07" ),
+			'projectType'      => 'other',
+			'projectTypeOther' => "A \u{2066}kind",
+			'jobTitle'         => "A \x1B title",
+		);
+		$problems = Submission::check( $hidden + self::good() );
+		$this->assertSame( array( 'jobTitle', 'title', 'projectTypeOther', 'abstract', 'takeaways-2' ), array_keys( $problems ) );
+		$this->assertSame( 'The project’s title: holds a character that doesn’t show, perhaps from copying the text. Type that part again.', $problems['title'] );
+
+		$fine = array(
+			'abstract'  => "What we studied.\n\nAnd\twhy: wild\u{00AD}fire, \u{1F469}\u{200D}\u{1F692}.",
+			'takeaways' => array( "One\r\nmore", 'Two' ),
+		);
+		$this->assertSame( array(), Submission::check( $fine + self::good() ) );
 	}
 
 	/**
@@ -173,7 +209,7 @@ final class SubmissionTest extends WordPressTestCase {
 		$this->assertSame( array( 'Survey', 'Notes during evaluation' ), $fields['methods'] );
 		$this->assertTrue( $fields['irbApproved'] );
 		$this->assertSame( array( 'regions' => array( 'NWCC', 'AICC' ) ), $fields['geo'] );
-		$this->assertSame( array( 'First takeaway', 'Second takeaway' ), $fields['takeaways'] );
+		$this->assertSame( array( 'First takeaway, on two lines', 'Second takeaway' ), $fields['takeaways'], 'Tidied, as the import tidies each.' );
 		$this->assertSame(
 			array(
 				array(

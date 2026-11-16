@@ -186,13 +186,13 @@ final class Project_Screen extends Edit_Screen {
 	/**
 	 * A survey form submission's private answers (rule 2), read-only, for those who may
 	 * edit the project: the email, the job title and how the results were shared. They
-	 * never reach a page, the REST API or a revision (Survey\Survey).
+	 * never reach a page, the REST API, a revision or WordPress's export (Survey\Survey).
 	 *
 	 * @param \WP_Post $post The post being edited.
 	 */
 	public static function private_box( \WP_Post $post ): void {
 		$answers = Survey\Survey::private_answers( $post->ID );
-		echo '<p>' . esc_html__( 'From the survey form, for the FireHouse team only. They never appear on the site.', 'firehouse' ) . '</p>';
+		echo '<p>' . esc_html__( 'From the survey form, for the FireHouse team and the site’s administrators only. They never appear on the site.', 'firehouse' ) . '</p>';
 		echo '<dl class="fh-edit-readonly">';
 		self::row( __( 'Email', 'firehouse' ), Markup::text( is_string( $answers['email'] ?? null ) ? $answers['email'] : '' ) );
 		self::row( __( 'Job title', 'firehouse' ), Markup::text( is_string( $answers['jobTitle'] ?? null ) ? $answers['jobTitle'] : '' ) );

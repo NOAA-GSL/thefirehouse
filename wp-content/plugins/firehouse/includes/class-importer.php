@@ -74,7 +74,7 @@ final class Importer {
 	 * @return array<string, mixed> The plan; see plan().
 	 */
 	public static function preview( array $content, array $notes = array(), array $problems = array() ): array {
-		$saved = false !== get_option( Settings::OPTION, false ) ? Settings::get() : null;
+		$saved = false !== get_option( Settings::OPTION, false ) ? Settings::stored() : null;
 		return self::plan( $content, Store::projects(), Store::topics(), $saved, $notes, $problems, Capabilities::root_id() );
 	}
 
@@ -941,7 +941,7 @@ final class Importer {
 			}
 		}
 
-		if ( 'update' === $plan['settings']['action'] && ! self::same( $plan['settings']['value'], Settings::get() ) ) {
+		if ( 'update' === $plan['settings']['action'] && ! self::same( $plan['settings']['value'], Settings::stored() ) ) {
 			$plan['settings']['problems'][] = 'The settings read back differently from what was imported.';
 		}
 

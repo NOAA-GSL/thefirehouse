@@ -51,6 +51,7 @@ final class SurveyFormTest extends WordPressTestCase {
 				'focus'    => $focus,
 				'nonce'    => 'a-nonce',
 				'started'  => '123.abc',
+				'action'   => 'https://example.test/firehouse/submit/',
 			)
 		);
 	}
@@ -64,7 +65,10 @@ final class SurveyFormTest extends WordPressTestCase {
 		$html = self::drawn( array( 'takeaways' => array( '', '' ) ) );
 
 		$this->assertStringContainsString( '<label class="fh-field__label" for="fh-survey-submitter">Submitter name (First Last). You must be a co-author on the project.<span class="fh-field__required" aria-hidden="true"> *</span></label><input id="fh-survey-submitter" name="firehouse_survey[submitter]" type="text" value="" class="fh-field__control" autocomplete="name" aria-required="true" />', $html );
-		$this->assertStringContainsString( '<fieldset class="fh-survey__group fh-survey__question" id="fh-survey-irb" tabindex="-1"><legend class="fh-field__label">Did this project receive IRB approval or exemption?', $html );
+		$this->assertStringContainsString( '<fieldset class="fh-survey__group fh-survey__question" id="fh-survey-irb" tabindex="-1"><legend class="fh-field__label">Did this project receive IRB approval or exemption?<span class="fh-field__required" aria-hidden="true"> *</span><span class="fh-visually-hidden"> (required)</span></legend>', $html, 'A required group says so in words.' );
+		$this->assertStringContainsString( '<legend class="fh-field__label">Beyond academic publications and presentations, have you shared your results outside of your research group? (select all that apply)</legend>', $html, 'An optional one doesn’t.' );
+		$this->assertStringContainsString( '<label class="fh-field__label" for="fh-survey-methodsOther">If other, what?<span class="fh-visually-hidden"> (The data collection instruments)</span></label>', $html, 'The two Other boxes named apart.' );
+		$this->assertStringContainsString( '<form class="fh-survey__form" method="post" action="https://example.test/firehouse/submit/" novalidate>', $html, 'Sent to the address with no fragment.' );
 		$this->assertStringContainsString( '<input type="checkbox" id="fh-survey-regions-NWCC" name="firehouse_survey[regions][]" value="NWCC" /><label for="fh-survey-regions-NWCC">Northwest — OR, WA (NWCC)</label>', $html );
 		$this->assertStringContainsString( '<label class="fh-field__label" for="fh-survey-takeaways-2">Takeaway 2</label>', $html );
 		$this->assertStringNotContainsString( 'Remove Takeaway', $html, 'No fewer than 2.' );
@@ -84,18 +88,20 @@ final class SurveyFormTest extends WordPressTestCase {
 		$html = self::drawn(
 			array( 'takeaways' => array( '', '' ) ),
 			array(
-				'title'       => 'The project’s title: this is required.',
-				'takeaways-1' => 'The takeaways: give at least 2.',
-				'form'        => 'The form had been open for too long to send.',
+				'title'     => 'The project’s title: this is required.',
+				'takeaways' => 'The takeaways: give at least 2.',
+				'form'      => 'The form had been open for too long to send.',
 			)
 		);
 
-		$this->assertStringContainsString( '<div class="fh-survey__problems" role="alert" tabindex="-1" autofocus aria-labelledby="fh-survey-problems-heading"><h2 id="fh-survey-problems-heading">There are 3 problems to fix before sending</h2>', $html );
+		$this->assertStringContainsString( '<div class="fh-survey__problems" tabindex="-1" autofocus><div role="alert"><h2 id="fh-survey-problems-heading">There are 3 problems to fix before sending</h2>', $html, 'The alert inside what takes the focus.' );
 		$this->assertStringContainsString( '<li><a href="#fh-survey-title">The project’s title: this is required.</a></li>', $html );
-		$this->assertStringContainsString( '<li><a href="#fh-survey-takeaways-1">The takeaways: give at least 2.</a></li>', $html );
+		$this->assertStringContainsString( '<li><a href="#fh-survey-takeaways">The takeaways: give at least 2.</a></li>', $html, 'How many: the group.' );
+		$this->assertStringContainsString( '<fieldset class="fh-survey__group fh-survey__question" id="fh-survey-takeaways" tabindex="-1" aria-describedby="fh-survey-takeaways-problem">', $html );
+		$this->assertStringContainsString( 'id="fh-survey-takeaways-1" name="firehouse_survey[takeaways][]" rows="3" class="fh-field__control fh-field__control--area">', $html, 'Its first box isn’t marked wrong.' );
 		$this->assertStringContainsString( '<li>The form had been open for too long to send.</li>', $html );
 		$this->assertStringContainsString( 'id="fh-survey-title" name="firehouse_survey[title]" type="text" value="" class="fh-field__control fh-field__control--error" aria-describedby="fh-survey-title-problem" aria-invalid="true" aria-required="true"', $html );
-		$this->assertStringContainsString( '<span id="fh-survey-title-problem" class="fh-field__help fh-field__help--error">The project’s title: this is required.</span>', $html );
+		$this->assertStringContainsString( '<span id="fh-survey-title-problem" class="fh-field__help fh-field__help--error"><span class="fh-visually-hidden">Error: </span>The project’s title: this is required.</span>', $html );
 	}
 
 	/**
@@ -129,7 +135,7 @@ final class SurveyFormTest extends WordPressTestCase {
 		$this->assertStringNotContainsString( '<form', $closed );
 
 		$thanks = Form::render( array( 'step' => 'yes' ) );
-		$this->assertStringContainsString( '<div class="fh-survey__done" role="status" tabindex="-1" autofocus><p>' . Questions::thanks() . '</p></div>', $thanks );
+		$this->assertStringContainsString( '<div class="fh-survey__done" role="group" tabindex="-1" autofocus aria-labelledby="fh-survey-done"><p id="fh-survey-done">' . Questions::thanks() . '</p></div>', $thanks, 'Named by its message, which is read as it takes the focus.' );
 		$this->assertStringContainsString( 'we only accept research studies that have been reviewed and approved', Form::render( array( 'step' => 'no-irb' ) ) );
 	}
 }

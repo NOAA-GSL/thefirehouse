@@ -44,7 +44,9 @@ final class Form {
 				break;
 			case 'yes':
 			case 'no-irb':
-				$body = '<div class="fh-survey__done" role="status" tabindex="-1" autofocus><p>' . esc_html( 'yes' === $state['step'] ? Questions::thanks() : Questions::no_irb() ) . '</p></div>'
+				// Takes the focus and is named by its message, which a screen reader reads
+				// on reaching it; a live region already on a page as it loads says nothing.
+				$body = '<div class="fh-survey__done" role="group" tabindex="-1" autofocus aria-labelledby="fh-survey-done"><p id="fh-survey-done">' . esc_html( 'yes' === $state['step'] ? Questions::thanks() : Questions::no_irb() ) . '</p></div>'
 					. '<p>' . Markup::button( __( 'Back to the FireHouse', 'firehouse' ), $landing, 'secondary' ) . '</p>';
 				break;
 			default:
@@ -61,9 +63,11 @@ final class Form {
 	private static function form( array $state ): string {
 		$problems = (array) $state['problems'];
 		$html     = ( array() !== $problems ? self::summary( $problems ) : '' ) . self::notice();
-		// Sent to the page's own address, with no fragment: a browser skips `autofocus`
-		// when the address has one, and the problems' summary and an added box use it.
-		$html .= '<form class="fh-survey__form" method="post" novalidate>';
+		// Sent to the page's own address, with no fragment: without an action a form is
+		// sent to the address as it is, a skip link's or a problem link's fragment
+		// included, and a browser skips `autofocus` when the address has one.
+		$action = (string) ( $state['action'] ?? '' );
+		$html  .= '<form class="fh-survey__form" method="post"' . ( '' !== $action ? ' action="' . esc_url( $action ) . '"' : '' ) . ' novalidate>';
 		// The first submit button is what Enter in a text field presses: Send, not an
 		// entry's Remove.
 		$html .= '<button type="submit" class="fh-visually-hidden" tabindex="-1" aria-hidden="true">' . esc_html__( 'Send', 'firehouse' ) . '</button>';
@@ -121,7 +125,7 @@ final class Form {
 		$help    = isset( $question['help'] ) ? (string) $question['help'] : '';
 		$many    = 'choices' === $question['type'];
 		$chosen  = array_map( 'strval', (array) $value );
-		$html    = '<fieldset class="fh-survey__group fh-survey__question" id="' . esc_attr( $id ) . '" tabindex="-1"' . self::described( $id, $help, $problem ) . '><legend class="fh-field__label">' . esc_html( $question['label'] ) . $required . '</legend>' . self::help( $id, $help, $problem );
+		$html    = '<fieldset class="fh-survey__group fh-survey__question" id="' . esc_attr( $id ) . '" tabindex="-1"' . self::described( $id, $help, $problem ) . '><legend class="fh-field__label">' . esc_html( $question['label'] ) . $required . self::required_words( $question ) . '</legend>' . self::help( $id, $help, $problem );
 		foreach ( $question['options'] as $key => $label ) {
 			$option = $id . '-' . $key;
 			$html  .= '<div class="fh-survey__option"><input type="' . ( $many ? 'checkbox' : 'radio' ) . '" id="' . esc_attr( $option ) . '" name="' . esc_attr( Submission::FIELD . '[' . $name . ']' . ( $many ? '[]' : '' ) ) . '" value="' . esc_attr( (string) $key ) . '"' . checked( in_array( (string) $key, $chosen, true ), true, false ) . ' /><label for="' . esc_attr( $option ) . '">' . esc_html( $label ) . '</label></div>';
@@ -129,7 +133,9 @@ final class Form {
 		if ( isset( $question['other'] ) ) {
 			$other_id      = 'fh-survey-' . $name . 'Other';
 			$other_problem = (string) ( $state['problems'][ $name . 'Other' ] ?? '' );
-			$html         .= '<div class="fh-field fh-survey__other"><label class="fh-field__label" for="' . esc_attr( $other_id ) . '">' . esc_html__( 'If other, what?', 'firehouse' ) . '</label><input id="' . esc_attr( $other_id ) . '" name="' . esc_attr( Submission::FIELD . '[' . $name . 'Other]' ) . '" type="text" value="' . Markup::text( (string) ( $state['values'][ $name . 'Other' ] ?? '' ) ) . '" class="fh-field__control' . ( '' !== $other_problem ? ' fh-field__control--error' : '' ) . '"' . self::described( $other_id, '', $other_problem ) . ( '' !== $other_problem ? ' aria-invalid="true"' : '' ) . ' />' . self::help( $other_id, '', $other_problem ) . '</div>';
+			// Named for its question too, so a screen reader's list of fields tells the
+			// two "Other" boxes apart.
+			$html .= '<div class="fh-field fh-survey__other"><label class="fh-field__label" for="' . esc_attr( $other_id ) . '">' . esc_html__( 'If other, what?', 'firehouse' ) . '<span class="fh-visually-hidden"> (' . esc_html( (string) $question['name'] ) . ')</span></label><input id="' . esc_attr( $other_id ) . '" name="' . esc_attr( Submission::FIELD . '[' . $name . 'Other]' ) . '" type="text" value="' . Markup::text( (string) ( $state['values'][ $name . 'Other' ] ?? '' ) ) . '" class="fh-field__control' . ( '' !== $other_problem ? ' fh-field__control--error' : '' ) . '"' . self::described( $other_id, '', $other_problem ) . ( '' !== $other_problem ? ' aria-invalid="true"' : '' ) . ' />' . self::help( $other_id, '', $other_problem ) . '</div>';
 		}
 		return $html . '</fieldset>';
 	}
@@ -148,7 +154,8 @@ final class Form {
 	private static function entries( string $name, array $question, array $entries, array $problems, string $focus, string $required ): string {
 		$id                = 'fh-survey-' . $name;
 		$help              = isset( $question['help'] ) ? (string) $question['help'] : '';
-		$html              = '<fieldset class="fh-survey__group fh-survey__question" id="' . esc_attr( $id ) . '"' . self::described( $id, $help, '' ) . '><legend class="fh-field__label">' . esc_html( $question['label'] ) . $required . '</legend>' . self::help( $id, $help, '' );
+		$group_problem     = $problems[ $name ] ?? '';
+		$html              = '<fieldset class="fh-survey__group fh-survey__question" id="' . esc_attr( $id ) . '" tabindex="-1"' . self::described( $id, $help, $group_problem ) . '><legend class="fh-field__label">' . esc_html( $question['label'] ) . $required . self::required_words( $question ) . '</legend>' . self::help( $id, $help, $group_problem );
 		[ $fewest, $most ] = $question['count'];
 		foreach ( $entries as $index => $entry ) {
 			$number  = $index + 1;
@@ -215,17 +222,31 @@ final class Form {
 	 * @param string $problem What's wrong with it.
 	 */
 	private static function help( string $id, string $help, string $problem ): string {
-		return ( '' !== $problem ? '<span id="' . esc_attr( $id . '-problem' ) . '" class="fh-field__help fh-field__help--error">' . esc_html( $problem ) . '</span>' : '' )
+		// "Error:" said before a problem, wherever a screen reader meets it.
+		return ( '' !== $problem ? '<span id="' . esc_attr( $id . '-problem' ) . '" class="fh-field__help fh-field__help--error"><span class="fh-visually-hidden">' . esc_html__( 'Error:', 'firehouse' ) . ' </span>' . esc_html( $problem ) . '</span>' : '' )
 			. ( '' !== $help ? '<span id="' . esc_attr( $id . '-help' ) . '" class="fh-field__help">' . esc_html( $help ) . '</span>' : '' );
 	}
 
 	/**
+	 * A required group's legend says so in words, which its `*` (hidden from screen
+	 * readers) doesn't: a group of radio buttons or checkboxes has no `aria-required`
+	 * of its own, and `required` on a checkbox would mean that box must be ticked.
+	 *
+	 * @param array<string, mixed> $question The question.
+	 */
+	private static function required_words( array $question ): string {
+		return $question['required'] ? '<span class="fh-visually-hidden"> ' . esc_html__( '(required)', 'firehouse' ) . '</span>' : '';
+	}
+
+	/**
 	 * The summary of what's wrong, at the top, which takes the focus, a link to each.
+	 * The alert is inside the part that takes the focus, as GOV.UK's error summary has
+	 * it, so a screen reader doesn't read it twice.
 	 *
 	 * @param array<string, string> $problems What's wrong, by field id.
 	 */
 	private static function summary( array $problems ): string {
-		$html = '<div class="fh-survey__problems" role="alert" tabindex="-1" autofocus aria-labelledby="fh-survey-problems-heading"><h2 id="fh-survey-problems-heading">' . esc_html(
+		$html = '<div class="fh-survey__problems" tabindex="-1" autofocus><div role="alert"><h2 id="fh-survey-problems-heading">' . esc_html(
 			sprintf(
 				/* translators: %d: how many problems the form has. */
 				_n( 'There’s %d problem to fix before sending', 'There are %d problems to fix before sending', count( $problems ), 'firehouse' ),
@@ -235,7 +256,7 @@ final class Form {
 		foreach ( $problems as $id => $problem ) {
 			$html .= '<li>' . ( 'form' === $id ? esc_html( $problem ) : '<a href="#' . esc_attr( 'fh-survey-' . $id ) . '">' . esc_html( $problem ) . '</a>' ) . '</li>';
 		}
-		return $html . '</ul></div>';
+		return $html . '</ul></div></div>';
 	}
 
 	/**

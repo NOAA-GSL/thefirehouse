@@ -83,7 +83,7 @@ final class Questions {
 				'max'          => 200,
 				'autocomplete' => 'email',
 				'label'        => 'What is your preferred email?',
-				'help'         => 'Only the FireHouse team sees it, to follow up with you. It never appears on the site.',
+				'help'         => 'Only the FireHouse team and the site’s administrators see it, to follow up with you. It never appears on the site.',
 			),
 			'jobTitle'       => array(
 				'name'         => 'Your job title',
@@ -92,7 +92,7 @@ final class Questions {
 				'max'          => 200,
 				'autocomplete' => 'organization-title',
 				'label'        => 'What is your job title?',
-				'help'         => 'Only the FireHouse team sees it. It never appears on the site.',
+				'help'         => 'Only the FireHouse team and the site’s administrators see it. It never appears on the site.',
 			),
 			'org'            => array(
 				'name'         => 'Your agency or institution',
@@ -146,7 +146,7 @@ final class Questions {
 				'type'     => 'choices',
 				'required' => false,
 				'label'    => 'Beyond academic publications and presentations, have you shared your results outside of your research group? (select all that apply)',
-				'help'     => 'Only the FireHouse team sees this answer.',
+				'help'     => 'Only the FireHouse team and the site’s administrators see this answer.',
 				'options'  => array(
 					'end-users'  => 'Yes - Communicated back with end-users (meteorologists, fire crews, public, etc.)',
 					'developers' => 'Yes - Communicated back with tool developers',

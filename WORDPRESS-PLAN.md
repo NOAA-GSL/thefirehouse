@@ -2177,19 +2177,31 @@ review says when to delete them (open question 14).*
   and removed without JavaScript; a summary of what's wrong that takes the focus and
   links to each field. The page is made when an administrator ticks "Accept
   submissions" under FireHouse → Settings, which stays off until the privacy review
-  and the PRA answer are in; while it's on, every Submit a Finding button leads to the
-  page (`Settings::get()`).*
+  and the PRA answer are in, and which only an administrator can change
+  (`manage_options`; FireHouse Editors see it unticked or ticked, but can't change it);
+  while it's on, every Submit a Finding button leads to the page (`Settings::get()`).*
 - Drafts from submissions, private answers stored apart (rule 2), the import script's
   checks on submit, and DOI title lookups. *Built 16 November, but for the DOI
   lookups, which come next: a submission becomes a draft with the fields an import of
   the same answers writes (`Submission`), a response ID of its own and no author. The
   email, job title and Q10 answer are one protected post meta field, in no schema, so
-  in no revision, REST response or export, shown to editors in a Private answers box.
+  in no revision or REST response, left out of WordPress's export by a
+  `wxr_export_skip_postmeta` filter, and shown to editors in a Private answers box.
   A submission without IRB approval is kept as a draft, which the publishing rules
-  won't publish.*
+  won't publish. Not yet: WordPress's personal-data export and erase tools
+  (`wp_privacy_personal_data_exporters`, `…_erasers`) don't find the private answers.
+  They come with deleting them, after the privacy review (Eric, 16 November: keep
+  them; build deletion later). Another plugin or a theme that reads every post meta
+  field (`get_post_custom()`) would see them, as it would any protected field.*
 - The submission handler's protections: nonce, server-side validation, length caps,
   repeat-submission limits and spam protection, with the Submit page never cached.
-  *Built 16 November, the repeat limits being Cloudflare's (above).*
+  *Built 16 November, the repeat limits being Cloudflare's (above). The handler takes
+  a POST only at the page's own address as its permalink spells it, so the Cloudflare
+  rule on that address sees every submission (WordPress would otherwise find the page
+  from a POST to any address that names it), and refuses one a browser says came
+  from another site. Text holding a character that doesn't show (a control
+  character, a direction override, a tag character) is refused with a request to type
+  it again, rather than changed (rule 1).*
 - Editable question wording on the settings screen.
 - Emails to the editors and the submitter. *To the team mailbox only (above).*
 - If the form uses the design system's `TextField` or `TextArea`, take `Field.css` off

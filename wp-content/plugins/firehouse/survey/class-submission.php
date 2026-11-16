@@ -31,10 +31,20 @@ final class Submission {
 	public const FIELD = 'firehouse_survey';
 
 	/**
-	 * Answers that are a researcher's public words, checked for an email address
-	 * (rule 2): the email has a question of its own, which only the team sees.
+	 * Answers the site shows, checked for an email address (rule 2): the email has a
+	 * question of its own, which the site never shows. The links are among them: a
+	 * paper's address or DOI is printed on the project's page.
 	 */
-	private const PUBLIC_TEXT = array( 'submitter', 'org', 'title', 'coResearchers', 'abstract', 'takeaways', 'needs', 'projectTypeOther', 'methodsOther' );
+	private const PUBLIC_TEXT = array( 'submitter', 'org', 'title', 'coResearchers', 'abstract', 'takeaways', 'needs', 'links', 'projectTypeOther', 'methodsOther' );
+
+	/**
+	 * Characters text is refused for, since no one would see them but they'd still be
+	 * there: control characters but tab and line breaks; direction overrides and
+	 * isolates, which turn what follows around; and tag characters, which a language
+	 * model reads (Phase 7b). Not every invisible character: a soft hyphen or a
+	 * zero-width joiner arrives in pasted text and does no harm.
+	 */
+	private const HIDDEN = '/[\x{0000}-\x{0008}\x{000B}\x{000C}\x{000E}-\x{001F}\x{007F}-\x{009F}\x{202A}-\x{202E}\x{2066}-\x{2069}\x{E0000}-\x{E007F}]/u';
 
 	/**
 	 * The answers in a POST, by question: text as a string, a choice as its value, a
@@ -111,13 +121,18 @@ final class Submission {
 			}
 		}
 
-		// Rule 2: no email address among the words the site shows.
-		foreach ( self::PUBLIC_TEXT as $name ) {
-			foreach ( (array) ( $values[ $name ] ?? array() ) as $index => $text ) {
-				$id = is_array( $values[ $name ] ?? null ) ? $name . '-' . ( $index + 1 ) : $name;
-				if ( ! isset( $problems[ $id ] ) && is_string( $text ) && Email_Shape::has_email( $text ) ) {
-					$problems[ $id ] = sprintf( '%s: holds an email address. Your email goes in its own question, which only the FireHouse team sees.', self::name( $name ) );
-				}
+		// Rule 2: no email address among the words the site shows. And no character no
+		// one would see, which the researcher is asked to type again rather than have
+		// their words changed (rule 1).
+		foreach ( self::text_fields( $values ) as $id => $text ) {
+			if ( isset( $problems[ $id ] ) ) {
+				continue;
+			}
+			$name = (string) preg_replace( '/-\d+$/', '', $id );
+			if ( 1 === preg_match( self::HIDDEN, $text ) ) {
+				$problems[ $id ] = sprintf( '%s: holds a character that doesn’t show, perhaps from copying the text. Type that part again.', self::name( $name ) );
+			} elseif ( in_array( $name, self::PUBLIC_TEXT, true ) && Email_Shape::has_email( $text ) ) {
+				$problems[ $id ] = sprintf( '%s: holds an email address. Your email goes in its own question, and the site never shows it.', self::name( $name ) );
 			}
 		}
 
@@ -158,7 +173,7 @@ final class Submission {
 			'methods'        => array_values( array_map( static fn( string $method ): string => $other( 'methods', $method ), array_unique( (array) $values['methods'] ) ) ),
 			'irbApproved'    => 'no' !== $values['irb'],
 			'geo'            => array( 'regions' => array_values( array_unique( (array) $values['regions'] ) ) ),
-			'takeaways'      => array_values( array_filter( array_map( 'trim', (array) $values['takeaways'] ), static fn( string $text ): bool => ! Synthesis::blank( $text ) ) ),
+			'takeaways'      => array_values( array_filter( array_map( array( self::class, 'tidy' ), (array) $values['takeaways'] ), static fn( string $text ): bool => ! Synthesis::blank( $text ) ) ),
 			'needs'          => array(),
 			'papers'         => array(),
 		);
@@ -368,13 +383,38 @@ final class Submission {
 				$problems[ $id ] = sprintf( '%1$s %2$d isn’t a web address or a DOI: start it with https:// or 10.', $question['entry'], $index + 1 );
 			}
 		}
+		// How many there are is the group's problem, not a box's.
 		[ $fewest, $most ] = $question['count'];
 		if ( $filled < $fewest && ( $question['required'] || $filled > 0 ) ) {
-			$problems[ $name . '-1' ] = $problems[ $name . '-1' ] ?? sprintf( '%1$s: give at least %2$d.', $question['name'], $fewest );
+			$problems[ $name ] = sprintf( '%1$s: give at least %2$d.', $question['name'], $fewest );
 		} elseif ( count( $entries ) > $most ) {
-			$problems[ $name . '-1' ] = $problems[ $name . '-1' ] ?? sprintf( '%1$s: give no more than %2$d.', $question['name'], $most );
+			$problems[ $name ] = sprintf( '%1$s: give no more than %2$d.', $question['name'], $most );
 		}
 		return $problems;
+	}
+
+	/**
+	 * Every typed answer, by the id of the field it's in: a text question's, each of an
+	 * entry question's boxes, and each "Other" box.
+	 *
+	 * @param array<string, string|list<string>> $values The answers, as read().
+	 * @return array<string, string>
+	 */
+	private static function text_fields( array $values ): array {
+		$fields = array();
+		foreach ( Questions::all() as $name => $question ) {
+			if ( 'entries' === $question['type'] ) {
+				foreach ( (array) ( $values[ $name ] ?? array() ) as $index => $text ) {
+					$fields[ $name . '-' . ( $index + 1 ) ] = (string) $text;
+				}
+			} elseif ( ! in_array( $question['type'], array( 'choice', 'choices' ), true ) ) {
+				$fields[ $name ] = (string) ( $values[ $name ] ?? '' );
+			}
+			if ( isset( $question['other'] ) ) {
+				$fields[ $name . 'Other' ] = (string) ( $values[ $name . 'Other' ] ?? '' );
+			}
+		}
+		return $fields;
 	}
 
 	/**

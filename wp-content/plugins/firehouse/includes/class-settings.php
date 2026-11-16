@@ -24,7 +24,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * only their labels are settings.
  *
  * Firehouse Editors can change them, through their own capability rather than
- * manage_options, which would open every setting on the site.
+ * manage_options, which would open every setting on the site; all but the switch that
+ * opens the survey form, which takes manage_options, an administrator's.
  */
 final class Settings {
 
@@ -32,6 +33,11 @@ final class Settings {
 	 * The option, and the settings group.
 	 */
 	public const OPTION = 'firehouse_settings';
+
+	/**
+	 * The capability that opens and closes the survey form: an administrator's.
+	 */
+	public const OPEN_SURVEY = 'manage_options';
 
 	/**
 	 * The screen's slug.
@@ -269,20 +275,23 @@ final class Settings {
 	 * screen sent it.
 	 */
 	public static function survey_field(): void {
-		$id = self::field_id( array( 'surveyOpen' ) );
-		printf( '<input type="hidden" name="%s" value="1" />', esc_attr( self::OPTION . '[surveyOpenShown]' ) );
+		$id      = self::field_id( array( 'surveyOpen' ) );
+		$may     = current_user_can( self::OPEN_SURVEY );
+		$details = __( 'The FireHouse survey form at /firehouse/submit/ takes submissions, and every Submit a Finding button leads to it; turning this on creates that page if it’s missing. Leave it off on gsl.noaa.gov until the privacy review and the Paperwork Reduction Act answer are in hand.', 'firehouse' );
+		if ( $may ) {
+			printf( '<input type="hidden" name="%s" value="1" />', esc_attr( self::OPTION . '[surveyOpenShown]' ) );
+		} else {
+			$details .= ' ' . __( 'Only an administrator can change this.', 'firehouse' );
+		}
 		printf(
-			'<label for="%1$s"><input type="checkbox" id="%1$s" name="%2$s" value="1" aria-describedby="%1$s-description"%3$s /> %4$s</label>',
+			'<label for="%1$s"><input type="checkbox" id="%1$s" name="%2$s" value="1" aria-describedby="%1$s-description"%3$s%4$s /> %5$s</label>',
 			esc_attr( $id ),
 			esc_attr( self::OPTION . '[surveyOpen]' ),
 			checked( self::stored()['surveyOpen'], true, false ),
+			$may ? '' : ' disabled',
 			esc_html__( 'Accept submissions', 'firehouse' )
 		);
-		printf(
-			'<p class="description" id="%1$s-description">%2$s</p>',
-			esc_attr( $id ),
-			esc_html__( 'The FireHouse survey form at /firehouse/submit/ takes submissions, and every Submit a Finding button leads to it; turning this on creates that page if it’s missing. Leave it off on gsl.noaa.gov until the privacy review and the Paperwork Reduction Act answer are in hand.', 'firehouse' )
-		);
+		printf( '<p class="description" id="%1$s-description">%2$s</p>', esc_attr( $id ), esc_html( $details ) );
 	}
 
 	/**
@@ -383,7 +392,9 @@ final class Settings {
 		}
 		// Only the settings screen sends the switch, with a mark that it did: an unticked
 		// box sends nothing, and the Import screen's settings have no switch to keep.
-		if ( isset( $input['surveyOpenShown'] ) ) {
+		// Only an administrator changes it: opening the form starts collecting people's
+		// details, which waits on the privacy review and the PRA answer.
+		if ( isset( $input['surveyOpenShown'] ) && current_user_can( self::OPEN_SURVEY ) ) {
 			$settings['surveyOpen'] = '1' === ( $input['surveyOpen'] ?? null );
 		}
 		foreach ( array_keys( self::NAV ) as $key ) {
