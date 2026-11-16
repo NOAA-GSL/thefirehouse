@@ -482,8 +482,9 @@ nothing from the database. Each class's docblock has the detail; this is the map
     On a FireHouse page made of nothing but FireHouse blocks, whatever attributes they
     hold, a note's included, the editor locks the layout (`Blocks::lock_layout()`,
     with `Page_Words::only_firehouse_blocks()`): no part can be added, moved or
-    removed there, so Backspace or Enter on a part's outline changes nothing. An empty page in the tree
-    can still be written, and a page holding another block can have it taken out.
+    removed there, so Backspace or Enter on a part's outline changes nothing. An
+    empty page in the tree can still be written, and a page holding another block can
+    have it taken out.
   - Every block saves its inner blocks and nothing else, so saving from the editor
     keeps the page's blocks: the hero keeps the live counts it holds, and the About
     sections block the four sections it holds. `scripts/block-editor.test.mjs` holds
