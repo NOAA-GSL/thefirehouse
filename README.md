@@ -492,7 +492,7 @@ nothing from the database. Each class's docblock has the detail; this is the map
     `Page_Words::only_firehouse_blocks()`): no part can be added, moved or removed
     there, so Backspace or Enter on a part's outline changes nothing. An empty page
     in the tree can still be written, and a page holding another block can have it
-    taken out.
+    taken out. A FireHouse page holds only FireHouse blocks (`Allowed_Blocks`).
   - Every block saves its inner blocks and nothing else, so saving from the editor
     keeps the page's blocks: the hero keeps the live counts it holds, and the About
     sections block the four sections it holds. `scripts/block-editor.test.mjs` holds
@@ -618,8 +618,12 @@ nothing from the database. Each class's docblock has the detail; this is the map
   editor's name or sign-in name is published as its author through oEmbed, the feeds
   or the users sitemap. No one can delete the landing page
   for good while pages outside the trash are under it: WordPress would move them to the
-  top of the site, the About page beside the site's own `/about/`. The Pages screens
-  say why.
+  top of the site, the About page beside the site's own `/about/`. Nor can anyone put
+  it in the trash while a published or scheduled page is under it, at any depth: from
+  there, such a page would still open at the trashed address
+  (`/firehouse__trashed/about/`) as a plain page of the site (decided by Eric, 14
+  November). Drafts, pending and private pages don't count. The Pages screens say why;
+  for the trash, they and the block editor's Move to trash name those pages too.
 - `Installer` stores the role and the administrators' capabilities and has the
   rewrite rules rebuilt, on activation and after `Installer::REVISION` changes.
 - `Settings` is FireHouse → Settings: the site name, the Submit a Finding label and
@@ -804,6 +808,18 @@ nothing from the database. Each class's docblock has the detail; this is the map
   turn off custom CSS, class names, locking and renaming in their block.json. A
   WordPress feature that adds `metadata` to a block, such as a note on it, sends the
   page's words back through kses until it's gone.
+- `Allowed_Blocks` keeps the FireHouse pages to their FireHouse blocks: no core block,
+  no Custom HTML, and nothing but spaces between them (decided by Eric, 14 November),
+  for everyone, administrators too. The block editor offers only FireHouse blocks on
+  a page in the tree (`allowed_block_types_all`), and none is in the inserter. A save
+  that would give the page anything else is refused: through the REST API, which the
+  block editor saves with, with a message the editor shows ("This page wasn't saved:
+  a FireHouse page holds only its FireHouse blocks…"), and by any other route by the
+  backstop on `wp_insert_post_empty_content`, which WordPress reports as empty
+  content. A save that leaves the content as stored goes through, so a page that
+  already holds another block can still be trashed, restored, published or
+  unpublished, and the block taken out; so does empty content. Autosaves and
+  revisions are left alone, and restoring a revision is refused like any save.
 - `Head` gives each Firehouse page its title, the site's title for it then GSL's
   suffix ("About — The FireHouse – Global Systems Laboratory"; decided by Eric, 12
   November, with Stephanie and Emily's spelling), and the description and Open Graph and

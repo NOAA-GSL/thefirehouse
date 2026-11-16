@@ -597,6 +597,171 @@ final class CapabilitiesTest extends WordPressTestCase {
 	}
 
 	/**
+	 * Stubs get_posts() for the tree under the root (10): About (11) under it, a draft
+	 * (12) under About, and these of them published or scheduled.
+	 *
+	 * @param \WP_Post[] $published What a query for the published and scheduled pages gives.
+	 * @return \ArrayObject<int, array<string, mixed>> The queries for them, as asked.
+	 */
+	private function tree_with( array $published ): \ArrayObject {
+		$asked = new \ArrayObject();
+		Functions\when( 'get_posts' )->alias(
+			static function ( array $args ) use ( $published, $asked ): array {
+				if ( isset( $args['post__in'] ) ) {
+					$asked[] = $args;
+					return $published;
+				}
+				if ( isset( $args['post_parent__in'] ) ) {
+					$children = array(
+						10 => array( 11 ),
+						11 => array( 12 ),
+					);
+					return $children[ $args['post_parent__in'][0] ] ?? array();
+				}
+				return array( 10 );
+			}
+		);
+		return $asked;
+	}
+
+	/**
+	 * A published page, as the query for them gives it.
+	 *
+	 * @param int    $id    Its ID.
+	 * @param string $title Its title.
+	 */
+	private static function titled( int $id, string $title ): \WP_Post {
+		return new \WP_Post(
+			array(
+				'ID'         => $id,
+				'post_type'  => 'page',
+				'post_title' => $title,
+			)
+		);
+	}
+
+	/**
+	 * The landing page isn't put in the trash while a published or scheduled page is
+	 * under it, at any depth: from there it would still answer at the trashed address.
+	 * With only drafts under it, it is, as WordPress decides.
+	 */
+	public function test_the_landing_page_isnt_trashed_from_over_its_published_pages(): void {
+		Functions\stubTranslationFunctions();
+		$asked = $this->tree_with( array( self::titled( 11, 'About' ) ) );
+
+		$this->assertFalse( Capabilities::keep_tree_root_out_of_trash( null, $this->posts[10] ) );
+		$this->assertSame( array( 11, 12 ), $asked[0]['post__in'], 'Every page under it, at any depth.' );
+		$this->assertSame( array( 'publish', 'future' ), $asked[0]['post_status'], 'Published or scheduled; a draft, pending or private page no visitor opens.' );
+
+		$this->assertSame( 'decided', Capabilities::keep_tree_root_out_of_trash( 'decided', $this->posts[10] ), 'An earlier filter decided.' );
+		$this->assertNull( Capabilities::keep_tree_root_out_of_trash( null, $this->posts[11] ), 'The About page.' );
+		$this->assertNull( Capabilities::keep_tree_root_out_of_trash( null, $this->posts[20] ), 'A page outside the tree.' );
+		$this->assertNull( Capabilities::keep_tree_root_out_of_trash( null, self::post( 60, 'post', 0, 'firehouse' ) ), 'A post named firehouse.' );
+
+		$this->tree_with( array() );
+		$this->assertNull( Capabilities::keep_tree_root_out_of_trash( null, $this->posts[10] ), 'Only drafts under it.' );
+	}
+
+	/**
+	 * With no page under the landing page, nothing more is asked: an empty post__in
+	 * would ask for every page on the site.
+	 */
+	public function test_a_landing_page_alone_is_trashed_without_asking(): void {
+		$asked = 0;
+		Functions\when( 'get_posts' )->alias(
+			static function ( array $args ) use ( &$asked ): array {
+				if ( isset( $args['post__in'] ) ) {
+					++$asked;
+				}
+				return isset( $args['post_parent__in'] ) ? array() : array( 10 );
+			}
+		);
+
+		$this->assertNull( Capabilities::keep_tree_root_out_of_trash( null, $this->posts[10] ) );
+		$this->assertSame( 0, $asked );
+	}
+
+	/**
+	 * On the Pages screens that trash a page, the refusal says why, names the pages,
+	 * escaped, and says what to do, with a link back; anywhere else it's just false.
+	 */
+	public function test_the_trash_screens_say_why_and_name_the_pages(): void {
+		global $pagenow;
+		$this->tree_with( array( self::titled( 11, 'About' ), self::titled( 12, 'Q&A <draft>' ), self::titled( 13, ' ' ) ) );
+		Functions\stubTranslationFunctions();
+		Functions\stubEscapeFunctions();
+		Functions\when( 'wp_sprintf' )->alias( static fn( string $pattern, array $items ): string => implode( ', ', $items ) );
+		Functions\when( 'is_admin' )->justReturn( true );
+		Functions\when( 'wp_doing_ajax' )->justReturn( false );
+		$said = array();
+		Functions\when( 'wp_die' )->alias(
+			static function ( string $message, string $title, array $args ) use ( &$said ): void {
+				$said[] = array( $message, $title, $args );
+			}
+		);
+
+		foreach ( array( 'post.php', 'edit.php', 'admin-post.php' ) as $screen ) {
+			$pagenow = $screen; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- standing in for the screen WordPress names.
+			$this->assertFalse( Capabilities::keep_tree_root_out_of_trash( null, $this->posts[10] ), $screen );
+		}
+		$pagenow = null; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- puts it back.
+
+		$this->assertCount( 2, $said, 'Only the Pages screens say why.' );
+		$this->assertStringContainsString( 'these pages under it are published or scheduled: About, Q&amp;A &lt;draft&gt;, (no title).', $said[0][0] );
+		$this->assertStringContainsString( 'Make them drafts, or move them to the Trash, first.', $said[0][0] );
+		$this->assertSame( 'The landing page wasn’t moved to the Trash', $said[0][1] );
+		$this->assertSame( array( 'back_link' => true ), $said[0][2] );
+	}
+
+	/**
+	 * The block editor's Move to trash, a REST request to delete the landing page
+	 * without `force`, gets the reason in place of WordPress's; deleting for good, other
+	 * requests and other pages are left to WordPress.
+	 */
+	public function test_the_block_editors_move_to_trash_says_why(): void {
+		$this->tree_with( array( self::titled( 11, 'About' ) ) );
+		Functions\stubTranslationFunctions();
+		Functions\when( 'wp_sprintf' )->alias( static fn( string $pattern, array $items ): string => implode( ', ', $items ) );
+		Functions\when( 'rest_sanitize_boolean' )->alias( static fn( mixed $value ): bool => in_array( $value, array( true, 1, '1', 'true' ), true ) );
+		$route = '/wp/v2/pages/(?P<id>[\d]+)';
+		$trash = static fn( int $id, array $more = array(), string $method = 'DELETE' ): \WP_REST_Request => new \WP_REST_Request( '/wp/v2/pages/' . $id, $method, array( 'id' => (string) $id ) + $more );
+
+		$refused = Capabilities::refuse_rest_trash( null, $trash( 10 ), $route );
+		$this->assertInstanceOf( \WP_Error::class, $refused );
+		$this->assertSame( 'firehouse_landing_page_in_use', $refused->get_error_code() );
+		$this->assertSame( array( 'status' => 409 ), $refused->data );
+		$this->assertStringContainsString( 'published or scheduled: About.', $refused->get_error_message() );
+
+		$this->assertNull( Capabilities::refuse_rest_trash( null, $trash( 10, array( 'force' => 'true' ) ), $route ), 'Deleting for good: keep_tree_root() decides.' );
+		$this->assertNull( Capabilities::refuse_rest_trash( null, $trash( 10, array(), 'POST' ), $route ), 'An update.' );
+		$this->assertNull( Capabilities::refuse_rest_trash( null, $trash( 11 ), $route ), 'The About page.' );
+		$this->assertNull( Capabilities::refuse_rest_trash( null, $trash( 10 ), '/wp/v2/posts/(?P<id>[\d]+)' ), 'Another route.' );
+		$this->assertSame( 'answered', Capabilities::refuse_rest_trash( 'answered', $trash( 10 ), $route ), 'An earlier filter answered.' );
+
+		$this->tree_with( array() );
+		$this->assertNull( Capabilities::refuse_rest_trash( null, $trash( 10 ), $route ), 'Only drafts under it.' );
+	}
+
+	/**
+	 * Putting the landing page in the trash through an edit, as code or WP-CLI might, is
+	 * refused by the backstop too, even for someone who may delete it.
+	 */
+	public function test_trashing_the_landing_page_through_an_edit_is_refused(): void {
+		$this->as_user( array( 'administrator' ), array() );
+		$this->can['delete_post:10'] = true;
+		$this->can['delete_post:11'] = true;
+		$this->tree_with( array( self::titled( 11, 'About' ) ) );
+		Functions\stubTranslationFunctions();
+
+		$this->assertTrue( Capabilities::refuse_write( false, array( 'ID' => 10, 'post_status' => 'trash' ) ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+		$this->assertFalse( Capabilities::refuse_write( false, array( 'ID' => 11, 'post_status' => 'trash' ) ), 'The About page.' ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+		$this->assertFalse( Capabilities::refuse_write( false, array( 'ID' => 10, 'post_status' => 'draft' ) ), 'Another status.' ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+
+		$this->tree_with( array() );
+		$this->assertFalse( Capabilities::refuse_write( false, array( 'ID' => 10, 'post_status' => 'trash' ) ), 'Only drafts under it.' ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+	}
+
+	/**
 	 * New posts, projects (but for their author) and others' pages are saved as given.
 	 */
 	public function test_others_saves_are_left_alone(): void {

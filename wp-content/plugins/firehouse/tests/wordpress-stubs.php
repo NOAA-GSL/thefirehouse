@@ -162,22 +162,40 @@ if ( ! class_exists( 'WP_User' ) ) {
 
 if ( ! class_exists( 'WP_REST_Request' ) ) {
 	/**
-	 * A REST request: its route.
+	 * A REST request: its route, method and parameters.
 	 */
 	final class WP_REST_Request {
 
 		/**
-		 * Sets the route.
+		 * Sets the route, method and parameters.
 		 *
-		 * @param string $route The route, such as "/wp/v2/pages/12".
+		 * @param string               $route  The route, such as "/wp/v2/pages/12".
+		 * @param string               $method The HTTP method.
+		 * @param array<string, mixed> $params The parameters, from the address and the body.
 		 */
-		public function __construct( private string $route = '' ) {}
+		public function __construct( private string $route = '', private string $method = 'POST', private array $params = array() ) {}
 
 		/**
 		 * The route.
 		 */
 		public function get_route(): string {
 			return $this->route;
+		}
+
+		/**
+		 * The HTTP method.
+		 */
+		public function get_method(): string {
+			return $this->method;
+		}
+
+		/**
+		 * One parameter, or null.
+		 *
+		 * @param string $key The parameter.
+		 */
+		public function get_param( string $key ): mixed {
+			return $this->params[ $key ] ?? null;
 		}
 	}
 }

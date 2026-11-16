@@ -195,6 +195,12 @@ one is.
 * The About page's team cards can be added, removed and reordered in the block editor,
   each with a portrait chosen from the FireHouse portraits, and the mission's and each
   biography's paragraphs added and removed.
+* The FireHouse pages hold only FireHouse blocks: the block editor offers no other
+  there, and a save that would add a core block, Custom HTML or text between the
+  blocks is refused, with a message saying why.
+* The FireHouse landing page can't be moved to the Trash while a published or
+  scheduled page is under it, since that page would still open at the trashed address.
+  The message names those pages.
 * The name the plugin prints is FireHouse: the plugin's name, the role, the admin
   menu, the block titles, and the pages' titles and words. A site that imported its
   content before keeps the old spelling in its settings and in the landing and About

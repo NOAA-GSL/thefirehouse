@@ -96,6 +96,8 @@ final class Capabilities {
 		add_action( 'load-post-new.php', array( self::class, 'refuse_new_page_screen' ) );
 		add_action( 'pre_get_posts', array( self::class, 'limit_page_list' ) );
 		add_filter( 'pre_delete_post', array( self::class, 'keep_tree_root' ), 10, 2 );
+		add_filter( 'pre_trash_post', array( self::class, 'keep_tree_root_out_of_trash' ), 10, 2 );
+		add_filter( 'rest_dispatch_request', array( self::class, 'refuse_rest_trash' ), 10, 3 );
 	}
 
 	/**
@@ -279,6 +281,8 @@ final class Capabilities {
 	 * - Moving a page, project or topic into or out of the trash through an edit, for
 	 *   anyone who may not delete it. WordPress asks for that only on its Trash and
 	 *   Restore links, and renames a trashed page before anything later could stop it.
+	 * - Moving the landing page into the trash through an edit while a published or
+	 *   scheduled page is under it (keep_tree_root_out_of_trash()).
 	 * - A limited editor's new page, or a change to a page they may not edit.
 	 *
 	 * WordPress reports a refusal here as empty content, so the routes an editor uses
@@ -299,6 +303,9 @@ final class Capabilities {
 		$trashing   = $stored instanceof \WP_Post && 'trash' === $status && 'trash' !== $stored->post_status;
 		$untrashing = $stored instanceof \WP_Post && 'trash' === $stored->post_status && '' !== $status && 'trash' !== $status;
 		if ( ( $trashing || $untrashing ) && in_array( $type, array( 'page', Post_Types::PROJECT, Post_Types::TOPIC ), true ) && is_user_logged_in() && ! current_user_can( 'delete_post', $id ) ) {
+			return true;
+		}
+		if ( $trashing && 'page' === $type && self::root_id() === $id && array() !== self::published_under( $id ) ) {
 			return true;
 		}
 
@@ -358,11 +365,9 @@ final class Capabilities {
 	 * under it: WordPress would move them to the top of the site, and the About page
 	 * would become a second top-level `about` beside the site's own. Pages in the trash
 	 * don't count: moved, they keep the name WordPress gave them there, so emptying the
-	 * trash of the whole tree works. Putting the landing page in the trash is allowed:
-	 * its pages stay under it. They aren't Firehouse pages while it's there, though one
-	 * that's published still answers under the trashed page's address
-	 * (/firehouse__trashed/about/), as an ordinary page of the theme's; restoring the
-	 * landing page brings them back.
+	 * trash of the whole tree works. Putting the landing page in the trash is allowed
+	 * once no published or scheduled page is under it (keep_tree_root_out_of_trash()):
+	 * its pages stay under it, and restoring it brings them back.
 	 *
 	 * On the two screens where someone deletes a page for good, the Pages list's trash
 	 * and the page's own Delete Permanently, it says why and what to do, before
@@ -392,8 +397,7 @@ final class Capabilities {
 		if ( array() === $children ) {
 			return $check;
 		}
-		global $pagenow;
-		if ( in_array( $pagenow ?? '', array( 'post.php', 'edit.php' ), true ) && is_admin() && ! wp_doing_ajax() ) {
+		if ( self::on_a_pages_screen() ) {
 			wp_die(
 				esc_html__( 'The FireHouse landing page wasn’t deleted: pages are under it, such as the About page, and WordPress would move them to the top of the site. Move those pages to the Trash first, or leave the landing page in the Trash.', 'firehouse' ),
 				esc_html__( 'The landing page wasn’t deleted', 'firehouse' ),
@@ -401,6 +405,124 @@ final class Capabilities {
 			);
 		}
 		return false;
+	}
+
+	/**
+	 * Refuses to put the landing page in the trash while a published or scheduled page
+	 * is under it, at any depth (decided by Eric, 14 November). In the trash WordPress
+	 * renames it, and a published page under it would still answer at the new address
+	 * (/firehouse__trashed/about/), as an ordinary page of the theme's with nothing in
+	 * it, and a scheduled one would once its time came. Drafts, pending and private
+	 * pages don't count: visitors can't open them.
+	 *
+	 * On the Pages list, whether its Trash link or its bulk action, and the page's own
+	 * Move to Trash, it says why, names those pages, and says what to do, before
+	 * WordPress's "Error in moving the item to Trash." would stop the request without
+	 * them. The block editor's Move to trash goes through the REST API, which says the
+	 * same (refuse_rest_trash()). Anywhere else the refusal is just false.
+	 *
+	 * @param mixed    $trash What an earlier filter decided, or null for nothing yet.
+	 * @param \WP_Post $post  The post to be put in the trash.
+	 * @return mixed False to refuse; otherwise what an earlier filter decided.
+	 */
+	public static function keep_tree_root_out_of_trash( mixed $trash, \WP_Post $post ): mixed {
+		if ( null !== $trash || 'page' !== $post->post_type || self::root_id() !== $post->ID ) {
+			return $trash;
+		}
+		$titles = self::published_under( $post->ID );
+		if ( array() === $titles ) {
+			return $trash;
+		}
+		if ( self::on_a_pages_screen() ) {
+			wp_die(
+				esc_html( self::why_not_trashed( $titles ) ),
+				esc_html__( 'The landing page wasn’t moved to the Trash', 'firehouse' ),
+				array( 'back_link' => true )
+			);
+		}
+		return false;
+	}
+
+	/**
+	 * The block editor's Move to trash, a REST request to delete the page without
+	 * `force`: for the landing page while a published or scheduled page is under it,
+	 * the reason, which the editor shows, in place of WordPress's "The post cannot be
+	 * deleted." This filter runs only once the request's own permission check has
+	 * passed, so only someone who may delete the page reads the titles. Any other
+	 * request is left to WordPress.
+	 *
+	 * @param mixed            $result  What an earlier filter answered, or null to let the request run.
+	 * @param \WP_REST_Request $request The request.
+	 * @param string           $route   The route matched.
+	 * @return mixed
+	 */
+	public static function refuse_rest_trash( mixed $result, \WP_REST_Request $request, string $route ): mixed {
+		if ( null !== $result || 'DELETE' !== $request->get_method() || '/wp/v2/pages/(?P<id>[\d]+)' !== $route || rest_sanitize_boolean( $request->get_param( 'force' ) ?? false ) ) {
+			return $result;
+		}
+		$id = (int) $request->get_param( 'id' );
+		if ( 0 === $id || self::root_id() !== $id ) {
+			return $result;
+		}
+		$titles = self::published_under( $id );
+		if ( array() === $titles ) {
+			return $result;
+		}
+		return new \WP_Error( 'firehouse_landing_page_in_use', self::why_not_trashed( $titles ), array( 'status' => 409 ) );
+	}
+
+	/**
+	 * The titles of the published and scheduled pages under the landing page, at any
+	 * depth, as stored, in the tree's order.
+	 *
+	 * @param int $root The landing page's ID.
+	 * @return list<string>
+	 */
+	private static function published_under( int $root ): array {
+		$under = array_values( array_diff( self::tree_ids(), array( $root ) ) );
+		// An empty post__in would mean every page on the site.
+		if ( array() === $under ) {
+			return array();
+		}
+		$pages  = get_posts(
+			array(
+				'post_type'   => 'page',
+				'post__in'    => $under,
+				'post_status' => array( 'publish', 'future' ),
+				'numberposts' => -1,
+				'orderby'     => 'post__in',
+			)
+		);
+		$titles = array();
+		foreach ( is_array( $pages ) ? $pages : array() as $page ) {
+			if ( $page instanceof \WP_Post ) {
+				$titles[] = '' === trim( $page->post_title ) ? __( '(no title)', 'firehouse' ) : $page->post_title;
+			}
+		}
+		return $titles;
+	}
+
+	/**
+	 * Why the landing page wasn't put in the trash, naming the pages under it, and what
+	 * to do. Plain text, for the Pages screens to escape and the block editor to show.
+	 *
+	 * @param string[] $titles The published and scheduled pages under it.
+	 */
+	private static function why_not_trashed( array $titles ): string {
+		return sprintf(
+			/* translators: %s: the titles of the published or scheduled pages under the landing page, as a list. */
+			__( 'The FireHouse landing page wasn’t moved to the Trash, because these pages under it are published or scheduled: %s. With the landing page in the Trash, they would still open at its address there, as plain pages of the site. Make them drafts, or move them to the Trash, first.', 'firehouse' ),
+			wp_sprintf( '%l', $titles )
+		);
+	}
+
+	/**
+	 * Whether the request is one of the Pages screens that delete or trash a page: the
+	 * Pages list, or a page's own Trash and Delete Permanently.
+	 */
+	private static function on_a_pages_screen(): bool {
+		global $pagenow;
+		return in_array( $pagenow ?? '', array( 'post.php', 'edit.php' ), true ) && is_admin() && ! wp_doing_ajax();
 	}
 
 	/**

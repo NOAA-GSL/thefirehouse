@@ -90,6 +90,8 @@ final class HooksTest extends WordPressTestCase {
 		Actions\expectAdded( 'load-post-new.php' )->once()->with( array( Capabilities::class, 'refuse_new_page_screen' ), 10, 1 );
 		Actions\expectAdded( 'pre_get_posts' )->once()->with( array( Capabilities::class, 'limit_page_list' ), 10, 1 );
 		Filters\expectAdded( 'pre_delete_post' )->once()->with( array( Capabilities::class, 'keep_tree_root' ), 10, 2 );
+		Filters\expectAdded( 'pre_trash_post' )->once()->with( array( Capabilities::class, 'keep_tree_root_out_of_trash' ), 10, 2 );
+		Filters\expectAdded( 'rest_dispatch_request' )->once()->with( array( Capabilities::class, 'refuse_rest_trash' ), 10, 3 );
 
 		Capabilities::hook();
 	}
@@ -101,6 +103,18 @@ final class HooksTest extends WordPressTestCase {
 		Filters\expectAdded( 'wp_insert_post_data' )->once()->with( array( \Firehouse\Page_Words::class, 'keep_as_typed' ), PHP_INT_MAX - 10, 3 );
 
 		\Firehouse\Page_Words::hook();
+	}
+
+	/**
+	 * The FireHouse pages' blocks are limited in the block editor, in REST saves and by
+	 * the backstop.
+	 */
+	public function test_allowed_blocks_hooks(): void {
+		Filters\expectAdded( 'allowed_block_types_all' )->once()->with( array( \Firehouse\Allowed_Blocks::class, 'offer' ), 10, 2 );
+		Filters\expectAdded( 'rest_pre_insert_page' )->once()->with( array( \Firehouse\Allowed_Blocks::class, 'refuse_rest' ), 10, 2 );
+		Filters\expectAdded( 'wp_insert_post_empty_content' )->once()->with( array( \Firehouse\Allowed_Blocks::class, 'refuse_write' ), 10, 2 );
+
+		\Firehouse\Allowed_Blocks::hook();
 	}
 
 	/**

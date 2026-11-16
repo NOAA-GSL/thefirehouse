@@ -1311,7 +1311,7 @@ signed off on the frame.
     `/firehouse__trashed/about/`, as an ordinary page of GSL's theme with nothing in
     it, until the landing page is restored. Decided by Eric, 14 November: the landing
     page can't be trashed while a published page sits under it, and the notice names
-    them.*
+    them. Built 15 November (Phase 6).*
 - Description and Open Graph tags, and whether a Firehouse page's `<title>` names The
   Firehouse. *Done 12 November (`includes/class-head.php`). Decided by Eric, as GSL's
   web team, 12 November: a Firehouse page's title names both, the site's title for it
@@ -1888,7 +1888,8 @@ to build say so:
   administrator uploads a new portrait and attaches it to the About page. *Built with
   the team cards.*
 - **Order.** The team cards, then the allowed blocks and the landing page's trash
-  rule; then each of the above its own change; then the synthesis screen.
+  rule; then each of the above its own change; then the synthesis screen. *The team
+  cards, the allowed blocks and the trash rule built 15 November.*
 
 - Project and topic edit screens: survey fields read-only, editorial fields editable,
   publishing through WordPress's Publish button. *A project's slug is editable while
@@ -2036,9 +2037,22 @@ to build say so:
   italic face (Phase 4's weight work), so the browser would slant the upright one.
   Keep core text blocks out of the tree, or add the italic faces they use to
   `scripts/fetch-fonts.mjs`. *Decided: the landing and About pages accept only their
-  own FireHouse blocks, so no core block and no Custom HTML.*
+  own FireHouse blocks, so no core block and no Custom HTML. Built 15 November
+  (`includes/class-allowed-blocks.php`): every page in the tree, for everyone,
+  administrators too. The block editor offers only FireHouse blocks there, and a save
+  that would add anything else is refused, through the REST API with a message the
+  editor shows, by any other route by a backstop. A save that leaves the content as
+  stored goes through, so a page holding another block from before can still change
+  status and have it taken out. Any FireHouse block is accepted on any FireHouse
+  page, not only the page's own: the check is the layout lock's
+  (`Page_Words::only_firehouse_blocks()`).*
 - *The landing page can't be trashed while a published page sits under it (decided;
-  Phase 4's About page note).*
+  Phase 4's About page note). Built 15 November (`Capabilities`): a published or
+  scheduled page under it at any depth, since a scheduled one would open at the
+  trashed address once its time came; drafts, pending and private pages don't count.
+  The Pages list's Trash link and bulk action, the page's Move to Trash and the block
+  editor's Move to trash say why and name those pages, and any other route is
+  refused too.*
 - The synthesis screen: paste, validation, the comparison against the published
   synthesis, and **Mark reviewed**. Validation includes the order: each topic area's
   needs by project count, highest first, since the About page says so (ties go by
