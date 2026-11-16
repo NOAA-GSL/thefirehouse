@@ -209,6 +209,105 @@ final class CapabilitiesTest extends WordPressTestCase {
 	}
 
 	/**
+	 * The tree is read level by level, by ID: the children of the root, then theirs,
+	 * each level one query, until a level has none. Nothing outside the tree is read.
+	 */
+	public function test_the_tree_is_read_level_by_level(): void {
+		$asked = array();
+		// The root (10); under it About (11) and another page (15); under About a draft (12).
+		$children = array(
+			'10'    => array( 11, 15 ),
+			'11,15' => array( 12 ),
+		);
+		Functions\when( 'get_posts' )->alias(
+			static function ( array $args ) use ( &$asked, $children ): array {
+				if ( ! isset( $args['post_parent__in'] ) ) {
+					return array( 10 );
+				}
+				$asked[] = $args;
+				return $children[ implode( ',', $args['post_parent__in'] ) ] ?? array();
+			}
+		);
+
+		$this->assertSame( array( 10, 11, 15, 12 ), Capabilities::tree_ids() );
+		$this->assertSame( array( array( 10 ), array( 11, 15 ), array( 12 ) ), array_column( $asked, 'post_parent__in' ) );
+		foreach ( $asked as $args ) {
+			$this->assertSame( 'page', $args['post_type'] );
+			$this->assertSame( 'ids', $args['fields'] );
+			$this->assertSame( -1, $args['numberposts'] );
+			// Every status but the trash, and not an auto-draft; nothing under the trash.
+			$this->assertSame( array( 'publish', 'future', 'draft', 'pending', 'private' ), $args['post_status'] );
+		}
+	}
+
+	/**
+	 * A query that answers with pages already walked, or with 0, as another plugin's
+	 * filter could, doesn't keep the walk going or widen it: each level keeps only IDs
+	 * above 0 not walked before.
+	 */
+	public function test_a_query_answering_with_walked_pages_or_zero_ends_the_walk(): void {
+		$asked = array();
+		Functions\when( 'get_posts' )->alias(
+			static function ( array $args ) use ( &$asked ): array {
+				if ( ! isset( $args['post_parent__in'] ) ) {
+					return array( 10 );
+				}
+				$asked[] = $args['post_parent__in'];
+				return array( 10 ) === $args['post_parent__in'] ? array( 11, 0, 11, -3 ) : array( 10, 11, 0 );
+			}
+		);
+
+		$this->assertSame( array( 10, 11 ), Capabilities::tree_ids() );
+		$this->assertSame( array( array( 10 ), array( 11 ) ), $asked, 'No 0 asked about, and nothing twice.' );
+	}
+
+	/**
+	 * A limited FireHouse Editor's Pages list shows the tree and nothing else, and
+	 * nothing at all with no tree, since an empty `post__in` would mean no limit. Anyone
+	 * else's list, another query and other screens are left as they are.
+	 */
+	public function test_the_pages_list_shows_a_limited_editor_the_tree(): void {
+		Functions\when( 'is_admin' )->justReturn( true );
+		Functions\when( 'get_posts' )->alias( static fn( array $args ): array => isset( $args['post_parent__in'] ) ? ( array( 10 ) === $args['post_parent__in'] ? array( 11 ) : array() ) : array( 10 ) );
+		$list = static function ( bool $main = true, string $type = 'page' ): \WP_Query {
+			$query = new \WP_Query( $main );
+			$query->set( 'post_type', $type );
+			Capabilities::limit_page_list( $query );
+			return $query;
+		};
+
+		$this->assertSame( array( 10, 11 ), $list()->get( 'post__in' ) );
+		$this->assertSame( '', $list( false )->get( 'post__in' ), 'Another query.' );
+		$this->assertSame( '', $list( true, 'post' )->get( 'post__in' ), 'Another list.' );
+
+		Functions\when( 'get_posts' )->justReturn( array() );
+		$this->assertSame( array( 0 ), $list()->get( 'post__in' ), 'No tree, so nothing listed.' );
+
+		Functions\when( 'is_admin' )->justReturn( false );
+		$this->assertSame( '', $list()->get( 'post__in' ), 'Not an admin screen.' );
+
+		Functions\when( 'is_admin' )->justReturn( true );
+		$this->as_user( array( 'editor' ), array_fill_keys( array( 'edit_pages', 'edit_others_pages', 'edit_published_pages', 'publish_pages', 'firehouse_edit_pages' ), true ) );
+		$this->assertSame( '', $list()->get( 'post__in' ), 'A user whose own role edits pages.' );
+	}
+
+	/**
+	 * With no root page there is no tree, and nothing more is asked.
+	 */
+	public function test_with_no_root_there_is_no_tree(): void {
+		$asked = 0;
+		Functions\when( 'get_posts' )->alias(
+			static function () use ( &$asked ): array {
+				++$asked;
+				return array();
+			}
+		);
+
+		$this->assertSame( array(), Capabilities::tree_ids() );
+		$this->assertSame( 1, $asked, 'Only the root was looked for.' );
+	}
+
+	/**
 	 * Outside the tree, a user keeps what their own roles grant, and no more: a role
 	 * that edits unpublished pages doesn't let the lent capabilities edit published ones.
 	 */

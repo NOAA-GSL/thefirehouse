@@ -116,10 +116,13 @@ final class Blocks {
 			return array();
 		}
 		// Only the FireHouse pages a visitor can see without a password: the About page
-		// wouldn't show an image attached to any other, so it isn't asked for.
+		// wouldn't show an image attached to any other, so it isn't asked for. The tree
+		// comes as IDs, so its pages are loaded in one query, not one each.
+		$tree = Capabilities::tree_ids();
+		_prime_post_caches( $tree, false, false );
 		$shown    = array_values(
 			array_filter(
-				Capabilities::tree_ids(),
+				$tree,
 				static function ( int $id ): bool {
 					$page = get_post( $id );
 					return $page instanceof \WP_Post && About_Page::shows_attached_to( $page );

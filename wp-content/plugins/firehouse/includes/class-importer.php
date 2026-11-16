@@ -861,7 +861,7 @@ final class Importer {
 				'post_type'   => 'page',
 				'name'        => $name,
 				'post_parent' => $parent_id,
-				'post_status' => array( 'publish', 'future', 'draft', 'pending', 'private' ),
+				'post_status' => Capabilities::TREE_STATUSES,
 				'orderby'     => 'ID',
 				'order'       => 'ASC',
 				'numberposts' => 1,

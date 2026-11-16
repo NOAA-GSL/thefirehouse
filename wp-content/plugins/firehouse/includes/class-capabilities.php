@@ -77,6 +77,13 @@ final class Capabilities {
 	private const META_CHECKS = array( 'edit_post_meta', 'add_post_meta', 'delete_post_meta' );
 
 	/**
+	 * The statuses a page of the FireHouse tree may have: any but the trash, and not an
+	 * auto-draft WordPress hasn't saved yet. The root is looked for, the tree walked and
+	 * the landing page's children counted in these.
+	 */
+	public const TREE_STATUSES = array( 'publish', 'future', 'draft', 'pending', 'private' );
+
+	/**
 	 * Hooks the filters.
 	 */
 	public static function hook(): void {
@@ -377,7 +384,7 @@ final class Capabilities {
 			array(
 				'post_type'   => 'page',
 				'post_parent' => $post->ID,
-				'post_status' => array( 'publish', 'future', 'draft', 'pending', 'private' ),
+				'post_status' => self::TREE_STATUSES,
 				'numberposts' => 1,
 				'fields'      => 'ids',
 			)
@@ -536,7 +543,7 @@ final class Capabilities {
 				'post_type'   => 'page',
 				'name'        => Query::ROOT_PATH,
 				'post_parent' => 0,
-				'post_status' => array( 'publish', 'future', 'draft', 'pending', 'private' ),
+				'post_status' => self::TREE_STATUSES,
 				'orderby'     => 'ID',
 				'order'       => 'ASC',
 				'numberposts' => 1,
@@ -547,7 +554,18 @@ final class Capabilities {
 	}
 
 	/**
-	 * The IDs of the root page and its descendants.
+	 * The IDs of the root page and its descendants, in TREE_STATUSES: one query for
+	 * each level of the tree, asking for the children of the level above by ID only,
+	 * through the index on the parent. It gets back the tree's pages and no others,
+	 * where get_pages()' `child_of` read every page on the site in full to find them, a
+	 * cost that grew with the site (the WordPress Performance Engineer's review of PR
+	 * #55). Like it, it doesn't walk
+	 * below a page in the trash, though in_tree() still counts a page there.
+	 *
+	 * Each level keeps only IDs above 0 not walked before. Real rows can't repeat one,
+	 * but another plugin's `pre_get_posts` or `posts_pre_query`, which run whatever
+	 * get_posts() suppresses, could answer with any: an ID already walked would keep
+	 * the walk going for ever, and a 0 would ask for every top-level page on the site.
 	 *
 	 * @return list<int>
 	 */
@@ -556,15 +574,24 @@ final class Capabilities {
 		if ( 0 === $root ) {
 			return array();
 		}
-		$descendants = get_pages(
-			array(
-				'child_of'    => $root,
-				'post_status' => array( 'publish', 'draft', 'pending', 'private', 'future' ),
-			)
-		);
-		if ( ! is_array( $descendants ) ) {
-			$descendants = array();
+		$tree  = array( $root );
+		$level = array( $root );
+		while ( array() !== $level ) {
+			$children = get_posts(
+				array(
+					'post_type'       => 'page',
+					'post_parent__in' => $level,
+					'post_status'     => self::TREE_STATUSES,
+					'numberposts'     => -1,
+					'orderby'         => 'ID',
+					'order'           => 'ASC',
+					'fields'          => 'ids',
+				)
+			);
+			$ids      = array_filter( array_map( 'intval', is_array( $children ) ? $children : array() ), static fn( int $id ): bool => $id > 0 );
+			$level    = array_values( array_diff( array_unique( $ids ), $tree ) );
+			$tree     = array_merge( $tree, $level );
 		}
-		return array_merge( array( $root ), array_map( static fn( \WP_Post $page ): int => $page->ID, $descendants ) );
+		return $tree;
 	}
 }
