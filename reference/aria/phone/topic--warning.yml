@@ -21,14 +21,14 @@
   - region "Top 5 needs":
     - heading "Top 5 needs" [level=2]
     - paragraph:
-      - strong: AI-synthesized
+      - strong: Drafted with Super Intelligence (SI)
       - text: across 4 of 8 projects.
       - strong: Draft, pending team review
       - text: · updated
       - time: September 17, 2026
       - text: .
     - paragraph:
-      - text: "Project count: the number of projects that raise each need."
+      - text: "Project count: the number of projects that raise each need. Under Executive Order 14434, federal agencies say “Super Intelligence” for artificial intelligence."
       - link "How these needs are synthesized":
         - /url: /#needs-source
     - list:

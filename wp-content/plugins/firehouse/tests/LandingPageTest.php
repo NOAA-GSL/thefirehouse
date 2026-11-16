@@ -319,12 +319,12 @@ final class LandingPageTest extends WordPressTestCase {
 	/**
 	 * The top needs: the section's words, the synthesis note without its review status,
 	 * a card for each published area in order with its first needs, counted among the
-	 * projects a visitor may see, and where the needs come from, naming the tool.
+	 * projects a visitor may see, and where the needs come from, saying what Super Intelligence is.
 	 */
 	public function test_the_top_needs(): void {
 		$html = Landing_Page::top_needs( self::landing()['topicSection'] + array( 'needsPerCard' => 2 ) );
 
-		$this->assertStringStartsWith( '<section class="fh-topics fh-container" id="top-needs" aria-labelledby="topics-heading"><div class="fh-topics__intro"><span class="fh-eyebrow">Synthesized across every project</span><h2 id="topics-heading" class="fh-topics__heading">Top needs across submitted projects</h2><p class="fh-topics__body">Read together &lt;as one body of evidence&gt;.</p><p class="fh-synthesis-note fh-topics__note"><span class="fh-synthesis-note__dot" aria-hidden="true"></span><span><strong>AI-synthesized</strong> across all 2 projects.</span></p></div>', $html );
+		$this->assertStringStartsWith( '<section class="fh-topics fh-container" id="top-needs" aria-labelledby="topics-heading"><div class="fh-topics__intro"><span class="fh-eyebrow">Synthesized across every project</span><h2 id="topics-heading" class="fh-topics__heading">Top needs across submitted projects</h2><p class="fh-topics__body">Read together &lt;as one body of evidence&gt;.</p><p class="fh-synthesis-note fh-topics__note"><span class="fh-synthesis-note__dot" aria-hidden="true"></span><span><strong>Drafted with Super Intelligence (SI)</strong> across all 2 projects.</span></p></div>', $html );
 
 		$this->assertSame( 2, substr_count( $html, '<article class="fh-topic-card fh-glass"' ) );
 		$this->assertLessThan( strpos( $html, 'href="https://example.test/firehouse/topics/warning/"' ), strpos( $html, 'href="https://example.test/firehouse/topics/observe/"' ) );
@@ -335,7 +335,8 @@ final class LandingPageTest extends WordPressTestCase {
 		$this->assertStringContainsString( '<a class="fh-topic-card__link" href="https://example.test/firehouse/topics/warning/">Warnings &amp; Response</a></h3><p class="fh-topic-card__empty">No needs have been published for this area yet.</p>', $html );
 		$this->assertMatchesRegularExpression( '#<div class="fh-topic-card__foot"><span class="fh-topic-card__cue" aria-hidden="true">View topic area and sources<svg[^>]*width="15"[^>]*>.*?</svg></span></div></article>#s', $html );
 
-		$this->assertStringContainsString( '<aside class="fh-source" id="needs-source" aria-labelledby="source-heading"><div class="fh-source__copy"><h3 id="source-heading" class="fh-source__heading">Where these needs come from</h3><p class="fh-source__body">Topic areas are not assigned project by project. Every project in The FireHouse is read together, with Claude. The end-user needs', $html );
+		$this->assertStringContainsString( '<aside class="fh-source" id="needs-source" aria-labelledby="source-heading"><div class="fh-source__copy"><h3 id="source-heading" class="fh-source__heading">Where these needs come from</h3><p class="fh-source__body">Topic areas are not assigned project by project. Every project in The FireHouse is read together with Super Intelligence (SI). Under Executive Order 14434, federal agencies say “Super Intelligence” for what federal law defines as artificial intelligence; the two terms mean the same thing. The end-user needs submitted by researchers are grouped into the four topic areas above and ranked by prevalence across projects. This pass', $html );
+		$this->assertStringNotContainsString( 'Claude', $html, 'The tool isn\x27t named while the service is undecided.' );
 		$this->assertMatchesRegularExpression( '#</p></div><a href="https://example.test/firehouse/projects/" class="fh-btn fh-btn--secondary fh-btn--md">Explore all projects<svg[^>]*>.*?</svg></a></aside></section>$#s', $html );
 	}
 

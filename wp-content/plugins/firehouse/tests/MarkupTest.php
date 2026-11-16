@@ -39,11 +39,11 @@ final class MarkupTest extends WordPressTestCase {
 		$date = '<time datetime="2026-10-27">October 27, 2026</time>';
 
 		$this->assertSame(
-			'<p class="fh-synthesis-note">' . $dot . '<span><strong>AI-synthesized</strong> across all 8 projects. Reviewed by Pat Reviewer on ' . $date . '.</span></p>',
+			'<p class="fh-synthesis-note">' . $dot . '<span><strong>Drafted with Super Intelligence (SI)</strong> across all 8 projects. Reviewed by Pat Reviewer on ' . $date . '.</span></p>',
 			Markup::synthesis_note( 'NotebookLM', 'Pat Reviewer', '2026-10-27', 8, 8 )
 		);
 		$this->assertSame(
-			'<p class="fh-synthesis-note fh-synthesis-note--draft">' . $dot . '<span><strong>AI-synthesized</strong> across 4 of 8 projects. <strong>Draft, pending team review</strong> · updated ' . $date . '.</span></p>',
+			'<p class="fh-synthesis-note fh-synthesis-note--draft">' . $dot . '<span><strong>Drafted with Super Intelligence (SI)</strong> across 4 of 8 projects. <strong>Draft, pending team review</strong> · updated ' . $date . '.</span></p>',
 			Markup::synthesis_note( 'NotebookLM', null, '2026-10-27', 4, 8 )
 		);
 		$this->assertSame(
@@ -55,8 +55,13 @@ final class MarkupTest extends WordPressTestCase {
 			Markup::synthesis_note( null, 'Sam <Editor>', null, 9, 8 )
 		);
 		$this->assertSame(
-			'<p class="fh-synthesis-note">' . $dot . '<span><strong>AI-synthesized</strong> across all 8 projects.</span></p>',
+			'<p class="fh-synthesis-note">' . $dot . '<span><strong>Drafted with Super Intelligence (SI)</strong> across all 8 projects.</span></p>',
 			Markup::synthesis_note( 'NotebookLM', null, '2026-10-27', 8, 8, false )
+		);
+		$this->assertSame(
+			'<p class="fh-synthesis-note">' . $dot . '<span><strong>Drafted with Super Intelligence (SI)</strong> across all 8 projects.</span></p>',
+			Markup::synthesis_note( 'Claude', null, null, 8, 8, false ),
+			'The tool isn\x27t named while the service is undecided.'
 		);
 	}
 

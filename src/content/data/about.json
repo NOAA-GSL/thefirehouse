@@ -8,7 +8,7 @@
     "heading": "Why it exists",
     "paragraphs": [
       "Fire weather social science asks what partners and the public actually need from weather information when decisions can't wait. A lot of great research exists, but its findings usually stay trapped inside individual reports.",
-      "The FireHouse pulls those completed projects into a single collection—preserving the researchers' exact words, end-user needs, and recommendations. Then, analyzed collectively, these needs are distilled into the five most pressing issues across four core areas—observations, forecasts, warnings, and governance—and ranked by frequency. Every count comes directly from published work, every synthesis is human-reviewed, and every need names the projects that backed it."
+      "The FireHouse pulls those completed projects into a single collection—preserving the researchers' exact words, end-user needs, and recommendations. Then, analyzed collectively, these needs are distilled into the five most pressing issues across four core areas—observations, forecasts, warnings, and governance—and ranked by project count. Every count comes directly from submitted work, every synthesis is human-reviewed, and every need names the projects that backed it."
     ]
   },
   "audiences": {
@@ -58,7 +58,7 @@
   "team": {
     "eyebrow": "The team",
     "heading": "Who is behind it",
-    "body": "This whole thing is the brainchild of Stephanie and Emily. They run the surveys, personally review every synthesis pass before it gets published, and keep the records up to date.",
+    "body": "The FireHouse is the brainchild of Stephanie and Emily. They run the surveys, personally review every synthesis pass before it gets published, and keep the records up to date.",
     "emailLead": "Write to the team at",
     "email": "gsl.firehouse@noaa.gov",
     "members": [

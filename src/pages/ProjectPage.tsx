@@ -25,7 +25,7 @@ import './ProjectPage.css';
  * needs and recommendations are printed exactly as submitted — not summarised, not
  * tightened, not merged.
  *
- * The AI-synthesized phrasing belongs to the landing page and stops there. This is
+ * The synthesized phrasing belongs to the landing page and stops there. This is
  * a product rule from the walkthrough, not a styling preference, and it is the kind
  * of rule a future contributor would break while trying to be helpful ("these
  * bullets are repetitive, let me condense them"). Please don't.
@@ -435,9 +435,9 @@ export function ProjectPage() {
             <Icon name="quote" size={14} />
             <span>
               Takeaways, needs and recommendations on this page are reproduced as the
-              researcher submitted them. The <Link to="/#top-needs">topic areas</Link>{' '}
-              are an AI-assisted synthesis across all projects, so no single project is
-              filed under one.
+              researcher submitted them. The needs in the{' '}
+              <Link to="/#top-needs">topic areas</Link> are drafted with Super Intelligence
+              (SI) from all projects together, so no project is filed under a single area.
             </span>
           </p>
         </aside>

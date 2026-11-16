@@ -94,6 +94,9 @@ export function TopicPage() {
             />
             <p className="fh-topic__how">
               Project count: the number of projects that raise each need.{' '}
+              {/* The note is the only disclosure here, so the term is explained here too. */}
+              {summary?.model &&
+                'Under Executive Order 14434, federal agencies say “Super Intelligence” for artificial intelligence. '}
               <Link to="/#needs-source">How these needs are synthesized</Link>
             </p>
           </div>

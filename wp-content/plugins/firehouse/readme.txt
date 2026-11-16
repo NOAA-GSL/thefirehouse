@@ -364,6 +364,14 @@ one is.
   project, with the submitter's email, job title and how they shared their results kept
   apart, for FireHouse Editors and administrators only, and left out of WordPress's
   export. It takes a form sent only to its own address from the site's own pages.
+* The landing page's "Where these needs come from" in Stephanie and Emily's 11
+  November wording. Under Executive Order 14434 the site says "Super Intelligence
+  (SI)" for AI: the note on the landing and topic pages says "Drafted with Super
+  Intelligence (SI)", "Where these needs come from" and the topic pages say what the
+  term means, the project pages say the needs are drafted with it, and the survey
+  form's notice says it too. None names the tool. Their new landing heading and About
+  words reach a site with its next first import; a site imported before keeps its
+  words until an editor changes them in the block editor.
 
 = 0.2.0 =
 * Project and topic post types at the Firehouse addresses, with their fields as post
