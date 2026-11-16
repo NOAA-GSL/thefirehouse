@@ -21,11 +21,13 @@
  * firehouse/ folder at the top. The plugin header, the VERSION constant and readme.txt's
  * stable tag must name the same version (tests/VersionTest.php checks the same).
  *
- * In GitHub Actions it writes version, zip (the path) and name to the step's outputs.
+ * In GitHub Actions it writes version, zip (the path), name and sha256 (the zip's
+ * SHA-256, which the release job checks before attaching it) to the step's outputs.
  */
 
 import { appendFileSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -192,9 +194,11 @@ function main() {
 
   const count = check(zipPath);
   const kb = Math.round(statSync(zipPath).size / 1024);
+  const sha256 = createHash('sha256').update(readFileSync(zipPath)).digest('hex');
   console.log(`${relative(ROOT, zipPath)}: The FireHouse ${version}, commit ${commit}, ${count} files, ${kb} KB`);
+  console.log(`SHA-256 ${sha256}`);
 
-  const uncommitted = git(['status', '--porcelain', '--', PLUGIN, ...ADDED]).trim();
+  const uncommitted = git(['status', '--porcelain', '--', PLUGIN, ...ADDED]).trimEnd();
   if (uncommitted) {
     console.warn(
       `plugin-zip: built from commit ${commit}; these changes aren't committed, so they aren't in it:\n` +
@@ -205,7 +209,7 @@ function main() {
   if (process.env.GITHUB_OUTPUT) {
     appendFileSync(
       process.env.GITHUB_OUTPUT,
-      `version=${version}\nzip=${relative(ROOT, zipPath).replaceAll('\\', '/')}\nname=${name}\n`,
+      `version=${version}\nzip=${relative(ROOT, zipPath).replaceAll('\\', '/')}\nname=${name}\nsha256=${sha256}\n`,
     );
   }
 }

@@ -97,10 +97,11 @@ to either with a role editor doesn't last past it.
 
 The plugin is installed from its zip, the file WordPress takes at Plugins → Add New
 Plugin → Upload Plugin. Each version's zip is attached to its release in the source
-repository (https://github.com/NOAA-GSL/thefirehouse/releases). A zip of any commit is
-on that commit's "WordPress plugin" run in the repository's Actions, under Artifacts;
-it hasn't been through GSL's security review, so it belongs only on a local or test
-site.
+repository (https://github.com/NOAA-GSL/thefirehouse/releases). A zip of any commit on
+one of the repository's branches is on that commit's "WordPress plugin" run in the
+repository's Actions, under Artifacts; it hasn't been through GSL's security review,
+so it belongs only on a local or test site. A pull request's run builds that pull
+request's code, which may come from outside the repository: don't install its zip.
 
 1. In the dashboard, go to Plugins → Add New Plugin, choose Upload Plugin, choose the
    zip, and choose Install Now.
@@ -334,7 +335,9 @@ one is.
   reads what it holds. A version tag drafts a GitHub release with it. This readme has
   WordPress.org's sections: Installation, Frequently Asked Questions, Screenshots, and
   External services, which describes the coverage map's tiles and links Esri's terms
-  and privacy statement.
+  and privacy statement. The plugin header's Update URI names GitHub, so WordPress never
+  offers an update from WordPress.org for it, even if another plugin is listed there as
+  firehouse.
 
 = 0.2.0 =
 * Project and topic post types at the Firehouse addresses, with their fields as post

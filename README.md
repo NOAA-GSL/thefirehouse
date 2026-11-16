@@ -1122,7 +1122,9 @@ bin/wp-init         # once: copy GSL's local database, activate the plugin
                     # then http://localhost:8090, with your GSL local login
 bin/wp plugin list  # WP-CLI against that site
 bin/wp plugin install plugin-check --activate   # once
-bin/wp plugin check firehouse                   # WordPress's Plugin Check
+bin/wp plugin check firehouse --exclude-checks=plugin_updater
+                    # WordPress's Plugin Check, less the check that flags the
+                    # Update URI header (wordpress-org/README.md)
 npm run seed        # then upload seed/firehouse-seed.json at FireHouse → Import
 composer install
 composer lint       # PHPCS: WordPress coding standards, PHP 8.1 compatibility
@@ -1145,10 +1147,13 @@ readme.txt's stable tag name different versions.
 CI builds it on every change to the plugin and keeps it for 30 days: on the run's
 Summary page, under Artifacts, `firehouse-<version>-<commit>.zip` downloads as the
 zip itself. That zip hasn't been through GSL's security review; it's for a local or
-test site. For a release, set the version in the three places, merge, and push a tag
+test site, and only from a run on one of this repository's branches: a pull request's
+run, a fork's included, builds the pull request's code and names the zip the same way. For a release, set the version in the three places, merge, and push a tag
 named for it (`git tag v0.3.0 && git push origin v0.3.0`): CI checks the tag matches,
-runs the checks, and drafts a GitHub release with `firehouse-0.3.0.zip`. Publish the
-draft once the release has passed security review.
+runs the checks, and drafts a GitHub release with `firehouse-0.3.0.zip`. The release
+job downloads the zip by the package job's artifact ID and checks its SHA-256 before
+attaching it, and the draft's notes name the commit and the hash, so the security
+review can record exactly what it passed. Publish the draft once it has.
 
 `wordpress-org/` holds what a WordPress.org listing would need beyond the zip, and
 what submitting it waits on (`wordpress-org/README.md`). The plugin isn't submitted.

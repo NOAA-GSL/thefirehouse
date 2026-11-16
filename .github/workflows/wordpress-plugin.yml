@@ -102,6 +102,8 @@ jobs:
     outputs:
       version: ${{ steps.zip.outputs.version }}
       name: ${{ steps.zip.outputs.name }}
+      sha256: ${{ steps.zip.outputs.sha256 }}
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -124,8 +126,11 @@ jobs:
         run: node scripts/plugin-zip.mjs ${TAG:+--tag "$TAG"}
 
       # archive: false keeps the file as it is, so the download is the plugin zip
-      # itself, not a zip around it.
+      # itself, not a zip around it. The jobs below fetch it by this upload's ID, not
+      # its name: an artifact uploaded again under the same name, later in the run,
+      # gets another ID.
       - name: Keep the zip
+        id: upload
         uses: actions/upload-artifact@v7
         with:
           path: ${{ steps.zip.outputs.zip }}
@@ -141,7 +146,7 @@ jobs:
       - name: Download the plugin zip
         uses: actions/download-artifact@v8
         with:
-          name: ${{ needs.package.outputs.name }}
+          artifact-ids: ${{ needs.package.outputs.artifact-id }}
           path: zip
           skip-decompress: true
 
@@ -149,17 +154,25 @@ jobs:
       # in its firehouse/ folder, so the slug and text domain match.
       - name: Unzip it
         env:
-          ZIP: zip/${{ needs.package.outputs.name }}
+          NAME: ${{ needs.package.outputs.name }}
         run: |
-          ls -la zip
+          ls -laR zip
+          ZIP="$(find zip -type f -name "$NAME" -print -quit)"
+          test -n "$ZIP"
           unzip -q "$ZIP" -d build
 
-      # Pinned to the commit behind v1.1.9 rather than the movable tag, as the action
-      # pins its own dependencies: a third-party action runs with this job's token.
+      # Pinned to the commit behind v1.1.9 rather than the movable tag: a third-party
+      # action runs with this job's token. The action pins the actions it uses, but not
+      # what it installs: @wordpress/env, WordPress and Plugin Check are the newest at
+      # run time. That's why the release job checks the zip's SHA-256 itself.
+      # plugin_updater is left out because it flags firehouse.php's Update URI header,
+      # which keeps WordPress.org from offering another plugin's update for this one.
+      # Both go when the plugin is submitted there (wordpress-org/README.md).
       - name: Plugin Check
         uses: WordPress/plugin-check-action@10857da14b6c2246d15402b3e69f777edcf8c12e # v1.1.9
         with:
           build-dir: ./build/firehouse
+          exclude-checks: plugin_updater
 
   # Only on a version tag, and only once the tests, the lint and Plugin Check have
   # passed: a draft release with the zip, which only the repository's maintainers see
@@ -176,20 +189,26 @@ jobs:
       - name: Download the plugin zip
         uses: actions/download-artifact@v8
         with:
-          name: ${{ needs.package.outputs.name }}
+          artifact-ids: ${{ needs.package.outputs.artifact-id }}
           path: zip
           skip-decompress: true
 
+      # The zip must be the one the package job built: the same SHA-256. The notes name
+      # the commit and the hash, so the security review can record exactly what it passed.
       - name: Draft the release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG: ${{ github.ref_name }}
+          COMMIT: ${{ github.sha }}
           VERSION: ${{ needs.package.outputs.version }}
-          ZIP: zip/${{ needs.package.outputs.name }}
+          NAME: ${{ needs.package.outputs.name }}
+          SHA256: ${{ needs.package.outputs.sha256 }}
         run: |
-          ls -la zip
-          test -f "$ZIP"
+          ls -laR zip
+          ZIP="$(find zip -type f -name "$NAME" -print -quit)"
+          test -n "$ZIP"
+          echo "$SHA256  $ZIP" | sha256sum -c -
           gh release create "$TAG" "$ZIP" --draft --verify-tag \
             --title "The FireHouse $VERSION" \
-            --notes "The FireHouse plugin $VERSION. Install it at Plugins → Add New Plugin → Upload Plugin. readme.txt's changelog lists what changed. Publish this draft only once the release has passed GSL's security review."
+            --notes "The FireHouse plugin $VERSION, built from commit $COMMIT. $NAME has SHA-256 $SHA256. Install it at Plugins → Add New Plugin → Upload Plugin. readme.txt's changelog lists what changed. Publish this draft only once the release has passed GSL's security review."

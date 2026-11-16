@@ -33,7 +33,9 @@ list below says what that waits on.
 1. **The decision to list it.** A listing is public and speaks for NOAA, so it goes
    through communications clearance (CLAUDE.md, "When a person decides" and the
    Communications Clearance Officer row), and the version submitted through GSL's
-   security review, as every release does.
+   security review, as every release does. Clearance covers the screenshots too: they
+   show researchers' names and abstracts, published on the site, in a new place, and
+   one shows a synthesis marked "Draft, pending team review".
 2. **Whether it fits the directory.** The directory is for plugins other sites can
    use. The FireHouse's content comes from a seed bundle built from this repository,
    and it is tested only with GSL's classic theme, so the review team may ask how
@@ -52,17 +54,20 @@ list below says what that waits on.
    their licences are beside them. The review team confirms these.
 6. **The version.** Set `Tested up to` to the newest WordPress at the time, and add an
    `== Upgrade Notice ==` entry for the version submitted.
-7. **After approval.** The directory's SVN repository gets the plugin's files in
+7. **Take out the Update URI.** The directory refuses a plugin with an `Update URI`
+   header. Remove it from `firehouse.php`, and `exclude-checks: plugin_updater` from
+   the Plugin Check step in `.github/workflows/wordpress-plugin.yml` (and the README's
+   local command), in the version submitted.
+8. **After approval.** The directory's SVN repository gets the plugin's files in
    `trunk/` and a `tags/<version>/` copy, and this folder's `assets/` in `assets/`. The
    zip's contents are what goes in `trunk/`.
 
 ## Until then
 
 GSL's sites install the reviewed zip from the GitHub release. WordPress offers updates
-from WordPress.org for any installed plugin whose folder matches a listed slug, so if
-another plugin is ever listed as `firehouse`, GSL's dashboards would offer it as an
-update to this one. Before each release, check
-`https://api.wordpress.org/plugins/info/1.2/?action=plugin_information&request[slug]=firehouse`
-answers "Plugin not found". If the slug is taken and the plugin isn't going to the
-directory, add an `Update URI:` header that isn't wordpress.org to `firehouse.php`;
-Plugin Check flags that header, since the directory doesn't allow it.
+from WordPress.org for an installed plugin whose folder matches a listed slug, so if
+another plugin were ever listed as `firehouse`, GSL's dashboards would offer it as an
+update to this one. `firehouse.php`'s `Update URI` header names GitHub instead, so
+WordPress never asks WordPress.org about it. Plugin Check flags that header, since the
+directory doesn't allow it, so CI leaves that one check out until the plugin is
+submitted (step 7 above).

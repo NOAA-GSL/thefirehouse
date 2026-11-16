@@ -2212,7 +2212,11 @@ ships.
   plugin's version drafts a GitHub release with it, which a maintainer publishes after
   the security review. `readme.txt` is in WordPress.org's format, and
   `wordpress-org/` holds the directory's icon, banner and screenshots and what
-  submitting waits on; the plugin isn't submitted.*
+  submitting waits on; the plugin isn't submitted. From the AppSec review: the release
+  job downloads the zip by its artifact ID and checks its SHA-256, and `firehouse.php`
+  has an `Update URI` naming GitHub, so WordPress.org can't offer another plugin's
+  update for it, with Plugin Check's `plugin_updater` check left out; on the day the
+  plugin is submitted to WordPress.org, both come out.*
 - A runbook for editors and for administrators, including how to remove a project
   for good (trash, then Delete Permanently, which takes its fields and revisions
   with it).
