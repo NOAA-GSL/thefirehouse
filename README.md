@@ -617,13 +617,22 @@ nothing from the database. Each class's docblock has the detail; this is the map
   in. Only administrators have `firehouse_import`. A project or topic has no author,
   whoever saves it and by whatever route (the plugin's own writes aside), so no
   editor's name or sign-in name is published as its author through oEmbed, the feeds
-  or the users sitemap. No one can delete the landing page
-  for good while pages outside the trash are under it: WordPress would move them to the
-  top of the site, the About page beside the site's own `/about/`. Nor can anyone put
-  it in the trash while a published or scheduled page is anywhere under it: with the
-  landing page in the trash, such a page would still open under its trashed address
+  or the users sitemap. A limited editor, one whose page editing is limited to the
+  FireHouse pages as a FireHouse Editor's is, can't change a page's parent or slug,
+  which are its address: `keep_in_place()` puts them back whatever a save asks, and
+  the REST API refuses the change. No one can delete the landing page for good while
+  pages outside the trash are under it: WordPress would move them to the top of the
+  site, the About page beside the site's own `/about/`. Nor can anyone put it in the
+  trash while a published or scheduled page is anywhere under it: with the landing
+  page in the trash, such a page would still open under its trashed address
   (`/firehouse__trashed/about/`) as a plain page of the site (decided by Eric, 14
-  November). Drafts, pending and private pages don't count. The Pages screens say why.
+  November). That counts a page below another page already in the trash, or in any
+  other registered status, such as an editorial workflow's, since WordPress finds a
+  page by its path whatever the status of the pages above it
+  (`Capabilities::pages_below()`; Copilot's review, 16 November). For the same reason,
+  deleting the landing page for good counts the pages directly under it in any
+  registered status but the trash. Drafts, pending and private pages don't count. The
+  Pages screens say why.
   For the trash, they and the block editor's Move to trash also name those pages and
   say to make them drafts or trash them first. The block editor's message comes only
   after WordPress's own permission check, so only someone who may delete the landing
@@ -820,9 +829,17 @@ nothing from the database. Each class's docblock has the detail; this is the map
   only FireHouse blocks on a page in the tree (`allowed_block_types_all`), and none of
   them is in the inserter, so it offers nothing to add. A save that would leave a page
   in the tree holding anything else is refused, whether the page is there already, is
-  created under it, or is moved into it, with the parent the save gives it deciding.
-  A page moved in brings the pages under it, unsaved, so the move is refused while
-  any of them, at any depth, holds something else ("This page wasn’t moved…").
+  created under it, or is moved into it. The check judges the page by the parent it
+  will have after the save: a limited editor's page keeps its old one, whatever the
+  save asks, because `keep_in_place()` puts it back after the check has run, so the
+  check uses the same answer (`Capabilities::parent_kept()`). A page moved in brings
+  the pages under it without a save of their own, so the move is refused while any of
+  them, at any depth, holds something else ("This page wasn’t moved…"). The message
+  names the first five, a title's `<` and `>` as ‹ and › (the block editor leaves out
+  a save's message that looks like markup), and counts the rest and any its user may
+  not open (`read_post`). That walk (`Capabilities::pages_below()`) goes through every
+  registered status, the trash included, where `tree_ids()` stops: restoring a trashed page brings it back as it is, and a
+  published page under one still opens at the trashed page's new address.
   Through the REST API, which the block editor saves with, the editor shows why ("This
   page wasn’t saved: a FireHouse page holds only its FireHouse blocks…"). On any other
   route the backstop on `wp_insert_post_empty_content` refuses it. WordPress reports

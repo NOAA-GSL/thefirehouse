@@ -12,6 +12,7 @@ namespace Firehouse\Tests;
 use Brain\Monkey\Functions;
 use Firehouse\Allowed_Blocks;
 use Firehouse\Blocks;
+use Firehouse\Capabilities;
 
 /**
  * A page in the FireHouse tree holds only FireHouse blocks: the block editor offers no
@@ -46,6 +47,12 @@ final class AllowedBlocksTest extends WordPressTestCase {
 	private const OUTSIDE = 'outside, with a paragraph';
 
 	/**
+	 * The statuses get_post_stati() gives: WordPress's, and `pitch`, an editorial
+	 * workflow plugin's.
+	 */
+	private const STATI = array( 'publish', 'future', 'draft', 'pending', 'private', 'trash', 'auto-draft', 'inherit', 'pitch' );
+
+	/**
 	 * Posts, by ID: the FireHouse root (10), its About page (11), a page outside the
 	 * tree (20), a revision of About (30), a project (40) and a page outside the tree
 	 * holding a core block (50).
@@ -53,6 +60,13 @@ final class AllowedBlocksTest extends WordPressTestCase {
 	 * @var array<int, \WP_Post>
 	 */
 	private array $posts = array();
+
+	/**
+	 * Whether the current user may open the pages (`read_post`).
+	 *
+	 * @var bool
+	 */
+	private bool $can = true;
 
 	/**
 	 * Stubs the tree and the block parser.
@@ -85,12 +99,40 @@ final class AllowedBlocksTest extends WordPressTestCase {
 			self::OUTSIDE   => array( $intro, $core ),
 		);
 		Functions\when( 'get_post' )->alias( fn( mixed $id ): ?\WP_Post => $this->posts[ (int) $id ] ?? null );
-		// The root's ID, or the pages under a level of them, as WordPress would give them.
+		// The root's ID; or the pages under a level of them, or these pages, in the
+		// statuses asked for, as WordPress would give them. As in WordPress, an empty
+		// post__in limits nothing.
 		Functions\when( 'get_posts' )->alias(
-			fn( array $args ): array => isset( $args['post_parent__in'] )
-				? array_values( array_filter( $this->posts, static fn( \WP_Post $post ): bool => 'page' === $post->post_type && in_array( $post->post_parent, $args['post_parent__in'], true ) ) )
-				: array( 10 )
+			function ( array $args ): array {
+				if ( ! isset( $args['post_parent__in'] ) && ! isset( $args['post__in'] ) ) {
+					return array( 10 );
+				}
+				$pages = array_values(
+					array_filter(
+						$this->posts,
+						static fn( \WP_Post $post ): bool => 'page' === $post->post_type
+							&& in_array( $post->post_status, $args['post_status'], true )
+							&& ( isset( $args['post__in'] ) ? ( array() === $args['post__in'] || in_array( $post->ID, $args['post__in'], true ) ) : in_array( $post->post_parent, $args['post_parent__in'], true ) )
+					)
+				);
+				return 'ids' === ( $args['fields'] ?? '' ) ? array_column( $pages, 'ID' ) : $pages;
+			}
 		);
+		// The statuses WordPress registers, and an editorial workflow's.
+		Functions\when( 'get_post_stati' )->justReturn( array_combine( self::STATI, self::STATI ) );
+		// Someone whose page editing isn't limited to the tree, who may open any page,
+		// unless a test says not.
+		Functions\when( 'wp_get_current_user' )->justReturn( new \WP_User( 1, array( 'administrator' ), array() ) );
+		$this->can = true;
+		Functions\when( 'current_user_can' )->alias(
+			function ( string $cap, mixed $id = null ): bool {
+				$this->assertSame( 'read_post', $cap );
+				$this->assertArrayHasKey( $id, $this->posts, 'Asked of a page there is.' );
+				return $this->can;
+			}
+		);
+		Functions\when( 'wp_specialchars_decode' )->alias( static fn( string $text ): string => htmlspecialchars_decode( $text, ENT_QUOTES ) );
+		Functions\when( 'wp_sprintf' )->alias( static fn( string $pattern, array $items ): string => implode( ', ', $items ) );
 		Functions\when( 'get_post_ancestors' )->alias(
 			function ( \WP_Post $post ): array {
 				$ancestors = array();
@@ -335,12 +377,14 @@ final class AllowedBlocksTest extends WordPressTestCase {
 	 * in the tree already aren't walked.
 	 */
 	public function test_a_page_moved_in_is_refused_while_a_page_under_it_holds_another_block(): void {
-		$page = static fn( int $id, int $parent_id, string $content ): \WP_Post => new \WP_Post(
+		$page = static fn( int $id, int $parent_id, string $content, string $status = 'publish' ): \WP_Post => new \WP_Post(
 			array(
 				'ID'           => $id,
 				'post_type'    => 'page',
 				'post_parent'  => $parent_id,
 				'post_content' => $content,
+				'post_status'  => $status,
+				'post_title'   => 'Page ' . $id . ' R&amp;D',
 			)
 		);
 		// Outside the tree: 60, holding FireHouse blocks; under it 61, the same; under that 62, a paragraph.
@@ -354,7 +398,8 @@ final class AllowedBlocksTest extends WordPressTestCase {
 		$refused = $moving();
 		$this->assertInstanceOf( \WP_Error::class, $refused );
 		$this->assertStringContainsString( 'This page wasn’t moved', $refused->get_error_message() );
-		$this->assertStringContainsString( 'a page under this one holds another block', $refused->get_error_message() );
+		$this->assertStringContainsString( 'One of them holds another block, or text between its blocks: Page 62 R&D.', $refused->get_error_message(), 'Naming the page, its title as typed.' );
+		$this->assertStringContainsString( 'restore it first', $refused->get_error_message() );
 		$this->assertTrue(
 			Allowed_Blocks::refuse_write(
 				false,
@@ -371,6 +416,33 @@ final class AllowedBlocksTest extends WordPressTestCase {
 		$this->posts[62] = $page( 62, 61, self::FIREHOUSE );
 		$this->assertNotInstanceOf( \WP_Error::class, $moving(), 'Every page under it holds FireHouse blocks.' );
 
+		// Through a page in the trash (61): a published page under it holding a paragraph
+		// still opens, at the trashed page's address, and would be in the tree.
+		$this->posts[61] = $page( 61, 60, self::FIREHOUSE, 'trash' );
+		$this->posts[62] = $page( 62, 61, self::PARAGRAPH );
+		$this->assertInstanceOf( \WP_Error::class, $moving(), 'Under a page in the trash.' );
+		// A page in the trash holding a paragraph itself, which a restore brings back as it is.
+		$this->posts[61] = $page( 61, 60, self::PARAGRAPH, 'trash' );
+		$this->posts[62] = $page( 62, 61, self::FIREHOUSE );
+		$this->assertStringContainsString( ': Page 61 R&D (in the Trash).', $moving()->get_error_message(), 'A page in the trash, marked so.' );
+		// The same in an editorial workflow's status, and through one.
+		$this->posts[61] = $page( 61, 60, self::PARAGRAPH, 'pitch' );
+		$this->assertInstanceOf( \WP_Error::class, $moving(), 'A page in a status another plugin registers.' );
+		$this->posts[61] = $page( 61, 60, self::FIREHOUSE, 'pitch' );
+		$this->posts[62] = $page( 62, 61, self::PARAGRAPH );
+		$this->assertInstanceOf( \WP_Error::class, $moving(), 'Under a page in such a status.' );
+		// A page its user may not open is only counted.
+		$this->can = false;
+		$this->assertStringContainsString( 'One of them holds another block, or text between its blocks: 1 page you can’t open.', $moving()->get_error_message() );
+		$this->can       = true;
+		$this->posts[61] = $page( 61, 60, self::FIREHOUSE, 'trash' );
+		$this->posts[62] = $page( 62, 61, self::FIREHOUSE );
+		$this->assertNotInstanceOf( \WP_Error::class, $moving(), 'Every page under it, in the trash or not, holds FireHouse blocks.' );
+
+		// A page with nothing under it reads no pages: an empty post__in would read every
+		// page on the site, About's paragraph among them.
+		$this->assertNotInstanceOf( \WP_Error::class, Allowed_Blocks::refuse_rest( self::prepared( 62, null, 10 ), new \WP_REST_Request( 'POST', '/wp/v2/pages/62' ) ) );
+
 		// A page in the tree already: the pages under it are there too, so none is read.
 		$this->posts[12] = $page( 12, 11, self::PARAGRAPH );
 		$walked          = 0;
@@ -382,6 +454,56 @@ final class AllowedBlocksTest extends WordPressTestCase {
 		);
 		$this->assertNotInstanceOf( \WP_Error::class, Allowed_Blocks::refuse_rest( self::prepared( 11, self::FIREHOUSE ), new \WP_REST_Request( 'POST', '/wp/v2/pages/11' ) ) );
 		$this->assertSame( 0, $walked );
+	}
+
+	/**
+	 * The move's message names five pages and counts the rest, and a title's angle
+	 * brackets read as ‹ and ›: the block editor leaves out a save's message whole when
+	 * anything in it looks like a tag.
+	 */
+	public function test_the_move_message_names_a_few_pages_and_nothing_like_a_tag(): void {
+		$page            = static fn( int $id, int $parent_id, string $content ): \WP_Post => new \WP_Post(
+			array(
+				'ID'           => $id,
+				'post_type'    => 'page',
+				'post_parent'  => $parent_id,
+				'post_content' => $content,
+				'post_title'   => 'Page <' . $id . '>',
+			)
+		);
+		$this->posts[60] = $page( 60, 0, self::FIREHOUSE );
+		foreach ( range( 61, 67 ) as $id ) {
+			$this->posts[ $id ] = $page( $id, 60, self::PARAGRAPH );
+		}
+		$refused = Allowed_Blocks::refuse_rest( self::prepared( 60, null, 10 ), new \WP_REST_Request( 'POST', '/wp/v2/pages/60' ) );
+
+		$this->assertInstanceOf( \WP_Error::class, $refused );
+		$this->assertStringContainsString( 'Some of them hold another block, or text between their blocks: Page ‹61›, Page ‹62›, Page ‹63›, Page ‹64›, Page ‹65›, 2 other pages.', $refused->get_error_message() );
+		$this->assertDoesNotMatchRegularExpression( '/<\/?[^>]*>/', $refused->get_error_message(), 'The block editor\'s test for markup.' );
+	}
+
+	/**
+	 * A limited editor's page keeps its parent whatever a save asks
+	 * (Capabilities::keep_in_place(), which runs after these checks), so a save is
+	 * judged where the page will stay: asking to move About out of the tree doesn't let
+	 * a paragraph in.
+	 */
+	public function test_a_limited_editors_page_is_checked_where_it_stays(): void {
+		Functions\when( 'wp_get_current_user' )->justReturn( new \WP_User( 7, array( Capabilities::EDITOR_ROLE ), array( Capabilities::EDIT_PAGES => true ) ) );
+		$postarr = array(
+			'ID'           => 11,
+			'post_type'    => 'page',
+			'post_parent'  => 0,
+			'post_content' => addslashes( self::PARAGRAPH ),
+		);
+
+		$this->assertTrue( Allowed_Blocks::refuse_write( false, $postarr ), 'Refused by the backstop.' );
+		$this->assertSame( 10, Capabilities::keep_in_place( $postarr, $postarr )['post_parent'], 'Where the save would have left it.' );
+		$this->assertInstanceOf( \WP_Error::class, Allowed_Blocks::refuse_rest( self::prepared( 11, self::PARAGRAPH, 0 ), new \WP_REST_Request( 'POST', '/wp/v2/pages/11' ) ), 'Refused through the REST API.' );
+
+		Functions\when( 'wp_get_current_user' )->justReturn( new \WP_User( 1, array( 'administrator' ), array() ) );
+		$this->assertFalse( Allowed_Blocks::refuse_write( false, $postarr ), 'Someone who may move it out of the tree.' );
+		$this->assertSame( 0, Capabilities::keep_in_place( $postarr, $postarr )['post_parent'] );
 	}
 
 	/**

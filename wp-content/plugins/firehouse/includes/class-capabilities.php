@@ -351,9 +351,9 @@ final class Capabilities {
 		if ( in_array( $stored->post_type, array( Post_Types::PROJECT, Post_Types::TOPIC ), true ) && ! Store::writing() ) {
 			$data['post_author'] = 0;
 		}
-		if ( 'page' === $stored->post_type && self::is_limited( wp_get_current_user() ) ) {
-			$data['post_parent'] = $stored->post_parent;
-			if ( '' !== $stored->post_name && 'trash' !== $stored->post_status ) {
+		if ( 'page' === $stored->post_type ) {
+			$data['post_parent'] = self::parent_kept( $stored, (int) ( $data['post_parent'] ?? $stored->post_parent ) );
+			if ( self::is_limited( wp_get_current_user() ) && '' !== $stored->post_name && 'trash' !== $stored->post_status ) {
 				$data['post_name'] = $stored->post_name;
 			}
 		}
@@ -361,11 +361,28 @@ final class Capabilities {
 	}
 
 	/**
+	 * The parent a save leaves a post with, which keep_in_place() gives it: the one asked
+	 * for, except that a limited editor's page keeps its own. The checks that refuse a
+	 * save run before keep_in_place() does, so they judge a page by this, not by what
+	 * was asked.
+	 *
+	 * @param \WP_Post|null $stored The post as stored, or null for a new one.
+	 * @param int           $asked  The parent the save asks for.
+	 */
+	public static function parent_kept( ?\WP_Post $stored, int $asked ): int {
+		if ( $stored instanceof \WP_Post && 'page' === $stored->post_type && self::is_limited( wp_get_current_user() ) ) {
+			return $stored->post_parent;
+		}
+		return $asked;
+	}
+
+	/**
 	 * Refuses to delete the landing page for good while pages outside the trash are
 	 * under it: WordPress would move them to the top of the site, and the About page
-	 * would become a second top-level `about` beside the site's own. Pages in the trash
-	 * don't count: moved, they keep the name WordPress gave them there, so emptying the
-	 * trash of the whole tree works. Putting the landing page in the trash is allowed
+	 * would become a second top-level `about` beside the site's own. A page in any status
+	 * counts, an editorial workflow's too (every_status()), but the trash: moved, a page
+	 * there keeps the name WordPress gave it, so emptying the trash of the whole tree
+	 * works. Putting the landing page in the trash is allowed
 	 * once no published or scheduled page is under it (keep_tree_root_out_of_trash()):
 	 * its pages stay under it, and restoring it brings them back.
 	 *
@@ -389,7 +406,7 @@ final class Capabilities {
 			array(
 				'post_type'   => 'page',
 				'post_parent' => $post->ID,
-				'post_status' => self::TREE_STATUSES,
+				'post_status' => array_values( array_diff( self::every_status(), array( 'trash' ) ) ),
 				'numberposts' => 1,
 				'fields'      => 'ids',
 			)
@@ -409,11 +426,12 @@ final class Capabilities {
 
 	/**
 	 * Refuses to put the landing page in the trash while a published or scheduled page
-	 * is under it, at any depth (decided by Eric, 14 November). In the trash WordPress
-	 * renames it, and a published page under it would still answer at the new address
-	 * (/firehouse__trashed/about/), as an ordinary page of the theme's with nothing in
-	 * it, and a scheduled one would once its time came. Drafts, pending and private
-	 * pages don't count: visitors can't open them.
+	 * is under it, at any depth (decided by Eric, 14 November), below a page in the
+	 * trash too (published_under(); Copilot's review, 16 November). In the trash
+	 * WordPress renames it, and a published page under it would still answer at the new
+	 * address (/firehouse__trashed/about/), as an ordinary page of the theme's with
+	 * nothing in it, and a scheduled one would once its time came. Drafts, pending and
+	 * private pages don't count: visitors can't open them.
 	 *
 	 * On the Pages list, whether its Trash link or its bulk action, and the page's own
 	 * Move to Trash, it says why, names those pages, and says what to do, before
@@ -473,34 +491,24 @@ final class Capabilities {
 
 	/**
 	 * The titles of the published and scheduled pages under the landing page, at any
-	 * depth, in the tree's order, as plain text: a title kses stored as "R&amp;D" reads
-	 * "R&D", for the Pages screens to escape and the block editor to show as text.
+	 * depth, below a page in the trash or in any other status too, through whose
+	 * address they still open (pages_below()), in the tree's order, as plain text.
 	 *
 	 * @param int $root The landing page's ID.
 	 * @return list<string>
 	 */
 	private static function published_under( int $root ): array {
-		$under = array_values( array_diff( self::tree_ids(), array( $root ) ) );
-		// An empty post__in would mean every page on the site.
-		if ( array() === $under ) {
-			return array();
-		}
-		$pages  = get_posts(
-			array(
-				'post_type'   => 'page',
-				'post__in'    => $under,
-				'post_status' => array( 'publish', 'future' ),
-				'numberposts' => -1,
-				'orderby'     => 'post__in',
-			)
-		);
-		$titles = array();
-		foreach ( is_array( $pages ) ? $pages : array() as $page ) {
-			if ( $page instanceof \WP_Post ) {
-				$titles[] = '' === trim( $page->post_title ) ? __( '(no title)', 'firehouse' ) : wp_specialchars_decode( $page->post_title, ENT_QUOTES );
-			}
-		}
-		return $titles;
+		return array_map( array( self::class, 'title_of' ), self::pages_below( $root, array( 'publish', 'future' ) ) );
+	}
+
+	/**
+	 * A page's title as plain text, for a message: a title kses stored as "R&amp;D"
+	 * reads "R&D", for the Pages screens to escape and the block editor to show as text.
+	 *
+	 * @param \WP_Post $page The page.
+	 */
+	public static function title_of( \WP_Post $page ): string {
+		return '' === trim( $page->post_title ) ? __( '(no title)', 'firehouse' ) : wp_specialchars_decode( $page->post_title, ENT_QUOTES );
 	}
 
 	/**
@@ -677,44 +685,105 @@ final class Capabilities {
 	}
 
 	/**
-	 * The IDs of the root page and its descendants, in TREE_STATUSES: one query for
-	 * each level of the tree, asking for the children of the level above by ID only,
-	 * through the index on the parent. It gets back the tree's pages and no others,
-	 * where get_pages()' `child_of` read every page on the site in full to find them, a
-	 * cost that grew with the site (the WordPress Performance Engineer's review of PR
-	 * #55). Like it, it doesn't walk
-	 * below a page in the trash, though in_tree() still counts a page there.
+	 * The IDs of the root page and its descendants, in TREE_STATUSES (below()). Like
+	 * get_pages()' `child_of`, which it replaced, it doesn't walk below a page in the
+	 * trash, though in_tree() still counts a page there.
+	 *
+	 * @return list<int>
+	 */
+	public static function tree_ids(): array {
+		$root = self::root_id();
+		return 0 === $root ? array() : array_merge( array( $root ), self::below( $root, self::TREE_STATUSES ) );
+	}
+
+	/**
+	 * The IDs of the pages under a page, at any depth, level by level, walking only
+	 * pages in these statuses: one query for each level, asking for the children of the
+	 * level above by ID only, through the index on the parent. It gets back those pages
+	 * and no others, where get_pages()' `child_of` read every page on the site in full to
+	 * find them, a cost that grew with the site (the WordPress Performance Engineer's
+	 * review of PR #55).
 	 *
 	 * Each level keeps only IDs above 0 not walked before. Real rows can't repeat one,
 	 * but another plugin's `pre_get_posts` or `posts_pre_query`, which run whatever
 	 * get_posts() suppresses, could answer with any: an ID already walked would keep
 	 * the walk going for ever, and a 0 would ask for every top-level page on the site.
 	 *
+	 * With no page, or no status, it walks nothing: from 0 it would walk every page on
+	 * the site, and WordPress reads no status as its default ones.
+	 *
+	 * @param int      $id       The page's ID.
+	 * @param string[] $statuses The statuses walked.
 	 * @return list<int>
 	 */
-	public static function tree_ids(): array {
-		$root = self::root_id();
-		if ( 0 === $root ) {
+	public static function below( int $id, array $statuses ): array {
+		if ( $id <= 0 || array() === $statuses ) {
 			return array();
 		}
-		$tree  = array( $root );
-		$level = array( $root );
+		$walked = array( $id );
+		$level  = array( $id );
 		while ( array() !== $level ) {
 			$children = get_posts(
 				array(
 					'post_type'       => 'page',
 					'post_parent__in' => $level,
-					'post_status'     => self::TREE_STATUSES,
+					'post_status'     => $statuses,
 					'numberposts'     => -1,
 					'orderby'         => 'ID',
 					'order'           => 'ASC',
 					'fields'          => 'ids',
 				)
 			);
-			$ids      = array_filter( array_map( 'intval', is_array( $children ) ? $children : array() ), static fn( int $id ): bool => $id > 0 );
-			$level    = array_values( array_diff( array_unique( $ids ), $tree ) );
-			$tree     = array_merge( $tree, $level );
+			$ids      = array_filter( array_map( 'intval', is_array( $children ) ? $children : array() ), static fn( int $child ): bool => $child > 0 );
+			$level    = array_values( array_diff( array_unique( $ids ), $walked ) );
+			$walked   = array_merge( $walked, $level );
 		}
-		return $tree;
+		return array_slice( $walked, 1 );
+	}
+
+	/**
+	 * The pages under a page, at any depth, walked through pages in every status
+	 * (every_status()), and those of them in these statuses read in full, in the walk's
+	 * order: what a page brings with it into the tree, or leaves open below it.
+	 *
+	 * @param int      $id       The page's ID.
+	 * @param string[] $statuses The statuses of the pages read.
+	 * @return list<\WP_Post>
+	 */
+	public static function pages_below( int $id, array $statuses ): array {
+		$under = array() === $statuses ? array() : self::below( $id, self::every_status() );
+		// An empty post__in would mean every page on the site, and no status WordPress's
+		// default ones.
+		if ( array() === $under ) {
+			return array();
+		}
+		$pages = get_posts(
+			array(
+				'post_type'              => 'page',
+				'post__in'               => $under,
+				'post_status'            => $statuses,
+				'numberposts'            => -1,
+				'orderby'                => 'post__in',
+				'update_post_meta_cache' => false,
+				'update_post_term_cache' => false,
+			)
+		);
+		return array_values( array_filter( is_array( $pages ) ? $pages : array(), static fn( mixed $page ): bool => $page instanceof \WP_Post ) );
+	}
+
+	/**
+	 * Every status registered for a page here: TREE_STATUSES, the trash, and any other
+	 * WordPress or another plugin registers, such as an editorial workflow's. WordPress
+	 * finds a page by its path whatever the status of the pages above it, so a
+	 * published page under a page in any of them still opens; and a page in any of them
+	 * comes back with what it holds when it's restored or published. The walks that
+	 * look for those go through every one. A status whose plugin is no longer active
+	 * isn't registered, and WordPress's queries can't ask for it, so a page left in one
+	 * isn't walked.
+	 *
+	 * @return list<string>
+	 */
+	public static function every_status(): array {
+		return array_values( array_unique( array_merge( self::TREE_STATUSES, array( 'trash' ), array_keys( get_post_stati() ) ) ) );
 	}
 }

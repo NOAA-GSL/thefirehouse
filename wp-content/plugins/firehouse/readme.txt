@@ -198,14 +198,17 @@ one is.
 * The FireHouse pages hold only FireHouse blocks, for administrators too: the block
   editor offers no other block there, and a save that would add one (a paragraph, an
   image, Custom HTML) or text between the blocks is refused; the block editor says why.
-  That includes a page created under the landing page or moved there, with the pages
-  under it. A page that already holds another block keeps it, and can still be
-  published, unpublished or moved to the Trash, but no change to its content saves
-  until that block is taken out.
+  That includes a page created under the landing page or moved there. A page moved
+  there brings the pages under it, including any in the Trash, so it can't be moved
+  while one of them holds another block; the block editor names them. A page that
+  already holds another block keeps it, and can still be published, unpublished or
+  moved to the Trash, but no change to its content saves until that block is taken
+  out.
 * The FireHouse landing page can't be moved to the Trash while a published or
-  scheduled page is anywhere under it, since that page would still open at an address
-  under the trashed landing page. The Pages screens and the block editor name those
-  pages; make them drafts or move them to the Trash first.
+  scheduled page is anywhere under it, even under a page that's in the Trash, since
+  that page would still open at an address under the trashed landing page. The Pages
+  screens and the block editor name those pages; make them drafts or move them to the
+  Trash first.
 * The name the plugin prints is FireHouse: the plugin's name, the role, the admin
   menu, the block titles, and the pages' titles and words. A site that imported its
   content before keeps the old spelling in its settings and in the landing and About

@@ -66,6 +66,13 @@ final class CapabilitiesTest extends WordPressTestCase {
 		$posts       = $this->posts;
 		Functions\when( 'get_post' )->alias( static fn( mixed $id ): ?\WP_Post => $id instanceof \WP_Post ? $id : ( $posts[ (int) $id ] ?? null ) );
 		Functions\when( 'get_posts' )->justReturn( array( 10 ) );
+		// The statuses WordPress registers, and `pitch`, an editorial workflow plugin's.
+		Functions\when( 'get_post_stati' )->justReturn(
+			array_combine( Capabilities::TREE_STATUSES, Capabilities::TREE_STATUSES ) + array(
+				'trash' => 'trash',
+				'pitch' => 'pitch',
+			)
+		);
 		Functions\when( 'get_post_ancestors' )->alias(
 			static function ( \WP_Post $post ) use ( $posts ): array {
 				$ancestors = array();
@@ -238,6 +245,24 @@ final class CapabilitiesTest extends WordPressTestCase {
 			// Every status but the trash, and not an auto-draft; nothing under the trash.
 			$this->assertSame( array( 'publish', 'future', 'draft', 'pending', 'private' ), $args['post_status'] );
 		}
+	}
+
+	/**
+	 * With no page, or no status, nothing is walked: from 0 the walk would take every
+	 * page on the site, and no status would be WordPress's default ones.
+	 */
+	public function test_nothing_is_walked_from_no_page_or_in_no_status(): void {
+		$asked = 0;
+		Functions\when( 'get_posts' )->alias(
+			static function () use ( &$asked ): array {
+				++$asked;
+				return array( 11 );
+			}
+		);
+
+		$this->assertSame( array(), Capabilities::below( 0, Capabilities::TREE_STATUSES ) );
+		$this->assertSame( array(), Capabilities::below( 10, array() ) );
+		$this->assertSame( 0, $asked );
 	}
 
 	/**
@@ -542,6 +567,7 @@ final class CapabilitiesTest extends WordPressTestCase {
 		$this->assertSame( 10, $asked[0]['post_parent'] );
 		$this->assertNotContains( 'trash', $asked[0]['post_status'], 'Pages in the trash keep their trash name when moved, so they don\'t hold it.' );
 		$this->assertContains( 'draft', $asked[0]['post_status'] );
+		$this->assertContains( 'pitch', $asked[0]['post_status'], 'Moved, a page in an editorial workflow\'s status keeps its own name.' );
 
 		// In the trash, WordPress has renamed it, and keeps the name it wants back.
 		$this->assertFalse( Capabilities::keep_tree_root( null, $this->posts[21] ) );
@@ -661,6 +687,50 @@ final class CapabilitiesTest extends WordPressTestCase {
 
 		$this->tree_with( array() );
 		$this->assertNull( Capabilities::keep_tree_root_out_of_trash( null, $this->posts[10] ), 'Only drafts under it.' );
+	}
+
+	/**
+	 * A published page under a page in the trash, or in another plugin's status, still
+	 * opens, through that page's address, so the trash rule's walk goes through them.
+	 * The Pages list's tree still stops at the trash.
+	 */
+	public function test_the_trash_rule_counts_a_published_page_under_a_trashed_one(): void {
+		Functions\stubTranslationFunctions();
+		Functions\when( 'wp_specialchars_decode' )->alias( static fn( string $text ): string => htmlspecialchars_decode( $text, ENT_QUOTES ) );
+		// The landing page (10); under it 13, in the trash; under that 14, published.
+		$tree  = array(
+			10 => array( 13 => 'trash' ),
+			13 => array( 14 => 'publish' ),
+		);
+		$asked = new \ArrayObject();
+		Functions\when( 'get_posts' )->alias(
+			static function ( array $args ) use ( &$tree, $asked ): array {
+				if ( isset( $args['post__in'] ) ) {
+					$asked[] = $args;
+					return array( self::titled( 14, 'Under a page in the trash' ) );
+				}
+				if ( ! isset( $args['post_parent__in'] ) ) {
+					return array( 10 );
+				}
+				$ids = array();
+				foreach ( $args['post_parent__in'] as $parent_id ) {
+					foreach ( $tree[ $parent_id ] ?? array() as $id => $status ) {
+						if ( in_array( $status, $args['post_status'], true ) ) {
+							$ids[] = $id;
+						}
+					}
+				}
+				return $ids;
+			}
+		);
+
+		$this->assertFalse( Capabilities::keep_tree_root_out_of_trash( null, $this->posts[10] ) );
+		$this->assertSame( array( 13, 14 ), $asked[0]['post__in'], 'Through the page in the trash.' );
+		$this->assertSame( array( 10 ), Capabilities::tree_ids(), 'The Pages list\'s tree stops at the trash.' );
+
+		$tree[10] = array( 13 => 'pitch' );
+		$this->assertFalse( Capabilities::keep_tree_root_out_of_trash( null, $this->posts[10] ) );
+		$this->assertSame( array( 13, 14 ), $asked[1]['post__in'], 'Through a page in an editorial workflow\'s status.' );
 	}
 
 	/**

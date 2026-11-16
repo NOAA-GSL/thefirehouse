@@ -2040,25 +2040,39 @@ to build say so:
   own FireHouse blocks, so no core block and no Custom HTML. Built 15 November
   (`includes/class-allowed-blocks.php`): every page in the tree, for everyone,
   administrators too, including a page created under the landing page or moved
-  there, with the pages under it. The block editor offers only FireHouse blocks there, and a save that would
-  add anything else is refused, through the REST API with a message the editor shows,
-  by any other route by a backstop; the revisions screen turns off Restore for a
-  revision that would be refused. A save that leaves a page in the tree with what it
-  holds goes through, so a page holding another block from before can still change
-  status and have it taken out. While the landing page is in the trash there's no
-  tree, so nothing is checked until it's restored. My reading, for Eric to confirm:
+  there, with the pages under it in any registered status, the trash included, which
+  the message names (Copilot's review, 16 November). A save is judged by the parent it
+  leaves the page with, so a limited editor, whose page keeps its parent, can't let
+  another block in by asking for another. The block editor offers only FireHouse
+  blocks there, and a save that would add anything else is refused, through the REST
+  API with a message the editor shows, by any other route by a backstop; the
+  revisions screen turns off Restore for a revision that would be refused. A save
+  that leaves a page in the tree with what it holds goes through, so a page holding
+  another block from before can still change status and have it taken out. While the
+  landing page is in the trash there's no tree, so nothing is checked, and restoring
+  it isn't checked either (below). My reading, for Eric to confirm:
   any FireHouse block is accepted on any FireHouse page, not only the page's own (the
   check is the layout lock's, `Page_Words::only_firehouse_blocks()`).*
 - *The landing page can't be trashed while a published page sits under it (decided;
   Phase 4's About page note). Built 15 November (`Capabilities`): a published page
-  under it at any depth. The Pages list's Trash link and bulk action, the page's Move
-  to Trash and the block editor's Move to trash say why and name those pages, and any
-  other route is refused too. My reading, for Eric to confirm: a scheduled page counts
-  as published, since it would open at the trashed address once its time came;
-  drafts, pending and private pages don't. Left open: the rule covers putting the
-  landing page in the trash, not publishing a draft under one already there, which
-  reopens the same address; and a bulk trash that includes the landing page stops at
-  it, leaving the pages before it in the trash.*
+  under it at any depth, below a page in the trash or any other registered status
+  too, through whose address it still opens (Copilot's review, 16 November). The Pages list's
+  Trash link and bulk action, the page's Move to Trash and the block editor's Move to
+  trash say why and name those pages, and any other route is refused too. My reading,
+  for Eric to confirm: a scheduled page counts as published, since it would open at
+  the trashed address once its time came; drafts, pending and private pages don't.
+  Left open, for Eric:*
+  - *The rule covers putting the landing page in the trash, not what follows: a draft
+    under a landing page already there can still be published, which reopens the same
+    address; and nothing under it is checked for other blocks while it's there, nor
+    when it's restored, which is the restore the moved-page check covers, at the root
+    (the Application Security Engineer agent's review, 16 November). A check on
+    `pre_untrash_post` could refuse the restore and name the pages.*
+  - *Deleting the landing page for good, skipping the trash, counts only the pages
+    under it outside the trash: one in the trash moves to the top of the site under
+    its trashed name, with any published page under it.*
+  - *A bulk trash that includes the landing page stops at it, leaving the pages before
+    it in the trash.*
 - The synthesis screen: paste, validation, the comparison against the published
   synthesis, and **Mark reviewed**. Validation includes the order: each topic area's
   needs by project count, highest first, since the About page says so (ties go by

@@ -27,11 +27,15 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - A save through the REST API, which the block editor saves with, that would leave
  *   a page in the tree holding anything else is refused, and says why. That's a page
  *   in the tree already, one created under it, or one moved into it, together with
- *   the pages under that one, which come with it.
- * - Any other route (another plugin, XML-RPC, WP-CLI, Quick Edit's Parent) is
- *   refused by the backstop. WordPress reports that as "Content, title, and excerpt
- *   are empty." to a caller that asks for errors; Quick Edit reports nothing, and
- *   the row keeps its old parent.
+ *   the pages under that one, in any status, the trash included, which come with it.
+ *   A save is judged by the parent it leaves the page with
+ *   (Capabilities::parent_kept()).
+ * - Any other save through wp_insert_post() (XML-RPC, WP-CLI, Quick Edit's Parent,
+ *   another plugin's) is refused by the backstop. WordPress reports that as "Content,
+ *   title, and excerpt are empty." to a caller that asks for errors; Quick Edit
+ *   reports nothing, and the row keeps its old parent. A plugin that changes a page's
+ *   parent after the backstop, in a later `wp_insert_post_data` or
+ *   `wp_insert_post_parent` filter or straight in the database, isn't checked.
  * - The revisions screen's Restore is turned off for a revision that would be
  *   refused, rather than letting WordPress say it restored one it didn't.
  *
@@ -43,9 +47,15 @@ if ( ! defined( 'ABSPATH' ) ) {
  * page, and WordPress would save a refusal as the autosave. A draft's autosave by its
  * own author saves the page itself, and is checked like any save. While the landing
  * page is in the trash there is no tree (Capabilities::root_id()), so nothing is
- * checked until it's restored.
+ * checked, and restoring it isn't checked either (left for Eric).
  */
 final class Allowed_Blocks {
+
+	/**
+	 * How many of the pages that keep a page from being moved in the message names;
+	 * the rest it counts.
+	 */
+	private const NAMED = 5;
 
 	/**
 	 * Hooks the block editor's list, the REST API's save, the backstop and the
@@ -92,7 +102,7 @@ final class Allowed_Blocks {
 		if ( ! empty( $prepared->ID ) && ! $stored instanceof \WP_Post ) {
 			return $prepared;
 		}
-		$parent_id = isset( $prepared->post_parent ) ? (int) $prepared->post_parent : ( $stored instanceof \WP_Post ? $stored->post_parent : 0 );
+		$parent_id = Capabilities::parent_kept( $stored, isset( $prepared->post_parent ) ? (int) $prepared->post_parent : ( $stored instanceof \WP_Post ? $stored->post_parent : 0 ) );
 		$content   = self::text( $prepared->post_content ?? null ) ?? ( $stored instanceof \WP_Post ? $stored->post_content : '' );
 		$why       = self::refusal( $stored, 'page', $parent_id, $content, static fn( \WP_Post $page ): array => array( $page->post_content ) );
 		return null === $why ? $prepared : new \WP_Error( 'firehouse_only_firehouse_blocks', $why, array( 'status' => 400 ) );
@@ -122,7 +132,7 @@ final class Allowed_Blocks {
 		}
 		// A revision has an ID and type of its own, so it's never the page.
 		$type      = (string) ( $postarr['post_type'] ?? ( $stored instanceof \WP_Post ? $stored->post_type : 'post' ) );
-		$parent_id = isset( $postarr['post_parent'] ) ? (int) $postarr['post_parent'] : ( $stored instanceof \WP_Post ? $stored->post_parent : 0 );
+		$parent_id = Capabilities::parent_kept( $stored, isset( $postarr['post_parent'] ) ? (int) $postarr['post_parent'] : ( $stored instanceof \WP_Post ? $stored->post_parent : 0 ) );
 		$sent      = self::text( $postarr['post_content'] ?? null );
 		$content   = null === $sent ? ( $stored instanceof \WP_Post ? $stored->post_content : '' ) : wp_unslash( $sent );
 		return null !== self::refusal(
@@ -189,48 +199,82 @@ final class Allowed_Blocks {
 			}
 			return null;
 		}
-		if ( ! $there && $stored instanceof \WP_Post && self::holds_other_blocks_below( $stored->ID ) ) {
-			return __( 'This page wasn’t moved: a FireHouse page holds only its FireHouse blocks, and a page under this one holds another block, or text between them, which would come into FireHouse with it. Take those out of the pages under it, or move them elsewhere, then move this page again.', 'firehouse' );
+		if ( ! $there && $stored instanceof \WP_Post ) {
+			$below = self::other_blocks_below( $stored->ID );
+			if ( array() !== $below ) {
+				return self::why_not_moved( $below );
+			}
 		}
 		return null;
 	}
 
 	/**
-	 * Whether any page under a page, at any depth and in any status but the trash
-	 * (Capabilities::TREE_STATUSES), holds something other than FireHouse blocks: one
-	 * query for each level, as Capabilities::tree_ids() walks the tree, run only when a
-	 * page comes into the tree from outside it. A page already walked isn't walked
-	 * again.
+	 * The pages under a page, at any depth and in any registered status, the trash
+	 * included (Capabilities::pages_below()), that hold something other than FireHouse
+	 * blocks. A page in the trash comes into the tree with the pages under it, and a
+	 * restore brings it back with what it holds, which a save keeping it lets through.
+	 * It runs only when a page comes into the tree from outside it.
 	 *
 	 * @param int $id The page's ID.
+	 * @return list<\WP_Post>
 	 */
-	private static function holds_other_blocks_below( int $id ): bool {
-		$walked = array( $id );
-		$level  = array( $id );
-		while ( array() !== $level ) {
-			$children = get_posts(
+	private static function other_blocks_below( int $id ): array {
+		return array_values( array_filter( Capabilities::pages_below( $id, Capabilities::every_status() ), static fn( \WP_Post $page ): bool => ! self::holds_only_firehouse_blocks( $page->post_content ) ) );
+	}
+
+	/**
+	 * Why a page wasn't moved into the tree, naming the pages under it that hold
+	 * another block, and what to do. The block editor shows it, so:
+	 *
+	 * - A page its user may not open (`read_post`) is only counted.
+	 * - The first NAMED are named, a page in the trash marked so, and the rest counted.
+	 * - A title's angle brackets read as ‹ and ›: the block editor leaves out a save's
+	 *   message whole when anything in it looks like a tag.
+	 *
+	 * @param \WP_Post[] $pages The pages under it that hold another block.
+	 */
+	private static function why_not_moved( array $pages ): string {
+		$named  = array();
+		$hidden = 0;
+		foreach ( $pages as $page ) {
+			if ( ! current_user_can( 'read_post', $page->ID ) ) {
+				++$hidden;
+				continue;
+			}
+			$title   = strtr(
+				Capabilities::title_of( $page ),
 				array(
-					'post_type'       => 'page',
-					'post_parent__in' => $level,
-					'post_status'     => Capabilities::TREE_STATUSES,
-					'numberposts'     => -1,
-					'orderby'         => 'ID',
-					'order'           => 'ASC',
+					'<' => '‹',
+					'>' => '›',
 				)
 			);
-			$level    = array();
-			foreach ( is_array( $children ) ? $children : array() as $child ) {
-				if ( ! $child instanceof \WP_Post || $child->ID <= 0 || in_array( $child->ID, $walked, true ) ) {
-					continue;
-				}
-				if ( ! self::holds_only_firehouse_blocks( $child->post_content ) ) {
-					return true;
-				}
-				$walked[] = $child->ID;
-				$level[]  = $child->ID;
-			}
+			$named[] = 'trash' === $page->post_status
+				/* translators: %s: a page's title. */
+				? sprintf( __( '%s (in the Trash)', 'firehouse' ), $title )
+				: $title;
 		}
-		return false;
+		$listed = array_slice( $named, 0, self::NAMED );
+		$more   = count( $named ) - count( $listed );
+		if ( $more > 0 ) {
+			/* translators: %d: how many more pages hold another block. */
+			$listed[] = sprintf( _n( '%d other page', '%d other pages', $more, 'firehouse' ), $more );
+		}
+		if ( $hidden > 0 ) {
+			/* translators: %d: how many of the pages that hold another block the user may not open. */
+			$listed[] = sprintf( _n( '%d page you can’t open', '%d pages you can’t open', $hidden, 'firehouse' ), $hidden );
+		}
+		return implode(
+			' ',
+			array(
+				__( 'This page wasn’t moved. FireHouse pages hold only FireHouse blocks, and the pages under this one would move with it.', 'firehouse' ),
+				sprintf(
+					/* translators: %s: the pages under the page being moved that hold another block, as a list. */
+					_n( 'One of them holds another block, or text between its blocks: %s.', 'Some of them hold another block, or text between their blocks: %s.', count( $pages ), 'firehouse' ),
+					wp_sprintf( '%l', $listed )
+				),
+				__( 'Pages in the Trash count too, since restoring one brings it back as it is. Take the other blocks out of those pages, or move those pages elsewhere, then move this page again. A page in the Trash can’t be changed or moved there: restore it first, or delete it permanently.', 'firehouse' ),
+			)
+		);
 	}
 
 	/**
