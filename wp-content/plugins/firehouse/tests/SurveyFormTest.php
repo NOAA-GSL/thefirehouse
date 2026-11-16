@@ -59,6 +59,25 @@ final class SurveyFormTest extends WordPressTestCase {
 		$this->assertStringContainsString( 'aria-describedby="fh-survey-email-help fh-survey-email-privacy"', $html, 'Help and privacy line, each its own line, both tied to the field.' );
 		$this->assertStringContainsString( '<fieldset class="fh-survey__group fh-survey__question" id="fh-survey-shared" tabindex="-1" aria-describedby="fh-survey-shared-privacy">', $html );
 		$this->assertStringNotContainsString( 'fh-survey-links-help', $html, 'Help cleared: none.' );
+
+		// A character reference shows as typed, never as the address or direction mark
+		// the settings screen refuses. esc_html() as WordPress has it, which leaves a
+		// reference alone (Brain Monkey's stand-in escapes it), so this fails if the
+		// wording goes through esc_html().
+		Functions\when( 'esc_html' )->alias( static fn( string $text ): string => htmlspecialchars( $text, ENT_QUOTES, 'UTF-8', false ) );
+		Functions\when( 'get_option' )->justReturn(
+			array(
+				'questions' => array(
+					'org'    => array( 'label' => 'Ask person&#64;example.org' ),
+					'shared' => array( 'label' => 'Shared &#x202E;results' ),
+					'needs'  => array( 'help' => 'Write &amp; &#x202E;here' ),
+				),
+			)
+		);
+		$html = self::drawn( array() );
+		$this->assertStringContainsString( '>Ask person&amp;#64;example.org<span', $html );
+		$this->assertStringContainsString( '<legend class="fh-field__label">Shared &amp;#x202E;results</legend>', $html );
+		$this->assertStringContainsString( '<span id="fh-survey-needs-help" class="fh-field__help">Write &amp;amp; &amp;#x202E;here</span>', $html );
 		$this->assertStringContainsString( 'Please list up to 8 user needs and recommendations identified in your project, one in each box.', $html, 'Not changed: the plugin’s wording.' );
 	}
 
