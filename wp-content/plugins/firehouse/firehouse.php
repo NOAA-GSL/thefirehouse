@@ -291,7 +291,8 @@ require_once __DIR__ . '/includes/class-head.php';
  * every such screen and act only on a project or topic. Topic_Screen's title box
  * filter (`title_edit_pre`) runs wherever a title is edited and acts only on a topic.
  * Project_Screen and Topic_Screen save a project's or a topic's fields only from their
- * own form, on its edit screen.
+ * own form, on its edit screen. Help's `current_screen` hook runs on every admin screen
+ * and adds a Help tab only on a FireHouse one.
  */
 Post_Types::hook();
 Meta::hook();

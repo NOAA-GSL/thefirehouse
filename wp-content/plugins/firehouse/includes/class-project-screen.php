@@ -16,14 +16,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Adds a project's fields to WordPress's own edit screen, in two boxes (rule 4):
+ * Adds a project's fields to WordPress's own edit screen, in two boxes (rule 4), and a
+ * third, Private answers, on a survey form submission that has any:
  *
  * - **Editorial fields**, which the FireHouse team writes and a re-import never
  *   changes: the summary, the publication status, the geography note and the
  *   full-record link. They're saved with the post, by WordPress's Publish or Update
  *   button, and kept exactly as typed: they're meta, which kses doesn't touch.
  * - **From the survey**, the researcher's answers, shown read-only, as stored (rule
- *   1). They change only when the survey record does, through the Import screen.
+ *   1). They change only when the survey record does, through the Import screen; a
+ *   survey form submission's don't change at all.
  *
  * A save checks every editorial field first, and saves none of them if any is wrong
  * (rule 6): the screen comes back with what was typed, each problem beside its field
@@ -297,7 +299,12 @@ final class Project_Screen extends Edit_Screen {
 		$list   = static fn( string $name ): array => is_array( $fields[ $name ] ?? null ) ? array_values( $fields[ $name ] ) : array();
 		$geo    = is_array( $fields['geo'] ?? null ) ? $fields['geo'] : array();
 
-		echo '<p>' . esc_html__( 'The researcher’s answers, exactly as submitted. They change only when the survey record does, through the Import screen.', 'firehouse' ) . '</p>';
+		// A form submission has no survey record for the import to correct.
+		echo '<p>' . esc_html(
+			str_starts_with( $text( 'id' ), Survey\Survey::RESPONSE_PREFIX )
+				? __( 'The researcher’s answers, exactly as sent through the FireHouse survey form. They can’t be changed here.', 'firehouse' )
+				: __( 'The researcher’s answers, exactly as submitted. They change only when the survey record does, through the Import screen.', 'firehouse' )
+		) . '</p>';
 		echo '<dl class="fh-edit-readonly">';
 		self::row( __( 'Title', 'firehouse' ), Markup::text( $text( 'title' ) ) );
 		self::row( __( 'Authors', 'firehouse' ), self::items( array_map( array( self::class, 'author' ), $list( 'authors' ) ) ) );
@@ -309,10 +316,14 @@ final class Project_Screen extends Edit_Screen {
 		self::row( __( 'Methods', 'firehouse' ), self::items( array_map( array( self::class, 'plain' ), $list( 'methods' ) ) ) );
 		self::row(
 			__( 'IRB approval', 'firehouse' ),
+			// False only from a survey form submission that answered No: the import never
+			// brings one in.
 			'<span class="fh-edit-note">' . esc_html(
-				true === ( $fields['irbApproved'] ?? null )
-					? __( 'Approved, exempt, or not required', 'firehouse' )
-					: __( 'Not recorded. Visitors can’t see a project without it.', 'firehouse' )
+				match ( $fields['irbApproved'] ?? null ) {
+					true    => __( 'Approved, exempt, or not required', 'firehouse' ),
+					false   => __( 'No approval or exemption. Visitors can’t see a project without it.', 'firehouse' ),
+					default => __( 'Not recorded. Visitors can’t see a project without it.', 'firehouse' ),
+				}
 			) . '</span>'
 		);
 		self::row( __( 'Geographic areas', 'firehouse' ), self::labels( is_array( $geo['regions'] ?? null ) ? array_values( $geo['regions'] ) : array(), Vocabulary::items( 'regions' ) ) );

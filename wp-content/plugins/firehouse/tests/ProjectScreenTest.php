@@ -525,10 +525,34 @@ final class ProjectScreenTest extends WordPressTestCase {
 	}
 
 	/**
-	 * A project without IRB approval says visitors can't see it.
+	 * The box says how the answers change: through the Import screen for a project from
+	 * the survey's records, and not at all for a survey form submission, which the
+	 * import never touches.
+	 */
+	public function test_the_box_says_how_the_answers_change(): void {
+		ob_start();
+		Project_Screen::survey_box( self::post() );
+		$this->assertStringContainsString( '<p>The researcher’s answers, exactly as submitted. They change only when the survey record does, through the Import screen.</p>', (string) ob_get_clean() );
+
+		$this->stored['fh_id'] = 'W_abcdefghijklmnop';
+		ob_start();
+		Project_Screen::survey_box( self::post() );
+		$html = (string) ob_get_clean();
+		$this->assertStringContainsString( '<p>The researcher’s answers, exactly as sent through the FireHouse survey form. They can’t be changed here.</p>', $html );
+		$this->assertStringNotContainsString( 'Import screen', $html );
+	}
+
+	/**
+	 * A project without IRB approval says visitors can't see it: one that answered No
+	 * (a survey form submission) says so, and one with no answer says it's not recorded.
 	 */
 	public function test_a_project_without_approval_says_so(): void {
 		$this->stored['fh_irbApproved'] = '';
+		ob_start();
+		Project_Screen::survey_box( self::post() );
+		$this->assertStringContainsString( '<dt>IRB approval</dt><dd><span class="fh-edit-note">No approval or exemption. Visitors can’t see a project without it.</span></dd>', (string) ob_get_clean() );
+
+		unset( $this->stored['fh_irbApproved'] );
 		ob_start();
 		Project_Screen::survey_box( self::post() );
 		$this->assertStringContainsString( '<dt>IRB approval</dt><dd><span class="fh-edit-note">Not recorded. Visitors can’t see a project without it.</span></dd>', (string) ob_get_clean() );

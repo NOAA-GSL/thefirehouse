@@ -59,7 +59,7 @@ that produced it).
 | Install path | Security reviews each plugin release; developers install it. |
 | WP-CLI | **Not relied on.** Everything, including the first data load, is done in wp-admin. |
 | Outbound network | Believed allowed (doi.org). DOI lookups also reach api.crossref.org and data.crosscite.org, where doi.org forwards them. The AI service adds one more host. A Site Health check confirms them on the test site. |
-| Survey tool | **A form built into the plugin** (29 October), as a self-contained part of it (31 October). See [The survey form](#the-survey-form). Until the plugin launches, researchers submit through the **Google Form** that replaced Colorado State's Qualtrics; it belongs to Emily's account in NOAA's Google Workspace. Its responses go into the site's files through the existing import script, as today, and reach WordPress in the seed bundle at launch (see [Importing the Google Form until launch](#importing-the-google-form-until-launch)). |
+| Survey tool | **A form built into the plugin** (29 October), in its own `survey/` folder (31 October), which uses the plugin's storage, settings and markup classes. See [The survey form](#the-survey-form). Until the plugin launches, researchers submit through the **Google Form** that replaced Colorado State's Qualtrics; it belongs to Emily's account in NOAA's Google Workspace. Its responses go into the site's files through the existing import script, as today, and reach WordPress in the seed bundle at launch (see [Importing the Google Form until launch](#importing-the-google-form-until-launch)). |
 | Responses so far | Qualtrics is closed, and every real submission was re-entered through the Google Form (28 October), so the form's Sheet is the complete record. |
 | Survey API sync | **Dropped** (29 October). With the form in the plugin there is no Sheet to sync. |
 | AI synthesis | **Runs from the plugin** (agreed with Stephanie and Emily, 28 October). An **Analyze results** button sends the published projects and the team's prompt to an approved AI service, and the result waits as a draft for review. The service will likely be Cloudflare Workers AI or Amazon Bedrock, and either needs approval under NOAA's AI policy (open question 7). The model is still open (1 November) and is chosen by checking its output. Until then, and as the fallback, the synthesis screen takes NotebookLM's output by paste. See [The AI service](#the-ai-service). |
@@ -227,7 +227,8 @@ wp-content/plugins/firehouse/
                    words and allowed blocks (Page_Words, Allowed_Blocks) and the
                    synthesis screen (Synthesis_Screen);
                    later, the AI service client
-  survey/          the survey form, self-contained (see The survey form)
+  survey/          the survey form, on the plugin's Meta, Store, Settings and
+                   Markup (see The survey form)
   domain/          PHP versions of the vocabularies, validation (normalize), derive,
                    format, search and the coverage map's colours (Map_Colors), with
                    the email shape, the JSON reading and the JavaScript rules they
@@ -300,8 +301,11 @@ bridge resolves unchanged under the plugin. The Submit page is new.
   Wherever it is kept, the templates render it inside the theme's `main`, after the
   content, never from `wp_footer` or a footer widget, which land after GSL's footer.
 - **Settings.** A FireHouse → Settings screen holds the site name, the submit label, the
-  submit address, the navigation labels and the survey's question wording (Phase 7a);
-  later, the AI prompt (Phase 7b) and who is emailed about new submissions.
+  submit address, the navigation labels, the switch that opens the survey form
+  (administrators only) and the survey's question wording (Phase 7a); later, the AI
+  prompt (Phase 7b). Who is emailed about new submissions is the team mailbox, fixed
+  in code (`Survey::NOTIFY`); a developer changes it with the
+  `firehouse_survey_notify` filter.
 - **Navigation.** The three nav items (Home, Explore Projects, About) and the Submit
   button are fixed in code, because the routes are structural; only their labels are
   editable. GSL's menus are edited under Appearance → Menus, which needs a capability
@@ -553,10 +557,11 @@ short:
   files, and limits repeat submissions. Spam protection adds no third-party service
   unless the review accepts one.
 - **Repeat limits without recording addresses.** Limits on repeat submissions usually
-  key on the visitor's IP address, which the form doesn't record. Two options go to
+  key on the visitor's IP address, which the form doesn't record. Two options went to
   security: a Cloudflare rate-limiting rule on the form's POST, which keeps addresses
   out of WordPress entirely, or a salted hash of the address held for an hour in a
-  transient and never attached to the submission. Behind Cloudflare, PHP sees the
+  transient and never attached to the submission. *Decided by Eric, 16 November: the
+  Cloudflare rule, which GSL's web team sets; the plugin keeps nothing about visitors.* Behind Cloudflare, PHP sees the
   visitor's address only if the server restores it from Cloudflare's header; otherwise
   every visitor shares a handful of Cloudflare addresses and one limit.
 - **No custom REST routes.** Nothing the pages or screens do needs one.
@@ -664,8 +669,9 @@ The survey is part of the plugin, at `/firehouse/submit/`. It is built in its ow
 `survey/` folder with its own tests, so it could later become a separate plugin if
 other GSL projects want a survey (see [Later phases](#later-phases)).
 
-- **The same questions as the Google Form.** The choices for regions, fire phases and
-  publication status come from `shared/vocabulary.json` (rule 8). The wording of each
+- **The same questions as the Google Form.** The choices for regions and fire phases
+  come from `shared/vocabulary.json` (rule 8); the form asks nothing about publication
+  status, which the team sets. The wording of each
   question and its help text is editable on the settings screen, so Stephanie and
   Emily can reword a question without a release; adding a question or a choice is a
   code change.
@@ -680,8 +686,8 @@ other GSL projects want a survey (see [Later phases](#later-phases)).
   carries one, as Zenodo records do. Today's import script also fetches other links
   and reads the page's citation tags; the plugin doesn't, so the server only contacts
   the hosts in [Security review](#security-review). The draft lists links without a
-  DOI, and an editor can type a title for one. Titles the site already shows carry
-  over in the seed bundle.
+  DOI with no title; typing one in isn't built (papers are survey fields, read-only).
+  Titles the site already shows carry over in the seed bundle.
 - **Email,** through GSL's own mail setup. The Firehouse editors are told of each new
   submission with a link to its draft; the message carries no private answers. The
   submitter gets a confirmation in fixed text, with nothing they typed in it, so the
@@ -697,6 +703,10 @@ other GSL projects want a survey (see [Later phases](#later-phases)).
   with a screen reader like the rest.
 - **The same notices as the Google Form:** that submissions may be shown on the site,
   and how AI is used on them, naming the approved AI service rather than NotebookLM.
+  *As built (16 November), the notice keeps the Google Form's words, with "AI" made
+  "SI" (Executive Order 14434), so it still names Google Gemini and NotebookLM. It
+  changes once the service is approved (open question 7), Stephanie and Emily confirm
+  the words, and clearance passes them.*
 - **Before it opens on prod:** a privacy review, a written answer on the Paperwork
   Reduction Act (open questions 12 and 14), and the security review's sign-off on the
   submission handler (see [Security review](#security-review)).
@@ -889,8 +899,8 @@ something new has arrived.
   IDs as their key.
 - **Excluded responses stay in the Sheet.** A response without IRB approval or
   exemption stays out of the site's files, as today, and the script lists it in its
-  report. There is one so far, and open question 13 may make it publishable (see the
-  appendix). If the team wants an excluded response in WordPress, an editor enters it
+  report. There is one so far; open question 13, since answered, made a "didn't need
+  review" answer publishable, not this one (see the appendix). If the team wants an excluded response in WordPress, an editor enters it
   through the Submit page after launch, which flags it the same way. A row with no
   project title is still dropped outright: there is nothing to make a project from.
 - **Tests first, and a check in CI.** The import already stops on two columns that
@@ -2246,7 +2256,15 @@ review says when to delete them (open question 14).*
   sends none. One that can't be sent is let go: the draft is saved.*
 - A page in the FireHouse guide (`help/`) on reviewing a submission, and the project
   page's "Where projects come from" brought up to date, with the form's screens added
-  to `Help::SCREENS` and `scripts/plugin-help.mjs`.
+  to `Help::SCREENS` and `scripts/plugin-help.mjs`. *Done with Phase 7a's close:
+  `help/03-survey-submissions.md`, on the projects list's and a project's Help tabs.
+  The form has no dashboard screen of its own (its wording is on Settings, #68), so
+  `Help::SCREENS` is unchanged. A submission's answers can't be corrected on the
+  site: for one never published, the guide asks the researcher to send the form again
+  and the team to delete the first draft, since a form submission has no survey record
+  for the import to correct (rule 1); one that has been published keeps its address,
+  editorial fields and synthesis links, so the team tells the developer instead
+  (Copilot on #69). Awaiting Eric's decision.*
 - If the form uses the design system's `TextField` or `TextArea`, take `Field.css` off
   `UNUSED` in `scripts/plugin-css-sources.mjs`, which leaves it out of the plugin's
   stylesheet; a test fails until then if the form's markup uses its classes. *Done:
@@ -2342,7 +2360,9 @@ starts when its trigger is met.
 
 - *Trigger:* another GSL project wants a survey like this one.
 - *What changes:* the `survey/` folder becomes its own plugin, and the Firehouse plugin
-  uses it. It is built self-contained so this is a move, not a rewrite.
+  uses it. It sits in its own folder with its own tests, so this is mostly a move; it
+  also uses the plugin's `Meta`, `Store`, `Settings` and `Markup`, which would move
+  with it or be replaced.
 
 ### At a glance
 
@@ -2431,7 +2451,9 @@ Phases 6–7.
    The design summary also asks how repeat submissions should be limited (see
    [Security review](#security-review)), whether a honeypot and a minimum fill time are
    enough spam protection, and whether the AI service needs a security review as well
-   as approval under NOAA's AI policy.
+   as approval under NOAA's AI policy. *Repeat limits: a Cloudflare rule; spam: a
+   honeypot and a minimum fill time in the plugin (Eric, 16 November). The security
+   review still sees both with the release.*
 3. Does any other cache sit in front of either site, such as a page cache on the
    server? (Cloudflare caches neither site's HTML: see [Caching](#caching).) If one
    does, hiding a project has to purge the topic pages that cite it, not only its own.
@@ -2478,7 +2500,7 @@ Phases 6–7.
 13. ~~Should a project that answers "Project did not require IRB review" be
     published?~~ *Yes (Stephanie and Emily, late October): only "No" ends the form, so a
     project that didn't need review is published like one that was approved. The
-    import script accepts the answer, the plugin's form will too, and WoFS-Smoke, the
+    import script accepts the answer, the plugin's form does too, and WoFS-Smoke, the
     one project it affected, is on the site.*
 
 **Privacy**

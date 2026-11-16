@@ -30,7 +30,7 @@ A project's screen has two boxes.
 - **Geography note:** a few words beside the project's regions on its page, such as "Front Range". Leave it empty if the survey names no region.
 - **Full record link:** where the full record is kept, starting with https:// or http://. The project's page links to it as "View full record".
 
-**From the survey** shows the researcher's answers, exactly as they submitted them. You can't change them here. If an answer needs correcting, tell the developer: the correction goes into the survey's records, you confirm it, and the next import brings it in.
+**From the survey** shows the researcher's answers, exactly as they submitted them. You can't change them here. If an answer needs correcting, tell the developer: the correction goes into the survey's records, you confirm it, and the next import brings it in. A survey form submission has no such record: see [Reviewing a survey form submission](03-survey-submissions.md).
 
 A project sent through the FireHouse survey form also has a **Private answers** box on the right: the submitter's email, their job title, and how they shared their results. Only the FireHouse team and the site's administrators see it. It never appears on the site, and you can't change it.
 

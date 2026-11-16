@@ -213,12 +213,15 @@ final class Submission {
 
 	/**
 	 * A page address from a title, as the import makes one: lower-case words, cut at a
-	 * word under 60 characters, without a trailing "and" or "of".
+	 * word under 60 characters, without a trailing short word such as "and" or "of".
+	 * One difference: an accented letter loses its accent here ("Évacuation" is
+	 * "evacuation"), where the import's slugify() splits the word at it
+	 * ("e-vacuation"). A form submission never meets the import, so the two never
+	 * disagree about one project.
 	 *
 	 * @param string $title The project's title.
 	 */
 	public static function slug( string $title ): string {
-		// The import decomposes accents and drops the marks: "Évacuation" is "evacuation".
 		$text  = (string) preg_replace( '/[^\x00-\x7F]/', '', remove_accents( $title ) );
 		$words = preg_split( '/[\s_-]+/', (string) preg_replace( '/[^\w\s-]/', ' ', strtolower( $text ) ), -1, PREG_SPLIT_NO_EMPTY );
 		$base  = '';

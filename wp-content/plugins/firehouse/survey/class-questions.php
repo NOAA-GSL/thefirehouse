@@ -267,7 +267,8 @@ final class Questions {
 
 	/**
 	 * What the form says above its questions: the Google Form's description, its
-	 * sections and their points, the placeholder for the site's address filled in.
+	 * sections and their points. Form::notice() adds a link to the site where the Google
+	 * Form had a placeholder for its address.
 	 * "AI" is "Super Intelligence (SI)" here, as Executive Order 14434 has federal
 	 * sites say (Eric, 16 November).
 	 *

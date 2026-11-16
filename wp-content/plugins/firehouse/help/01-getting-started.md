@@ -17,16 +17,16 @@ The FireHouse is a section of the site at /firehouse/. In WordPress you look aft
 
 Everything is under **FireHouse** in the menu on the left of the dashboard.
 
-![The FireHouse menu in the dashboard, open on Projects, with Topics, Settings, Import and Synthesis under it](images/firehouse-menu.webp "The FireHouse menu, as an administrator sees it.")
+![The FireHouse menu in the dashboard, open on Projects, with Topics, Settings, Import, Synthesis and Help under it](images/firehouse-menu.webp "The FireHouse menu, as an administrator sees it.")
 
 - **Projects** lists every project. Choose a title to open it.
 - **Topics** lists the four topic areas.
-- **Settings** holds the site name, the Submit a Finding button and the navigation labels.
+- **Settings** holds the site name, the Submit a Finding button, the navigation labels, the switch that opens the survey form, and the survey form's questions.
 - **Import** loads content from the survey's records. Only administrators see it.
 - **Synthesis** is where you publish a reviewed synthesis.
 - **Help**, at the end, is this guide.
 
-The landing and About pages are under **Pages**, as "The FireHouse" and the page under it.
+The landing and About pages are under **Pages**, as "The FireHouse" and the About page under it. While the survey form is open, its Submit page is under "The FireHouse" too.
 
 ## What a FireHouse Editor can and can't do
 
@@ -38,6 +38,6 @@ The FireHouse Editor role can change the FireHouse and nothing else on the site:
 
 ## Getting help
 
-On each FireHouse screen, choose **Help** at the top right of the screen. It opens the part of this guide for that screen. FireHouse → Help has the whole guide, with screenshots. The editor for the landing and About pages has no Help tab: see [Changing the landing and About pages](05-landing-and-about-pages.md).
+On each FireHouse screen, choose **Help** at the top right of the screen. It opens the part of this guide for that screen. FireHouse → Help has the whole guide, with screenshots. The editor for the landing and About pages has no Help tab: see [Changing the landing and About pages](06-landing-and-about-pages.md).
 
 > This guide comes with the plugin, so it matches the version installed on this site.

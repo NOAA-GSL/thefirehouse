@@ -255,11 +255,11 @@ final class SubmissionTest extends WordPressTestCase {
 	}
 
 	/**
-	 * A slug is made as the import makes one: accents dropped, cut at a word under 60
-	 * characters, no trailing "and" or "of".
+	 * A slug is made as the import makes one, cut at a word under 60 characters, no
+	 * trailing "and" or "of"; an accent is dropped, where the import splits the word.
 	 */
 	public function test_a_slug_is_made_as_the_import_makes_one(): void {
-		$this->assertSame( 'evacuation-orders-smoke-a-study', Submission::slug( 'Évacuation orders & smoke: a study' ), 'Accents dropped, & gone, as the import does.' );
+		$this->assertSame( 'evacuation-orders-smoke-a-study', Submission::slug( 'Évacuation orders & smoke: a study' ), 'Accents dropped, and & gone.' );
 		$this->assertSame( 'fire-weather-testbed-evaluations-002-fire-detection', Submission::slug( 'Fire Weather Testbed Evaluations #002: Fire Detection and Dissemination - NESDIS Next Generation Fire System' ) );
 		$this->assertSame( 'project', Submission::slug( '!!!' ) );
 	}
