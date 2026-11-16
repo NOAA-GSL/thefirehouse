@@ -801,7 +801,32 @@ final class TopicScreenTest extends WordPressTestCase {
 		$this->assertNotFalse( has_filter( 'title_edit_pre', array( Topic_Screen::class, 'edit_label' ) ) );
 		$this->assertNotFalse( has_filter( 'enter_title_here', array( Topic_Screen::class, 'title_prompt' ) ) );
 		$this->assertNotFalse( has_action( 'edit_form_before_permalink', array( Topic_Screen::class, 'label_error' ) ) );
+		$this->assertNotFalse( has_filter( 'post_row_actions', array( Topic_Screen::class, 'row_actions' ) ) );
+		$this->assertNotFalse( has_filter( 'bulk_actions-edit-fh_topic', array( Topic_Screen::class, 'bulk_actions' ) ) );
 		$this->assertFalse( has_action( 'save_post_fh_project', array( Topic_Screen::class, 'save' ) ) );
+	}
+
+	/**
+	 * The topics list has no Quick Edit, in a row or as the bulk Edit; every other list
+	 * keeps it.
+	 */
+	public function test_the_topics_list_has_no_quick_edit(): void {
+		$actions = array(
+			'edit'                 => 'Edit',
+			'inline hide-if-no-js' => 'Quick&nbsp;Edit',
+			'view'                 => 'View',
+		);
+
+		$this->assertSame( array( 'edit', 'view' ), array_keys( Topic_Screen::row_actions( $actions, $this->posts[40] ) ) );
+		$this->assertSame( $actions, Topic_Screen::row_actions( $actions, $this->posts[11] ), 'A project.' );
+		$this->assertSame( 'not a list', Topic_Screen::row_actions( 'not a list', $this->posts[40] ), 'Another plugin\'s filter.' );
+
+		$bulk = array(
+			'edit'  => 'Edit',
+			'trash' => 'Move to Trash',
+		);
+		$this->assertSame( array( 'trash' => 'Move to Trash' ), Topic_Screen::bulk_actions( $bulk ) );
+		$this->assertNull( Topic_Screen::bulk_actions( null ) );
 	}
 
 	/**

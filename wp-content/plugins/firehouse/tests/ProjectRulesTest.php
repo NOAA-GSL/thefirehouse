@@ -586,8 +586,8 @@ final class ProjectRulesTest extends WordPressTestCase {
 	}
 
 	/**
-	 * The Publish box says why a project can't be published, and what saving does,
-	 * and shows a fixed address; the Slug box is removed to match.
+	 * The Publish box says what Preview shows, why a project can't be published, and
+	 * what saving does, and shows a fixed address; the Slug box is removed to match.
 	 */
 	public function test_the_publish_box_says_why_and_shows_the_address(): void {
 		ob_start();
@@ -596,12 +596,14 @@ final class ProjectRulesTest extends WordPressTestCase {
 		$this->assertStringContainsString( 'This project can’t be published.', $draft );
 		$this->assertStringContainsString( 'You can still save it as a draft.', $draft );
 		$this->assertStringNotContainsString( 'Address:', $draft );
+		$this->assertStringContainsString( 'Preview shows the project as last saved, not the changes on this screen: save it first to see them.', $draft );
 
 		ob_start();
 		Project_Rules::publish_box( $this->posts[41] );
 		$published = (string) ob_get_clean();
 		$this->assertStringNotContainsString( 'can’t be published', $published );
 		$this->assertStringContainsString( 'Address: <code>/firehouse/projects/smoke-study/</code><br>It can’t change now that the project has been published', $published );
+		$this->assertStringContainsString( 'Preview Changes shows the project as last updated, not the changes on this screen, which show once you update it.', $published );
 
 		$this->meta[41]['fh_irbApproved'] = '';
 		ob_start();

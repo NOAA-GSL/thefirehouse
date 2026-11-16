@@ -338,9 +338,15 @@ final class Project_Rules {
 	}
 
 	/**
-	 * In the Publish box: why a project without IRB approval can't be published, in
-	 * place of the Publish button, which load() hides; and a fixed address, read-only,
-	 * in place of the Slug box, which boxes() removes.
+	 * In the Publish box: what Preview shows; why a project without IRB approval can't
+	 * be published, in place of the Publish button, which load() hides; and a fixed
+	 * address, read-only, in place of the Slug box, which boxes() removes.
+	 *
+	 * Preview shows a project as last saved, not the changes on the screen (decided by
+	 * Eric, 15 November): a project has no author (Capabilities::keep_in_place()), and
+	 * WordPress saves a draft on Preview only for its author, so a preview is an
+	 * autosave, which takes none of the project's fields from the screen
+	 * (Edit_Screen::save()). A published project's Preview Changes is always one.
 	 *
 	 * @param \WP_Post $post The post being edited.
 	 */
@@ -348,6 +354,10 @@ final class Project_Rules {
 		if ( Post_Types::PROJECT !== $post->post_type ) {
 			return;
 		}
+		$preview = in_array( $post->post_status, self::PUBLISHED, true )
+			? __( 'Preview Changes shows the project as last updated, not the changes on this screen, which show once you update it.', 'firehouse' )
+			: __( 'Preview shows the project as last saved, not the changes on this screen: save it first to see them.', 'firehouse' );
+		echo '<div class="misc-pub-section fh-publish-preview"><p>' . esc_html( $preview ) . '</p></div>';
 		if ( ! self::approved( $post->ID ) ) {
 			$public = in_array( $post->post_status, self::PUBLISHED, true );
 			$head   = $public ? __( 'This project can’t stay published.', 'firehouse' ) : __( 'This project can’t be published.', 'firehouse' );

@@ -1869,13 +1869,15 @@ to build say so:
 - **Paragraphs.** Editors can add and remove paragraphs in the About mission and in
   each team member's biography. *Built with the team cards.*
 - **Preview.** A draft project's Publish box says Preview shows what's saved, since
-  no editor is its author (#52). *To build.*
+  no editor is its author (#52). *Built 16 November, and a published project's Preview
+  Changes says the same: it shows the project as last updated.*
 - **The trash.** Another project may take a trashed project's address; a restored one
   gets the next free address and its editor is told, as built (#51).
 - **Revisions.** The revisions comparison shows the team's fields as well as the
   title, and the survey's labelled as not restored. *To build.*
 - **Lengths.** No length limits on the team's fields, as built.
-- **Quick Edit** is removed for topics. *To build.*
+- **Quick Edit** is removed for topics. *Built 16 November: the row link and the bulk
+  Edit.*
 - **Notes.** `Page_Words` accepts `metadata` holding only a note's ID, so a note on a
   block doesn't send the page's words back through kses. *To build.*
 - **The synthesis.** The Research Synthesist checks every topic area's need counts
