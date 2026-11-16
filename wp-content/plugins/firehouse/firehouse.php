@@ -11,6 +11,7 @@
  * License:           Apache-2.0
  * License URI:       https://www.apache.org/licenses/LICENSE-2.0
  * Text Domain:       firehouse
+ * Update URI:        https://github.com/NOAA-GSL/thefirehouse
  *
  * Registers the project and topic post types and their fields at the Firehouse
  * addresses, the FireHouse Editor role, and the Firehouse settings, Import, project and
@@ -24,7 +25,9 @@
  * holds what does. The comment above the hook calls below lists where the plugin acts
  * beyond the Firehouse pages.
  * WORDPRESS-PLAN.md in the repository describes what this plugin becomes, phase by
- * phase.
+ * phase. Update URI names a host that isn't WordPress.org, so WordPress never offers
+ * an update from there, even if another plugin is listed as firehouse; the plugin is
+ * updated by uploading a reviewed zip (wordpress-org/README.md).
  *
  * @package Firehouse
  */
@@ -221,9 +224,10 @@ require_once __DIR__ . '/includes/class-head.php';
  *   page in the Firehouse tree, which restoring would refuse, loses its Restore.
  * - Every list of a post type's revisioned meta (`wp_post_revision_meta_keys`) passes
  *   through Meta::revision_keys: only for a project or topic, and only while WordPress
- *   makes an autosave (it leaves the Firehouse fields out) or restores a revision (it
- *   leaves a project's survey fields out), does it change. Other post types' lists,
- *   and every list anywhere else, are left as they are.
+ *   makes an autosave or reads a field (`get_post_metadata`, as a preview does: it
+ *   leaves the Firehouse fields out, so a preview reads the post's own) or restores a
+ *   revision (it leaves a project's survey fields out), does it change. Other post
+ *   types' lists, and every list anywhere else, are left as they are.
  * - Every save of any post passes through Capabilities::keep_in_place
  *   (`wp_insert_post_data`): a topic keeps its key and status, and a project or topic
  *   has no author, except in the plugin's own writes; a limited editor's page keeps

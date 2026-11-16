@@ -21,6 +21,7 @@
     "plugin:assets:check": "node scripts/plugin-assets.mjs --check",
     "plugin:blocks": "node scripts/blocks-manifest.mjs",
     "plugin:blocks:check": "node scripts/blocks-manifest.mjs --check",
+    "plugin:zip": "node scripts/plugin-zip.mjs",
     "plugin:help": "node scripts/plugin-help.mjs",
     "plugin:help:check": "node scripts/plugin-help.mjs --check",
     "plugin:compare": "node scripts/compare-plugin.mjs",
