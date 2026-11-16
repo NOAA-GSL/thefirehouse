@@ -28,6 +28,9 @@ npm run plugin:assets
 npm run plugin:blocks
                    # write the plugin's block manifest from its block.json files
                    # (plugin:blocks:check only compares)
+npm run plugin:zip # build release/firehouse-<version>-<commit>.zip, the file WordPress
+                   # installs, from the last commit, without the tests (CI builds it
+                   # on every change to the plugin; see "The plugin's zip" below)
 npm run reference  # capture the reference the plugin matches (reference/README.md)
 npm run plugin:compare
                    # compare each built page's main landmark with the reference's
@@ -1128,7 +1131,9 @@ bin/wp-init         # once: copy GSL's local database, activate the plugin
                     # then http://localhost:8090, with your GSL local login
 bin/wp plugin list  # WP-CLI against that site
 bin/wp plugin install plugin-check --activate   # once
-bin/wp plugin check firehouse                   # WordPress's Plugin Check
+bin/wp plugin check firehouse --exclude-checks=plugin_updater
+                    # WordPress's Plugin Check, less the check that flags the
+                    # Update URI header (wordpress-org/README.md)
 npm run seed        # then upload seed/firehouse-seed.json at FireHouse → Import
 composer install
 composer lint       # PHPCS: WordPress coding standards, PHP 8.1 compatibility
@@ -1136,7 +1141,31 @@ composer test       # PHPUnit
 ```
 
 CI runs all three on every change to the plugin: PHPCS and PHPUnit on PHP 8.1, and
-Plugin Check in a throwaway WordPress (`.github/workflows/wordpress-plugin.yml`).
+Plugin Check in a throwaway WordPress (`.github/workflows/wordpress-plugin.yml`), on
+what the plugin's zip holds.
+
+### The plugin's zip
+
+`npm run plugin:zip` (`scripts/plugin-zip.mjs`) builds the zip WordPress installs at
+Plugins → Add New Plugin → Upload Plugin: `wp-content/plugins/firehouse` as of the last
+commit, in a `firehouse/` folder, with the repository's `LICENSE`, and without
+`tests/` and `shared/cases/`, which only the tests read. It reads the zip back and
+fails if a file is missing or extra, and if the plugin header, `VERSION` and
+readme.txt's stable tag name different versions.
+
+CI builds it on every change to the plugin and keeps it for 30 days: on the run's
+Summary page, under Artifacts, `firehouse-<version>-<commit>.zip` downloads as the
+zip itself. That zip hasn't been through GSL's security review; it's for a local or
+test site, and only from a run on one of this repository's branches: a pull request's
+run, a fork's included, builds the pull request's code and names the zip the same way. For a release, set the version in the three places, merge, and push a tag
+named for it (`git tag v0.3.0 && git push origin v0.3.0`): CI checks the tag matches,
+runs the checks, and drafts a GitHub release with `firehouse-0.3.0.zip`. The release
+job downloads the zip by the package job's artifact ID and checks its SHA-256 before
+attaching it, and the draft's notes name the commit and the hash, so the security
+review can record exactly what it passed. Publish the draft once it has.
+
+`wordpress-org/` holds what a WordPress.org listing would need beyond the zip, and
+what submitting it waits on (`wordpress-org/README.md`). The plugin isn't submitted.
 
 It listens only on this computer and is never exposed beyond it, because Firehouse
 isn't hosted outside GSL, even for a demo.
