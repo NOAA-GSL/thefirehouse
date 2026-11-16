@@ -137,16 +137,22 @@ jobs:
     needs: package
     runs-on: ubuntu-latest
     steps:
+      # skip-decompress, or the action unzips it: the steps below want the file itself.
       - name: Download the plugin zip
         uses: actions/download-artifact@v8
         with:
           name: ${{ needs.package.outputs.name }}
           path: zip
+          skip-decompress: true
 
       # Plugin Check reads the plugin as a site would install it: what the zip holds,
       # in its firehouse/ folder, so the slug and text domain match.
       - name: Unzip it
-        run: unzip -q "zip/${{ needs.package.outputs.name }}" -d build
+        env:
+          ZIP: zip/${{ needs.package.outputs.name }}
+        run: |
+          ls -la zip
+          unzip -q "$ZIP" -d build
 
       # Pinned to the commit behind v1.1.9 rather than the movable tag, as the action
       # pins its own dependencies: a third-party action runs with this job's token.
@@ -172,6 +178,7 @@ jobs:
         with:
           name: ${{ needs.package.outputs.name }}
           path: zip
+          skip-decompress: true
 
       - name: Draft the release
         env:
@@ -181,4 +188,8 @@ jobs:
           VERSION: ${{ needs.package.outputs.version }}
           ZIP: zip/${{ needs.package.outputs.name }}
         run: |
-          gh release create "$TAG" "$ZIP" --draft --verify-tag             --title "The FireHouse $VERSION"             --notes "The FireHouse plugin $VERSION. Install it at Plugins → Add New Plugin → Upload Plugin. readme.txt's changelog lists what changed. Publish this draft only once the release has passed GSL's security review."
+          ls -la zip
+          test -f "$ZIP"
+          gh release create "$TAG" "$ZIP" --draft --verify-tag \
+            --title "The FireHouse $VERSION" \
+            --notes "The FireHouse plugin $VERSION. Install it at Plugins → Add New Plugin → Upload Plugin. readme.txt's changelog lists what changed. Publish this draft only once the release has passed GSL's security review."
