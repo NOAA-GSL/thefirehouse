@@ -36,6 +36,52 @@ final class SurveyFormTest extends WordPressTestCase {
 	}
 
 	/**
+	 * The questions are asked as the settings screen words them, escaped; a private
+	 * answer's help ends with who sees it, even when the screen gave it help of its own
+	 * or none.
+	 */
+	public function test_the_questions_are_asked_as_worded_on_the_settings_screen(): void {
+		Functions\when( 'get_option' )->justReturn(
+			array(
+				'questions' => array(
+					'title'    => array( 'label' => 'Your <b>project</b>’s title?' ),
+					'email'    => array( 'help' => 'Use your work address.' ),
+					'jobTitle' => array( 'help' => '' ),
+					'links'    => array( 'help' => '' ),
+				),
+			)
+		);
+		$html = self::drawn( array() );
+
+		$this->assertStringContainsString( '<label class="fh-field__label" for="fh-survey-title">Your &lt;b&gt;project&lt;/b&gt;’s title?<span class="fh-field__required" aria-hidden="true"> *</span></label>', $html );
+		$this->assertStringContainsString( '<span id="fh-survey-email-help" class="fh-field__help">Use your work address.</span><span id="fh-survey-email-privacy" class="fh-field__help">Only the FireHouse team and the site’s administrators see it, to follow up with you. It never appears on the site.</span>', $html );
+		$this->assertStringContainsString( '<span id="fh-survey-jobTitle-privacy" class="fh-field__help">Only the FireHouse team and the site’s administrators see it. It never appears on the site.</span>', $html );
+		$this->assertStringContainsString( 'aria-describedby="fh-survey-email-help fh-survey-email-privacy"', $html, 'Help and privacy line, each its own line, both tied to the field.' );
+		$this->assertStringContainsString( '<fieldset class="fh-survey__group fh-survey__question" id="fh-survey-shared" tabindex="-1" aria-describedby="fh-survey-shared-privacy">', $html );
+		$this->assertStringNotContainsString( 'fh-survey-links-help', $html, 'Help cleared: none.' );
+
+		// A character reference shows as typed, never as the address or direction mark
+		// the settings screen refuses. esc_html() as WordPress has it, which leaves a
+		// reference alone (Brain Monkey's stand-in escapes it), so this fails if the
+		// wording goes through esc_html().
+		Functions\when( 'esc_html' )->alias( static fn( string $text ): string => htmlspecialchars( $text, ENT_QUOTES, 'UTF-8', false ) );
+		Functions\when( 'get_option' )->justReturn(
+			array(
+				'questions' => array(
+					'org'    => array( 'label' => 'Ask person&#64;example.org' ),
+					'shared' => array( 'label' => 'Shared &#x202E;results' ),
+					'needs'  => array( 'help' => 'Write &amp; &#x202E;here' ),
+				),
+			)
+		);
+		$html = self::drawn( array() );
+		$this->assertStringContainsString( '>Ask person&amp;#64;example.org<span', $html );
+		$this->assertStringContainsString( '<legend class="fh-field__label">Shared &amp;#x202E;results</legend>', $html );
+		$this->assertStringContainsString( '<span id="fh-survey-needs-help" class="fh-field__help">Write &amp;amp; &amp;#x202E;here</span>', $html );
+		$this->assertStringContainsString( 'Please list up to 8 user needs and recommendations identified in your project, one in each box.', $html, 'Not changed: the plugin’s wording.' );
+	}
+
+	/**
 	 * The form as drawn for these answers and problems.
 	 *
 	 * @param array<string, string|list<string>> $values   The answers.
@@ -76,7 +122,7 @@ final class SurveyFormTest extends WordPressTestCase {
 		$this->assertStringContainsString( 'name="_wpnonce" value="a-nonce"', $html );
 		$this->assertStringContainsString( 'name="' . Survey::STARTED . '" value="123.abc"', $html );
 		$this->assertStringContainsString( '<div class="fh-survey__trap" aria-hidden="true">', $html );
-		$this->assertStringContainsString( 'aria-describedby="fh-survey-email-help"', $html, 'A private field says so.' );
+		$this->assertStringContainsString( 'aria-describedby="fh-survey-email-privacy"', $html, 'A private field says so.' );
 		$this->assertSame( count( Questions::all() ), substr_count( $html, 'fh-survey__question' ) );
 	}
 

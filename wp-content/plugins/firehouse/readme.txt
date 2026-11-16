@@ -108,6 +108,12 @@ the submitter typed is in it, private or not. A developer can send it elsewhere,
 stop it, with the `firehouse_survey_notify` filter; return "" to send none. The
 submitter is sent nothing; the page they're taken to thanks them.
 
+FireHouse Editors and administrators can reword each question, and the help under it,
+under FireHouse → Settings. Only what differs from the plugin's own wording is stored,
+so wording nobody changed follows the plugin's when it's updated. The choices, the
+order of the questions, and the line on each private question saying who sees the
+answer are fixed in the plugin.
+
 = Deactivating and deleting =
 
 Deactivating the plugin keeps the FireHouse Editor role, which can then only sign in.
@@ -162,8 +168,8 @@ another site, and its fonts, icons and scripts are served from the plugin.
 
 Administrators can do everything, and only they can import or open the survey form.
 FireHouse Editors can edit and publish projects and topic areas, change the words on
-the landing and About pages, change the other FireHouse settings, and publish a
-reviewed synthesis. They can't change the
+the landing and About pages, change the other FireHouse settings (the survey form's
+questions among them), and publish a reviewed synthesis. They can't change the
 site's other posts, pages or menus, add or remove pages, or use the Media Library.
 
 = Does it change what researchers wrote? =
@@ -424,6 +430,10 @@ one is.
   from doi.org just after it's saved, as the import gets them, and the team mailbox is told of each
   submission with a link to its draft and nothing the submitter typed (see External
   services and The survey form).
+* The survey form's questions can be reworded, with the help under each, under
+  FireHouse → Settings; a private question's line saying who sees the answer can't be.
+  The FireHouse guide's Settings page says how, and the FireHouse menu's screenshot
+  shows Help.
 
 = 0.2.0 =
 * Project and topic post types at the Firehouse addresses, with their fields as post

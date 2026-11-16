@@ -300,8 +300,8 @@ bridge resolves unchanged under the plugin. The Submit page is new.
   Wherever it is kept, the templates render it inside the theme's `main`, after the
   content, never from `wp_footer` or a footer widget, which land after GSL's footer.
 - **Settings.** A FireHouse → Settings screen holds the site name, the submit label, the
-  submit address and the navigation labels; later, the survey's question wording
-  (Phase 7a), the AI prompt (Phase 7b) and who is emailed about new submissions.
+  submit address, the navigation labels and the survey's question wording (Phase 7a);
+  later, the AI prompt (Phase 7b) and who is emailed about new submissions.
 - **Navigation.** The three nav items (Home, Explore Projects, About) and the Submit
   button are fixed in code, because the routes are structural; only their labels are
   editable. GSL's menus are edited under Appearance → Menus, which needs a capability
@@ -2226,7 +2226,18 @@ review says when to delete them (open question 14).*
   from another site. Text holding a character that doesn't show (a control
   character, a direction override, a tag character) is refused with a request to type
   it again, rather than changed (rule 1).*
-- Editable question wording on the settings screen.
+- Editable question wording on the settings screen. *Built 16 November: a "Survey
+  questions" section on FireHouse → Settings, for FireHouse Editors and administrators,
+  with each question's wording and the help under it (`Settings::questions_section()`,
+  `Questions::worded()`). Only what differs from `Questions::all()` is stored, under
+  `questions` in the settings option, so wording nobody changed follows the plugin's.
+  A question can't be empty; a question or its help can't hold an email address or a
+  character that doesn't show, or more than 2,000 characters, and a save with any of
+  them is refused whole, as the screen's other fields are. The choices, the order and
+  each private question's line saying who sees the answer (its `privacy`, which the
+  form adds after the help) stay in code: that line is a promise for the privacy
+  review, not wording. The Import screen's settings carry no wording and keep what's
+  stored.*
 - Emails to the editors and the submitter. *To the team mailbox only (above). Built
   16 November (`Survey::notify()`): through `wp_mail()`, fixed text with a link to the
   draft and to every draft, saying when the submission has no IRB approval; nothing

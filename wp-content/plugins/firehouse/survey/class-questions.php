@@ -10,6 +10,7 @@ declare( strict_types = 1 );
 namespace Firehouse\Survey;
 
 use Firehouse\Domain\Vocabulary;
+use Firehouse\Settings;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -21,12 +22,15 @@ if ( ! defined( 'ABSPATH' ) ) {
  * numbered or comma-separated list in one box; here each entry has its own box (the
  * plan's "One box per entry"), so their wording drops the numbering. The choices
  * for fire phases and regions are the site's own, from shared/vocabulary.json (rule
- * 8). A later change makes the wording editable on the settings screen (decided by
- * Eric, 16 November).
+ * 8). Each question's wording and help can be changed on the settings screen (Eric,
+ * 16 November), and worded() gives them as changed there; their order, their choices
+ * and the line saying who sees a private answer are fixed here.
  *
  * Three answers are private (rule 2): the email (Q2), the job title (Q3) and how the
  * results were shared (Q10). They're stored apart from the project and never reach a
- * page, the REST API or a revision.
+ * page, the REST API or a revision. Each has a `privacy` line saying who sees it, which
+ * the form shows after its help and the settings screen can't change: it's a promise
+ * for the privacy review to check, not wording.
  */
 final class Questions {
 
@@ -51,10 +55,17 @@ final class Questions {
 	public const PRIVATE = array( 'email', 'jobTitle', 'shared' );
 
 	/**
-	 * The questions, by name, in the form's order. Each has a `type` (text, email,
-	 * year, longtext, choice, choices or entries), whether it's `required`, its
-	 * `label` and any `help`, the most characters an answer may have (`max`), and a
-	 * choice's `options` (value => label, with `other` for a box of its own).
+	 * The parts of a question the settings screen can reword.
+	 */
+	public const WORDING = array( 'label', 'help' );
+
+	/**
+	 * The questions, by name, in the form's order, in the plugin's own wording (the form
+	 * asks worded()). Each has a `type` (text, email, year, longtext, choice, choices or
+	 * entries), whether it's `required`, a short `name` for what's wrong with an answer,
+	 * its `label` and any `help`, a private answer's `privacy` line, the most characters
+	 * an answer may have (`max`), and a choice's `options` (value => label, with `other`
+	 * for a box of its own).
 	 *
 	 * @return array<string, array<string, mixed>>
 	 */
@@ -83,7 +94,7 @@ final class Questions {
 				'max'          => 200,
 				'autocomplete' => 'email',
 				'label'        => 'What is your preferred email?',
-				'help'         => 'Only the FireHouse team and the site’s administrators see it, to follow up with you. It never appears on the site.',
+				'privacy'      => 'Only the FireHouse team and the site’s administrators see it, to follow up with you. It never appears on the site.',
 			),
 			'jobTitle'       => array(
 				'name'         => 'Your job title',
@@ -92,7 +103,7 @@ final class Questions {
 				'max'          => 200,
 				'autocomplete' => 'organization-title',
 				'label'        => 'What is your job title?',
-				'help'         => 'Only the FireHouse team and the site’s administrators see it. It never appears on the site.',
+				'privacy'      => 'Only the FireHouse team and the site’s administrators see it. It never appears on the site.',
 			),
 			'org'            => array(
 				'name'         => 'Your agency or institution',
@@ -146,7 +157,7 @@ final class Questions {
 				'type'     => 'choices',
 				'required' => false,
 				'label'    => 'Beyond academic publications and presentations, have you shared your results outside of your research group? (select all that apply)',
-				'help'     => 'Only the FireHouse team and the site’s administrators see this answer.',
+				'privacy'  => 'Only the FireHouse team and the site’s administrators see this answer.',
 				'options'  => array(
 					'end-users'  => 'Yes - Communicated back with end-users (meteorologists, fire crews, public, etc.)',
 					'developers' => 'Yes - Communicated back with tool developers',
@@ -231,6 +242,27 @@ final class Questions {
 				'entry'    => 'Link',
 			),
 		);
+	}
+
+	/**
+	 * The questions as the form asks them: each one's wording and help as the settings
+	 * screen changed them (Settings::stored()), over the plugin's own. A private
+	 * answer's privacy line stays as it is, for the form to show after the help, whatever
+	 * the help says.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	public static function worded(): array {
+		$questions = self::all();
+		$changed   = Settings::stored()['questions'];
+		foreach ( array_keys( $questions ) as $name ) {
+			foreach ( self::WORDING as $part ) {
+				if ( isset( $changed[ $name ][ $part ] ) ) {
+					$questions[ $name ][ $part ] = $changed[ $name ][ $part ];
+				}
+			}
+		}
+		return $questions;
 	}
 
 	/**

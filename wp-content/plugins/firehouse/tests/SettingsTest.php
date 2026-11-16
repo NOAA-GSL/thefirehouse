@@ -11,6 +11,7 @@ namespace Firehouse\Tests;
 
 use Brain\Monkey\Functions;
 use Firehouse\Settings;
+use Firehouse\Survey\Questions;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
@@ -150,9 +151,141 @@ final class SettingsTest extends WordPressTestCase {
 	 * A valid submission is saved as given, with no errors.
 	 */
 	public function test_a_valid_submission_is_saved(): void {
-		$this->assertSame( array_slice( self::valid(), 0, 3, true ) + array( 'surveyOpen' => false ) + array_slice( self::valid(), 3, null, true ), Settings::sanitize( self::valid() ) );
+		$this->assertSame( array_slice( self::valid(), 0, 3, true ) + array( 'surveyOpen' => false ) + array_slice( self::valid(), 3, null, true ) + array( 'questions' => array() ), Settings::sanitize( self::valid() ) );
 		$this->assertSame( array(), $this->errors );
 		$this->assertSame( array(), $this->transients );
+	}
+
+	/**
+	 * A survey question's wording and help are stored only where they differ from the
+	 * plugin's, as one line: wording left as it was, or a question the screen didn't
+	 * send, follows the plugin's. Help may be cleared; a question may not.
+	 */
+	public function test_question_wording_is_stored_where_it_differs(): void {
+		$own   = Questions::all();
+		$input = self::valid() + array(
+			'questions' => array(
+				'submitter' => array(
+					'label' => $own['submitter']['label'],
+					'help'  => '',
+				),
+				'email'     => array(
+					'label' => $own['email']['label'],
+					'help'  => 'Use your work address.',
+				),
+				'title'     => array(
+					'label' => "  The  project’s\r\n title?  ",
+					'help'  => '',
+				),
+				'needs'     => array( 'help' => '' ),
+				'nobody'    => array( 'label' => 'Not a question' ),
+			),
+		);
+
+		$this->assertSame(
+			array(
+				'email' => array( 'help' => 'Use your work address.' ),
+				'title' => array( 'label' => 'The project’s title?' ),
+				'needs' => array( 'help' => '' ),
+			),
+			Settings::sanitize( $input )['questions']
+		);
+		$this->assertSame( array(), $this->errors );
+
+		Functions\when( 'get_option' )->justReturn( array( 'questions' => array( 'title' => array( 'label' => 'Old' ) ) ) );
+		$this->assertSame( array(), Settings::sanitize( self::valid() + array( 'questions' => array( 'title' => array( 'label' => $own['title']['label'] ) ) ) )['questions'], 'Put back as the plugin has it: stored no more.' );
+	}
+
+	/**
+	 * Wording the form shouldn't show is refused, not changed, and the save with it:
+	 * an empty question, a character that doesn't show, too much, or an email address.
+	 */
+	public function test_question_wording_that_cant_be_shown_is_refused(): void {
+		Functions\when( 'number_format_i18n' )->alias( static fn( int $number ): string => number_format( $number ) );
+		Functions\when( 'get_option' )->justReturn( array( 'questions' => array( 'org' => array( 'help' => 'Kept' ) ) ) );
+		$input = self::valid() + array(
+			'questions' => array(
+				'submitter' => array( 'label' => " \n " ),
+				'email'     => array( 'help' => "Type it \u{202E}here" ),
+				'jobTitle'  => array( 'help' => "Bad \xC3(" ),
+				'org'       => array( 'help' => str_repeat( 'x', Settings::LONGEST_WORDING + 1 ) ),
+				'title'     => array( 'label' => 'Ask jane.doe@noaa.gov' ),
+			),
+		);
+
+		$this->assertSame( array( 'org' => array( 'help' => 'Kept' ) ), Settings::sanitize( $input )['questions'] );
+		$this->assertSame(
+			array(
+				'firehouse-questions-submitter-label' => 'Your name: the question can’t be empty.',
+				'firehouse-questions-email-help'      => 'Your email: the help has a character that doesn’t show, such as a direction mark. Type it again.',
+				'firehouse-questions-jobTitle-help'   => 'Your job title: the help has a character that doesn’t show, such as a direction mark. Type it again.',
+				'firehouse-questions-org-help'        => 'Your agency or institution: the help has more than 2,000 characters.',
+				'firehouse-questions-title-label'     => 'The project’s title: the question can’t hold an email address. The About page gives the team’s.',
+			),
+			array_column( $this->errors, 'message', 'code' )
+		);
+		$this->assertSame( 'Ask jane.doe@noaa.gov', $this->transients['firehouse_settings_rejected_7']['firehouse-questions-title-label'], 'What was typed, to show again.' );
+	}
+
+	/**
+	 * The Import screen's settings carry no wording, and keep what's stored; what's
+	 * stored is read only as wording, an empty question left out.
+	 */
+	public function test_stored_wording_is_kept_and_read_as_wording(): void {
+		Functions\when( 'get_option' )->justReturn(
+			array(
+				'questions' => array(
+					'email' => array(
+						'help'  => '',
+						'label' => '',
+					),
+					'title' => array(
+						'label' => 5,
+						'help'  => 'Short is best.',
+					),
+					'org'   => 'A string',
+					3       => array( 'label' => 'A number' ),
+				),
+			)
+		);
+		$stored = array(
+			'email' => array( 'help' => '' ),
+			'title' => array( 'help' => 'Short is best.' ),
+		);
+		$this->assertSame( $stored, Settings::stored()['questions'] );
+		$this->assertSame( $stored, Settings::validate( self::valid() )[0]['questions'] );
+	}
+
+	/**
+	 * The screen gives each question a row: its wording and help, each labelled, a
+	 * changed one with the plugin's own wording to put back, and a private answer's help
+	 * with the line the form always adds. A field in error says so and takes the focus.
+	 */
+	public function test_the_questions_are_drawn_to_reword(): void {
+		Functions\when( 'get_option' )->justReturn(
+			array(
+				'questions' => array(
+					'title' => array( 'label' => 'Your <b>project</b>’s title?' ),
+					'email' => array( 'help' => '' ),
+				),
+			)
+		);
+		$html = self::questions();
+
+		$this->assertSame( count( Questions::all() ), substr_count( $html, '<th scope="row">' ) );
+		$this->assertStringContainsString( '<th scope="row"><h3>The project’s title</h3></th><td><fieldset><legend class="screen-reader-text">The project’s title</legend>', $html );
+		$this->assertStringContainsString( '<p><label for="firehouse-questions-title-label">Question<span class="screen-reader-text"> (The project’s title)</span></label></p><p><textarea id="firehouse-questions-title-label" name="firehouse_settings[questions][title][label]" rows="2" class="large-text" required aria-describedby="firehouse-questions-title-label-own">Your &lt;b&gt;project&lt;/b&gt;’s title?</textarea></p>', $html );
+		$this->assertStringContainsString( '<p class="description" id="firehouse-questions-title-label-own">Changed. The plugin’s own wording: “What is the title of your project?”</p>', $html );
+		$this->assertStringContainsString( 'name="firehouse_settings[questions][title][help]" rows="3" class="large-text"></textarea>', $html, 'No help, unchanged: nothing describes it.' );
+		$this->assertStringContainsString( 'aria-describedby="firehouse-questions-email-help-privacy"></textarea>', $html, 'The help cleared to match the plugin, which has none.' );
+		$this->assertStringContainsString( '<p class="description" id="firehouse-questions-email-help-privacy">Under the help, the form always says, and this screen can’t change: “Only the FireHouse team and the site’s administrators see it, to follow up with you. It never appears on the site.”</p>', $html );
+		$this->assertStringNotContainsString( 'aria-invalid', $html );
+
+		Settings::sanitize( self::valid() + array( 'questions' => array( 'org' => array( 'label' => '' ) ) ) );
+		$html = self::questions();
+		$this->assertStringContainsString( '<tr class="form-invalid form-required"><th scope="row"><h3>Your agency or institution</h3></th>', $html );
+		$this->assertStringContainsString( 'required aria-describedby="firehouse-questions-org-label-error" aria-invalid="true" autofocus>', $html );
+		$this->assertStringContainsString( '<p class="description" id="firehouse-questions-org-label-error"><strong>Error:</strong> Your agency or institution: the question can’t be empty.</p>', $html );
 	}
 
 	/**
@@ -358,11 +491,22 @@ final class SettingsTest extends WordPressTestCase {
 	}
 
 	/**
+	 * Draws the survey questions' section, as a refused save leaves the screen.
+	 */
+	private static function questions(): string {
+		( new \ReflectionProperty( Settings::class, 'focused' ) )->setValue( null, false );
+		ob_start();
+		Settings::questions_section();
+		return (string) ob_get_clean();
+	}
+
+	/**
 	 * Draws one field.
 	 *
 	 * @param string[] $path The field's path.
 	 */
 	private static function field( array $path ): string {
+		( new \ReflectionProperty( Settings::class, 'focused' ) )->setValue( null, false );
 		ob_start();
 		Settings::text_field(
 			array(

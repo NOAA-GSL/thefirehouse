@@ -23,8 +23,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  * JavaScript (the plan's survey form): a label for every field, a fieldset and legend
  * for every group of choices and entries, each field's help and problem tied to it by
  * `aria-describedby`, and, when something's wrong, a summary at the top that takes the
- * focus and links to each problem. Everything a researcher typed is printed escaped,
- * as typed (Markup::text()).
+ * focus and links to each problem. Everything a researcher typed, and each question's
+ * wording and help from the settings screen, is printed escaped, as typed
+ * (Markup::text()): a character reference such as "&#64;" shows as typed, so it can't
+ * become what the settings screen refuses.
  */
 final class Form {
 
@@ -74,7 +76,7 @@ final class Form {
 		$html .= '<input type="hidden" name="_wpnonce" value="' . esc_attr( (string) $state['nonce'] ) . '" />';
 		$html .= '<input type="hidden" name="' . esc_attr( Survey::STARTED ) . '" value="' . esc_attr( (string) $state['started'] ) . '" />';
 		$html .= '<div class="fh-survey__trap" aria-hidden="true"><label for="fh-survey-website">' . esc_html__( 'Leave this empty', 'firehouse' ) . '</label><input type="text" id="fh-survey-website" name="' . esc_attr( Survey::TRAP ) . '" value="" tabindex="-1" autocomplete="off" /></div>';
-		foreach ( Questions::all() as $name => $question ) {
+		foreach ( Questions::worded() as $name => $question ) {
 			$html .= self::question( $name, $question, $state );
 		}
 		$html .= '<p class="fh-survey__send"><button type="submit" class="fh-btn fh-btn--accent fh-btn--lg">' . esc_html__( 'Send', 'firehouse' ) . '</button></p>';
@@ -94,6 +96,7 @@ final class Form {
 		$focus    = (string) $state['focus'];
 		$required = $question['required'] ? '<span class="fh-field__required" aria-hidden="true"> *</span>' : '';
 		$help     = isset( $question['help'] ) ? (string) $question['help'] : '';
+		$privacy  = isset( $question['privacy'] ) ? (string) $question['privacy'] : '';
 		switch ( $question['type'] ) {
 			case 'choice':
 			case 'choices':
@@ -106,7 +109,7 @@ final class Form {
 				$control = 'longtext' === $question['type']
 					? '<textarea id="' . esc_attr( $id ) . '" name="' . esc_attr( Submission::FIELD . '[' . $name . ']' ) . '" rows="' . (int) ( $question['rows'] ?? 4 ) . '" class="fh-field__control fh-field__control--area' . ( '' !== $problem ? ' fh-field__control--error' : '' ) . '"' . self::attributes( $id, $question, $help, $problem, $focus === $name ) . '>' . Markup::text( (string) $value ) . '</textarea>'
 					: '<input id="' . esc_attr( $id ) . '" name="' . esc_attr( Submission::FIELD . '[' . $name . ']' ) . '" type="' . ( 'email' === $question['type'] ? 'email' : 'text' ) . '"' . ( 'year' === $question['type'] ? ' inputmode="numeric" maxlength="4"' : '' ) . ' value="' . Markup::text( (string) $value ) . '" class="fh-field__control' . ( '' !== $problem ? ' fh-field__control--error' : '' ) . '"' . ( isset( $question['autocomplete'] ) ? ' autocomplete="' . esc_attr( $question['autocomplete'] ) . '"' : '' ) . self::attributes( $id, $question, $help, $problem, $focus === $name ) . ' />';
-				return '<div class="fh-field fh-survey__question"><label class="fh-field__label" for="' . esc_attr( $id ) . '">' . esc_html( $question['label'] ) . $required . '</label>' . $control . self::help( $id, $help, $problem ) . '</div>';
+				return '<div class="fh-field fh-survey__question"><label class="fh-field__label" for="' . esc_attr( $id ) . '">' . Markup::text( (string) $question['label'] ) . $required . '</label>' . $control . self::help( $id, $help, $problem, $privacy ) . '</div>';
 		}
 	}
 
@@ -123,9 +126,10 @@ final class Form {
 		$id      = 'fh-survey-' . $name;
 		$problem = (string) ( $state['problems'][ $name ] ?? '' );
 		$help    = isset( $question['help'] ) ? (string) $question['help'] : '';
+		$privacy = isset( $question['privacy'] ) ? (string) $question['privacy'] : '';
 		$many    = 'choices' === $question['type'];
 		$chosen  = array_map( 'strval', (array) $value );
-		$html    = '<fieldset class="fh-survey__group fh-survey__question" id="' . esc_attr( $id ) . '" tabindex="-1"' . self::described( $id, $help, $problem ) . '><legend class="fh-field__label">' . esc_html( $question['label'] ) . $required . self::required_words( $question ) . '</legend>' . self::help( $id, $help, $problem );
+		$html    = '<fieldset class="fh-survey__group fh-survey__question" id="' . esc_attr( $id ) . '" tabindex="-1"' . self::described( $id, $help, $problem, $privacy ) . '><legend class="fh-field__label">' . Markup::text( (string) $question['label'] ) . $required . self::required_words( $question ) . '</legend>' . self::help( $id, $help, $problem, $privacy );
 		foreach ( $question['options'] as $key => $label ) {
 			$option = $id . '-' . $key;
 			$html  .= '<div class="fh-survey__option"><input type="' . ( $many ? 'checkbox' : 'radio' ) . '" id="' . esc_attr( $option ) . '" name="' . esc_attr( Submission::FIELD . '[' . $name . ']' . ( $many ? '[]' : '' ) ) . '" value="' . esc_attr( (string) $key ) . '"' . checked( in_array( (string) $key, $chosen, true ), true, false ) . ' /><label for="' . esc_attr( $option ) . '">' . esc_html( $label ) . '</label></div>';
@@ -155,7 +159,7 @@ final class Form {
 		$id                = 'fh-survey-' . $name;
 		$help              = isset( $question['help'] ) ? (string) $question['help'] : '';
 		$group_problem     = $problems[ $name ] ?? '';
-		$html              = '<fieldset class="fh-survey__group fh-survey__question" id="' . esc_attr( $id ) . '" tabindex="-1"' . self::described( $id, $help, $group_problem ) . '><legend class="fh-field__label">' . esc_html( $question['label'] ) . $required . self::required_words( $question ) . '</legend>' . self::help( $id, $help, $group_problem );
+		$html              = '<fieldset class="fh-survey__group fh-survey__question" id="' . esc_attr( $id ) . '" tabindex="-1"' . self::described( $id, $help, $group_problem ) . '><legend class="fh-field__label">' . Markup::text( (string) $question['label'] ) . $required . self::required_words( $question ) . '</legend>' . self::help( $id, $help, $group_problem );
 		[ $fewest, $most ] = $question['count'];
 		foreach ( $entries as $index => $entry ) {
 			$number  = $index + 1;
@@ -196,35 +200,44 @@ final class Form {
 	 * @param bool                 $autofocus Whether it takes the focus.
 	 */
 	private static function attributes( string $id, array $question, string $help, string $problem, bool $autofocus ): string {
-		return self::described( $id, $help, $problem )
+		return self::described( $id, $help, $problem, isset( $question['privacy'] ) ? (string) $question['privacy'] : '' )
 			. ( '' !== $problem ? ' aria-invalid="true"' : '' )
 			. ( ! empty( $question['required'] ) ? ' aria-required="true"' : '' )
 			. ( $autofocus ? ' autofocus' : '' );
 	}
 
 	/**
-	 * The `aria-describedby` that ties help and a problem to their control.
+	 * The `aria-describedby` that ties a problem, help and a private answer's privacy
+	 * line to their control.
 	 *
 	 * @param string $id      The control's id.
 	 * @param string $help    Its help.
 	 * @param string $problem What's wrong with it.
+	 * @param string $privacy Who sees the answer, for a private one.
 	 */
-	private static function described( string $id, string $help, string $problem ): string {
-		$ids = array_merge( '' !== $problem ? array( $id . '-problem' ) : array(), '' !== $help ? array( $id . '-help' ) : array() );
+	private static function described( string $id, string $help, string $problem, string $privacy = '' ): string {
+		$ids = array_merge(
+			'' !== $problem ? array( $id . '-problem' ) : array(),
+			'' !== $help ? array( $id . '-help' ) : array(),
+			'' !== $privacy ? array( $id . '-privacy' ) : array()
+		);
 		return array() === $ids ? '' : ' aria-describedby="' . esc_attr( implode( ' ', $ids ) ) . '"';
 	}
 
 	/**
-	 * A control's problem and help, under it.
+	 * A control's problem, help and privacy line, under it, each on a line of its own,
+	 * so help however it's worded doesn't run into the privacy line.
 	 *
 	 * @param string $id      The control's id.
 	 * @param string $help    Its help.
 	 * @param string $problem What's wrong with it.
+	 * @param string $privacy Who sees the answer, for a private one.
 	 */
-	private static function help( string $id, string $help, string $problem ): string {
+	private static function help( string $id, string $help, string $problem, string $privacy = '' ): string {
 		// "Error:" said before a problem, wherever a screen reader meets it.
 		return ( '' !== $problem ? '<span id="' . esc_attr( $id . '-problem' ) . '" class="fh-field__help fh-field__help--error"><span class="fh-visually-hidden">' . esc_html__( 'Error:', 'firehouse' ) . ' </span>' . esc_html( $problem ) . '</span>' : '' )
-			. ( '' !== $help ? '<span id="' . esc_attr( $id . '-help' ) . '" class="fh-field__help">' . esc_html( $help ) . '</span>' : '' );
+			. ( '' !== $help ? '<span id="' . esc_attr( $id . '-help' ) . '" class="fh-field__help">' . Markup::text( $help ) . '</span>' : '' )
+			. ( '' !== $privacy ? '<span id="' . esc_attr( $id . '-privacy' ) . '" class="fh-field__help">' . Markup::text( $privacy ) . '</span>' : '' );
 	}
 
 	/**
