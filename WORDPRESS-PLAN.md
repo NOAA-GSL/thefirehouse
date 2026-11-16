@@ -2153,8 +2153,9 @@ number of changes down: what isn't needed for it says *After launch*.
 
 **Done when:** Stephanie and Emily have done every task in the review checklist, written
 as editor tasks, in a walkthrough with Eric on his local copy. The checklist is the
-first draft of Phase 8's editor runbook, and takes the place of `README.md` and
-`notebooklm/README.md`, which hold no editor tasks (Eric, 16 November). Doing them on their
+first draft of Phase 8's editor runbook, and takes the place of `README.md`, which holds
+no editor tasks; the synthesis steps are in `notebooklm/README.md` too, under "Under the
+WordPress plugin" (Eric, 16 November). Doing them on their
 own, without a developer, is checked on the test site with the first release (Eric, 9
 November; see Where each phase is reviewed).
 

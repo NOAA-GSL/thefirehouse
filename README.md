@@ -246,10 +246,10 @@ overrides are isolated so a re-sync doesn't lose them.
       replace it before any copy goes up, the test site's included. The reviewed
       table is transcribed word for word to the prompt's JSON in
       `notebooklm/reviewed-synthesis-2026-10-27.json` (16 November), and the Research
-      Synthesist has checked it against the projects; its list goes to Stephanie and
-      Emily. They decide on it and mark it reviewed, in the plugin on FireHouse →
-      Synthesis, and the same JSON with their decisions replaces the draft here
-      (Eric, 16 November).
+      Synthesist has checked it against the projects; that check goes to Stephanie and
+      Emily. They decide on it and mark it reviewed on FireHouse → Synthesis (Eric, 16
+      November). For this site, the same needs, with each topic's `updatedAt`,
+      `sourceCount`, `model` and `reviewedBy` added, replace the draft here.
 - [x] **Set up `gsl.firehouse@noaa.gov`.** Since 2 November the About page gives it as
       the team's address in place of Stephanie's and Emily's own, so it has to receive
       mail before any build is deployed, the test site included. Requested from GSL's
@@ -304,16 +304,17 @@ overrides are isolated so a re-sync doesn't lose them.
       The prompt in `notebooklm/README.md` differs: it ranks by importance and lets an
       entry count in several areas. The team's full text replaces it, through the
       Prompt Engineer, after old and new are run on the same projects (CLAUDE.md). It
-      has to keep, or come with updates to, what other docs rely on: the JSON shape
-      in `notebooklm/README.md` and the once-per-project count in the plan. The
+      has to keep, or come with updates to, what other docs and code rely on: the JSON
+      shape in `notebooklm/README.md` and `Synthesis::check()`, and the once-per-project
+      count in the plan. The
       plan's "Need counts" row then records the hierarchy too. In the same change the
       source document's title becomes "The FireHouse — collected project findings"
       (Eric, 16 November), in `scripts/notebooklm-source.mjs`,
       `domain/class-notebook-source.php` and `shared/cases/notebooklm-source.json`,
-      whose `expected` is regenerated from the script. The plugin's synthesis screen
-      (`domain/class-synthesis.php`) takes the prompt's JSON and refuses an area whose
-      needs don't run by project count, highest first, which the team's prompt does
-      and the current one doesn't.
+      whose `expected` is regenerated from the script. The plugin's synthesis check
+      (`Synthesis::check()`, `domain/class-synthesis.php`) reads the prompt's JSON and
+      refuses an area whose needs don't run by project count, highest first. The team's
+      prompt orders them that way; the current one, which ranks by importance, doesn't.
 - [ ] **Review the topic-area `covers` copy** in `topics.json` — the bullet list in
       the callout, and now the only area copy on `/topics/…`. The longer `intro`
       paragraphs are no longer rendered (September 2026 review) but are kept in the
@@ -330,7 +331,10 @@ overrides are isolated so a re-sync doesn't lose them.
 - [ ] **Check that deleting a transient reports whether it deleted one** on each
       WordPress site the plugin runs on, with whatever object cache it has. The
       synthesis screen's Mark reviewed relies on it to publish a check once
-      (`Synthesis_Screen::publish()`).
+      (`Synthesis_Screen::publish()`). On each site,
+      `wp eval 'set_transient( "fh_check", 1, 60 ); var_dump( delete_transient( "fh_check" ), delete_transient( "fh_check" ) );'`
+      must print `bool(true) bool(false)`. If the second is true too, two clicks at once
+      could both publish: hold the release.
 - [ ] **Confirm the SPA fallback with Matt** — which of `.htaccess` / `_redirects` /
       `404.html` actually applies on GSL's host, and drop the two that don't.
 - [ ] **Decide on a sitemap.** Under `/firehouse/`, `public/robots.txt` isn't at the
@@ -364,7 +368,8 @@ overrides are isolated so a re-sync doesn't lose them.
       headshot uploaded since, change that image's Title in the Media Library, or
       upload the right file again so it's the newest, then preview again. The import keeps those images
       in the page. A portrait uploaded later shows in the team card's portrait picker
-      once an administrator attaches it to the About page (`Blocks::portraits()`),
+      once an administrator attaches it to the About page (Media → Library, list
+      view, Attach; `Blocks::portraits()`),
       and an editor chooses it there; a card with no portrait shows the person's
       initials. After importing, open `/firehouse/about/` and check that each
       photo sits under the right name.
@@ -695,11 +700,13 @@ nothing from the database. Each class's docblock has the detail; this is the map
   blank (spaces and invisible characters such as a zero-width space count as blank:
   `blank()`), its description, and what it covers, one item a line (each trimmed,
   blank lines dropped). **Synthesis of needs** shows the synthesis read-only: who reviewed
-  it, or that the topic page calls it a draft, its date, how many projects the site
-  showed when it was marked reviewed, and what made it, and each need with its project count and its projects by title,
-  linked to their edit screens and marked when visitors can't see one. A new
-  synthesis replaces it, on FireHouse → Synthesis (`Synthesis_Screen`), and restoring
-  an earlier revision of the topic is the undo (Eric, 16 November). The label is kept escaped, as `Store::label()` writes it, by
+  it (or that the topic page calls it a draft), its date, what made it, and how many
+  projects the site showed when it was marked reviewed. Below that come its needs,
+  each with its project count and its projects by title, linked to their edit screens
+  and marked when visitors can't see one. A new synthesis replaces it, on FireHouse →
+  Synthesis (`Synthesis_Screen`); restoring each topic's earlier revision is the
+  undo, and puts back all of that topic's fields, its label and words included (Eric,
+  16 November). The label is kept escaped, as `Store::label()` writes it, by
   any route that saves it (`Topic_Screen::keep_label()`, on `wp_insert_post_data`,
   late). It's read as it was sent, before kses, which would strip anything that looks
   like a tag from a FireHouse Editor's save; the control characters kses would drop
@@ -711,8 +718,10 @@ nothing from the database. Each class's docblock has the detail; this is the map
   no one can change its key or status (`Capabilities`). Under Preview Changes a note
   says the label shows as typed and the other words as last updated, since a preview
   is an autosave (`preview_note()`). The topics list has no Quick Edit, bulk Edit or
-  checkboxes (`row_actions()`, `bulk_actions()`, `columns()`); a request sent by hand
-  is saved as before, its slug and status kept and its label checked.
+  checkboxes (`row_actions()`, `bulk_actions()`, `columns()`). Hiding them is a guide,
+  not a control: a Quick Edit or bulk Edit request sent without the screen is still
+  saved, with the topic's slug and status kept (`Capabilities::keep_in_place()`) and
+  its label checked (`keep_label()`).
 - `Project_Rules` holds three rules on every save of a project through WordPress's
   editing routes (the edit screen, Quick Edit, bulk edit, a restore, XML-RPC), on
   `wp_insert_post_data`, late, so another plugin's filter can't undo them. The
@@ -736,14 +745,14 @@ nothing from the database. Each class's docblock has the detail; this is the map
   - The post's own title is `Store::label()` of the researcher's (escaped and
     trimmed, as WordPress stores titles), so a restore or a forged Quick Edit can't
     relabel a project in WordPress's lists.
-  - Under the Publish box's Preview button a note says Preview shows the project as
-    last saved, not the changes on the screen, or, once published, Preview Changes as
-    last updated (`Project_Rules::preview_note()`, on `post_submitbox_minor_actions`):
-    no editor is a project's author, so a preview is an autosave, which takes no
-    field from the screen.
 
   A refusal from bulk edit or a forged request is said on the next projects list or
-  project screen the editor opens, within an hour.
+  project screen the editor opens, within an hour. `Project_Rules::preview_note()` (on
+  `post_submitbox_minor_actions`) says under the Preview button what it shows: for a
+  draft or pending project, Preview shows it as last saved; once published, Preview
+  Changes shows it as last updated; when scheduled or private, Preview shows it as last
+  updated. No editor is a project's author, so a preview is an autosave, which takes no
+  field from the screen.
 - `Seed_Bundle` reads a seed bundle and checks it; `Importer` plans the import and
   writes it through `Store`; `Import_Screen` is FireHouse → Import, for
   administrators. `npm run seed` writes the bundle from `src/content/data/` to
@@ -899,17 +908,23 @@ nothing from the database. Each class's docblock has the detail; this is the map
     the projects a visitor may see and the published topics.
   - A synthesis pasted below it (200 KB at most; a Markdown code fence around it is
     fine) is checked by `Synthesis`, which lists what's wrong, 50 problems at most,
-    and writes nothing. A check with none waits thirty minutes for the person who made
-    it, under its own token, in place of a stored draft (Eric, 16 November).
+    and writes nothing. A check with none waits at most thirty minutes for the person
+    who made it, under its own token, in place of a stored draft (Eric, 16 November).
+    Opening the screen afresh, or checking again, drops it.
   - **Mark reviewed and publish** claims that check by deleting its transient, so it
     publishes once, checks it again against the projects as they are, then writes
     each topic's `topNeeds`, `updatedAt` (the site's date), `sourceCount` (how many
     projects the site shows then), `model` (Made with) and `reviewedBy` through
-    `Store`. Each topic keeps a revision, whose author is whoever was signed in.
-    Reviewed by and Made with are cleaned of markup (`sanitize_text_field()`) and
-    invisible characters, 200 characters at most.
-  - Any FireHouse Editor may mark a synthesis reviewed; restoring a topic's earlier
-    revision is the undo. The comparison against the published synthesis and the
+    `Store`. Each topic keeps a revision, whose author is whoever was signed in. If that
+    second check differs, nothing is written and the screen shows the new check. An
+    area with no topic post is skipped without a problem, which only an administrator
+    can cause, before an import. Reviewed by and Made with go through
+    `sanitize_text_field()`; one that's blank, holds a control or format character
+    (`Synthesis::hidden()`), or runs past 200 characters is sent back to fix before
+    the check is claimed.
+  - Any FireHouse Editor may mark a synthesis reviewed; restoring each topic's earlier
+    revision is the undo, one topic at a time, and puts back all of that topic's
+    fields. The comparison against the published synthesis and the
     re-sort when counts change come after launch (Eric, 16 November).
 - `Head` gives each Firehouse page its title, the site's title for it then GSL's
   suffix ("About — The FireHouse – Global Systems Laboratory"; decided by Eric, 12
