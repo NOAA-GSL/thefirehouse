@@ -35,7 +35,10 @@ list below says what that waits on.
    Communications Clearance Officer row), and the version submitted through GSL's
    security review, as every release does. Clearance covers the screenshots too: they
    show researchers' names and abstracts, published on the site, in a new place, and
-   one shows a synthesis marked "Draft, pending team review".
+   one shows a synthesis marked "Draft, pending team review". Take them again first
+   (`node scripts/wporg-assets.mjs`): they show the site as of 16 November 2026, with
+   its "AI-synthesized" badge, which the site's wording changes to follow Executive
+   Order 14434 ("SI", for Super Intelligence).
 2. **Whether it fits the directory.** The directory is for plugins other sites can
    use. The FireHouse's content comes from a seed bundle built from this repository,
    and it is tested only with GSL's classic theme, so the review team may ask how
