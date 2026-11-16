@@ -1,9 +1,10 @@
 # WordPress plan — The Firehouse as a GSL WordPress plugin
 
-> **Status: the plan being built, last updated 14 November 2026.** Phases 0–5 are built
-> on the local copy of GSL's WordPress, and the frame is signed off; Phases 4 and 5's
-> "Done when" wait on Stephanie and Emily's review on that local copy (see Where each
-> phase is reviewed). This
+> **Status: the plan being built, last updated 16 November 2026.** Phases 0–6 are built
+> on the local copy of GSL's WordPress, Phase 6 as cut on 16 November for the first
+> release, and the frame is signed off. Phases 4 to 6's "Done when" wait on one
+> review with Stephanie and Emily on that local copy, after Eric's own walkthrough of
+> Phase 6 (see Where each phase is reviewed). This
 > document is the current plan: the decisions made so far, the architecture
 > they lead to, and a phased plan from the current `main` branch to a plugin running on
 > gsl.noaa.gov. It changes through pull requests, so earlier versions are in its git
@@ -79,7 +80,7 @@ pass, a pending queue, human review, then publishing.
 
 ```
 Survey form (/firehouse/submit/) ───▶ draft projects ──preview, Publish──▶ site
-Analyze results (AI service) ───────▶ draft synthesis ──diff, Mark reviewed──▶ site
+Analyze results (AI service) ───────▶ synthesis ──check, Mark reviewed──▶ site
 ```
 
 - **Researchers submit on gsl.noaa.gov.** The survey form is part of the plugin, and
@@ -87,8 +88,10 @@ Analyze results (AI service) ───────▶ draft synthesis ──diff
   happens on the draft's preview, which shows the project page as visitors will see it
   (see [The survey form](#the-survey-form)).
 - **The synthesis runs from the dashboard.** Analyze results sends the published
-  projects to an approved AI service; the result is a draft that Stephanie and Emily
-  compare, edit and mark reviewed (see [The AI service](#the-ai-service)).
+  projects to an approved AI service; the result comes to the synthesis screen, where
+  Stephanie and Emily check it, edit it and mark it reviewed (see [The AI
+  service](#the-ai-service)). The comparison with the published synthesis comes after
+  launch.
 - **Two ways in stay for what comes from outside.** The seed bundle brings today's
   projects, including every Google Form response collected before launch, once. Pasted
   AI output is the fallback until an AI service is approved.
@@ -151,7 +154,7 @@ The alternatives, and why not:
 | `scripts/notebooklm-source.mjs` | Rewritten in PHP as **Download NotebookLM source**, for the paste-in fallback |
 | The Google Form (outside this repository) | The plugin's survey form (see [The survey form](#the-survey-form)) |
 | The NotebookLM notebook | Analyze results and an approved AI service (see [The AI service](#the-ai-service)); paste-in stays as the fallback |
-| Vite, `public/.htaccess`, `public/_redirects` | The hosting files retire. Vite stays while the plugin's generated files come from `src/`: `npm run plugin:css` builds the plugin's CSS with the site's own Vite build, and `npm run plugin:assets` draws the icons from `Icon.tsx` through it (see Phase 8). View scripts are plain ES modules, and the blocks' editor script (`assets/js/block-editor.js`) is plain JavaScript, with no build step; `@wordpress/scripts` comes in if Phase 6's editing controls need one. The generated scripts are the explorer's search module (`assets/search/search.js`) and the coverage map's drawing (`assets/map/`), which `npm run plugin:assets` bundles with esbuild from `search.ts` and from `mapCanvas.ts` with Leaflet. |
+| Vite, `public/.htaccess`, `public/_redirects` | The hosting files retire. Vite stays while the plugin's generated files come from `src/`: `npm run plugin:css` builds the plugin's CSS with the site's own Vite build, and `npm run plugin:assets` draws the icons from `Icon.tsx` through it (see Phase 8). View scripts are plain ES modules, and the blocks' editor script (`assets/js/block-editor.js`) is plain JavaScript, with no build step; Phase 6's editing controls needed none, so `@wordpress/scripts` isn't used. The generated scripts are the explorer's search module (`assets/search/search.js`) and the coverage map's drawing (`assets/map/`), which `npm run plugin:assets` bundles with esbuild from `search.ts` and from `mapCanvas.ts` with Leaflet. |
 
 The rewrite is smaller than the line counts suggest. The design system is already in
 plain CSS files with `fh-` class names, not inline React styles. The PHP templates emit
@@ -219,13 +222,17 @@ wp-content/plugins/firehouse/
                    render (the bar, the 404, the explorer, the coverage map, the
                    project, topic, landing and About pages, and what those two
                    share (Page_Blocks), icons, buttons, topic tags, the synthesis
-                   note);
+                   note); the editing screens (Edit_Screen, Project_Screen,
+                   Topic_Screen), the publishing rules (Project_Rules), the page
+                   words and allowed blocks (Page_Words, Allowed_Blocks) and the
+                   synthesis screen (Synthesis_Screen);
                    later, the AI service client
   survey/          the survey form, self-contained (see The survey form)
   domain/          PHP versions of the vocabularies, validation (normalize), derive,
                    format, search and the coverage map's colours (Map_Colors), with
                    the email shape, the JSON reading and the JavaScript rules they
-                   share (Email_Shape, Json, Js)
+                   share (Email_Shape, Json, Js), the NotebookLM source
+                   (Notebook_Source) and the synthesis screen's checks (Synthesis)
   blocks/<name>/   block.json · render.php · view.js and view.asset.php when it is
                    interactive (Interactivity API) · an editor preview once editors
                    place it
@@ -276,7 +283,8 @@ bridge resolves unchanged under the plugin. The Submit page is new.
   by **post ID**; the ID is turned back into a slug when the page renders.
 - **Landing and About.** Ordinary WordPress pages built from blocks. Their layouts are
   to be locked to text-only editing, with no blocks but their own and no Custom HTML
-  block; nothing locks the pages' layout yet (Phase 6). *Their sections are custom
+  block; the layout lock and the allowed blocks do that (Phase 6: `Blocks::lock_layout()`,
+  `Allowed_Blocks`). *Their sections are custom
   blocks whose attributes hold the words (Blocks, below), which `contentOnly` locking
   doesn't show to editors. Decided by Eric, 14 November: the blocks stay, and in the
   block editor their words become text fields in place (Phase 6).*
@@ -318,13 +326,15 @@ below):
 | `firehouse/about-mission` | Why it exists: a heading and its paragraphs | — |
 | `firehouse/about-audiences` | Who it serves: the section's words and a card for each audience, with its icon | — |
 | `firehouse/about-process` | How it works: the numbered steps and the links after them | — |
-| `firehouse/about-team` | Who is behind it: the team's mailbox, and a card for each member with a portrait from the Media Library | — |
+| `firehouse/about-team` | Who is behind it: the team's mailbox, and a card for each member with a portrait chosen from the FireHouse portraits | — |
 | `firehouse/about-cta` | The About page's closing band: heading, body and the Submit button | — |
 | `firehouse/not-found` | The Firehouse 404 | — |
 | `firehouse/survey-form` | The survey: questions, repeated need entries, validation messages, the thank-you message | Adding and removing entries (works without JavaScript) |
 
-**Submit buttons** are core buttons whose link is bound to the Firehouse settings
-through the Block Bindings API. The submit address lives in one field, which is the
+**Submit buttons** were planned as core buttons whose link is bound to the Firehouse
+settings through the Block Bindings API. *Superseded in Phase 6: no core block is
+allowed on a FireHouse page, so the blocks that print a Submit button read the address
+from the settings as the page renders (`Page_Blocks`).* The submit address lives in one field, which is the
 job the empty-`href` convention does today. It points at the plugin's Submit page, or
 at the Google Form until the plugin's form opens on prod. *Until the editing screens
 (Phase 6), the landing page's Submit buttons are inside its own blocks, which read the
@@ -581,10 +591,11 @@ as the newest image titled as the bundle's `photo` (`stephanie-hoekstra`,
 `emily-wells`), which WordPress sets from the file name; the dry run names the image
 and who uploaded it, for whoever imports to check; and the page keeps it by its ID
 (decided by Eric, 12 November, after the security review found that a lookup by title
-as the page renders let anyone who can upload media change a portrait). Until an
-editor can choose a portrait in Phase 6 (from the Media Library, on each team card,
-as Eric decided on 14 November), one uploaded after the import changes nothing, and
-a card with none shows the person's initials. The slug can't be used: WordPress gives
+as the page renders let anyone who can upload media change a portrait). An editor
+chooses a portrait on each team card (Phase 6) from the FireHouse portraits, the
+images attached to a FireHouse page visitors can see, not the Media Library; one
+uploaded after the import shows there once an administrator attaches it to the About
+page. A card with none shows the person's initials. The slug can't be used: WordPress gives
 every upload a slug no other post has, so where a staff profile page already uses
 `stephanie-hoekstra`, as on the copy of GSL's site this was built against, the upload
 becomes `stephanie-hoekstra-2`. The plugin checks the bundle
@@ -607,8 +618,8 @@ responses arrive through the plugin's own form.
 
 WP-CLI commands may exist for developers, but nothing depends on them.
 
-The same area offers **Download NotebookLM source**, a port of `notebooklm-source.mjs`,
-for the paste-in fallback. It holds only published projects, so it should be the
+The synthesis screen, FireHouse → Synthesis, offers **Download NotebookLM source**, a
+port of `notebooklm-source.mjs`, for the paste-in fallback. It holds only published projects, so it should be the
 notebook's only source.
 
 Next to it is the **synthesis screen**, where the AI pass comes back in:
@@ -630,13 +641,17 @@ Next to it is the **synthesis screen**, where the AI pass comes back in:
    the order again. *Decided by Eric, 14 November: the topic pages sort each area's
    needs by the counts they show, highest first, ties keeping the reviewed order, so
    the About page stays true; and the synthesis screen marks the area as changed since
-   its review.*
-3. **Compare.** The screen shows what changes against the published synthesis: needs
+   its review. Both come after launch (Eric, 16 November).*
+3. **Compare** (after launch, Eric, 16 November). The screen shows what changes
+   against the published synthesis: needs
    added, dropped or reworded, rank and count changes, and sources gained or lost. This
    is what the reviewer signs off on.
 4. **Save as a draft, then Mark reviewed.** Marking it reviewed publishes it to the
    topic pages and records the reviewer and the date. Until then, visitors keep seeing
-   the last reviewed version. Earlier versions stay in the revision history.
+   the last reviewed version. Earlier versions stay in the revision history, and
+   restoring one is the undo. *For the first release (Eric, 16 November) there's no
+   stored draft: a check with no problems waits thirty minutes for the person who made
+   it, who marks it reviewed.*
 
 No project link is made by hand: the JSON carries them.
 
@@ -693,8 +708,8 @@ open model, or a commercial one. Either service fits the client as planned: one
 host, and one key in `wp-config.php`.
 
 - **Analyze results** sends the published projects' text and the team's prompt, and
-  the reply lands on the synthesis screen as a draft, with the same validation,
-  comparison and **Mark reviewed** step as a pasted result. The prompt lives on the
+  the reply lands on the synthesis screen with the same checks and **Mark
+  reviewed** step as a pasted result, and the comparison once it's built. The prompt lives on the
   settings screen, so Stephanie and Emily can refine it without a release. It runs
   when an editor presses the button; running it on its own each time a project is
   published can come later.
@@ -898,7 +913,8 @@ test site's own setup wait for the first release: outbound network, Cloudflare a
 link-preview bots, caching, and `noindex`. So does the check that Stephanie and Emily
 can do every editing task on their own, without a developer (Phase 6), since on the
 local copy Eric is always there. *Eric, 16 November: one session with Stephanie and
-Emily covers Phases 4 to 6, after his own Phase 6 walkthrough.*
+Emily covers Phases 4 to 6, after his own Phase 6 walkthrough, each signed in with a
+FireHouse Editor account of their own on the local copy.*
 
 ### Phase 0 — Reference, decisions, groundwork (1–1.5 weeks)
 
@@ -1097,8 +1113,8 @@ ones.
     `main`. The bar is a `div` too, since the theme's header is the page's banner.*
   - *Its view script is plain JavaScript with no build step: WordPress maps its
     `@wordpress/interactivity` import, which `view.asset.php` declares.
-    `@wordpress/scripts` comes in if Phase 6's editing controls need a build (the
-    read-only editor boxes of 13 November didn't).*
+    `@wordpress/scripts` would have come in if Phase 6's editing controls needed a
+    build; they didn't.*
   - *Without JavaScript, below 1024px the links stay in the bar on a row of their own,
     with the Submit button after them (`@media (scripting: none)`), so the menu never
     strands them. The bar is then too tall to pin, so it scrolls with the page. That covers JavaScript switched off, not a script that fails
@@ -1459,8 +1475,9 @@ signed off on the frame.
   256-colour PNG was smaller but banded the flame's gradients. The portraits
   are 336 by 420, 57 KB for the two. The local copy, imported before this, keeps the
   640 by 800 portraits: its About page holds them by ID, and importing again leaves an
-  existing About page alone, so they change there when Phase 6 lets an editor choose a
-  portrait, or when a developer swaps the files in place with WP-CLI. Sites not yet
+  existing About page alone, so they change there once the new files are attached to the About
+  page and an editor chooses them in the team card, or when a developer swaps the
+  files in place with WP-CLI. Sites not yet
   imported take the new files from the README's upload step.*
 - Rerun the frame's style and focus checks on the real pages. *Done 12 November, on the
   local copy against the site's build: every element in the main content of the
@@ -1680,7 +1697,8 @@ its own (`DEFERRED`), loaded only on a page with the map.
     its tiles and on the site, have no label a screen reader hears ("Before During
     Published"); a visually hidden "Fire phases:" and "Status:" would need their
     wording, on both sites.*
-  - *Left for Eric, on both sites: on a phone the panel fills the screen, so there's
+  - *Left for after launch (Eric, 16 November), on both sites: on a phone the panel
+    fills the screen, so there's
     no page around it to tap, and its close button scrolls away with its header (a
     sticky header would keep it in reach; Escape and Android's back gesture still
     close it); and a second click or tap just after one that closes it goes through to
@@ -1875,14 +1893,16 @@ number of changes down: what isn't needed for it says *After launch*.
   each team member's biography. *Built with the team cards.*
 - **Preview.** A draft project's Publish box says Preview shows what's saved, since
   no editor is its author (#52). *Built 16 November, and a published project's Preview
-  Changes says the same: it shows the project as last updated.*
+  Changes says the same: it shows the project as last updated. A topic's Preview
+  Changes says the label shows as typed and its other words as last updated (Eric,
+  16 November).*
 - **The trash.** Another project may take a trashed project's address; a restored one
   gets the next free address and its editor is told, as built (#51).
 - **Revisions.** The revisions comparison shows the team's fields as well as the
   title, and the survey's labelled as not restored. *After launch.*
 - **Lengths.** No length limits on the team's fields, as built.
-- **Quick Edit** is removed for topics. *Built 16 November: the row link and the bulk
-  Edit.*
+- **Quick Edit** is removed for topics. *Built 16 November: the row link, the bulk Edit, and the
+  checkboxes, which had nothing left to act on.*
 - **Notes.** `Page_Words` accepts `metadata` holding only a note's ID, so a note on a
   block doesn't send the page's words back through kses. *After launch.*
 - **The synthesis.** The Research Synthesist checks every topic area's need counts
@@ -1922,8 +1942,8 @@ number of changes down: what isn't needed for it says *After launch*.
     fields (summary, publication status, full-record link), not its geography, which
     holds the survey's regions. An autosave of a project or topic takes no field from
     the request (a new one still copies the post's own, as any revision does). A
-    topic's restore puts back all its fields; the synthesis screen decides what
-    restoring one may do. Tried on the local copy: the forged autosave carried
+    topic's restore puts back all its fields, the synthesis included: it's the undo
+    for a synthesis published by mistake (Eric, 16 November). Tried on the local copy: the forged autosave carried
     nothing, and an older revision with other survey answers restored only the
     summary.*
   - *The security re-check (15 November) confirmed that, on every route, and found
@@ -1942,8 +1962,9 @@ number of changes down: what isn't needed for it says *After launch*.
     session-expired dialog, and a stale one on WordPress's own save says so and keeps
     what was typed, where the editorial fields had been dropped quietly under "Project
     updated." The geography is written only when its note changes.*
-  - *Left for Eric and the team: WordPress's revisions screen compares only the
-    title, so an editor restoring the team's fields can't see their history first.*
+  - *WordPress's revisions screen compares only the title, so an editor restoring
+    the team's fields can't see their history first: the fuller comparison comes after
+    launch (Eric, 16 November; Revisions, above).*
   - *The publishing rules done 15 November (`includes/class-project-rules.php`), on
     every save of a project through WordPress's editing routes, the plugin's own
     writes aside (the importer and the survey form set a project's status
@@ -2015,7 +2036,8 @@ number of changes down: what isn't needed for it says *After launch*.
   editors. *Decided: they keep their blocks and markup, and in the block editor each
   block's words become text fields in place, in plain JavaScript like
   `block-editor.js`; the layout stays fixed. The team block's cards can be added,
-  removed and reordered, each with a portrait chosen from the Media Library, kept by
+  removed and reordered, each with a portrait chosen from the FireHouse portraits
+  (Portraits, above), kept by
   its ID and shown only where visitors may see it (the import's check). The audience
   cards and the numbered steps stay fixed lists whose words change. Editors' text is
   kept as typed (`Page_Words`, below).*
@@ -2029,7 +2051,7 @@ number of changes down: what isn't needed for it says *After launch*.
   FireHouse blocks (`Blocks::lock_layout()`, the editor's `templateLock` for the
   page, since a `lock` attribute on each block would send the words back through
   kses): the Section 508 review found that Backspace on a part's outline, where the
-  Down arrow takes an editor between parts, removed the part. The team's cards and portraits come next. Before that (13 November, at Eric's request,
+  Down arrow takes an editor between parts, removed the part. The team cards came after. Before that (13 November, at Eric's request,
   to tell the page's words from what FireHouse adds), each block was a read-only box
   of what the page stores in it. Every block saves its inner blocks, so a save keeps
   the page's blocks; a save that rebuilds the page leaves out values equal to a
@@ -2083,6 +2105,8 @@ number of changes down: what isn't needed for it says *After launch*.
     its trashed name, with any published page under it.*
   - *A bulk trash that includes the landing page stops at it, leaving the pages before
     it in the trash.*
+  - *Quick Edit's Parent menu lists every page, not only the FireHouse pages; a
+    limited editor's choice there is put back anyway (`keep_in_place()`).*
 - The synthesis screen: paste, validation, the comparison against the published
   synthesis, and **Mark reviewed**. Validation includes the order: each topic area's
   needs by project count, highest first, since the About page says so (ties go by
@@ -2094,10 +2118,10 @@ number of changes down: what isn't needed for it says *After launch*.
   Download NotebookLM source, as one change. The comparison against the published
   synthesis and the re-sort when the counts change come after launch.* *Built 16
   November (FireHouse → Synthesis, `includes/class-synthesis-screen.php`; the checks
-  in `domain/class-synthesis.php`): a check says every problem and writes nothing;
+  in `domain/class-synthesis.php`): a check lists every problem, fifty at most, and writes nothing;
   with none, it waits thirty minutes for its checker, in place of a stored draft, and
   Mark reviewed checks it again, then saves the four topics with the reviewer and the
-  tool as typed, the date, and how many projects the site shows, each topic keeping a
+  tool as typed, without markup (`sanitize_text_field()`, kept by Eric, 16 November), the date, and how many projects the site shows, each topic keeping a
   revision. On the local copy, the 17 September draft's check found the four counts
   the Research Synthesist had.* *Decided by Eric, 16 November: any FireHouse Editor
   may mark a synthesis reviewed, the name typed in Reviewed by and the revision's
@@ -2107,7 +2131,10 @@ number of changes down: what isn't needed for it says *After launch*.
   JSON, checked by the Research Synthesist, and marked reviewed by Stephanie or Emily
   in their review on the local copy. Before the first release, check that deleting
   a transient on the hosting setup reports whether it deleted one, which the check's
-  single use relies on.*
+  single use relies on. Restoring a topic's earlier revision is the undo for a
+  synthesis published by mistake. Needs for a topic area with no topic post are
+  skipped without a problem, which only an administrator can cause, before an import:
+  left as documented.*
 - **The prompt.** *Decided by Eric, 16 November:* Stephanie's "FireHouse Prompt
   (Final)" replaces the one in `notebooklm/README.md` once its text arrives, after the
   Prompt Engineer runs both on the same projects. In the same change the source's
@@ -2121,10 +2148,13 @@ number of changes down: what isn't needed for it says *After launch*.
   allowed (above), no core button is on a FireHouse page: the blocks that print a
   Submit button store a link to the survey empty, and read the address from the
   settings as the page renders (`Page_Blocks`).*
-- Validation notices.
+- Validation notices. *Built with each screen: the edit screens, the publishing rules
+  and the synthesis screen say each problem beside its field or at the top.*
 
-**Done when:** Stephanie and Emily have done every task in `README.md` and
-`notebooklm/README.md` in a walkthrough with Eric on his local copy. Doing them on their
+**Done when:** Stephanie and Emily have done every task in the review checklist, written
+as editor tasks, in a walkthrough with Eric on his local copy. The checklist is the
+first draft of Phase 8's editor runbook, and takes the place of `README.md` and
+`notebooklm/README.md`, which hold no editor tasks (Eric, 16 November). Doing them on their
 own, without a developer, is checked on the test site with the first release (Eric, 9
 November; see Where each phase is reviewed).
 
@@ -2247,7 +2277,8 @@ Phases 6–7.
   never in the site's JSON.
 - **Migration parity.** After the seed import, the content WordPress renders must
   match `normalizeSiteContent()` run over today's JSON.
-- **Synthesis import.** Pasting the published synthesis back shows no changes. A need
+- **Synthesis import.** Once the comparison is built, pasting the published synthesis
+  back shows no changes. A need
   that names an unknown or unpublished project is flagged with the entry quoted.
 - **Synthesis comparison.** Analyze results and NotebookLM run on the same published
   projects, and Stephanie and Emily sign off that the results match in substance.

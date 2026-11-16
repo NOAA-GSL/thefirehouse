@@ -242,7 +242,7 @@ return array(
 		'name'        => 'firehouse/about-team',
 		'title'       => 'FireHouse About team',
 		'category'    => 'widgets',
-		'description' => 'Who is behind the hub: the section\'s words, the team\'s mailbox, and a card for each member with a portrait from the Media Library.',
+		'description' => 'Who is behind the hub: the section\'s words, the team\'s mailbox, and a card for each member with a portrait chosen from the FireHouse portraits.',
 		'textdomain'  => 'firehouse',
 		'parent'      => array(
 			'firehouse/about-sections',

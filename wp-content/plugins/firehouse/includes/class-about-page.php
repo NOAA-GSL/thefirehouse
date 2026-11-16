@@ -30,12 +30,13 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - `firehouse/about-team`: who is behind it, the team's mailbox, a card for each member.
  * - `firehouse/about-cta`: the closing band with the Submit button.
  *
- * Each member's portrait is a Media Library image an administrator uploaded, which
- * the import found by its Title, the member's `photo` (`stephanie-hoekstra`), named in
- * the dry run so whoever imports can check it, and stored in the page as its ID. The
- * page looks nothing up when it renders, so an image uploaded later under the same
- * Title changes nothing; without one, the card shows the member's initials, as the
- * site does. Biographies are printed as stored, one paragraph each: they were written
+ * Each member's portrait is a Media Library image an administrator uploaded, stored in
+ * the page as its ID: the one the import found by its Title, the member's `photo`
+ * (`stephanie-hoekstra`), named in the dry run so whoever imports can check it, or the
+ * one an editor chose in the team card from the FireHouse portraits
+ * (Blocks::portraits()). The page looks nothing up when it renders, so an image
+ * uploaded later under the same Title changes nothing until an editor chooses it;
+ * without one, the card shows the member's initials, as the site does. Biographies are printed as stored, one paragraph each: they were written
  * by the people they describe.
  */
 final class About_Page {

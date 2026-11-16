@@ -18,7 +18,10 @@ It registers the project and topic post types and their fields. Projects are at
 Editor role, a FireHouse settings screen, an Import screen that loads the site's
 content from a seed bundle, and edit screens for projects and topics, where editors
 change the FireHouse team's fields and see the survey's answers and the synthesis
-read-only. Every
+read-only. Editors change the landing and About pages' words in the block editor,
+where those pages hold only FireHouse blocks, and publish a reviewed synthesis on
+FireHouse → Synthesis. The landing page can't be moved to the Trash while a
+published page is under it. Every
 FireHouse address (projects, topics and pages under /firehouse/) gets the plugin's
 frame: the theme's header and footer, with the
 FireHouse area between them in the plugin's own stylesheets and fonts. A FireHouse
@@ -80,7 +83,10 @@ License, whose text is beside it in LICENSE.txt. The map's region boundaries are
 simplified from the National Interagency Fire Center's National GACC Boundaries.
 
 The Import screen keeps nothing it doesn't import: the uploaded file isn't saved, and
-the checked content waits briefly for the confirmation and is then cleared. The plugin
+the checked content waits briefly for the confirmation and is then cleared. The
+synthesis screen keeps a checked synthesis for thirty minutes for the person who
+checked it; an edit screen keeps refused input for five minutes, and a refused
+publish's notice waits an hour, each for the person it's for. The plugin
 stores only what the site publishes.
 
 Deactivating the plugin keeps the FireHouse Editor role, which can then only sign in.
@@ -151,8 +157,8 @@ one is.
   follow the search as you type and each filter as it changes, with no request, and
   the address follows; on a phone the filters fold behind a button; and each tile's
   Quick look button opens a preview of the project in a dialog.
-* In the block editor, each FireHouse block shows, read-only, what the page stores in
-  it, so that can be told from what FireHouse adds. Changing it comes later. Opening
+* In the block editor, each FireHouse block shows what the page stores in it, so that
+  can be told from what FireHouse adds; its words became fields later (below). Opening
   and saving a page keeps its FireHouse blocks, the ones they hold included.
 * A project's edit screen: the FireHouse team's fields (its summary, publication
   status, geography note and full-record link), saved with the project and kept as
@@ -214,7 +220,9 @@ one is.
   content before keeps the old spelling in its settings and in the landing and About
   pages until they are changed.
 * A project's Publish box says Preview shows the project as last saved, not the
-  changes on the screen. The topics list has no Quick Edit.
+  changes on the screen, and a topic's says Preview Changes shows its label as typed
+  and its other words as last updated. The topics list has no Quick Edit, bulk Edit
+  or checkboxes.
 * FireHouse → Synthesis: download the NotebookLM source, paste the synthesis it makes,
   check it, and mark it reviewed to publish it to the topic pages.
 

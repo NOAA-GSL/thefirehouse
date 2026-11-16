@@ -2,15 +2,41 @@
 
 The four topic-area "top needs" on the landing page and topic pages are synthesized
 across **all** published projects in Google NotebookLM, reviewed by the team, and
-then written into `src/content/data/topicSummaries.json`. No project is assigned to
-a topic area. This folder holds what the notebook reads.
+then written into `src/content/data/topicSummaries.json` for this site, or, under the
+WordPress plugin, published from FireHouse → Synthesis (below). No project is
+assigned to a topic area. This folder holds what the notebook reads.
 
 | File | What it is |
 | --- | --- |
 | `firehouse-findings.md` | **Generated — do not hand-edit.** Every published project's abstract, takeaways, needs and recommendations, word for word, plus the four topic-area definitions. |
 | `draft-synthesis-2026-09-17.md` | The current, **unreviewed** draft behind `topicSummaries.json`, with every need traced to the survey entries it counts. Replace or confirm it with a NotebookLM pass. |
+| `reviewed-synthesis-2026-10-27.json` | The team's reviewed table of 27 October, from Stephanie's email of 3 November, transcribed word for word to the prompt's JSON (16 November). It passes the synthesis screen's checks. The Research Synthesist's check of it against the projects goes to Stephanie and Emily, who decide on it and mark it reviewed. Not yet on the site. |
 
-## After each survey batch
+## Under the WordPress plugin
+
+Everything happens on **FireHouse → Synthesis**, for anyone who may publish a topic.
+
+1. **Download NotebookLM source** there, and make that `firehouse-findings.md` the
+   notebook's only source, in place of the old one. It holds the projects the site
+   shows, word for word.
+2. **Run the prompt below** in the notebook chat.
+3. **Review** each need against the projects it came from, with NotebookLM's
+   citations, and edit the JSON: the published wording is the team's, not the
+   model's. Order each area's needs by project count, highest first, with a tie going
+   to the need with broader interagency or multi-regional applicability, as the About
+   page says: the screen refuses any other order. (The prompt below asks for the most
+   important first; the team's own prompt orders by count.) A project can be named by
+   its page slug or by the source's "Project ID".
+4. **Paste** the JSON into "The JSON the prompt gave" and press **Check the
+   synthesis**. Fix whatever it lists in the box and check again; nothing is written
+   until it finds nothing wrong.
+5. **Mark it reviewed:** fill in Reviewed by and Made with, and press **Mark reviewed
+   and publish** within thirty minutes of the check. The screen records today's date
+   and how many projects the site shows, and the topic pages show it at once. Each
+   topic keeps the synthesis it had as a revision; restoring that revision is the
+   undo.
+
+## After each survey batch (this site)
 
 1. **Import the export.** This also regenerates `firehouse-findings.md`:
 

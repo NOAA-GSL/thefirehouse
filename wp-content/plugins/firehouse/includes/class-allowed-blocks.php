@@ -47,7 +47,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * page, and WordPress would save a refusal as the autosave. A draft's autosave by its
  * own author saves the page itself, and is checked like any save. While the landing
  * page is in the trash there is no tree (Capabilities::root_id()), so nothing is
- * checked, and restoring it isn't checked either (left for Eric).
+ * checked, and restoring it isn't checked either (left as documented, Eric, 16
+ * November: what only an administrator can cause isn't built against).
  */
 final class Allowed_Blocks {
 

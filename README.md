@@ -78,7 +78,9 @@ wp-content/plugins/firehouse/
                     The WordPress plugin that will replace this app (see
                     The WordPress plugin, below). So far: firehouse.php, which
                     loads the content logic in PHP (domain/) and what hooks
-                    into WordPress (includes/); templates/frame.php, the frame
+                    into WordPress (includes/), the admin screens among them
+                    (Settings, Import, the project and topic edit screens and
+                    Synthesis); templates/frame.php, the frame
                     every Firehouse page sits in; blocks/, the server-rendered
                     blocks the templates and pages place (so far the Firehouse
                     bar, the not-found page, the project pages, the topic
@@ -241,7 +243,13 @@ overrides are isolated so a re-sync doesn't lose them.
       reviewed table replaces the draft, with `reviewedBy` set to clear the label. The draft also counts some needs more than once
       per project, so four of its "Project count" figures exceed the projects listed
       under them (`src/content/synthesis.test.ts` pins the four). The rerun has to
-      replace it before any copy goes up, the test site's included.
+      replace it before any copy goes up, the test site's included. The reviewed
+      table is transcribed word for word to the prompt's JSON in
+      `notebooklm/reviewed-synthesis-2026-10-27.json` (16 November), and the Research
+      Synthesist has checked it against the projects; its list goes to Stephanie and
+      Emily. They decide on it and mark it reviewed, in the plugin on FireHouse →
+      Synthesis, and the same JSON with their decisions replaces the draft here
+      (Eric, 16 November).
 - [x] **Set up `gsl.firehouse@noaa.gov`.** Since 2 November the About page gives it as
       the team's address in place of Stephanie's and Emily's own, so it has to receive
       mail before any build is deployed, the test site included. Requested from GSL's
@@ -262,7 +270,8 @@ overrides are isolated so a re-sync doesn't lose them.
         "ranked by how often they come up" (written into `LandingPage.tsx`, and separately
         into the plugin's `includes/class-landing-page.php`: change both, since no test
         keeps them the same). The first two also live in each imported site's landing
-        and About pages, which a later import leaves as they are;
+        and About pages, which a later import leaves as they are and an editor changes in
+        the block editor;
       - whether the synthesis needs its own line saying whose it is;
       - the explorer's "Update results" button, which only the plugin has: without
         JavaScript it sends the search and filters. The Science Communicator suggests
@@ -297,7 +306,14 @@ overrides are isolated so a re-sync doesn't lose them.
       Prompt Engineer, after old and new are run on the same projects (CLAUDE.md). It
       has to keep, or come with updates to, what other docs rely on: the JSON shape
       in `notebooklm/README.md` and the once-per-project count in the plan. The
-      plan's "Need counts" row then records the hierarchy too.
+      plan's "Need counts" row then records the hierarchy too. In the same change the
+      source document's title becomes "The FireHouse — collected project findings"
+      (Eric, 16 November), in `scripts/notebooklm-source.mjs`,
+      `domain/class-notebook-source.php` and `shared/cases/notebooklm-source.json`,
+      whose `expected` is regenerated from the script. The plugin's synthesis screen
+      (`domain/class-synthesis.php`) takes the prompt's JSON and refuses an area whose
+      needs don't run by project count, highest first, which the team's prompt does
+      and the current one doesn't.
 - [ ] **Review the topic-area `covers` copy** in `topics.json` — the bullet list in
       the callout, and now the only area copy on `/topics/…`. The longer `intro`
       paragraphs are no longer rendered (September 2026 review) but are kept in the
@@ -311,6 +327,10 @@ overrides are isolated so a re-sync doesn't lose them.
       text describes the hub, not the image. Record who confirmed what text, and when.
 - [ ] **Build with the right variables** for each copy (see [Hosting](#hosting)), so
       `og:image` is emitted and the test-site copy isn't indexed.
+- [ ] **Check that deleting a transient reports whether it deleted one** on each
+      WordPress site the plugin runs on, with whatever object cache it has. The
+      synthesis screen's Mark reviewed relies on it to publish a check once
+      (`Synthesis_Screen::publish()`).
 - [ ] **Confirm the SPA fallback with Matt** — which of `.htaccess` / `_redirects` /
       `404.html` actually applies on GSL's host, and drop the two that don't.
 - [ ] **Decide on a sitemap.** Under `/firehouse/`, `public/robots.txt` isn't at the
@@ -343,9 +363,10 @@ overrides are isolated so a re-sync doesn't lose them.
       the right person before confirming. If it names the wrong image, such as a staff
       headshot uploaded since, change that image's Title in the Media Library, or
       upload the right file again so it's the newest, then preview again. The import keeps those images
-      in the page, so one uploaded later changes nothing until Phase 6's editing
-      screens let an editor choose it; until then, a card with no portrait shows the
-      person's initials. After importing, open `/firehouse/about/` and check that each
+      in the page. A portrait uploaded later shows in the team card's portrait picker
+      once an administrator attaches it to the About page (`Blocks::portraits()`),
+      and an editor chooses it there; a card with no portrait shows the person's
+      initials. After importing, open `/firehouse/about/` and check that each
       photo sits under the right name.
 - [ ] **Run an audit with a real screen reader**, and check the remaining federal
       requirements the brief flags as unconfirmed (USWDS conventions, privacy
@@ -597,7 +618,10 @@ nothing from the database. Each class's docblock has the detail; this is the map
   map reuses, and which both carry in their page state; the landing page's counts and
   need cards (`Landing_Page::content()`), which keep a project the explorer leaves out
   for want of a slug, a title or a year; the project pages' previous and next links;
-  the topic pages' links and project total; and the not-found guess.
+  the topic pages' links and project total; the not-found guess; and the synthesis
+  screen's download, the projects its check accepts and the count it records
+  (`Synthesis_Screen`). The topic screen marks a need's project visitors can't see
+  with `Store::is_public()`.
 - `Visibility` keeps every other project off the public side of the site. It drops
   one from what a query finds, outside the admin's own screens, so its address,
   `?p=`, the archive, the feed, embeds and the sitemap leave it out. It refuses one
@@ -671,10 +695,11 @@ nothing from the database. Each class's docblock has the detail; this is the map
   blank (spaces and invisible characters such as a zero-width space count as blank:
   `blank()`), its description, and what it covers, one item a line (each trimmed,
   blank lines dropped). **Synthesis of needs** shows the synthesis read-only: who reviewed
-  it, or that the topic page calls it a draft, its date, how many projects it read and
-  what made it, and each need with its project count and its projects by title,
+  it, or that the topic page calls it a draft, its date, how many projects the site
+  showed when it was marked reviewed, and what made it, and each need with its project count and its projects by title,
   linked to their edit screens and marked when visitors can't see one. A new
-  synthesis replaces it. The label is kept escaped, as `Store::label()` writes it, by
+  synthesis replaces it, on FireHouse → Synthesis (`Synthesis_Screen`), and restoring
+  an earlier revision of the topic is the undo (Eric, 16 November). The label is kept escaped, as `Store::label()` writes it, by
   any route that saves it (`Topic_Screen::keep_label()`, on `wp_insert_post_data`,
   late). It's read as it was sent, before kses, which would strip anything that looks
   like a tag from a FireHouse Editor's save; the control characters kses would drop
@@ -683,7 +708,11 @@ nothing from the database. Each class's docblock has the detail; this is the map
   and the screen refuses its fields with it and says why, under the title box. The
   title box shows the label as text (`edit_label()`) and is named "Label". The
   topic's introduction, which no page shows, and its order aren't on the screen, and
-  no one can change its key or status (`Capabilities`).
+  no one can change its key or status (`Capabilities`). Under Preview Changes a note
+  says the label shows as typed and the other words as last updated, since a preview
+  is an autosave (`preview_note()`). The topics list has no Quick Edit, bulk Edit or
+  checkboxes (`row_actions()`, `bulk_actions()`, `columns()`); a request sent by hand
+  is saved as before, its slug and status kept and its label checked.
 - `Project_Rules` holds three rules on every save of a project through WordPress's
   editing routes (the edit screen, Quick Edit, bulk edit, a restore, XML-RPC), on
   `wp_insert_post_data`, late, so another plugin's filter can't undo them. The
@@ -707,6 +736,11 @@ nothing from the database. Each class's docblock has the detail; this is the map
   - The post's own title is `Store::label()` of the researcher's (escaped and
     trimmed, as WordPress stores titles), so a restore or a forged Quick Edit can't
     relabel a project in WordPress's lists.
+  - Under the Publish box's Preview button a note says Preview shows the project as
+    last saved, not the changes on the screen, or, once published, Preview Changes as
+    last updated (`Project_Rules::preview_note()`, on `post_submitbox_minor_actions`):
+    no editor is a project's author, so a preview is an autosave, which takes no
+    field from the screen.
 
   A refusal from bulk edit or a forged request is said on the next projects list or
   project screen the editor opens, within an hour.
@@ -718,8 +752,7 @@ nothing from the database. Each class's docblock has the detail; this is the map
   problem, and imports once confirmed. A site imported before 13 November keeps "The
   Firehouse" in its saved settings and its landing and About pages, since the import
   writes neither again: set the name under FireHouse → Settings, and import onto a
-  clean site or, until Phase 6 lets editors change those pages' words, have a
-  developer change them with WP-CLI.
+  clean site, or change those pages' words in the block editor.
   - Projects are matched by response ID, so importing again updates the same posts.
     Survey fields come from the bundle; editorial fields (`Importer::EDITORIAL`, and
     the geography note and states) keep WordPress's (rule 4). Projects the bundle
@@ -796,7 +829,8 @@ nothing from the database. Each class's docblock has the detail; this is the map
   `firehouse/about-intro`, `firehouse/about-sections` holding `about-mission`,
   `about-audiences`, `about-process` and `about-team`, and `firehouse/about-cta`. The
   words are the blocks' attributes, the biographies printed as written. Each member's
-  portrait is the image the import kept by its ID, printed by
+  portrait is the image kept by its ID, the import's or the one an editor chose in the
+  team card (`photoId`), shown only where `About_Page::shows()` allows it, printed by
   `wp_get_attachment_image()` with its sizes for the 168px it's drawn at; the page
   looks nothing up as it renders, and without one the card shows their initials
   (`Format::initials()`, held to the site's by `shared/cases/format.json`). The import
@@ -858,6 +892,25 @@ nothing from the database. Each class's docblock has the detail; this is the map
     WordPress say it restored a revision it didn't.
   - While the landing page is in the trash there's no tree, so nothing is checked
     until it's restored.
+- `Synthesis_Screen` is FireHouse → Synthesis, for whoever may publish a topic
+  (`publish_fh_topics`: the FireHouse Editors and administrators).
+  - **Download NotebookLM source** (the admin-post action `firehouse_notebook_source`,
+    with a nonce) sends `firehouse-findings.md`, which `Notebook_Source` builds from
+    the projects a visitor may see and the published topics.
+  - A synthesis pasted below it (200 KB at most; a Markdown code fence around it is
+    fine) is checked by `Synthesis`, which lists what's wrong, 50 problems at most,
+    and writes nothing. A check with none waits thirty minutes for the person who made
+    it, under its own token, in place of a stored draft (Eric, 16 November).
+  - **Mark reviewed and publish** claims that check by deleting its transient, so it
+    publishes once, checks it again against the projects as they are, then writes
+    each topic's `topNeeds`, `updatedAt` (the site's date), `sourceCount` (how many
+    projects the site shows then), `model` (Made with) and `reviewedBy` through
+    `Store`. Each topic keeps a revision, whose author is whoever was signed in.
+    Reviewed by and Made with are cleaned of markup (`sanitize_text_field()`) and
+    invisible characters, 200 characters at most.
+  - Any FireHouse Editor may mark a synthesis reviewed; restoring a topic's earlier
+    revision is the undo. The comparison against the published synthesis and the
+    re-sort when counts change come after launch (Eric, 16 November).
 - `Head` gives each Firehouse page its title, the site's title for it then GSL's
   suffix ("About — The FireHouse – Global Systems Laboratory"; decided by Eric, 12
   November, with Stephanie and Emily's spelling), and the description and Open Graph and
@@ -901,7 +954,9 @@ The traps, for whoever changes this code next:
   site, and the capabilities; the content stays.
 
 `domain/` holds the PHP versions of `src/content/derive.ts`, `format.ts`,
-`normalize.ts` and `search.ts`, and of `src/design-system/heat.ts` (`Map_Colors`):
+`normalize.ts` and `search.ts`, of `src/design-system/heat.ts` (`Map_Colors`) and
+`scripts/notebooklm-source.mjs` (`Notebook_Source`), and the synthesis screen's
+checks (`Synthesis`):
 
 - `Normalize::site_content()` checks the raw content files and returns them in the
   JSON shape of `src/content/types.ts`. When it refuses content, it throws a
@@ -938,6 +993,15 @@ The traps, for whoever changes this code next:
   `shared/coverage-map.json`, which the site's `src/design-system/heat.ts` reads too,
   and, from the same file, the basemap's attribution for the credit under the map and
   the tiles' host, which the view script connects to before the map loads.
+- `Notebook_Source::build()` writes the NotebookLM source from the projects and
+  topics, byte for byte as `scripts/notebooklm-source.mjs` does: both pass
+  `shared/cases/notebooklm-source.json`, whose `expected` is generated from the script.
+- `Synthesis::check()` reads the JSON the synthesis prompt gives and lists what's
+  wrong: its shape (the four areas, each once, up to five needs each, an empty list
+  allowed); a project, named by page slug or response ID, that the site doesn't show
+  or that a need names twice; a count that isn't the number of projects named; an
+  area not ordered by count, highest first; and text that shows nothing or holds a
+  control or format character. It lists 50 problems at most and counts the rest.
 - `Json::decode()` reads JSON as the TypeScript sees it: an empty or numbered object
   (`{}`, `{"0": …}`) stays an object, a `Json_Object`, instead of passing for a list.
   `Normalize` turns every one back into an array on the way out, so pages and post meta
@@ -945,7 +1009,8 @@ The traps, for whoever changes this code next:
   reads the seed bundle through it.
 
 They pass the cases in `shared/cases/derive.json`, `format.json`, `normalize.json`,
-`email-shape.json`, `search.json` and `coverage-map.json`, the same ones `npm test` runs.
+`email-shape.json`, `search.json`, `coverage-map.json` and `notebooklm-source.json`,
+the same ones `npm test` runs.
 
 `assets/css/firehouse.min.css` is the site's CSS, scoped under `.fh-app` so it can sit
 inside GSL's theme without reaching the theme's header and footer (plan rule 9).
@@ -1211,7 +1276,8 @@ walk can't see the halo and tiles, or the image (the known limitation at the top
 the hero's and stats' text is 6.45:1 at the lowest (AA needs 4.5:1); the codes'
 contrast against their halo wasn't measured. The walk flags the same on the plugin's
 landing page, explorer and quick look, inside GSL's header and footer, and nothing
-more.
+more. Phase 6's admin screens were reviewed by the Section 508 specialist change by
+change, not audited as a whole; Phase 8's screen-reader audit covers them.
 
 ## Hosting
 

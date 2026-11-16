@@ -40,7 +40,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const DATA = resolve(HERE, '../src/content/data');
 export const NOTEBOOK_SOURCE = resolve(HERE, '../notebooklm/firehouse-findings.md');
 
-const byRecency = (a, b) => b.completionYear - a.completionYear || a.title.localeCompare(b.title);
+const byRecency = (a, b) => b.completionYear - a.completionYear || a.title.localeCompare(b.title, 'en-US');
 
 function list(items) {
   return items.map((item) => `- ${item}`).join('\n');

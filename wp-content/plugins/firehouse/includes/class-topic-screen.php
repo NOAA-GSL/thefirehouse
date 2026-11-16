@@ -92,6 +92,7 @@ final class Topic_Screen extends Edit_Screen {
 		add_filter( 'post_row_actions', array( self::class, 'row_actions' ), 10, 2 );
 		add_filter( 'bulk_actions-edit-' . Post_Types::TOPIC, array( self::class, 'bulk_actions' ) );
 		add_filter( 'manage_' . Post_Types::TOPIC . '_posts_columns', array( self::class, 'columns' ) );
+		add_action( 'post_submitbox_minor_actions', array( self::class, 'preview_note' ) );
 	}
 
 	/**
@@ -110,6 +111,22 @@ final class Topic_Screen extends Edit_Screen {
 			unset( $actions['inline hide-if-no-js'] );
 		}
 		return $actions;
+	}
+
+	/**
+	 * Under the Publish box's Preview Changes, as a project's screen has
+	 * (Project_Rules::preview_note()), what it shows (decided by Eric, 16 November): a
+	 * topic's preview is an autosave, which takes its title, the label, from the screen
+	 * but none of its fields (Edit_Screen::save()), so the label shows as typed and the
+	 * other words as last updated.
+	 *
+	 * @param \WP_Post $post The post being edited.
+	 */
+	public static function preview_note( \WP_Post $post ): void {
+		if ( Post_Types::TOPIC !== $post->post_type ) {
+			return;
+		}
+		echo '<p class="fh-publish-preview">' . esc_html__( 'Preview Changes shows the label as typed, but the topic’s other words as last updated, not as typed on this screen: they show once you update it.', 'firehouse' ) . '</p>';
 	}
 
 	/**
@@ -144,7 +161,7 @@ final class Topic_Screen extends Edit_Screen {
 	 * The screen's own styles.
 	 */
 	protected static function own_style(): string {
-		return self::STYLE;
+		return self::STYLE . Project_Rules::PREVIEW_STYLE;
 	}
 
 	/**
@@ -359,11 +376,11 @@ final class Topic_Screen extends Edit_Screen {
 		$count  = $fields['sourceCount'] ?? null;
 		$needs  = is_array( $fields['topNeeds'] ?? null ) ? array_values( $fields['topNeeds'] ) : array();
 
-		echo '<p>' . esc_html__( 'The needs this area’s projects raise, as the last synthesis found them. They can’t be edited here: a new synthesis replaces them. Each project’s title links to its edit screen.', 'firehouse' ) . '</p>';
+		echo '<p>' . esc_html__( 'The needs this area’s projects raise, as the last synthesis found them. They can’t be edited here: a new synthesis replaces them, on FireHouse → Synthesis. Each project’s title links to its edit screen.', 'firehouse' ) . '</p>';
 		echo '<dl class="fh-edit-readonly">';
 		self::row( __( 'Reviewed by', 'firehouse' ), Markup::text( $text( 'reviewedBy' ) ), __( 'No one yet. The topic page marks the needs “Draft, pending team review”.', 'firehouse' ) );
 		self::row( __( 'Last updated', 'firehouse' ), '' === $text( 'updatedAt' ) ? '' : Markup::text( Format::review_date( $text( 'updatedAt' ) ) ), $none );
-		self::row( __( 'Projects it read', 'firehouse' ), is_int( $count ) || is_float( $count ) ? esc_html( (string) $count ) : '', $none );
+		self::row( __( 'Projects on the site when reviewed', 'firehouse' ), is_int( $count ) || is_float( $count ) ? esc_html( (string) $count ) : '', $none );
 		self::row( __( 'Made with', 'firehouse' ), Markup::text( $text( 'model' ) ), $none );
 		self::row( __( 'Top needs', 'firehouse' ), self::items( array_map( array( self::class, 'need' ), $needs ), 'ol' ), __( '(None)', 'firehouse' ) );
 		echo '</dl>';

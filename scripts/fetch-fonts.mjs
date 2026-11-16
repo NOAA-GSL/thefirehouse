@@ -47,8 +47,8 @@ const CSS = resolve(ROOT, 'wp-content/plugins/firehouse/assets/css/fonts.css');
 // No italics: nothing the site or the plugin writes is set in italic (fonts.test.mjs
 // holds them to that), so no browser ever downloaded the italic faces the design
 // system's stylesheet asked for. Text set in italic needs its face added here, or the
-// browser slants the upright one. That includes text an editor sets in italic in a
-// page of the Firehouse tree, if Phase 6 lets them.
+// browser slants the upright one. Editors can't set italic in the Firehouse pages:
+// they hold only FireHouse blocks, whose words are plain text.
 const WANTED = [
   ['Archivo', 'normal', [500, 600, 700, 800]],
   ['Public Sans', 'normal', [400, 500, 600, 700]],
