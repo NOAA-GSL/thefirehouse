@@ -74,7 +74,7 @@ final class Form {
 		$html .= '<input type="hidden" name="_wpnonce" value="' . esc_attr( (string) $state['nonce'] ) . '" />';
 		$html .= '<input type="hidden" name="' . esc_attr( Survey::STARTED ) . '" value="' . esc_attr( (string) $state['started'] ) . '" />';
 		$html .= '<div class="fh-survey__trap" aria-hidden="true"><label for="fh-survey-website">' . esc_html__( 'Leave this empty', 'firehouse' ) . '</label><input type="text" id="fh-survey-website" name="' . esc_attr( Survey::TRAP ) . '" value="" tabindex="-1" autocomplete="off" /></div>';
-		foreach ( Questions::all() as $name => $question ) {
+		foreach ( Questions::worded() as $name => $question ) {
 			$html .= self::question( $name, $question, $state );
 		}
 		$html .= '<p class="fh-survey__send"><button type="submit" class="fh-btn fh-btn--accent fh-btn--lg">' . esc_html__( 'Send', 'firehouse' ) . '</button></p>';

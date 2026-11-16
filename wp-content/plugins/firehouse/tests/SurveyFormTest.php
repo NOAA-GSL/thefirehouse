@@ -36,6 +36,31 @@ final class SurveyFormTest extends WordPressTestCase {
 	}
 
 	/**
+	 * The questions are asked as the settings screen words them, escaped; a private
+	 * answer's help ends with who sees it, even when the screen gave it help of its own
+	 * or none.
+	 */
+	public function test_the_questions_are_asked_as_worded_on_the_settings_screen(): void {
+		Functions\when( 'get_option' )->justReturn(
+			array(
+				'questions' => array(
+					'title'    => array( 'label' => 'Your <b>project</b>’s title?' ),
+					'email'    => array( 'help' => 'Use your work address.' ),
+					'jobTitle' => array( 'help' => '' ),
+					'links'    => array( 'help' => '' ),
+				),
+			)
+		);
+		$html = self::drawn( array() );
+
+		$this->assertStringContainsString( '<label class="fh-field__label" for="fh-survey-title">Your &lt;b&gt;project&lt;/b&gt;’s title?<span class="fh-field__required" aria-hidden="true"> *</span></label>', $html );
+		$this->assertStringContainsString( '<span id="fh-survey-email-help" class="fh-field__help">Use your work address. Only the FireHouse team and the site’s administrators see it, to follow up with you. It never appears on the site.</span>', $html );
+		$this->assertStringContainsString( '<span id="fh-survey-jobTitle-help" class="fh-field__help">Only the FireHouse team and the site’s administrators see it. It never appears on the site.</span>', $html );
+		$this->assertStringNotContainsString( 'fh-survey-links-help', $html, 'Help cleared: none.' );
+		$this->assertStringContainsString( 'Please list up to 8 user needs and recommendations identified in your project, one in each box.', $html, 'Not changed: the plugin’s wording.' );
+	}
+
+	/**
 	 * The form as drawn for these answers and problems.
 	 *
 	 * @param array<string, string|list<string>> $values   The answers.

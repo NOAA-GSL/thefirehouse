@@ -2,7 +2,7 @@
 
 <!-- help audience: editors; screens: settings -->
 
-The site name, the Submit a Finding button, and the navigation labels, on FireHouse → Settings.
+The site name, the Submit a Finding button, the navigation labels, and the survey form's questions, on FireHouse → Settings.
 
 ## What each setting does
 
@@ -15,3 +15,25 @@ The site name, the Submit a Finding button, and the navigation labels, on FireHo
 ![FireHouse → Settings, with the Site, Submit a Finding and Navigation sections](images/settings.webp "FireHouse → Settings.")
 
 Choose **Save Changes** to save. If a setting has a problem, such as an empty label or a survey address that doesn't start with https://, nothing is saved, and the screen marks the problem.
+
+## Reword a survey question
+
+**Survey questions**, at the bottom of the screen, has a row for each question on the FireHouse survey form. Each row has two boxes:
+
+- **Question:** the question as the form asks it. It can't be empty.
+- **Help under it:** the line under the question. Clear it to show none.
+
+1. Change the words in the box.
+2. Choose **Save Changes**. The form asks the new wording straight away.
+
+A box you've changed says so under it, and gives the plugin's own wording. To put it back, copy that wording into the box and save.
+
+Some things here can't be changed:
+
+- **The choices and the order of the questions.** Changing those is a job for the developer.
+- **Who sees a private answer.** The help of the email, job title and sharing questions always ends with a line saying who sees the answer. Add to the help if you like; that line stays.
+- **Some characters.** A question or its help can't hold an email address or a character that doesn't show, such as a direction mark.
+
+![The Survey questions section, with a question's two boxes](images/settings-questions.webp "Survey questions, on FireHouse → Settings.")
+
+Projects that came in before you reworded a question keep their answers, as the researcher gave them.

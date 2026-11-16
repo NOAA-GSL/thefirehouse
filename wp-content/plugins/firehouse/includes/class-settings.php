@@ -15,10 +15,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * The site-wide Firehouse text: the site name, the label and address of every
- * "Submit a Finding" control, and the navigation labels.
+ * "Submit a Finding" control, the navigation labels, and the survey form's question
+ * wording.
  *
- * These are the fields that exist now. The survey's question wording, the AI prompt
- * and who is emailed about submissions join them in later phases. The footer
+ * These are the fields that exist now. The AI prompt joins them in a later phase. A
+ * survey question's wording and help are stored only where they differ from the
+ * plugin's own (Survey\Questions::all()), so wording nobody changed follows the
+ * plugin's when it's updated. The footer
  * settings of the React site aren't here: GSL's footer takes its place. The three
  * navigation links are fixed in code, because their routes are the site's structure;
  * only their labels are settings.
@@ -54,12 +57,25 @@ final class Settings {
 	);
 
 	/**
+	 * The most characters a survey question's wording or help may have: the longest the
+	 * plugin ships, the needs question's help, is under a thousand.
+	 */
+	public const LONGEST_WORDING = 2000;
+
+	/**
 	 * What was typed into each field of a refused save, by field ID, while the screen
 	 * is drawn.
 	 *
 	 * @var array<string, string>
 	 */
 	private static array $rejected = array();
+
+	/**
+	 * Whether a field in error has taken the focus yet, while the screen is drawn.
+	 *
+	 * @var bool
+	 */
+	private static bool $focused = false;
 
 	/**
 	 * Hooks the setting, the screen and the capability.
@@ -71,10 +87,11 @@ final class Settings {
 	}
 
 	/**
-	 * The settings before anyone has saved them: the React site's wording. The submit
-	 * address has no default, so a site can't point at a wrong one.
+	 * The settings before anyone has saved them: the React site's wording, and the
+	 * survey questions' own. The submit address has no default, so a site can't point at
+	 * a wrong one.
 	 *
-	 * @return array{siteName: string, submitLabel: string, submitFormUrl: string, surveyOpen: bool, navLabels: array<string, string>}
+	 * @return array{siteName: string, submitLabel: string, submitFormUrl: string, surveyOpen: bool, navLabels: array<string, string>, questions: array<string, array<string, string>>}
 	 */
 	public static function defaults(): array {
 		return array(
@@ -87,6 +104,7 @@ final class Settings {
 				'projects' => 'Explore Projects',
 				'about'    => 'About',
 			),
+			'questions'     => array(),
 		);
 	}
 
@@ -95,7 +113,7 @@ final class Settings {
 	 * form takes submissions and its page exists, the survey address is that page's,
 	 * so every Submit a Finding button leads to it.
 	 *
-	 * @return array{siteName: string, submitLabel: string, submitFormUrl: string, surveyOpen: bool, navLabels: array<string, string>}
+	 * @return array{siteName: string, submitLabel: string, submitFormUrl: string, surveyOpen: bool, navLabels: array<string, string>, questions: array<string, array<string, string>>}
 	 */
 	public static function get(): array {
 		$settings = self::stored();
@@ -114,7 +132,7 @@ final class Settings {
 	 * that skipped it could have stored: the public pages show no Submit button rather
 	 * than one that goes nowhere (rule 6).
 	 *
-	 * @return array{siteName: string, submitLabel: string, submitFormUrl: string, surveyOpen: bool, navLabels: array<string, string>}
+	 * @return array{siteName: string, submitLabel: string, submitFormUrl: string, surveyOpen: bool, navLabels: array<string, string>, questions: array<string, array<string, string>>}
 	 */
 	public static function stored(): array {
 		$defaults = self::defaults();
@@ -135,6 +153,17 @@ final class Settings {
 		foreach ( array_keys( self::NAV ) as $key ) {
 			if ( is_string( $stored['navLabels'][ $key ] ?? null ) ) {
 				$settings['navLabels'][ $key ] = $stored['navLabels'][ $key ];
+			}
+		}
+		if ( is_array( $stored['questions'] ?? null ) ) {
+			foreach ( $stored['questions'] as $name => $parts ) {
+				foreach ( Survey\Questions::WORDING as $part ) {
+					$text = is_array( $parts ) ? ( $parts[ $part ] ?? null ) : null;
+					// A question's wording is never empty; its help may be.
+					if ( is_string( $name ) && is_string( $text ) && ( 'help' === $part || '' !== $text ) ) {
+						$settings['questions'][ $name ][ $part ] = $text;
+					}
+				}
 			}
 		}
 		return $settings;
@@ -180,6 +209,9 @@ final class Settings {
 		self::add_field( 'firehouse_nav', array( 'navLabels', 'home' ), __( 'Home link', 'firehouse' ), __( 'Goes to the FireHouse landing page.', 'firehouse' ) );
 		self::add_field( 'firehouse_nav', array( 'navLabels', 'projects' ), __( 'Projects link', 'firehouse' ), __( 'Goes to the list of projects.', 'firehouse' ) );
 		self::add_field( 'firehouse_nav', array( 'navLabels', 'about' ), __( 'About link', 'firehouse' ), __( 'Goes to the About page.', 'firehouse' ) );
+
+		// Drawn by its own callback, so the questions are read only to draw the screen.
+		add_settings_section( 'firehouse_questions', __( 'Survey questions', 'firehouse' ), array( self::class, 'questions_section' ), self::PAGE );
 	}
 
 	/**
@@ -201,7 +233,7 @@ final class Settings {
 					add_filter( 'admin_title', array( self::class, 'title' ) );
 					// WordPress's style for a field in error replaces the focus ring with the
 					// same red border every field in error has; this puts the ring back.
-					wp_add_inline_style( 'common', '.form-table tr.form-invalid.form-required input:focus{box-shadow:0 0 0 2px var(--wp-admin-theme-color,#2271b1)}' );
+					wp_add_inline_style( 'common', '.form-table tr.form-invalid.form-required input:focus,.form-table tr.form-invalid.form-required textarea:focus{box-shadow:0 0 0 2px var(--wp-admin-theme-color,#2271b1)}' );
 				}
 			);
 		}
@@ -229,6 +261,7 @@ final class Settings {
 		$errors         = self::errors();
 		$rejected       = get_transient( self::rejected_key() );
 		self::$rejected = is_array( $rejected ) ? $rejected : array();
+		self::$focused  = false;
 		delete_transient( self::rejected_key() );
 		?>
 		<div class="wrap">
@@ -251,7 +284,7 @@ final class Settings {
 			<?php else : ?>
 				<?php settings_errors( 'general' ); ?>
 			<?php endif; ?>
-			<p><?php esc_html_e( 'Every field is required.', 'firehouse' ); ?></p>
+			<p><?php esc_html_e( 'Every field is required, except a survey question’s help.', 'firehouse' ); ?></p>
 			<form action="options.php" method="post" novalidate>
 				<?php
 				settings_fields( self::OPTION );
@@ -300,18 +333,11 @@ final class Settings {
 	 * @param array{path: string[], description: string, type: string} $args The field.
 	 */
 	public static function text_field( array $args ): void {
-		static $focused = false;
-
 		$id        = self::field_id( $args['path'] );
 		$error     = self::errors()[ $id ] ?? null;
 		$value     = self::$rejected[ $id ] ?? self::value_at( self::stored(), $args['path'] );
 		$described = null === $error ? $id . '-description' : $id . '-error ' . $id . '-description';
-		$state     = '';
-		if ( null !== $error ) {
-			$state = ' aria-invalid="true"' . ( $focused ? '' : ' autofocus' );
-			// The first field in error takes the focus.
-			$focused = true;
-		}
+		$state     = null === $error ? '' : self::invalid();
 		printf(
 			'<input type="%1$s" id="%2$s" name="%3$s" value="%4$s" class="regular-text" required aria-describedby="%5$s"%6$s />',
 			esc_attr( $args['type'] ),
@@ -328,12 +354,93 @@ final class Settings {
 	}
 
 	/**
+	 * Draws the survey questions, a row each: the question as the form asks it, and the
+	 * help under it. A field changed from the plugin's wording says so and gives the
+	 * plugin's, so it can be put back; a private answer's help says what the form always
+	 * adds after it.
+	 */
+	public static function questions_section(): void {
+		echo '<div id="firehouse-questions"><p>' . esc_html__( 'The wording of each question on the FireHouse survey form, and the help under it. A question’s choices, and its place in the form, are fixed: changing them is a code change. Clear a question’s help to show none.', 'firehouse' ) . '</p>';
+		$changed = self::stored()['questions'];
+		$errors  = self::errors();
+		echo '<table class="form-table" role="presentation"><tbody>';
+		foreach ( Survey\Questions::all() as $name => $question ) {
+			$invalid = isset( $errors[ self::field_id( array( 'questions', $name, 'label' ) ) ] ) || isset( $errors[ self::field_id( array( 'questions', $name, 'help' ) ) ] );
+			printf(
+				'<tr%1$s><th scope="row">%2$s</th><td><fieldset><legend class="screen-reader-text">%2$s</legend>',
+				$invalid ? ' class="form-invalid form-required"' : '',
+				esc_html( (string) $question['name'] )
+			);
+			self::wording_field( $name, 'label', $question, $changed );
+			self::wording_field( $name, 'help', $question, $changed );
+			echo '</fieldset></td></tr>';
+		}
+		echo '</tbody></table></div>';
+	}
+
+	/**
+	 * Draws one question's wording or help: its box, its error, and what describes it.
+	 *
+	 * @param string                               $name     The question's name.
+	 * @param string                               $part     "label" or "help".
+	 * @param array<string, mixed>                 $question The question, in the plugin's wording.
+	 * @param array<string, array<string, string>> $changed  The stored changes.
+	 */
+	private static function wording_field( string $name, string $part, array $question, array $changed ): void {
+		$id    = self::field_id( array( 'questions', $name, $part ) );
+		$error = self::errors()[ $id ] ?? null;
+		$own   = (string) ( $question[ $part ] ?? '' );
+		$value = self::$rejected[ $id ] ?? $changed[ $name ][ $part ] ?? $own;
+		$notes = array();
+		if ( null !== $error ) {
+			$notes[ $id . '-error' ] = '<strong>' . esc_html__( 'Error:', 'firehouse' ) . '</strong> ' . esc_html( $error );
+		}
+		if ( isset( $changed[ $name ][ $part ] ) && $changed[ $name ][ $part ] !== $own ) {
+			$notes[ $id . '-own' ] = esc_html(
+				'' === $own
+					? __( 'Changed: the plugin’s own wording has no help here.', 'firehouse' )
+					/* translators: %s: the plugin's own wording of the question or its help. */
+					: sprintf( __( 'Changed. The plugin’s own wording: “%s”', 'firehouse' ), $own )
+			);
+		}
+		if ( 'help' === $part && isset( $question['privacy'] ) ) {
+			/* translators: %s: the fixed line saying who sees a private answer. */
+			$notes[ $id . '-privacy' ] = esc_html( sprintf( __( 'After the help, the form always says, and this screen can’t change: “%s”', 'firehouse' ), (string) $question['privacy'] ) );
+		}
+
+		printf( '<p><label for="%1$s">%2$s</label></p>', esc_attr( $id ), esc_html( 'label' === $part ? __( 'Question', 'firehouse' ) : __( 'Help under it', 'firehouse' ) ) );
+		printf(
+			'<p><textarea id="%1$s" name="%2$s" rows="%3$d" class="large-text"%4$s%5$s%6$s>%7$s</textarea></p>',
+			esc_attr( $id ),
+			esc_attr( self::OPTION . '[questions][' . $name . '][' . $part . ']' ),
+			'label' === $part ? 2 : 3,
+			'label' === $part ? ' required' : '',
+			array() === $notes ? '' : ' aria-describedby="' . esc_attr( implode( ' ', array_keys( $notes ) ) ) . '"',
+			null === $error ? '' : self::invalid(), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Fixed attributes.
+			esc_textarea( $value )
+		);
+		foreach ( $notes as $note_id => $note ) {
+			printf( '<p class="description" id="%1$s">%2$s</p>', esc_attr( $note_id ), $note ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped as each note was made.
+		}
+	}
+
+	/**
+	 * A field in error's attributes: invalid, and, for the first on the screen, the
+	 * focus.
+	 */
+	private static function invalid(): string {
+		$state         = ' aria-invalid="true"' . ( self::$focused ? '' : ' autofocus' );
+		self::$focused = true;
+		return $state;
+	}
+
+	/**
 	 * Checks a save. If anything is wrong, nothing is changed: each error is recorded
 	 * against its field, and what was typed is kept for a minute so the screen can
 	 * show it again.
 	 *
 	 * @param mixed $input The submitted settings.
-	 * @return array{siteName: string, submitLabel: string, submitFormUrl: string, surveyOpen: bool, navLabels: array<string, string>}
+	 * @return array{siteName: string, submitLabel: string, submitFormUrl: string, surveyOpen: bool, navLabels: array<string, string>, questions: array<string, array<string, string>>}
 	 */
 	public static function sanitize( mixed $input ): array {
 		list( $settings, $errors ) = self::validate( $input );
@@ -356,7 +463,7 @@ final class Settings {
 	 * Checks settings, from the screen or the Import screen, without saving them.
 	 *
 	 * @param mixed $input The settings to check.
-	 * @return array{0: array{siteName: string, submitLabel: string, submitFormUrl: string, surveyOpen: bool, navLabels: array<string, string>}, 1: array<string, string>}
+	 * @return array{0: array{siteName: string, submitLabel: string, submitFormUrl: string, surveyOpen: bool, navLabels: array<string, string>, questions: array<string, array<string, string>>}, 1: array<string, string>}
 	 *         The settings, with each valid field changed; and each error, by field ID.
 	 */
 	public static function validate( mixed $input ): array {
@@ -405,8 +512,65 @@ final class Settings {
 				$settings['navLabels'][ $key ] = $text;
 			}
 		}
+		// Only the settings screen sends the survey's wording: the Import screen's
+		// settings have none, and keep what's stored. A part the input doesn't hold, or
+		// that's the plugin's own wording, isn't stored, so it follows the plugin's.
+		if ( is_array( $input['questions'] ?? null ) ) {
+			$was                   = $settings['questions'];
+			$settings['questions'] = array();
+			foreach ( Survey\Questions::all() as $name => $question ) {
+				foreach ( Survey\Questions::WORDING as $part ) {
+					if ( ! isset( $input['questions'][ $name ][ $part ] ) ) {
+						continue;
+					}
+					list( $text, $problem ) = self::wording( $input['questions'][ $name ][ $part ], $part );
+					if ( null !== $problem ) {
+						/* translators: 1: the question's short name, such as "Your name"; 2: what's wrong. */
+						$errors[ self::field_id( array( 'questions', $name, $part ) ) ] = sprintf( __( '%1$s: %2$s', 'firehouse' ), $question['name'], $problem );
+						if ( isset( $was[ $name ][ $part ] ) ) {
+							$settings['questions'][ $name ][ $part ] = $was[ $name ][ $part ];
+						}
+					} elseif ( (string) ( $question[ $part ] ?? '' ) !== $text ) {
+						$settings['questions'][ $name ][ $part ] = $text;
+					}
+				}
+			}
+		}
 
 		return array( $settings, $errors );
+	}
+
+	/**
+	 * A survey question's typed wording or help as one line, as the form shows it, and
+	 * what's wrong with it, if anything: empty, for the wording; a character that
+	 * doesn't show, as a submission refuses one; too long; or an email address, which
+	 * the site shows only on the About page.
+	 *
+	 * @param mixed  $value What was typed.
+	 * @param string $part  "label" (the question, which can't be empty) or "help".
+	 * @return array{0: string, 1: string|null} The text, and what's wrong with it.
+	 */
+	private static function wording( mixed $value, string $part ): array {
+		$value   = is_string( $value ) ? $value : '';
+		$subject = 'label' === $part ? __( 'the question', 'firehouse' ) : __( 'the help', 'firehouse' );
+		if ( 1 !== preg_match( '//u', $value ) || 1 === preg_match( Survey\Submission::HIDDEN, $value ) ) {
+			/* translators: %s: "the question" or "the help". */
+			return array( '', sprintf( __( '%s has a character that doesn’t show, such as a direction mark. Type it again.', 'firehouse' ), $subject ) );
+		}
+		$text = trim( (string) preg_replace( '/\s+/u', ' ', $value ) );
+		if ( 'label' === $part && '' === $text ) {
+			/* translators: %s: "the question". */
+			return array( $text, sprintf( __( '%s can’t be empty.', 'firehouse' ), $subject ) );
+		}
+		if ( mb_strlen( $text ) > self::LONGEST_WORDING ) {
+			/* translators: 1: "the question" or "the help"; 2: the most characters allowed. */
+			return array( $text, sprintf( __( '%1$s has more than %2$s characters.', 'firehouse' ), $subject, number_format_i18n( self::LONGEST_WORDING ) ) );
+		}
+		if ( Domain\Email_Shape::has_email( $text ) ) {
+			/* translators: %s: "the question" or "the help". */
+			return array( $text, sprintf( __( '%s can’t hold an email address. The About page gives the team’s.', 'firehouse' ), $subject ) );
+		}
+		return array( $text, null );
 	}
 
 	/**
@@ -440,6 +604,15 @@ final class Settings {
 		}
 		foreach ( array_keys( self::NAV ) as $key ) {
 			$typed[ self::field_id( array( 'navLabels', $key ) ) ] = self::value_at( $input, array( 'navLabels', $key ) );
+		}
+		if ( is_array( $input['questions'] ?? null ) ) {
+			foreach ( array_keys( Survey\Questions::all() ) as $name ) {
+				foreach ( Survey\Questions::WORDING as $part ) {
+					if ( isset( $input['questions'][ $name ][ $part ] ) ) {
+						$typed[ self::field_id( array( 'questions', $name, $part ) ) ] = self::value_at( $input, array( 'questions', $name, $part ) );
+					}
+				}
+			}
 		}
 		return $typed;
 	}

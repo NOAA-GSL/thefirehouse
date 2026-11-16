@@ -61,7 +61,9 @@ const SHOTS = {
   'project-screen': { project: true, element: '#wpbody-content', height: 1150 },
   'topic-fields': { topic: TOPIC, element: '#wpbody-content', height: 760 },
   'synthesis-screen': { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-synthesis', element: '#wpbody-content', height: 440 },
-  settings: { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-settings', element: '#wpbody-content', height: 900 },
+  // The survey form's switch as a new site has it, whatever this copy's is.
+  settings: { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-settings', element: '#wpbody-content', height: 900, untick: '#firehouse-surveyOpen' },
+  'settings-questions': { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-settings', element: '#firehouse-questions', height: 560 },
   import: { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-import', element: '#wpbody-content', height: 320 },
   'landing-hero-fields': { landing: true, block: 'firehouse/hero', height: 600 },
 };
@@ -124,6 +126,8 @@ async function shoot(page, name, shot) {
   await page.goto(url, { waitUntil: 'load' });
   if (page.url().includes('wp-login.php')) throw new Error('WP_COOKIE is not a signed-in session');
   await page.addStyleTag({ content: HIDE + (shot.menu ? '' : HIDE_MENU) });
+  // Only in the picture: nothing is saved.
+  if (shot.untick) await page.locator(shot.untick).evaluate((box) => (box.checked = false));
 
   let box;
   if (shot.block) {
