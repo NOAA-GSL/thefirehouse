@@ -803,12 +803,13 @@ final class TopicScreenTest extends WordPressTestCase {
 		$this->assertNotFalse( has_action( 'edit_form_before_permalink', array( Topic_Screen::class, 'label_error' ) ) );
 		$this->assertNotFalse( has_filter( 'post_row_actions', array( Topic_Screen::class, 'row_actions' ) ) );
 		$this->assertNotFalse( has_filter( 'bulk_actions-edit-fh_topic', array( Topic_Screen::class, 'bulk_actions' ) ) );
+		$this->assertNotFalse( has_filter( 'manage_fh_topic_posts_columns', array( Topic_Screen::class, 'columns' ) ) );
 		$this->assertFalse( has_action( 'save_post_fh_project', array( Topic_Screen::class, 'save' ) ) );
 	}
 
 	/**
-	 * The topics list has no Quick Edit, in a row or as the bulk Edit; every other list
-	 * keeps it.
+	 * The topics list has no Quick Edit, in a row or as the bulk Edit, and so no
+	 * checkboxes; every other list keeps them.
 	 */
 	public function test_the_topics_list_has_no_quick_edit(): void {
 		$actions = array(
@@ -827,6 +828,17 @@ final class TopicScreenTest extends WordPressTestCase {
 		);
 		$this->assertSame( array( 'trash' => 'Move to Trash' ), Topic_Screen::bulk_actions( $bulk ) );
 		$this->assertNull( Topic_Screen::bulk_actions( null ) );
+
+		// No checkboxes, with nothing left for them to choose rows for.
+		$this->assertSame(
+			array( 'title' => 'Label' ),
+			Topic_Screen::columns(
+				array(
+					'cb'    => '<input type="checkbox" />',
+					'title' => 'Label',
+				)
+			)
+		);
 	}
 
 	/**

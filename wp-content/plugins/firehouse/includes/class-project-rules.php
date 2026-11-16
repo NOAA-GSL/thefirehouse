@@ -53,6 +53,11 @@ final class Project_Rules {
 	private const PUBLISHED = array( 'publish', 'future', 'private' );
 
 	/**
+	 * The Preview note's line, under the Publish box's floated buttons.
+	 */
+	public const PREVIEW_STYLE = '#submitdiv .fh-publish-preview{clear:both;margin:0;padding-top:8px;text-align:left}';
+
+	/**
 	 * The meta that records a project has been published once.
 	 */
 	public const PUBLISHED_ONCE = '_firehouse_published';
@@ -71,6 +76,7 @@ final class Project_Rules {
 		add_action( 'wp_ajax_inline-save', array( self::class, 'quick_edit' ), 0 );
 		add_action( 'admin_notices', array( self::class, 'list_notices' ) );
 		add_action( 'edit_form_top', array( self::class, 'form_notices' ), 20 );
+		add_action( 'post_submitbox_minor_actions', array( self::class, 'preview_note' ) );
 		add_action( 'post_submitbox_misc_actions', array( self::class, 'publish_box' ) );
 		add_action( 'load-post.php', array( self::class, 'load' ) );
 		add_action( 'add_meta_boxes_' . Post_Types::PROJECT, array( self::class, 'boxes' ), 20 );
@@ -338,15 +344,34 @@ final class Project_Rules {
 	}
 
 	/**
-	 * In the Publish box: what Preview shows; why a project without IRB approval can't
-	 * be published, in place of the Publish button, which load() hides; and a fixed
-	 * address, read-only, in place of the Slug box, which boxes() removes.
-	 *
-	 * Preview shows a project as last saved, not the changes on the screen (decided by
-	 * Eric, 15 November): a project has no author (Capabilities::keep_in_place()), and
+	 * Under the Publish box's Preview button, where reading on from it reaches it: what
+	 * it shows, a project as last saved, not the changes on the screen (decided by
+	 * Eric, 15 November). A project has no author (Capabilities::keep_in_place()), and
 	 * WordPress saves a draft on Preview only for its author, so a preview is an
 	 * autosave, which takes none of the project's fields from the screen
-	 * (Edit_Screen::save()). A published project's Preview Changes is always one.
+	 * (Edit_Screen::save()). A published project's Preview Changes is always one. The
+	 * button is named as WordPress names it: Preview Changes only once published.
+	 *
+	 * @param \WP_Post $post The post being edited.
+	 */
+	public static function preview_note( \WP_Post $post ): void {
+		if ( Post_Types::PROJECT !== $post->post_type ) {
+			return;
+		}
+		if ( 'publish' === $post->post_status ) {
+			$note = __( 'Preview Changes shows the project as last updated, not the changes on this screen, which show once you update it.', 'firehouse' );
+		} elseif ( in_array( $post->post_status, self::PUBLISHED, true ) ) {
+			$note = __( 'Preview shows the project as last updated, not the changes on this screen, which show once you update it.', 'firehouse' );
+		} else {
+			$note = __( 'Preview shows the project as last saved, not the changes on this screen: save it first to see them.', 'firehouse' );
+		}
+		echo '<p class="fh-publish-preview">' . esc_html( $note ) . '</p>';
+	}
+
+	/**
+	 * In the Publish box: why a project without IRB approval can't be published, in
+	 * place of the Publish button, which load() hides; and a fixed address, read-only,
+	 * in place of the Slug box, which boxes() removes.
 	 *
 	 * @param \WP_Post $post The post being edited.
 	 */
@@ -354,10 +379,6 @@ final class Project_Rules {
 		if ( Post_Types::PROJECT !== $post->post_type ) {
 			return;
 		}
-		$preview = in_array( $post->post_status, self::PUBLISHED, true )
-			? __( 'Preview Changes shows the project as last updated, not the changes on this screen, which show once you update it.', 'firehouse' )
-			: __( 'Preview shows the project as last saved, not the changes on this screen: save it first to see them.', 'firehouse' );
-		echo '<div class="misc-pub-section fh-publish-preview"><p>' . esc_html( $preview ) . '</p></div>';
 		if ( ! self::approved( $post->ID ) ) {
 			$public = in_array( $post->post_status, self::PUBLISHED, true );
 			$head   = $public ? __( 'This project can’t stay published.', 'firehouse' ) : __( 'This project can’t be published.', 'firehouse' );
@@ -370,18 +391,24 @@ final class Project_Rules {
 	}
 
 	/**
-	 * On the screen of a project that can't be published, hides what would ask for it:
-	 * the Publish button, and the visibility and date settings, which would make it
-	 * private or schedule it. Save Draft and Save as Pending stay. The server refuses
-	 * them anyway; this keeps the box from offering them, or from leaving no button
-	 * once Private is chosen.
+	 * On a project's screen, sets the Preview note on a line of its own under the
+	 * buttons, which WordPress floats in a right-aligned row. On the screen of a project
+	 * that can't be published, also hides what would ask for it: the Publish button, and
+	 * the visibility and date settings, which would make it private or schedule it. Save
+	 * Draft and Save as Pending stay. The server refuses them anyway; this keeps the box
+	 * from offering them, or from leaving no button once Private is chosen.
 	 */
 	public static function load(): void {
 		$id   = isset( $_GET['post'] ) && is_string( $_GET['post'] ) ? absint( $_GET['post'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Only reads which post the screen shows.
 		$post = 0 === $id ? null : get_post( $id );
-		if ( $post instanceof \WP_Post && Post_Types::PROJECT === $post->post_type && self::unpublishable( $post ) ) {
-			wp_add_inline_style( 'common', '#publishing-action,#submitdiv .misc-pub-visibility,#submitdiv .misc-pub-curtime{display:none}' );
+		if ( ! $post instanceof \WP_Post || Post_Types::PROJECT !== $post->post_type ) {
+			return;
 		}
+		$style = self::PREVIEW_STYLE;
+		if ( self::unpublishable( $post ) ) {
+			$style .= '#publishing-action,#submitdiv .misc-pub-visibility,#submitdiv .misc-pub-curtime{display:none}';
+		}
+		wp_add_inline_style( 'common', $style );
 	}
 
 	/**

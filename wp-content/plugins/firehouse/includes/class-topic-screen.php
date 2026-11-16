@@ -91,6 +91,7 @@ final class Topic_Screen extends Edit_Screen {
 		add_action( 'edit_form_before_permalink', array( self::class, 'label_error' ) );
 		add_filter( 'post_row_actions', array( self::class, 'row_actions' ), 10, 2 );
 		add_filter( 'bulk_actions-edit-' . Post_Types::TOPIC, array( self::class, 'bulk_actions' ) );
+		add_filter( 'manage_' . Post_Types::TOPIC . '_posts_columns', array( self::class, 'columns' ) );
 	}
 
 	/**
@@ -122,6 +123,21 @@ final class Topic_Screen extends Edit_Screen {
 			unset( $actions['edit'] );
 		}
 		return $actions;
+	}
+
+	/**
+	 * The topics list's columns, without the checkboxes: with no bulk Edit and no
+	 * deleting a topic (Capabilities::map_meta_cap()), no bulk action is left for them
+	 * to choose rows for, and each would be a stop for Tab and screen readers.
+	 *
+	 * @param mixed $columns The columns, by name.
+	 * @return mixed
+	 */
+	public static function columns( mixed $columns ): mixed {
+		if ( is_array( $columns ) ) {
+			unset( $columns['cb'] );
+		}
+		return $columns;
 	}
 
 	/**
