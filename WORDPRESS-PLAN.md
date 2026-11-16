@@ -1858,12 +1858,13 @@ behaves the same, and the accessibility snapshots match.
 Eric decided this phase's open questions on 14 November, asked one by one; each is
 marked below. He answered the questions that came up while building it on 15
 November, again one by one, choosing each time the option recommended. Those still
-to build say so:
+to build say so. On 16 November he cut what the first release needs, to keep the
+number of changes down: what isn't needed for it says *After launch*.
 
 - **Email addresses in staff-typed words.** In the landing and About text fields, a
   word shaped like an email address holds the save, as an empty required word does,
-  except in the team's mailbox field (rule 2's spirit; a guide, not a control). *To
-  build.*
+  except in the team's mailbox field (rule 2's spirit; a guide, not a control). *After
+  launch.*
 - **Private.** A project without IRB approval still can't be made private (#51), as
   built.
 - **Paragraphs.** Editors can add and remove paragraphs in the About mission and in
@@ -1873,11 +1874,11 @@ to build say so:
 - **The trash.** Another project may take a trashed project's address; a restored one
   gets the next free address and its editor is told, as built (#51).
 - **Revisions.** The revisions comparison shows the team's fields as well as the
-  title, and the survey's labelled as not restored. *To build.*
+  title, and the survey's labelled as not restored. *After launch.*
 - **Lengths.** No length limits on the team's fields, as built.
 - **Quick Edit** is removed for topics. *To build.*
 - **Notes.** `Page_Words` accepts `metadata` holding only a note's ID, so a note on a
-  block doesn't send the page's words back through kses. *To build.*
+  block doesn't send the page's words back through kses. *After launch.*
 - **The synthesis.** The Research Synthesist checks every topic area's need counts
   against the projects each names, and Stephanie and Emily decide on its list. *Done
   15 November: four counts carried over from the 17 September draft, one need with no
@@ -1889,7 +1890,9 @@ to build say so:
   the team cards.*
 - **Order.** The team cards, then the allowed blocks and the landing page's trash
   rule; then each of the above its own change; then the synthesis screen. *The team
-  cards, the allowed blocks and the trash rule built 15 November.*
+  cards, the allowed blocks and the trash rule built 15 November. From 16 November:
+  the Preview note and Quick Edit's removal for topics as one change, then the
+  synthesis screen at its smallest (below).*
 
 - Project and topic edit screens: survey fields read-only, editorial fields editable,
   publishing through WordPress's Publish button. *A project's slug is editable while
@@ -2061,7 +2064,8 @@ to build say so:
   trash say why and name those pages, and any other route is refused too. My reading,
   for Eric to confirm: a scheduled page counts as published, since it would open at
   the trashed address once its time came; drafts, pending and private pages don't.
-  Left open, for Eric:*
+  Left open, and left as documented (Eric, 16 November: administrators are trusted,
+  so what only an administrator can cause isn't built against):*
   - *The rule covers putting the landing page in the trash, not what follows: a draft
     under a landing page already there can still be published, which reopens the same
     address; and nothing under it is checked for other blocks while it's there, nor
@@ -2079,7 +2083,10 @@ to build say so:
   broader interagency or multi-regional applicability, which the reviewer judges).
   *Decided: when a project published or unpublished later changes the counts, the
   topic pages sort by the counts they show, ties keeping the reviewed order, and the
-  screen marks the area as changed since its review.*
+  screen marks the area as changed since its review.* *For the first release (Eric,
+  16 November): the paste, its validation with the order, and Mark reviewed, with
+  Download NotebookLM source, as one change. The comparison against the published
+  synthesis and the re-sort when the counts change come after launch.*
 - Download NotebookLM source, for the paste-in fallback.
 - Submit buttons bound to the settings. *With the blocks staying and no core blocks
   allowed (above), no core button is on a FireHouse page: the blocks that print a
