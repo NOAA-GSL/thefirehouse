@@ -225,6 +225,9 @@ one is.
   updated, not the changes on the screen; and a topic's says Preview Changes shows its label as typed
   and its other words as last updated. The topics list has no Quick Edit, bulk Edit
   or checkboxes.
+* A project's or topic's Preview shows all its fields as stored. It had shown only
+  the first item of each list (one author, one fire phase, one need) and no geography,
+  with a PHP warning.
 * FireHouse → Synthesis, for FireHouse Editors and administrators: download the
   NotebookLM source, paste the JSON NotebookLM gives, check it, and mark it reviewed
   to publish it to the topic pages and the landing page. Each topic keeps a revision

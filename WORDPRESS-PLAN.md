@@ -1895,7 +1895,12 @@ number of changes down: what isn't needed for it says *After launch*.
   no editor is its author (#52). *Built 16 November, and a published project's Preview
   Changes says the same: it shows the project as last updated. A topic's Preview
   Changes says the label shows as typed and its other words as last updated (Eric,
-  16 November).*
+  16 November). Found previewing on the local copy the same day: a preview read the
+  fields from the autosave, as WordPress does for revisioned meta, and kept only the
+  first item of each list (one author, one fire phase, one need) and nothing of the
+  geography, with a warning from WordPress. The autosave's copy is also never brought
+  up to date. A preview now reads the post's own fields, as the notes say
+  (`Meta::revision_keys()`).*
 - **The trash.** Another project may take a trashed project's address; a restored one
   gets the next free address and its editor is told, as built (#51).
 - **Revisions.** The revisions comparison shows the team's fields as well as the

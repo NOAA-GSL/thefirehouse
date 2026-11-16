@@ -97,18 +97,20 @@ final class MetaTest extends WordPressTestCase {
 
 	/**
 	 * The revisioned keys: none of the fields while an autosave of a project or topic
-	 * is made, so WordPress copies none from the request; a project's editorial ones
-	 * only while a revision is restored; every field anywhere else, a revision's own
-	 * copy included; and other post types' lists as they are.
+	 * is made, so WordPress copies none from the request, or while a field is read,
+	 * so a preview reads the post's own; a project's editorial ones only while a
+	 * revision is restored; every field anywhere else, a revision's own copy included;
+	 * and other post types' lists as they are.
 	 *
 	 * @dataProvider revision_key_cases
 	 *
-	 * @param string   $doing     The action under way, or ''.
+	 * @param string   $doing     The action or filter under way, or ''.
 	 * @param string   $post_type The post type.
 	 * @param string[] $expected  The keys left.
 	 */
 	public function test_the_revisioned_keys_are_narrowed_where_written_back( string $doing, string $post_type, array $expected ): void {
 		Functions\when( 'doing_action' )->alias( static fn( string $action ): bool => $doing === $action );
+		Functions\when( 'doing_filter' )->alias( static fn( string $filter ): bool => $doing === $filter );
 		$this->assertSame( $expected, Meta::revision_keys( array( 'fh_summary', 'other_key', 'fh_org', 'fh_reviewedBy' ), $post_type ) );
 	}
 
@@ -126,6 +128,9 @@ final class MetaTest extends WordPressTestCase {
 			'project restore'  => array( 'wp_restore_post_revision', 'fh_project', array( 'fh_summary', 'other_key' ) ),
 			'topic restore'    => array( 'wp_restore_post_revision', 'fh_topic', $all ),
 			'post restore'     => array( 'wp_restore_post_revision', 'post', $all ),
+			'project preview'  => array( 'get_post_metadata', 'fh_project', array( 'other_key' ) ),
+			'topic preview'    => array( 'get_post_metadata', 'fh_topic', array( 'other_key' ) ),
+			'post preview'     => array( 'get_post_metadata', 'post', $all ),
 			'project revision' => array( '', 'fh_project', $all ),
 		);
 	}
