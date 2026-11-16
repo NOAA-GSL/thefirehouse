@@ -45,23 +45,51 @@ final class Blocks {
 	public static function hook(): void {
 		add_action( 'init', array( self::class, 'register' ) );
 		add_action( 'enqueue_block_editor_assets', array( self::class, 'enqueue_editor' ) );
+		add_filter( 'block_editor_settings_all', array( self::class, 'lock_layout' ), 10, 2 );
+	}
+
+	/**
+	 * Locks a FireHouse page's layout in the block editor: its parts can't be added,
+	 * moved or removed there, only their words changed (Phase 6's decision). Without it,
+	 * Backspace on a part's outline, where the Down arrow takes an editor between parts,
+	 * removed the part, and Enter added a paragraph. The lock is the editor's setting
+	 * for the page, not a `lock` attribute on each block, which the blocks don't declare
+	 * (Page_Words).
+	 *
+	 * Only a page in the FireHouse tree made of nothing but FireHouse blocks is locked
+	 * (Page_Words::only_firehouse_blocks()), whatever attributes they hold, so a block
+	 * with a note on it doesn't unlock the page. An empty page there can still be
+	 * written, and one holding another block can have it taken out, which also lets
+	 * Page_Words keep its words as typed again; it's locked when the editor next opens
+	 * it. Other posts are left as they are.
+	 *
+	 * @param array<string, mixed> $settings The block editor's settings.
+	 * @param mixed                $context  What the editor edits: WP_Block_Editor_Context, its `post` the post.
+	 * @return array<string, mixed>
+	 */
+	public static function lock_layout( array $settings, mixed $context ): array {
+		$post = is_object( $context ) && isset( $context->post ) ? $context->post : null;
+		if ( $post instanceof \WP_Post && 'page' === $post->post_type && Capabilities::in_tree( $post ) && Page_Words::only_firehouse_blocks( parse_blocks( $post->post_content ) ) ) {
+			$settings['templateLock'] = 'all';
+		}
+		return $settings;
 	}
 
 	/**
 	 * Loads assets/js/block-editor.js in every block editor on the site, with each
 	 * block's name and the attributes its block.json declares, from the manifest. It
-	 * shows each block read-only, listing what the page stores in it, until Phase 6 lets
-	 * editors change that (WORDPRESS-PLAN.md), and adds nothing to the inserter. Plain
-	 * JavaScript with no build step: its dependencies are WordPress's own packages, and
-	 * it is versioned by the plugin's version and the file's modified time, as the
-	 * stylesheets are.
+	 * shows the landing and About pages' words as text fields in place, and adds nothing
+	 * to the inserter. Plain JavaScript with no build step: its dependencies are
+	 * WordPress's own packages (`wp-data` for holding a save while a required word is
+	 * empty), and it is versioned by the plugin's version and the file's modified time,
+	 * as the stylesheets are.
 	 */
 	public static function enqueue_editor(): void {
 		$root = dirname( __DIR__ );
 		wp_enqueue_script(
 			self::EDITOR_SCRIPT,
 			plugins_url( 'assets/js/block-editor.js', $root . '/firehouse.php' ),
-			array( 'wp-blocks', 'wp-block-editor', 'wp-components', 'wp-element', 'wp-i18n' ),
+			array( 'wp-blocks', 'wp-block-editor', 'wp-components', 'wp-data', 'wp-element', 'wp-i18n' ),
 			VERSION . '-' . (int) filemtime( $root . '/assets/js/block-editor.js' ),
 			false
 		);

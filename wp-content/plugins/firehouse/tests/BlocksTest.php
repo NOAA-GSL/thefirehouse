@@ -80,6 +80,51 @@ final class BlocksTest extends WordPressTestCase {
 	}
 
 	/**
+	 * A FireHouse page made of FireHouse blocks has its layout locked in the block
+	 * editor, its parts fixed; an empty one, one holding another block, any other post's
+	 * editor, a page outside the tree, or an editor with no post is left as it is.
+	 */
+	public function test_a_firehouse_pages_layout_is_locked(): void {
+		Functions\when( 'get_posts' )->justReturn( array( 10 ) );
+		Functions\when( 'get_post_ancestors' )->alias( static fn( \WP_Post $post ): array => 0 === $post->post_parent ? array() : array( $post->post_parent ) );
+		$block    = static fn( string $name, array $attrs = array() ): array => array(
+			'blockName'    => $name,
+			'attrs'        => $attrs,
+			'innerBlocks'  => array(),
+			'innerHTML'    => '',
+			'innerContent' => array(),
+		);
+		Functions\when( 'parse_blocks' )->alias(
+			static fn( string $content ): array => match ( $content ) {
+				'firehouse' => array( $block( 'firehouse/about-intro' ) ),
+				'noted'     => array( $block( 'firehouse/about-intro', array( 'metadata' => array( 'noteId' => 5 ) ) ) ),
+				'mixed'     => array( $block( 'firehouse/about-intro' ), $block( 'core/paragraph' ) ),
+				default     => array(),
+			}
+		);
+		$editing  = static fn( ?\WP_Post $post ): object => (object) array( 'post' => $post );
+		$page     = static fn( int $id, int $parent_id, string $type = 'page', string $content = 'firehouse' ): \WP_Post => new \WP_Post(
+			array(
+				'ID'           => $id,
+				'post_type'    => $type,
+				'post_parent'  => $parent_id,
+				'post_content' => $content,
+			)
+		);
+		$settings = array( 'titlePlaceholder' => 'Add title' );
+
+		$this->assertSame( 'all', Blocks::lock_layout( $settings, $editing( $page( 10, 0 ) ) )['templateLock'], 'The landing page.' );
+		$this->assertSame( 'all', Blocks::lock_layout( $settings, $editing( $page( 11, 10 ) ) )['templateLock'], 'The About page.' );
+		$this->assertSame( 'all', Blocks::lock_layout( $settings, $editing( $page( 11, 10, 'page', 'noted' ) ) )['templateLock'], 'A block with a note on it.' );
+		$this->assertSame( $settings, Blocks::lock_layout( $settings, $editing( $page( 12, 10, 'page', '' ) ) ), 'An empty page in the tree.' );
+		$this->assertSame( $settings, Blocks::lock_layout( $settings, $editing( $page( 13, 10, 'page', 'mixed' ) ) ), 'A page holding another block.' );
+		$this->assertSame( $settings, Blocks::lock_layout( $settings, $editing( $page( 20, 0 ) ) ), 'A page outside the tree.' );
+		$this->assertSame( $settings, Blocks::lock_layout( $settings, $editing( $page( 30, 10, 'post' ) ) ), 'Not a page.' );
+		$this->assertSame( $settings, Blocks::lock_layout( $settings, $editing( null ) ), 'The site editor.' );
+		$this->assertSame( $settings, Blocks::lock_layout( $settings, null ) );
+	}
+
+	/**
 	 * The block editor loads the blocks' editor script, on WordPress's own packages,
 	 * versioned by the plugin and the file, with every block's name and the attributes
 	 * its block.json declares before it, and the plugin's translations.
@@ -115,7 +160,7 @@ final class BlocksTest extends WordPressTestCase {
 				array(
 					Blocks::EDITOR_SCRIPT,
 					'https://example.test/wp-content/plugins/firehouse/assets/js/block-editor.js',
-					array( 'wp-blocks', 'wp-block-editor', 'wp-components', 'wp-element', 'wp-i18n' ),
+					array( 'wp-blocks', 'wp-block-editor', 'wp-components', 'wp-data', 'wp-element', 'wp-i18n' ),
 					\Firehouse\VERSION . '-' . filemtime( $file ),
 					false,
 				),

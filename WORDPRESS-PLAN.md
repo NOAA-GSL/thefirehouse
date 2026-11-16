@@ -338,9 +338,10 @@ each. These blocks stay, edited through text fields of their own (Eric, 14 Novem
 see Phase 6).*
 
 **Editor previews** are rendered on the server, so each block's markup is written once,
-in PHP. *Until Phase 6 (13 November): the editor shows each block as a read-only box of
-what the page stores in it, not a preview, since a preview would blur the page's own
-words with what FireHouse adds (Phase 6's landing and About item).*
+in PHP. *Since 13 November the editor shows each block as a box of what the page stores
+in it, not a preview, since a preview would blur the page's own words with what
+FireHouse adds; since 15 November the words in it are text fields (Phase 6's landing
+and About item).*
 
 ### Interactivity
 
@@ -1970,15 +1971,25 @@ marked below.
   removed and reordered, each with a portrait chosen from the Media Library, kept by
   its ID and shown only where visitors may see it (the import's check). The audience
   cards and the numbered steps stay fixed lists whose words change. Editors' text is
-  kept as typed, though their saves run it through kses (below).*
-  *Until then (13 November, at Eric's request, to tell the page's words
-  from what FireHouse adds): `assets/js/block-editor.js` shows each block in the editor
-  as a read-only box of what the page stores in it. Every block saves its inner blocks,
-  so a save keeps the page's blocks; a save that rebuilds the page leaves out values
-  equal to a block's default, which render the same, and a FireHouse Editor's save
-  keeps the words as typed (`Page_Words`, 15 November; Phase 4's landing page
-  note). The Code editor can still change anything stored, so the boxes aren't a
-  control. The text fields replace the boxes.*
+  kept as typed (`Page_Words`, below).*
+  *The text fields done 15 November (`assets/js/block-editor.js`): each landing and
+  About block's words are fields in its box, a paragraph at a time; its layout,
+  links, icons, counts and portraits are shown beside them, and a list keeps the
+  entries it has. A required word (a heading, a button's or link's text, a count's
+  label or words, an entry's title, a member's name) left empty is marked and holds
+  the save, with a notice naming it that goes to it; the hold is a guide, not a
+  control. The editor locks the layout of a FireHouse page made of nothing but
+  FireHouse blocks (`Blocks::lock_layout()`, the editor's `templateLock` for the
+  page, since a `lock` attribute on each block would send the words back through
+  kses): the Section 508 review found that Backspace on a part's outline, where the
+  Down arrow takes an editor between parts, removed the part. The team's cards and portraits come next. Before that (13 November, at Eric's request,
+  to tell the page's words from what FireHouse adds), each block was a read-only box
+  of what the page stores in it. Every block saves its inner blocks, so a save keeps
+  the page's blocks; a save that rebuilds the page leaves out values equal to a
+  block's default, which render the same, and a FireHouse Editor's save keeps the
+  words as typed (`Page_Words`, 15 November; Phase 4's landing page note). The Code
+  editor can still change anything stored, so the fields' rules aren't a control: the
+  pages' escaping and `Page_Words` are.*
 - Whether an editor can reword the cleared disclaimer. *Decided: no one can from
   WordPress. It stays the templates' own copy, and a cleared change comes as a pull
   request.*

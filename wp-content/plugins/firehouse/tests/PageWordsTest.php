@@ -293,5 +293,22 @@ final class PageWordsTest extends WordPressTestCase {
 			self::block( 'firehouse/about-sections', array(), array( self::block( 'firehouse/about-mission' ), self::block( 'firehouse/about-team', array( 'members' => array() ) ) ), array( "\n\t", null, "\n", null, "\n" ) ),
 		);
 		$this->assertTrue( Page_Words::only_firehouse( $blocks ) );
+		$this->assertTrue( Page_Words::only_firehouse_blocks( $blocks ) );
+	}
+
+	/**
+	 * A page's structure is FireHouse blocks whatever attributes they hold, a note's
+	 * `metadata` included, so its layout stays locked; its words still go through
+	 * WordPress's filters while a block holds one. Anything else in the structure isn't.
+	 */
+	public function test_the_structure_check_ignores_attributes_only(): void {
+		$noted = array( self::block( 'firehouse/hero', array(), array( self::block( 'firehouse/stats', array( 'metadata' => array( 'noteId' => 5 ) ) ) ), array( null ) ) );
+		$this->assertTrue( Page_Words::only_firehouse_blocks( $noted ) );
+		$this->assertFalse( Page_Words::only_firehouse( $noted ) );
+
+		$this->assertFalse( Page_Words::only_firehouse_blocks( array( self::block( 'firehouse/hero' ), self::block( 'core/paragraph' ) ) ) );
+		$this->assertFalse( Page_Words::only_firehouse_blocks( array( self::block( 'firehouse/hero', array(), array(), array( '<b>' ) ) ) ) );
+		$this->assertFalse( Page_Words::only_firehouse_blocks( array( array( 'attrs' => 'x' ) + self::block( 'firehouse/hero' ) ) ) );
+		$this->assertFalse( Page_Words::only_firehouse_blocks( array() ) );
 	}
 }

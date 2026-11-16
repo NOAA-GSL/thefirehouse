@@ -89,8 +89,8 @@ wp-content/plugins/firehouse/
                     readable copies are generated from src/, and
                     assets/css/frame.css is written by hand;
                     assets/fonts/ and assets/css/fonts.css hold the fonts;
-                    assets/js/block-editor.js, which shows the blocks in the
-                    block editor, is written by hand;
+                    assets/js/block-editor.js, which shows the blocks and their
+                    words' fields in the block editor, is written by hand;
                     assets/icons/, assets/logos/, assets/preview/, assets/search/
                     and assets/map/ are generated from src/, public/ and the site's
                     npm packages by npm run plugin:assets;
@@ -466,19 +466,31 @@ nothing from the database. Each class's docblock has the detail; this is the map
     holds the two to each other. The bar and the project block declare
     `supports.interactivity`, so WordPress processes their directives on the server;
     the explorer and the coverage map don't (`Explorer_Page` says why).
-  - In the block editor, each block is a read-only box with its title and what the
-    page stores in it (`assets/js/block-editor.js`, also plain JavaScript): its words,
-    and the links, icons, portraits and counts' settings that go with them. That lets
-    an editor tell the page's own words from what FireHouse adds in each block from its
-    settings, projects and topic areas. A block that stores nothing and holds no
-    others says FireHouse adds it. Changing what's stored comes with Phase 6.
+  - In the block editor, each landing and About block is a box with its title and its
+    words as text fields in place (`assets/js/block-editor.js`, also plain
+    JavaScript): headings, text, button and link text, each count's label and caption,
+    each audience card's, step's and team member's words, a paragraph at a time. The
+    layout, links, icons, counts and portraits stay as they are, shown beside the
+    fields, a list keeps the entries it has, and a button the page doesn't have stays
+    out. A field that can't be empty (a heading, a button's or link's text, a count's
+    label or words, an entry's title, a member's name) says so; while one is, it's
+    marked, the editor says which in a notice that goes to it, and holds the save. The
+    hold is a guide, not a control: the Code editor and an autosave don't keep it. The
+    box tells the page's own words from what FireHouse adds from its settings,
+    projects and topic areas, and says how to move between the page's parts by
+    keyboard. A block that stores nothing and holds no others says FireHouse adds it.
+    On a FireHouse page made of nothing but FireHouse blocks, whatever attributes they
+    hold, a note's included, the editor locks the layout (`Blocks::lock_layout()`,
+    with `Page_Words::only_firehouse_blocks()`): no part can be added, moved or
+    removed there, so Backspace or Enter on a part's outline changes nothing. An
+    empty page in the tree can still be written, and a page holding another block can
+    have it taken out.
   - Every block saves its inner blocks and nothing else, so saving from the editor
     keeps the page's blocks: the hero keeps the live counts it holds, and the About
     sections block the four sections it holds. `scripts/block-editor.test.mjs` holds
     each block's save to that. A save that rebuilds the page respaces the block
     comments and leaves out values equal to a block's default, which render the same,
-    and a FireHouse Editor's save runs the words through WordPress's HTML filter
-    (WORDPRESS-PLAN.md, Phase 6).
+    and keeps an editor's words as typed (`Page_Words`).
   - `tests/BlocksTest.php` holds each folder to that shape, and fails on a folder
     missing from the list, or on any file in `blocks/` but the manifest.
 - `Subnav` is the Firehouse bar, `firehouse/subnav`: the site's `SiteHeader` without
