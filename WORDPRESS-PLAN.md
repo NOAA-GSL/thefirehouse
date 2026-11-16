@@ -2260,9 +2260,11 @@ review says when to delete them (open question 14).*
   `help/03-survey-submissions.md`, on the projects list's and a project's Help tabs.
   The form has no dashboard screen of its own (its wording is on Settings, #68), so
   `Help::SCREENS` is unchanged. A submission's answers can't be corrected on the
-  site: the guide asks the researcher to send the form again and the team to delete
-  the first draft, since a form submission has no survey record for the import to
-  correct (rule 1).*
+  site: for one never published, the guide asks the researcher to send the form again
+  and the team to delete the first draft, since a form submission has no survey record
+  for the import to correct (rule 1); one that has been published keeps its address,
+  editorial fields and synthesis links, so the team tells the developer instead
+  (Copilot on #69). Awaiting Eric's decision.*
 - If the form uses the design system's `TextField` or `TextArea`, take `Field.css` off
   `UNUSED` in `scripts/plugin-css-sources.mjs`, which leaves it out of the plugin's
   stylesheet; a test fails until then if the form's markup uses its classes. *Done:

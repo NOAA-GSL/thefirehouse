@@ -36,7 +36,10 @@ A submission without IRB approval or exemption can't be published. It stays a dr
 
 ## Correct it
 
-You can't change a researcher's answers. If one needs correcting, ask the researcher, if they gave an email, to send the form again with the correction. When the new draft arrives, delete the first one, as below.
+You can't change a researcher's answers. If one needs correcting:
+
+- **If it has never been published:** ask the researcher, if they gave an email, to send the form again with the correction. When the new draft arrives, delete the first one, as below.
+- **If it has been published, even if it's a draft again now:** don't delete it. Its address, your editorial fields and the synthesis's links to it would go with it, and a new submission doesn't bring them back. Tell the developer instead.
 
 ## Set it aside or delete it
 
