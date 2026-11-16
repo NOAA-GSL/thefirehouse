@@ -1,0 +1,285 @@
+<?php
+/**
+ * Tests for the checks on a pasted synthesis.
+ *
+ * @package Firehouse
+ */
+
+declare( strict_types = 1 );
+
+namespace Firehouse\Tests;
+
+use Firehouse\Domain\Synthesis;
+
+/**
+ * A pasted synthesis is read and checked as the synthesis screen shows it: every
+ * problem said, the needs given only when there are none.
+ */
+final class SynthesisTest extends DomainTestCase {
+
+	/**
+	 * The projects: two the site shows, one a draft.
+	 *
+	 * @var list<array<string, mixed>>
+	 */
+	private const PROJECTS = array(
+		array(
+			'ref'    => 11,
+			'slug'   => 'smoke-study',
+			'id'     => 'R_smoke',
+			'title'  => 'Smoke study',
+			'public' => true,
+		),
+		array(
+			'ref'    => 12,
+			'slug'   => 'heat-study',
+			'id'     => '2026-10-01 10:00:00',
+			'title'  => 'Heat study',
+			'public' => true,
+		),
+		array(
+			'ref'    => 13,
+			'slug'   => 'draft-study',
+			'id'     => 'R_draft',
+			'title'  => 'Draft study',
+			'public' => false,
+		),
+	);
+
+	/**
+	 * A good synthesis: every area, with two needs in one.
+	 *
+	 * @return list<array<string, mixed>>
+	 */
+	private static function good(): array {
+		return array(
+			array(
+				'topic'    => 'forecast',
+				'topNeeds' => array(
+					array(
+						'text'     => ' Longer-lead outlooks ',
+						'mentions' => 2,
+						'projects' => array( 'smoke-study', '2026-10-01 10:00:00' ),
+						'cites'    => array( 'Entry 1' ),
+					),
+					array(
+						'text'     => 'Clearer smoke forecasts',
+						'mentions' => 1,
+						'projects' => array( 'R_smoke' ),
+					),
+				),
+			),
+			array(
+				'topic'    => 'observe',
+				'topNeeds' => array(),
+			),
+			array(
+				'topic'    => 'warning',
+				'topNeeds' => array(),
+			),
+			array(
+				'topic'    => 'governance',
+				'topNeeds' => array(),
+			),
+		);
+	}
+
+	/**
+	 * What's wrong with a synthesis.
+	 *
+	 * @param mixed $synthesis The synthesis, before it's JSON.
+	 * @return list<string>
+	 */
+	private static function problems( mixed $synthesis ): array {
+		return Synthesis::check( (string) json_encode( $synthesis ), self::PROJECTS )['problems'];
+	}
+
+	/**
+	 * A good synthesis gives its needs, by area in the site's order, each need's text
+	 * trimmed and its projects by post ID, whether named by slug or response ID; what
+	 * the site doesn't show is left out; a Markdown code fence around it is fine.
+	 */
+	public function test_a_good_synthesis_gives_its_needs(): void {
+		$result = Synthesis::check( "```json\n" . json_encode( self::good() ) . "\n```", self::PROJECTS );
+
+		$this->assertSame( array(), $result['problems'] );
+		$this->assertSame( array( 'observe', 'forecast', 'warning', 'governance' ), array_keys( $result['needs'] ) );
+		$this->assertSame(
+			array(
+				array(
+					'text'     => 'Longer-lead outlooks',
+					'mentions' => 2,
+					'projects' => array( 11, 12 ),
+				),
+				array(
+					'text'     => 'Clearer smoke forecasts',
+					'mentions' => 1,
+					'projects' => array( 11 ),
+				),
+			),
+			$result['needs']['forecast']
+		);
+		$this->assertSame( array(), $result['needs']['observe'], 'An area with no need.' );
+	}
+
+	/**
+	 * A need whose text shows nothing has none; one holding a character visitors
+	 * wouldn't see, which a direction override or a model's hidden tag characters
+	 * would be, says which; a long one is quoted in part; and past fifty problems the
+	 * rest are counted.
+	 */
+	public function test_text_visitors_wouldnt_see_is_a_problem(): void {
+		$synthesis = self::good();
+		$texts     = array(
+			"\u{200B}\u{3164} ",
+			"Clearer outlooks\u{202E}",
+			"Clearer outlooks\u{E0041}\u{E0042}",
+			"Clearer\u{0000} outlooks",
+			str_repeat( 'Long text ', 20 ),
+		);
+		foreach ( $texts as $index => $text ) {
+			$synthesis[0]['topNeeds'][ $index ] = array(
+				'text'     => $text,
+				'mentions' => 1,
+				'projects' => array( 'smoke-study' ),
+			);
+		}
+		$problems = self::problems( $synthesis );
+
+		$this->assertSame( 'Forecasts and Modeling, need 1: has no text.', $problems[0] );
+		$this->assertStringContainsString( 'need 2 (“Clearer outlooks', $problems[1] );
+		$this->assertStringEndsWith( ': holds a character visitors wouldn’t see (U+202E), such as a zero-width space or a direction override. Take it out and check again.', $problems[1] );
+		$this->assertStringContainsString( '(U+E0041)', $problems[2] );
+		$this->assertStringContainsString( '(U+0000)', $problems[3] );
+		$this->assertSame( 3 + 1, count( $problems ), 'The long need is fine; one problem each.' );
+
+		$synthesis[0]['topNeeds'] = array(
+			array(
+				'text'     => str_repeat( 'Long text ', 20 ),
+				'mentions' => 60,
+				'projects' => array_fill( 0, 60, 7 ),
+			),
+		);
+		$problems                 = self::problems( $synthesis );
+		$this->assertCount( 51, $problems );
+		$this->assertStringStartsWith( 'Forecasts and Modeling, need 1 (“' . mb_substr( str_repeat( 'Long text ', 20 ), 0, 79 ) . '…”): names a project by something other', $problems[0] );
+		$this->assertSame( '…and 10 more. Fix these and check again to see them.', $problems[50] );
+
+		$this->assertTrue( Synthesis::blank( "\u{00A0}\u{FE0F}" ) );
+		$this->assertFalse( Synthesis::blank( "\u{2615}\u{FE0F}" ), 'An emoji with its variation.' );
+		$this->assertNull( Synthesis::hidden( 'R&D for <10 km' ) );
+	}
+
+	/**
+	 * What can't be read as a synthesis at all says so, and nothing else.
+	 */
+	public function test_what_isnt_a_synthesis_says_so(): void {
+		$this->assertSame( array( 'Nothing was pasted.' ), Synthesis::check( "  \n ", self::PROJECTS )['problems'] );
+		$this->assertStringStartsWith( 'The paste isn’t JSON the screen can read', Synthesis::check( 'Here are the needs: [', self::PROJECTS )['problems'][0] );
+		$this->assertStringStartsWith( 'The paste must be a list of the four topic areas', self::problems( array( 'observe' => array() ) )[0] );
+		$this->assertStringStartsWith( 'The paste must be a list of the four topic areas', self::problems( array() )[0] );
+		$this->assertSame( array(), Synthesis::check( 'nope', self::PROJECTS )['needs'] );
+	}
+
+	/**
+	 * The areas: each once, by a key the site has, every one there.
+	 */
+	public function test_every_area_once(): void {
+		$synthesis    = self::good();
+		$synthesis[1] = array(
+			'topic'    => 'smoke',
+			'topNeeds' => array(),
+		);
+		$synthesis[]  = array(
+			'topic'    => 'warning',
+			'topNeeds' => array(),
+		);
+		$synthesis[]  = 'governance';
+		$synthesis[2] = array( 'topic' => 'warning' );
+		$this->assertSame(
+			array(
+				'“smoke” isn’t a topic area. The areas are observe, forecast, warning, governance.',
+				'Warnings and Immediate Response: its topNeeds must be a list of needs.',
+				'Warnings and Immediate Response is in the paste twice.',
+				'Item 6 in the list isn’t a topic area: each is { "topic": …, "topNeeds": [ … ] }.',
+				'Observations and Monitoring isn’t in the paste. Every topic area needs its list, an empty one if no project supports a need there.',
+			),
+			self::problems( $synthesis )
+		);
+	}
+
+	/**
+	 * An area shows up to five needs, by project count, highest first; a tie is the
+	 * reviewer's to order.
+	 */
+	public function test_up_to_five_needs_by_count(): void {
+		$need      = static fn( string $text, int $mentions, array $projects ): array => array(
+			'text'     => $text,
+			'mentions' => $mentions,
+			'projects' => $projects,
+		);
+		$synthesis = self::good();
+
+		$synthesis[0]['topNeeds'] = array(
+			$need( 'One', 1, array( 'smoke-study' ) ),
+			$need( 'Two', 2, array( 'smoke-study', 'heat-study' ) ),
+			$need( 'Tie', 2, array( 'smoke-study', 'heat-study' ) ),
+		);
+		$this->assertSame( array( 'Forecasts and Modeling: its needs don’t run by project count, highest first: need 2 counts 2, more than need 1 above it, which counts 1.' ), self::problems( $synthesis ) );
+
+		$synthesis[0]['topNeeds'] = array_fill( 0, 6, $need( 'Same', 1, array( 'heat-study' ) ) );
+		$this->assertSame( array( 'Forecasts and Modeling has 6 needs; an area shows up to 5.' ), self::problems( $synthesis ) );
+	}
+
+	/**
+	 * Each need's text, count and projects, every problem with the need it's in.
+	 */
+	public function test_each_need_is_checked(): void {
+		$synthesis                = self::good();
+		$synthesis[0]['topNeeds'] = array(
+			array(
+				'text'     => 'Unknown and unpublished',
+				'mentions' => 3,
+				'projects' => array( 'no-such-study', 'R_draft', 'smoke-study' ),
+			),
+			array(
+				'text'     => 'Twice',
+				'mentions' => 2,
+				'projects' => array( 'smoke-study', 'R_smoke' ),
+			),
+			array(
+				'text'     => '  ',
+				'mentions' => '1',
+				'projects' => array(),
+			),
+			array(
+				'text'     => 'Not by name',
+				'mentions' => 1,
+				'projects' => array( 11 ),
+			),
+			array( 'Not', 'a need' ),
+		);
+		$this->assertSame(
+			array(
+				'Forecasts and Modeling, need 1 (“Unknown and unpublished”): names “no-such-study”, which isn’t a project on the site.',
+				'Forecasts and Modeling, need 1 (“Unknown and unpublished”): names “R_draft”, Draft study, which the site doesn’t show: the synthesis may only draw on published projects.',
+				'Forecasts and Modeling, need 2 (“Twice”): names Smoke study twice.',
+				'Forecasts and Modeling, need 3: has no text.',
+				'Forecasts and Modeling, need 3: names no projects. Each need lists the projects it draws on, by page slug or response ID.',
+				'Forecasts and Modeling, need 3: its project count, mentions, must be a whole number.',
+				'Forecasts and Modeling, need 4 (“Not by name”): names a project by something other than its page slug or response ID.',
+				'Forecasts and Modeling, need 5: isn’t a need: each is { "text": …, "mentions": …, "projects": [ … ] }.',
+			),
+			self::problems( $synthesis )
+		);
+
+		$synthesis[0]['topNeeds'] = array(
+			array(
+				'text'     => 'Miscounted',
+				'mentions' => 3,
+				'projects' => array( 'smoke-study', 'heat-study' ),
+			),
+		);
+		$this->assertSame( array( 'Forecasts and Modeling, need 1 (“Miscounted”): counts 3 projects but names 2. A project counts once, so the two must match.' ), self::problems( $synthesis ) );
+	}
+}

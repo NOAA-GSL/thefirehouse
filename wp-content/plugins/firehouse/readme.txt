@@ -215,6 +215,8 @@ one is.
   pages until they are changed.
 * A project's Publish box says Preview shows the project as last saved, not the
   changes on the screen. The topics list has no Quick Edit.
+* FireHouse → Synthesis: download the NotebookLM source, paste the synthesis it makes,
+  check it, and mark it reviewed to publish it to the topic pages.
 
 = 0.2.0 =
 * Project and topic post types at the Firehouse addresses, with their fields as post

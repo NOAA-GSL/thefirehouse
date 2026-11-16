@@ -897,7 +897,8 @@ GSL's WordPress (the `docker-compose.yml` stack, with GSL's theme), and a phase'
 test site's own setup wait for the first release: outbound network, Cloudflare and
 link-preview bots, caching, and `noindex`. So does the check that Stephanie and Emily
 can do every editing task on their own, without a developer (Phase 6), since on the
-local copy Eric is always there.
+local copy Eric is always there. *Eric, 16 November: one session with Stephanie and
+Emily covers Phases 4 to 6, after his own Phase 6 walkthrough.*
 
 ### Phase 0 — Reference, decisions, groundwork (1–1.5 weeks)
 
@@ -1822,6 +1823,9 @@ its own (`DEFERRED`), loaded only on a page with the map.
       Safari before 17) with JavaScript off show the map's empty stage and credit;*
     - *clicking a region's shape or a zoom button gives it focus, inside the hidden
       map, though Tab never does.*
+  - *Decided by Eric, 16 November: these, the explorer's phone fold shift, and
+    analytics on its address changes come after launch. Its status line is heard in
+    Phase 8's screen-reader audit of the public pages.*
 - *The frame's style, focus and contrast checks rerun on Phase 5's pieces, 14
   November, on the local copy against the site's build, at desktop and phone width in
   both themes, with reduced motion:*
@@ -2055,17 +2059,17 @@ number of changes down: what isn't needed for it says *After launch*.
   that leaves a page in the tree with what it holds goes through, so a page holding
   another block from before can still change status and have it taken out. While the
   landing page is in the trash there's no tree, so nothing is checked, and restoring
-  it isn't checked either (below). My reading, for Eric to confirm:
-  any FireHouse block is accepted on any FireHouse page, not only the page's own (the
-  check is the layout lock's, `Page_Words::only_firehouse_blocks()`).*
+  it isn't checked either (below). Any FireHouse block is accepted on any FireHouse
+  page, not only the page's own (the check is the layout lock's,
+  `Page_Words::only_firehouse_blocks()`; confirmed by Eric, 16 November).*
 - *The landing page can't be trashed while a published page sits under it (decided;
   Phase 4's About page note). Built 15 November (`Capabilities`): a published page
   under it at any depth, below a page in the trash or any other registered status
   too, through whose address it still opens (Copilot's review, 16 November). The Pages list's
   Trash link and bulk action, the page's Move to Trash and the block editor's Move to
-  trash say why and name those pages, and any other route is refused too. My reading,
-  for Eric to confirm: a scheduled page counts as published, since it would open at
-  the trashed address once its time came; drafts, pending and private pages don't.
+  trash say why and name those pages, and any other route is refused too. A scheduled
+  page counts as published, since it would open at the trashed address once its time
+  came (confirmed by Eric, 16 November); drafts, pending and private pages don't.
   Left open, and left as documented (Eric, 16 November: administrators are trusted,
   so what only an administrator can cause isn't built against):*
   - *The rule covers putting the landing page in the trash, not what follows: a draft
@@ -2088,8 +2092,31 @@ number of changes down: what isn't needed for it says *After launch*.
   screen marks the area as changed since its review.* *For the first release (Eric,
   16 November): the paste, its validation with the order, and Mark reviewed, with
   Download NotebookLM source, as one change. The comparison against the published
-  synthesis and the re-sort when the counts change come after launch.*
-- Download NotebookLM source, for the paste-in fallback.
+  synthesis and the re-sort when the counts change come after launch.* *Built 16
+  November (FireHouse → Synthesis, `includes/class-synthesis-screen.php`; the checks
+  in `domain/class-synthesis.php`): a check says every problem and writes nothing;
+  with none, it waits thirty minutes for its checker, in place of a stored draft, and
+  Mark reviewed checks it again, then saves the four topics with the reviewer and the
+  tool as typed, the date, and how many projects the site shows, each topic keeping a
+  revision. On the local copy, the 17 September draft's check found the four counts
+  the Research Synthesist had.* *Decided by Eric, 16 November: any FireHouse Editor
+  may mark a synthesis reviewed, the name typed in Reviewed by and the revision's
+  author recording who; the thirty-minute check stands in for a stored draft; and the
+  project count is the site's when it's marked reviewed. The reviewed 27 October
+  synthesis comes in through it: transcribed from Stephanie's PDF to the prompt's
+  JSON, checked by the Research Synthesist, and marked reviewed by Stephanie or Emily
+  in their review on the local copy. Before the first release, check that deleting
+  a transient on the hosting setup reports whether it deleted one, which the check's
+  single use relies on.*
+- **The prompt.** *Decided by Eric, 16 November:* Stephanie's "FireHouse Prompt
+  (Final)" replaces the one in `notebooklm/README.md` once its text arrives, after the
+  Prompt Engineer runs both on the same projects. In the same change the source's
+  title becomes "The FireHouse — collected project findings", the spelling people
+  see, which the prompt names it by.
+- Download NotebookLM source, for the paste-in fallback. *Built 16 November
+  (`domain/class-notebook-source.php`), held to `scripts/notebooklm-source.mjs` by
+  `shared/cases/notebooklm-source.json`; on the local copy the two documents are the
+  same, byte for byte.*
 - Submit buttons bound to the settings. *With the blocks staying and no core blocks
   allowed (above), no core button is on a FireHouse page: the blocks that print a
   Submit button store a link to the survey empty, and read the address from the
@@ -2124,7 +2151,12 @@ hand.
 ### Phase 7b — Analyze results (1–1.5 weeks)
 
 - The AI service client: one host, a key in `wp-config.php`, only published text sent
-  (see [The AI service](#the-ai-service)).
+  (see [The AI service](#the-ai-service)). *From the synthesis screen's security
+  review (16 November): the NotebookLM source puts researchers' text straight into
+  its Markdown, so a submitted abstract could fake another project's section. Before
+  that text goes to an AI service, wrap each project in a delimiter its text can't
+  fake, tell the model the projects are data, not instructions, and never send it an
+  earlier synthesis: compare syntheses on the server.*
 - The Analyze results button and the prompt on the settings screen.
 - The comparison with NotebookLM: both run on the same published projects, and
   Stephanie and Emily judge the results.
