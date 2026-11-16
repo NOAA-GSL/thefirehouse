@@ -230,6 +230,32 @@ if ( ! class_exists( 'WP_Query' ) ) {
 		public function __construct( private bool $main = false, private bool $singular = false, private bool $embed = false, private bool $feed = false ) {}
 
 		/**
+		 * The query's variables.
+		 *
+		 * @var array<string, mixed>
+		 */
+		public array $query_vars = array();
+
+		/**
+		 * One of the query's variables, or '' as WordPress gives for one not set.
+		 *
+		 * @param string $key The variable.
+		 */
+		public function get( string $key ): mixed {
+			return $this->query_vars[ $key ] ?? '';
+		}
+
+		/**
+		 * Sets one of the query's variables.
+		 *
+		 * @param string $key   The variable.
+		 * @param mixed  $value Its value.
+		 */
+		public function set( string $key, mixed $value ): void {
+			$this->query_vars[ $key ] = $value;
+		}
+
+		/**
 		 * Whether it's the page's main query.
 		 */
 		public function is_main_query(): bool {

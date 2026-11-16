@@ -222,10 +222,16 @@ final class BlocksTest extends WordPressTestCase {
 			}
 		);
 		Functions\when( 'is_post_publicly_viewable' )->justReturn( true );
-		Functions\when( 'get_posts' )->alias( static fn( array $args ): array => 'attachment' === ( $args['post_type'] ?? null ) ? array( 50 ) : array( 10 ) );
+		// The root (10), and the About page (11) under it.
+		Functions\when( 'get_posts' )->alias(
+			static fn( array $args ): array => match ( true ) {
+				'attachment' === ( $args['post_type'] ?? null ) => array( 50 ),
+				isset( $args['post_parent__in'] ) => array( 10 ) === $args['post_parent__in'] ? array( 11 ) : array(),
+				default => array( 10 ),
+			}
+		);
 		Functions\when( '_prime_post_caches' )->justReturn();
 		Functions\when( 'get_post_ancestors' )->justReturn( array( 10 ) );
-		Functions\when( 'get_pages' )->justReturn( array( $about ) );
 		Functions\when( 'parse_blocks' )->justReturn( array() );
 		Functions\when( 'wp_attachment_is_image' )->justReturn( true );
 		Functions\when( 'wp_get_attachment_image_url' )->justReturn( 'https://example.test/50.webp' );
@@ -248,19 +254,15 @@ final class BlocksTest extends WordPressTestCase {
 	public function test_the_portraits_a_team_card_can_show(): void {
 		Functions\when( 'get_post_ancestors' )->alias( static fn( \WP_Post $post ): array => 0 === $post->post_parent ? array() : array( $post->post_parent ) );
 		// Under the root (10): the About page (11), a draft (12) and one with a password (13).
-		Functions\when( 'get_pages' )->justReturn(
-			array(
-				new \WP_Post( array( 'ID' => 11 ) ),
-				new \WP_Post( array( 'ID' => 12 ) ),
-				new \WP_Post( array( 'ID' => 13 ) ),
-			)
-		);
 		$asked = array();
 		Functions\when( 'get_posts' )->alias(
 			static function ( array $args ) use ( &$asked ): array {
 				if ( 'attachment' === ( $args['post_type'] ?? null ) ) {
 					$asked[] = $args;
 					return array( 50, 51 );
+				}
+				if ( isset( $args['post_parent__in'] ) ) {
+					return array( 10 ) === $args['post_parent__in'] ? array( 11, 12, 13 ) : array();
 				}
 				return array( 10 );
 			}
@@ -354,7 +356,14 @@ final class BlocksTest extends WordPressTestCase {
 		$this->assertSame( array( 10, 11 ), $asked[0]['post_parent__in'], 'Attached to the FireHouse pages a visitor can see.' );
 		$this->assertSame( 'image', $asked[0]['post_mime_type'] );
 		$this->assertSame( -1, $asked[0]['numberposts'], 'Every one, none left off.' );
-		$this->assertSame( array( array( array( 50, 51, 52 ), false, true ) ), $primed, 'Every image and its metadata loaded at once, its terms not.' );
+		$this->assertSame(
+			array(
+				array( array( 10, 11, 12, 13 ), false, false ),
+				array( array( 50, 51, 52 ), false, true ),
+			),
+			$primed,
+			'The FireHouse pages loaded at once, then every image and its metadata, nothing\'s terms.'
+		);
 
 		// With no FireHouse page a visitor can see, no image is asked for, since WordPress
 		// would take an empty `post_parent__in` as every image on the site; only the
