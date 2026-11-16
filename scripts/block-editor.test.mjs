@@ -363,6 +363,22 @@ describe('the block editor script', () => {
     expect(notice[3]).toBe('FireHouse About team: fill in Team member 1: Name. The page can’t be saved while it’s empty.');
   });
 
+  it('makes each add, move and remove its own undo step, apart from the typing around it', () => {
+    const team = edit('firehouse/about-team', { heading: 'Team', members: [{ name: 'Ana', bio: ['A.'] }, { name: 'Ben' }] });
+    const before = team.calls.length;
+    buttons(team.tree)['Remove Team member 1'].props.onClick();
+    // The step before it ends, the removal is made, then its own step ends.
+    expect(team.calls.slice(before).map((call) => call.slice(0, 2))).toEqual([
+      ['core/block-editor', '__unstableMarkLastChangeAsPersistent'],
+      ['core/block-editor', '__unstableMarkLastChangeAsPersistent'],
+    ]);
+    expect(team.changes).toHaveLength(1);
+
+    // A biography's paragraph names its card when it's removed.
+    buttons(team.tree)['Remove Team member 1’s biography, paragraph 1'].props.onClick();
+    expect(team.spoken.at(-1)).toBe('Team member 1: Biography, paragraph 1 removed. Undo puts it back.');
+  });
+
   it('chooses a team member’s portrait from the FireHouse portraits, or none', () => {
     const portraits = [
       { id: 7, title: 'ana', url: 'https://example.org/ana-150x150.webp' },
@@ -380,10 +396,10 @@ describe('the block editor script', () => {
     ]);
     expect(find(team.tree, 'img')[0].props).toMatchObject({ src: 'https://example.org/ana-150x150.webp', alt: '' });
     picker.props.onChange('9');
-    // The import's name for the old portrait goes with it.
-    expect(team.changes.at(-1)).toEqual({ members: [{ name: 'Ana', photoId: 9, photoAlt: '', bio: [] }] });
+    // The import's name for the old portrait, and its description, go with it.
+    expect(team.changes.at(-1)).toEqual({ members: [{ name: 'Ana', photoId: 9, bio: [] }] });
     picker.props.onChange('');
-    expect(team.changes.at(-1)).toEqual({ members: [{ name: 'Ana', photoAlt: '', bio: [] }] });
+    expect(team.changes.at(-1)).toEqual({ members: [{ name: 'Ana', bio: [] }] });
 
     // A portrait set some other way is still named, so choosing again doesn't lose it.
     const other = edit('firehouse/about-team', { heading: 'Team', members: [{ name: 'Ana', photoId: 42 }] }, { portraits });

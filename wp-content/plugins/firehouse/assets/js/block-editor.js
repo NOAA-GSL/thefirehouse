@@ -50,11 +50,15 @@
 	const area = ( key, label, options ) => ( { kind: 'area', key, label, ...( options || {} ) } );
 	/** A button or link: its text, which can't be empty, and where it goes, shown. */
 	const button = ( key, label ) => ( { kind: 'button', key, label } );
-	/** Paragraphs, each a field, as many as stored, or added and removed with `edit`'s words. */
+	/**
+	 * Paragraphs, each a field, as many as stored; with `edit`, added and removed, its
+	 * `add( owner )` and `remove( owner, name, number )` naming the buttons.
+	 */
 	const paragraphs = ( key, label, edit ) => ( { kind: 'paragraphs', key, label, edit } );
 	/**
 	 * Entries, as many as stored, each with its fields; `item` names one, with its number.
-	 * With `edit`, entries can be added, removed and moved, `edit.empty()` a new one.
+	 * With `edit`, entries can be added, removed and moved: `edit.add( owner )` names
+	 * the button that adds one, and `edit.empty()` is a new one.
 	 */
 	const list = ( key, label, item, fields, edit ) => ( { kind: 'list', key, label, item, fields, edit } );
 	/** Something stored that isn't words, shown as it is, or as `shown( value, entry )` words it. */
@@ -151,13 +155,14 @@
 						/* translators: 1: a team member, such as "Team member 2", 2: the number of a paragraph of their biography. */
 						remove: ( owner, name, number ) => sprintf( __( 'Remove %1$s’s biography, paragraph %2$d', 'firehouse' ), owner, number ),
 					} ),
-					// The import's name for a portrait goes with it when another is chosen.
-					portrait( 'photoId', __( 'Portrait', 'firehouse' ), [ 'photo' ] ),
+					// The import's name for a portrait, and its description, go with it when
+					// another is chosen: both were the old picture's.
+					portrait( 'photoId', __( 'Portrait', 'firehouse' ), [ 'photo', 'photoAlt' ] ),
 					text( 'photoAlt', __( 'Portrait description', 'firehouse' ), {
 						help: __( 'Usually empty: the name follows the portrait, so describing the person would say who they are twice. Describe only what else it shows.', 'firehouse' ),
 					} ),
 				],
-				{ add: __( 'Add a team member', 'firehouse' ), empty: () => ( { name: '', bio: [] } ) }
+				{ add: () => __( 'Add a team member', 'firehouse' ), empty: () => ( { name: '', bio: [] } ) }
 			),
 		],
 		'firehouse/about-cta': [ HEADING, BODY, button( 'cta', __( 'Button', 'firehouse' ) ) ],
@@ -394,10 +399,31 @@
 		return copy;
 	}
 
-	/** One of the cards' buttons: add, move, remove. */
+	/**
+	 * Ends the editor's current undo step. Every card's words and every add, move and
+	 * remove change one attribute, which the editor otherwise merges into one step, so
+	 * Undo after a removal would also take back the typing before it. WordPress offers
+	 * this only as an unstable action; without it, the steps merge as before.
+	 */
+	function checkpoint() {
+		const editor = store( 'core/block-editor' );
+		if ( editor && editor.__unstableMarkLastChangeAsPersistent ) {
+			editor.__unstableMarkLastChangeAsPersistent();
+		}
+	}
+
+	/**
+	 * One of the cards' buttons: add, move, remove. Its change is an undo step of its
+	 * own, apart from the typing before and after it.
+	 */
 	function action( clientId, id, label, onClick ) {
+		const run = () => {
+			checkpoint();
+			onClick();
+			checkpoint();
+		};
 		// A long name wraps, rather than running past the button's border on a phone.
-		return el( Button, { key: id, variant: 'secondary', 'data-firehouse-action': id, onClick, __next40pxDefaultSize: true, style: { whiteSpace: 'normal', height: 'auto', textAlign: 'center' } }, label );
+		return el( Button, { key: id, variant: 'secondary', 'data-firehouse-action': id, onClick: run, __next40pxDefaultSize: true, style: { whiteSpace: 'normal', height: 'auto', textAlign: 'center' } }, label );
 	}
 
 	/** The button that adds an entry or a paragraph, set apart from the last one. */
@@ -490,8 +516,13 @@
 								change( items.filter( ( item, at ) => at !== index ) );
 								// The paragraph after it, which takes its place, or the button to add one.
 								later( clientId, [ fieldAt( id + '-' + ( index < items.length - 1 ? index : index - 1 ) ), buttonAt( id + '-add' ) ] );
-								/* translators: %s: a paragraph, such as "Paragraph 2". */
-								speak( sprintf( __( '%s removed. Undo puts it back.', 'firehouse' ), name ) );
+								speak(
+									owner
+										? /* translators: 1: a team member, such as "Team member 2", 2: a paragraph of their biography, such as "Biography, paragraph 1". */
+										  sprintf( __( '%1$s: %2$s removed. Undo puts it back.', 'firehouse' ), owner, name )
+										: /* translators: %s: a paragraph, such as "Paragraph 2". */
+										  sprintf( __( '%s removed. Undo puts it back.', 'firehouse' ), name )
+								);
 							} )
 						);
 					} ),
@@ -503,7 +534,7 @@
 				const edit = field.edit;
 				const add = edit
 					? adding(
-							action( clientId, id + '-add', edit.add, () => {
+							action( clientId, id + '-add', edit.add( owner ), () => {
 								change( [ ...items, edit.empty() ] );
 								later( clientId, [ fieldAt( id + '-' + items.length + '-' + field.fields[ 0 ].key ) ] );
 								// No word of its own: the new entry's empty name raises the notice

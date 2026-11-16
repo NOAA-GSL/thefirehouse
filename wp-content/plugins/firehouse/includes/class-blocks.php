@@ -130,15 +130,9 @@ final class Blocks {
 		if ( array() === $ids ) {
 			return array();
 		}
-		// One query loads every image and its metadata, rather than one or two each.
-		get_posts(
-			array(
-				'post_type'   => 'attachment',
-				'post_status' => 'inherit',
-				'post__in'    => $ids,
-				'numberposts' => count( $ids ),
-			)
-		);
+		// Two queries load the images not already loaded, then their metadata, rather
+		// than one or two for each image in the loop below.
+		_prime_post_caches( $ids, false, true );
 
 		$portraits = array();
 		foreach ( $ids as $id ) {

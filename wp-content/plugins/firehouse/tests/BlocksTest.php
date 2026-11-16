@@ -181,6 +181,55 @@ final class BlocksTest extends WordPressTestCase {
 	}
 
 	/**
+	 * A portrait's title goes into the editor's inline script with < and & as escapes,
+	 * so nothing in a title can read as markup there.
+	 */
+	public function test_a_portraits_title_cant_read_as_markup(): void {
+		$inline = array();
+		Functions\when( 'plugins_url' )->justReturn( 'https://example.test/block-editor.js' );
+		Functions\when( 'wp_enqueue_script' )->justReturn();
+		Functions\when( 'wp_set_script_translations' )->justReturn( true );
+		Functions\when( 'wp_add_inline_script' )->alias(
+			static function ( string $handle, string $script ) use ( &$inline ): void {
+				$inline[] = $script;
+			}
+		);
+		Functions\when( 'wp_json_encode' )->alias( static fn( mixed $data, int $flags = 0 ): string => (string) json_encode( $data, $flags ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- standing in for wp_json_encode().
+		$about = new \WP_Post(
+			array(
+				'ID'          => 11,
+				'post_type'   => 'page',
+				'post_parent' => 10,
+			)
+		);
+		Functions\when( 'get_post' )->alias(
+			static fn( mixed $id = null ): ?\WP_Post => ( null === $id ) ? $about : ( 50 === (int) $id ? new \WP_Post(
+				array(
+					'ID'          => 50,
+					'post_type'   => 'attachment',
+					'post_status' => 'inherit',
+				)
+			) : null )
+		);
+		Functions\when( 'get_posts' )->alias( static fn( array $args ): array => 'attachment' === ( $args['post_type'] ?? null ) ? array( 50 ) : array( 10 ) );
+		Functions\when( '_prime_post_caches' )->justReturn();
+		Functions\when( 'get_post_ancestors' )->justReturn( array( 10 ) );
+		Functions\when( 'get_pages' )->justReturn( array( $about ) );
+		Functions\when( 'parse_blocks' )->justReturn( array() );
+		Functions\when( 'wp_attachment_is_image' )->justReturn( true );
+		Functions\when( 'wp_get_attachment_image_url' )->justReturn( 'https://example.test/50.webp' );
+		Functions\when( 'get_post_field' )->justReturn( '<!--<script> & x' );
+
+		Blocks::enqueue_editor();
+
+		// The title as JSON with < and & escaped, as it should appear.
+		$escaped = substr( (string) json_encode( '<!--<script> & x', JSON_HEX_TAG | JSON_HEX_AMP ), 1, -1 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- the expected encoding.
+		$this->assertStringNotContainsString( '<', $escaped );
+		$this->assertStringContainsString( 'window.firehousePortraits = [{"id":50,"title":"' . $escaped . '"', $inline[0] );
+		$this->assertStringNotContainsString( '<script', $inline[0] );
+	}
+
+	/**
 	 * A FireHouse page's editor is offered the portraits attached to the FireHouse pages
 	 * and those its team cards use, each only if the About page would show it; any other
 	 * post's editor, none.
@@ -193,9 +242,15 @@ final class BlocksTest extends WordPressTestCase {
 			static function ( array $args ) use ( &$asked ): array {
 				if ( 'attachment' === ( $args['post_type'] ?? null ) ) {
 					$asked[] = $args;
-					return isset( $args['post__in'] ) ? array() : array( 50, 51 );
+					return array( 50, 51 );
 				}
 				return array( 10 );
+			}
+		);
+		$primed = array();
+		Functions\when( '_prime_post_caches' )->alias(
+			static function ( array $ids, bool $terms, bool $meta ) use ( &$primed ): void {
+				$primed[] = array( $ids, $terms, $meta );
 			}
 		);
 		$team = array(
@@ -265,7 +320,7 @@ final class BlocksTest extends WordPressTestCase {
 		);
 		$this->assertSame( array( 10, 11 ), $asked[0]['post_parent__in'], 'Attached to the FireHouse pages.' );
 		$this->assertSame( 'image', $asked[0]['post_mime_type'] );
-		$this->assertSame( array( 50, 51, 52 ), $asked[1]['post__in'], 'Every image loaded in one query.' );
+		$this->assertSame( array( array( array( 50, 51, 52 ), false, true ) ), $primed, 'Every image and its metadata loaded at once, its terms not.' );
 		$this->assertSame( array(), Blocks::portraits( new \WP_Post( array( 'post_type' => 'post' ) ) ), 'Not a page.' );
 		$this->assertSame( array(), Blocks::portraits( null ), 'No post.' );
 	}
