@@ -244,11 +244,11 @@ export function LandingPage() {
             <h3 id="source-heading" className="fh-source__heading">
               Where these needs come from
             </h3>
-            {/* The tool's name comes from the synthesis itself, so it stays right when
-                the synthesis moves from NotebookLM to the plugin's AI service. */}
+            {/* Stephanie and Emily's wording (11 November) names no tool: a synthesis
+                with a model is "with super intelligence", whichever model it was. */}
             <p className="fh-source__body">
               Topic areas are not assigned project by project. Every project in The
-              FireHouse is read together{synthesis.model ? `, with ${synthesis.model}` : ''}.
+              FireHouse is read together{synthesis.model ? ', with super intelligence' : ''}.
               The end-user needs submitted by researchers are grouped into the four topic
               areas above and ranked by prevalence across projects. This pass serves as an initial
               draft that our team reviews and refines before finalizing each synthesis.

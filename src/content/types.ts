@@ -107,7 +107,9 @@ export interface TopicSummary {
   sourceCount?: number;
   /**
    * Tool or model that produced the synthesis, e.g. "NotebookLM". Presence of this
-   * field is what flips the card's "AI-synthesized" label on.
+   * field is what flips the card's "SI-synthesized" label on, and the landing page's
+   * "with super intelligence" (Stephanie and Emily's wording, 11 November), which names
+   * no tool.
    *
    * This is not decoration. The landing page is the one surface where the site
    * paraphrases researchers instead of quoting them (project pages stay verbatim),

@@ -47,7 +47,7 @@ export function SynthesisNote({
     <p className={['fh-synthesis-note', draft && 'fh-synthesis-note--draft', className].filter(Boolean).join(' ')}>
       <span className="fh-synthesis-note__dot" aria-hidden="true" />
       <span>
-        <strong>{model ? 'AI-synthesized' : 'Synthesized'}</strong> across {projects}.
+        <strong>{model ? 'SI-synthesized' : 'Synthesized'}</strong> across {projects}.
         {showStatus &&
           (reviewedBy ? (
             <>

@@ -186,9 +186,9 @@ final class Markup {
 			'<p class="fh-synthesis-note%1$s"><span class="fh-synthesis-note__dot" aria-hidden="true"></span><span>%2$s%3$s</span></p>',
 			( $show_status && ! $reviewed ? ' fh-synthesis-note--draft' : '' ) . ( '' !== $extra_class ? ' ' . esc_attr( $extra_class ) : '' ),
 			sprintf(
-				/* translators: 1: "AI-synthesized" or "Synthesized", 2: which projects, e.g. "all 8 projects". */
+				/* translators: 1: "SI-synthesized" or "Synthesized", 2: which projects, e.g. "all 8 projects". */
 				esc_html__( '%1$s across %2$s.', 'firehouse' ),
-				'<strong>' . ( null !== $model && '' !== $model ? esc_html__( 'AI-synthesized', 'firehouse' ) : esc_html__( 'Synthesized', 'firehouse' ) ) . '</strong>',
+				'<strong>' . ( null !== $model && '' !== $model ? esc_html__( 'SI-synthesized', 'firehouse' ) : esc_html__( 'Synthesized', 'firehouse' ) ) . '</strong>',
 				esc_html( $projects )
 			),
 			$status

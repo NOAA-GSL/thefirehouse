@@ -272,7 +272,12 @@ overrides are isolated so a re-sync doesn't lose them.
         separately into the plugin's `includes/class-landing-page.php`: change both,
         since no test keeps them the same). Wording from `landing.json` and `about.json`
         also lives in each imported site's landing and About pages, which a later import
-        leaves as they are and an editor changes in the block editor;
+        leaves as they are and an editor changes in the block editor. Her review also
+        made the synthesis note "SI-synthesized" in place of "AI-synthesized", and
+        "Where these needs come from" say the projects are read together "with super
+        intelligence" in place of the tool's name; Eric chose on 16 November to apply
+        both as written. Both are the synthesis's AI disclosure, so they go through
+        clearance with the reviewed synthesis before gsl.noaa.gov;
       - whether the synthesis needs its own line saying whose it is;
       - the explorer's "Update results" button, which only the plugin has: without
         JavaScript it sends the search and filters. The Science Communicator suggests

@@ -186,10 +186,10 @@ final class Landing_Page {
 			$cards,
 			esc_html__( 'Where these needs come from', 'firehouse' ),
 			sprintf(
-				/* translators: %s: ", with" and the AI tool that read the projects, or nothing. */
+				/* translators: %s: ", with super intelligence" when a model read the projects, or nothing. */
 				esc_html__( 'Topic areas are not assigned project by project. Every project in The FireHouse is read together%s. The end-user needs submitted by researchers are grouped into the four topic areas above and ranked by prevalence across projects. This pass serves as an initial draft that our team reviews and refines before finalizing each synthesis. Open any topic area to see which specific projects each need draws on; each project page preserves the researchers’ own words.', 'firehouse' ),
-				/* translators: %s: the AI tool that read the projects. */
-				null !== $model && '' !== $model ? Markup::text( sprintf( __( ', with %s', 'firehouse' ), $model ) ) : ''
+				// Stephanie and Emily's wording (11 November) names no tool, whichever model it was.
+				null !== $model && '' !== $model ? esc_html__( ', with super intelligence', 'firehouse' ) : ''
 			),
 			Markup::button( __( 'Explore all projects', 'firehouse' ), home_url( $root . 'projects/' ), 'secondary', 'md', array( 1 => 'arrow-right' ) )
 		);
