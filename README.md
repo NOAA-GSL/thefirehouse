@@ -384,7 +384,11 @@ overrides are isolated so a re-sync doesn't lose them.
       gsl.firehouse@noaa.gov; and, on a local copy or the test site, whether the team
       wants its test submissions emailed (the `firehouse_survey_notify` filter, set to
       "" in a must-use plugin, stops them). Also confirm the site's address doesn't
-      come from the request's Host header, since the email's links use it.
+      come from the request's Host header, since the email's links use it. Tools →
+      Site Health's FireHouse checks cover the hosts, the test site's search-engine
+      setting (with `WP_ENVIRONMENT_TYPE` set to `staging` there, so the check knows
+      it's not production) and whether a cache keeps FireHouse's pages; WordPress's
+      own checks there cover WP-Cron.
 - [ ] **Give a site Analyze results' key only once the service is approved for it**
       (plan open question 7). Until then it has none, and its synthesis screen offers
       only the paste. The key is the site's `wp-config.php` constants
@@ -1057,6 +1061,23 @@ nothing from the database. Each class's docblock has the detail; this is the map
   `<think>` block, so a citation such as `[7]` isn't taken for it; a reply without
   one, or cut off, is kept as failed, with the reply to read. A reply holding a
   character that doesn't show is marked, and the screen says so above it.
+- `Site_Health` adds three checks to Tools → Site Health, badged FireHouse:
+  - **Outside services** (async): a HEAD request to the front page of doi.org,
+    api.crossref.org and data.crosscite.org (`Doi_Lookup::HOSTS`), and
+    api.cloudflare.com while the site has a Workers AI key, with no key sent; any
+    answer counts, and a host that can't be reached is named.
+  - **Search engines** (direct): production should let them in, and any other
+    `wp_get_environment_type()` keep them out (`blog_public`), so WordPress marks its
+    pages noindex.
+  - **Page caching** (async): the server loads its own FireHouse landing page and
+    reads `cf-cache-status`. A status of a kept page (HIT, MISS, EXPIRED…) is
+    critical, since a hidden project would stay on the pages that showed it and the
+    plugin doesn't purge; `Age` above 0 or an `X-Cache` HIT is a recommendation; none
+    says how to check from outside, since the server's own request may not pass
+    through Cloudflare.
+  - The async checks answer Site Health's script (`wp_ajax_health-check-firehouse-…`)
+    with its nonce, for `view_site_health_checks`, and skip WordPress's weekly check
+    (`skip_cron`), so no request is made unless someone is looking.
 - `Head` gives each Firehouse page its title, the site's title for it then GSL's
   suffix ("About — The FireHouse – Global Systems Laboratory"; decided by Eric, 12
   November, with Stephanie and Emily's spelling), and the description and Open Graph and
@@ -1303,6 +1324,14 @@ and a token made from Cloudflare's "Workers AI" template in `.env` as
 lines), typed there yourself and never into a chat, an issue or a commit, then run
 `docker compose up -d`. `docker-compose.yml` passes them to `wp-config.php`'s
 constants. Without them, the synthesis screen offers only the paste.
+
+WP-Cron starts scheduled events (DOI lookups, Analyze results) by calling the site's
+own address, `localhost:8090`, which reaches nothing inside the container, where
+Apache listens on port 80. `docker-compose.yml` sends that call to port 80, still
+asking for `localhost:8090`, through a `cron_request` filter set in `wp-config.php`,
+so they run locally as on GSL's sites; after changing it, `docker compose up -d`. To
+run a waiting event at once: `bin/wp cron event run firehouse_analyze` (from bash,
+since `bin/wp` is a bash script).
 
 CI runs all three on every change to the plugin: PHPCS and PHPUnit on PHP 8.1, and
 Plugin Check in a throwaway WordPress (`.github/workflows/wordpress-plugin.yml`), on

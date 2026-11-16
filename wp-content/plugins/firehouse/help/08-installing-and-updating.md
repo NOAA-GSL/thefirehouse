@@ -19,6 +19,14 @@ A zip of any other commit is on that commit's "WordPress plugin" run in the repo
 5. Check **FireHouse → Settings**, above all the survey address the Submit a Finding buttons go to.
 6. Give the people who keep the FireHouse up to date the FireHouse Editor role: see [People and portraits](10-people-and-portraits.md).
 
+## Check it
+
+**Tools → Site Health** lists three FireHouse checks, marked FireHouse. Open it after installing the plugin on a site, and again after anything about the server changes.
+
+- **Outside services:** whether the server can reach doi.org and the services it sends DOI lookups on to, and Cloudflare when the site has a Workers AI key. If one can't be reached, ask whoever runs the server to let it through.
+- **Search engines:** a test or local site should keep search engines out, under **Settings → Reading → Search engine visibility**, so its pages aren't taken for the public site's; the public site should let them in. Which kind of site it is comes from WP_ENVIRONMENT_TYPE in the site's wp-config.php.
+- **Page caching:** whether a cache in front of the site keeps FireHouse's pages. If it does, a project you hide stays on the pages that showed it until the cache expires, so this one is marked critical: turn the cache off for /firehouse/, or tell the developer. The server checks its own page, which may not pass through Cloudflare as a visitor's does; the check says how to look from outside.
+
 ## Update it
 
 Upload the new version's zip the same way. WordPress shows the installed and uploaded versions side by side; choose **Replace current with uploaded**. The content and the settings stay.

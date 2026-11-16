@@ -169,7 +169,9 @@ Three times: the visitor's browser loads the coverage map's basemap tiles from E
 the server looks up a paper's title by its DOI when a survey form submission gives
 one; and, only on a site given a Workers AI key, the server sends the published
 projects to Cloudflare Workers AI when an editor chooses Analyze results. See
-External services. The plugin's code on the server makes no other request to
+External services. When an administrator opens Tools → Site Health, the plugin's
+checks also ask those services' hosts for their front pages, and load the site's own
+FireHouse landing page. The plugin's code on the server makes no other request to
 another site, and its fonts, icons and scripts are served from the plugin.
 
 = Who can change what? =
@@ -303,6 +305,17 @@ processes to train models or keep inputs and outputs after a request:
 https://developers.cloudflare.com/workers-ai/platform/data-usage/. Its terms:
 https://www.cloudflare.com/terms/. Its privacy policy:
 https://www.cloudflare.com/privacypolicy/.
+
+= Site Health checks =
+
+When someone who may see Tools → Site Health opens it, the plugin checks that the
+server can reach doi.org, api.crossref.org and data.crosscite.org, and
+api.cloudflare.com on a site given a Workers AI key: one HEAD request to each host's
+front page, carrying only the plugin's name as its user agent, no key and nothing
+about the site's content or people. It also loads the site's own FireHouse landing
+page, as a visitor would, to see whether a cache keeps it. Neither runs in WordPress's
+weekly Site Health check, so they happen only while someone is looking. These hosts'
+terms and privacy policies are above.
 
 == Changelog ==
 
@@ -483,6 +496,10 @@ one is.
   which can be changed there. Each model's latest draft is kept, to compare; checking
   one puts it through the screen's check and Mark reviewed, with the model under Made
   with. The guide's synthesis and settings pages say how (see External services).
+* Three FireHouse checks on Tools → Site Health: whether the server reaches the
+  outside services the plugin uses, whether search engines are kept out of a site
+  that isn't production, and whether a cache keeps FireHouse's pages (see External
+  services). The guide's installing page says what to do about each.
 
 = 0.2.0 =
 * Project and topic post types at the Firehouse addresses, with their fields as post

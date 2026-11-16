@@ -36,6 +36,21 @@ x-wordpress-env: &wordpress-env
       define( 'FIREHOUSE_WORKERS_AI_ACCOUNT', getenv( 'FIREHOUSE_WORKERS_AI_ACCOUNT' ) );
       define( 'FIREHOUSE_WORKERS_AI_TOKEN', getenv( 'FIREHOUSE_WORKERS_AI_TOKEN' ) );
     }
+    // WP-Cron starts its scheduled events by calling the site's own address,
+    // localhost:<port>, which reaches nothing inside this container: Apache listens on
+    // port 80. This sends that call to port 80, still asking for localhost:<port>, so
+    // DOI lookups and Analyze results run here as they do on GSL's sites.
+    $$GLOBALS['wp_filter']['cron_request'][10][] = array(
+      'accepted_args' => 1,
+      'function'      => static function ( $$request ) {
+        $$parts = parse_url( $$request['url'] );
+        if ( 'localhost' === ( $$parts['host'] ?? '' ) && isset( $$parts['port'] ) ) {
+          $$request['url']                     = str_replace( '//localhost:' . $$parts['port'] . '/', '//localhost/', $$request['url'] );
+          $$request['args']['headers']['Host'] = 'localhost:' . $$parts['port'];
+        }
+        return $$request;
+      },
+    );
 
 x-wordpress-volumes: &wordpress-volumes
   - wordpress:/var/www/html

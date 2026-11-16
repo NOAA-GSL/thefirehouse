@@ -73,6 +73,7 @@ require_once __DIR__ . '/includes/class-import-screen.php';
 require_once __DIR__ . '/includes/class-workers-ai.php';
 require_once __DIR__ . '/includes/class-analysis.php';
 require_once __DIR__ . '/includes/class-synthesis-screen.php';
+require_once __DIR__ . '/includes/class-site-health.php';
 require_once __DIR__ . '/includes/class-help.php';
 require_once __DIR__ . '/survey/class-questions.php';
 require_once __DIR__ . '/survey/class-submission.php';
@@ -295,7 +296,8 @@ require_once __DIR__ . '/includes/class-head.php';
  * Project_Screen and Topic_Screen save a project's or a topic's fields only from their
  * own form, on its edit screen. Help's `current_screen` hook runs on every admin screen
  * and adds a Help tab only on a FireHouse one. Analysis hooks only its own scheduled
- * event, which an editor starts from the Synthesis screen.
+ * event, which an editor starts from the Synthesis screen. Site_Health adds its checks
+ * to Site Health's list and answers only its own two requests from Site Health's script.
  */
 Post_Types::hook();
 Meta::hook();
@@ -306,6 +308,7 @@ Settings::hook();
 Import_Screen::hook();
 Synthesis_Screen::hook();
 Analysis::hook();
+Site_Health::hook();
 Help::hook();
 Survey\Survey::hook();
 Project_Screen::hook();
