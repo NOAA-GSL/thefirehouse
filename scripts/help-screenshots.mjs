@@ -15,6 +15,12 @@
  * FireHouse menu's own screenshot shows the menu, cropped to the FireHouse part.
  * The project and topic shown are the first published project and the topic in TOPIC.
  *
+ * The images go into a public repository and the plugin's zip, so nothing that isn't
+ * public goes into them: the Projects list is the Published view, which lists no
+ * survey submission or other draft, and a project's Private answers box (a submitter's
+ * email, job title and sharing answers) is hidden, as publishing doesn't make those
+ * public.
+ *
  * Images are WebP, encoded by the browser at quality QUALITY, so the plugin's zip stays
  * small. Then run npm run plugin:help, since help.json records each image's size.
  *
@@ -33,9 +39,11 @@ const BASE = (process.env.BASE_URL ?? 'http://localhost:8090').replace(/\/$/, ''
 const BROWSER = process.env.REFERENCE_BROWSER === 'chrome' ? 'chrome' : 'msedge';
 const TOPIC = 'warning';
 const QUALITY = 0.9;
+const PUBLISHED = '/wp-admin/edit.php?post_type=fh_project&post_status=publish';
 
 const HIDE = `
   #wpadminbar, #wpfooter, #screen-meta-links, .notice, .update-nag, #wp-auth-check-wrap { display: none !important; }
+  #firehouse-private { display: none !important; }
   html.wp-toolbar { padding-top: 0 !important; }
 `;
 const HIDE_MENU = `
@@ -48,8 +56,8 @@ const HIDE_MENU = `
  * `height`), and whether the menu shows.
  */
 const SHOTS = {
-  'firehouse-menu': { path: '/wp-admin/edit.php?post_type=fh_project', element: '#menu-posts-fh_project', menu: true },
-  'projects-list': { path: '/wp-admin/edit.php?post_type=fh_project', element: '#wpbody-content', height: 460 },
+  'firehouse-menu': { path: PUBLISHED, element: '#menu-posts-fh_project', menu: true },
+  'projects-list': { path: PUBLISHED, element: '#wpbody-content', height: 460 },
   'project-screen': { project: true, element: '#wpbody-content', height: 1150 },
   'topic-fields': { topic: TOPIC, element: '#wpbody-content', height: 760 },
   'synthesis-screen': { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-synthesis', element: '#wpbody-content', height: 440 },
@@ -110,7 +118,7 @@ async function webp(page, png) {
 
 async function shoot(page, name, shot) {
   let url = `${BASE}${shot.path ?? ''}`;
-  if (shot.project) url = await firstRow(page, '/wp-admin/edit.php?post_type=fh_project&post_status=publish');
+  if (shot.project) url = await firstRow(page, PUBLISHED);
   if (shot.topic) url = await topicUrl(page, shot.topic);
   if (shot.landing) url = await landingUrl(page);
   await page.goto(url, { waitUntil: 'load' });

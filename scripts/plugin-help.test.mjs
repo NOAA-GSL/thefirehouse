@@ -81,6 +81,13 @@ describe('a page body', () => {
     expect(() => body(lines('![x](https://example.org/a.png)'), 'p.md', pages, images())).toThrow(/an image is/);
     expect(() => body(lines('    code block'), 'p.md', pages, images())).toThrow(/indented line/);
     expect(() => body(lines('- item\n    too far'), 'p.md', pages, images())).toThrow(/indented 4 spaces/);
+    expect(() => body(lines('>'), 'p.md', pages, images())).toThrow(/a note with no words/);
+    expect(() => body(lines('Text.\n\n>\n>'), 'p.md', pages, images())).toThrow(/p\.md:3: a note with no words/);
+  });
+
+  it('takes every line starting with > as the note\'s, with a space after it or not', () => {
+    const { html } = body(lines('>Note one.\n>\n> Note two.'), 'page.md', pages, images());
+    expect(html).toBe('<div class="fh-help__note"><p>Note one.</p><p>Note two.</p></div>');
   });
 });
 

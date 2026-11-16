@@ -229,7 +229,9 @@ export function body(lines, file, pages, images) {
       i++;
     } else if (line.startsWith('![')) {
       throw new HelpError(`${at()}: an image is ![what it shows](images/name.webp "Caption"), alone on its line`);
-    } else if (line.startsWith('> ')) {
+    } else if (line.startsWith('>')) {
+      // Every line starting with >, with a space after it or not, is the note's.
+      const start = at();
       const parts = [];
       while (i < lines.length && lines[i].startsWith('>')) {
         parts.push(lines[i].replace(/^>\s?/, ''));
@@ -238,14 +240,20 @@ export function body(lines, file, pages, images) {
       const paras = parts
         .join('\n')
         .split(/\n\s*\n/)
-        .map((p) => `<p>${inline(p.replace(/\n/g, ' ').trim(), at(), pages)}</p>`);
+        .map((p) => p.replace(/\n/g, ' ').trim())
+        .filter(Boolean)
+        .map((p) => `<p>${inline(p, start, pages)}</p>`);
+      if (!paras.length) throw new HelpError(`${start}: a note with no words`);
       both(`<div class="fh-help__note">${paras.join('')}</div>`);
     } else if (/^(- |\d+\. )/.test(line)) {
       both(list(0));
     } else if (/^\s/.test(line)) {
       throw new HelpError(`${at()}: an indented line outside a list`);
     } else {
-      both(`<p>${inline(paragraph(), at(), pages)}</p>`);
+      const text = paragraph();
+      // A line that no branch above takes, and paragraph() refuses, would loop for ever.
+      if (!text) throw new HelpError(`${at()}: a line the guide can't read`);
+      both(`<p>${inline(text, at(), pages)}</p>`);
     }
   }
   return { html: full.join('\n'), tab: tab.join('\n') };
