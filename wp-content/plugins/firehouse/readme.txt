@@ -441,7 +441,8 @@ one is.
 * The FireHouse guide has a page on reviewing a survey form submission, on the
   projects list's and a project's Help tabs. A submission's From the survey box says
   its answers can't be changed on the site, where it used to point to the Import screen,
-  which never changes a submission.
+  which never changes a submission, and a "No" to the IRB question shows as no approval
+  or exemption rather than "Not recorded".
 
 = 0.2.0 =
 * Project and topic post types at the Firehouse addresses, with their fields as post

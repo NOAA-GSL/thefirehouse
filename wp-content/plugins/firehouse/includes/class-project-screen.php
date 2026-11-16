@@ -16,7 +16,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Adds a project's fields to WordPress's own edit screen, in two boxes (rule 4):
+ * Adds a project's fields to WordPress's own edit screen, in two boxes (rule 4), and a
+ * third, Private answers, on a survey form submission that has any:
  *
  * - **Editorial fields**, which the FireHouse team writes and a re-import never
  *   changes: the summary, the publication status, the geography note and the
@@ -315,10 +316,14 @@ final class Project_Screen extends Edit_Screen {
 		self::row( __( 'Methods', 'firehouse' ), self::items( array_map( array( self::class, 'plain' ), $list( 'methods' ) ) ) );
 		self::row(
 			__( 'IRB approval', 'firehouse' ),
+			// False only from a survey form submission that answered No: the import never
+			// brings one in.
 			'<span class="fh-edit-note">' . esc_html(
-				true === ( $fields['irbApproved'] ?? null )
-					? __( 'Approved, exempt, or not required', 'firehouse' )
-					: __( 'Not recorded. Visitors can’t see a project without it.', 'firehouse' )
+				match ( $fields['irbApproved'] ?? null ) {
+					true    => __( 'Approved, exempt, or not required', 'firehouse' ),
+					false   => __( 'No approval or exemption. Visitors can’t see a project without it.', 'firehouse' ),
+					default => __( 'Not recorded. Visitors can’t see a project without it.', 'firehouse' ),
+				}
 			) . '</span>'
 		);
 		self::row( __( 'Geographic areas', 'firehouse' ), self::labels( is_array( $geo['regions'] ?? null ) ? array_values( $geo['regions'] ) : array(), Vocabulary::items( 'regions' ) ) );

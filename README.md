@@ -351,14 +351,17 @@ overrides are isolated so a re-sync doesn't lose them.
       text describes the hub, not the image. Record who confirmed what text, and when.
 - [ ] **Build with the right variables** for each copy (see [Hosting](#hosting)), so
       `og:image` is emitted and the test-site copy isn't indexed.
-- [ ] **Confirm the survey form's wording** with Stephanie and Emily, then clear it.
-      The form keeps the Google Form's notice and questions (`survey/class-questions.php`),
-      with "AI" made "SI" (Executive Order 14434). Its SI disclosure still names the
-      tool ("Google Gemini within a secure NOAA Gemini / NotebookLM workspace"), which
-      the plan expects to name the approved service instead (plan open question 7).
-      The disclosure goes through clearance before gsl.noaa.gov (CLAUDE.md). A
-      question's wording and help can be changed under FireHouse → Settings; the
-      notice and the thank-you messages are in code.
+- [ ] **Confirm the survey form's wording** with Stephanie and Emily, then send it
+      through clearance before gsl.noaa.gov (CLAUDE.md). The notice, the no-IRB thanks
+      and the questions are the Google Form's (`survey/class-questions.php`), with "AI"
+      made "SI" (Executive Order 14434) and the three list questions reworded for one
+      box per entry. The rest is the plugin's own: each private question's line saying
+      who sees the answer (for the privacy review too), the thanks, the closed page and
+      the error messages (`survey/`). The SI disclosure still names the tool ("Google
+      Gemini within a secure NOAA Gemini / NotebookLM workspace"), which the plan
+      expects to name the approved service instead (plan open question 7). A question's
+      wording and help can be changed under FireHouse → Settings; everything else is in
+      code.
 - [ ] **Open the survey form only once it's cleared:** the privacy review, the
       written Paperwork Reduction Act answer (plan open questions 12 and 14), and GSL's
       security review of the release that carries it. Then tick Accept submissions
@@ -536,7 +539,8 @@ nothing from the database. Each class's docblock has the detail; this is the map
     differs from the files, or if it holds anything but its header and literals.
     `render.php` and `view.js` need no rerun.
   - Each block renders on the server (`render.php`) and stays out of the inserter: the
-    templates or the Import screen place it.
+    templates, the Import screen or, for the survey form, saving Settings with Accept
+    submissions ticked (`Survey::opened()`) place it.
   - An interactive block has a view script module for WordPress's Interactivity API.
     It's plain JavaScript with no build step: WordPress maps its imports, which
     `view.asset.php` declares (`@wordpress/interactivity`; for the explorer,
@@ -585,7 +589,7 @@ nothing from the database. Each class's docblock has the detail; this is the map
   the NOAA and GSL logos and the theme toggle, which the theme's header already has.
   - It has the wordmark, the Settings screen's link labels, and the Submit a Finding
     button, which is left out until a survey address is set or the survey form is
-    open (`Settings::get()`). A survey on another site opens in a new tab and tells
+    open and its Submit page published (`Settings::get()`). A survey on another site opens in a new tab and tells
     screen readers so.
   - It marks the current page's link with `aria-current="page"`: Home on the landing
     page, Explore Projects on the explorer and every project, About on the About page
@@ -753,7 +757,8 @@ nothing from the database. Each class's docblock has the detail; this is the map
   team's, never touched by a re-import (rule 4). The geography is written only when
   its note changes, so a save never stands or falls on the survey's regions. **From
   the survey** shows the researcher's answers read-only, as stored. **Private
-  answers**, on a form submission only, shows the submitter's email, job title and how
+  answers**, on a form submission that answered any of the three optional private
+  questions, shows the submitter's email, job title and how
   they shared their results, to FireHouse Editors and administrators. WordPress has
   saved the project's status by the time a save is refused.
 - `Topic_Screen` is a topic's, in two boxes under its label, WordPress's title box.
@@ -1054,11 +1059,13 @@ the toolbar, other plugins' notices and anything private.
   write, and lists what's wrong: required answers, counts, lengths, an email address
   in a public answer, a character that doesn't show.
 - `Survey` handles the POST, only at the page's own address and from the site's own
-  pages, with a nonce, a field people don't see and a minimum time; saves the draft
-  (response ID `W_…`, no author), with the email, job title and sharing answer apart
-  in protected meta (`_firehouse_private`) left out of WordPress's export; and emails
-  the team mailbox fixed text with a link to the draft (`firehouse_survey_notify`
-  changes the address, or with "" sends none).
+  pages, with a nonce, a field people don't see, and a fill time of at least the
+  minimum and at most a day; saves the draft (response ID `W_…`, no author), with the
+  email, job title and sharing answer apart in protected meta (`_firehouse_private`)
+  left out of WordPress's export; and emails the team mailbox fixed text with a link
+  to the draft (`firehouse_survey_notify` changes the address, or with "" sends
+  none). A submission without IRB approval is saved too, as a draft `Project_Rules`
+  won't publish, and gets the Google Form's no-IRB thanks; its DOIs aren't looked up.
 - `Doi_Lookup` looks up each DOI's title, journal and year from doi.org, Crossref and
   DataCite only, in a WP-Cron event just after the save, and stores them only while the
   submission is still a draft.
@@ -1413,7 +1420,11 @@ the hero's and stats' text is 6.45:1 at the lowest (AA needs 4.5:1); the codes'
 contrast against their halo wasn't measured. The walk flags the same on the plugin's
 landing page, explorer and quick look, inside GSL's header and footer, and nothing
 more. Phase 6's admin screens were reviewed by the Section 508 specialist change by
-change, not audited as a whole; Phase 8's screen-reader audit covers them.
+change, not audited as a whole; Phase 8's screen-reader audit covers them. So with
+Phase 7a's survey form at `/firehouse/submit/` and its Settings section: the form has
+no React counterpart, so `npm run reference` and `plugin:compare` don't cover it; the
+Section 508 specialist reviewed it in its pull requests (#62, #68), and the audit
+includes it.
 
 ## Hosting
 

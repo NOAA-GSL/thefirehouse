@@ -543,10 +543,16 @@ final class ProjectScreenTest extends WordPressTestCase {
 	}
 
 	/**
-	 * A project without IRB approval says visitors can't see it.
+	 * A project without IRB approval says visitors can't see it: one that answered No
+	 * (a survey form submission) says so, and one with no answer says it's not recorded.
 	 */
 	public function test_a_project_without_approval_says_so(): void {
 		$this->stored['fh_irbApproved'] = '';
+		ob_start();
+		Project_Screen::survey_box( self::post() );
+		$this->assertStringContainsString( '<dt>IRB approval</dt><dd><span class="fh-edit-note">No approval or exemption. Visitors can’t see a project without it.</span></dd>', (string) ob_get_clean() );
+
+		unset( $this->stored['fh_irbApproved'] );
 		ob_start();
 		Project_Screen::survey_box( self::post() );
 		$this->assertStringContainsString( '<dt>IRB approval</dt><dd><span class="fh-edit-note">Not recorded. Visitors can’t see a project without it.</span></dd>', (string) ob_get_clean() );

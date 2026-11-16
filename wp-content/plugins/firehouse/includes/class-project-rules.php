@@ -16,8 +16,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Holds three rules on every save of a project through WordPress's editing routes (the
  * edit screen, Quick Edit, bulk edit, a restore, XML-RPC). The plugin's own writes
- * through Store are left alone: the importer and, later, the survey form set a
- * project's status themselves.
+ * through Store are left alone: the importer and the survey form set a project's
+ * status themselves.
  *
  * - **No project without IRB approval is published, scheduled or made private**
  *   (decided by Eric, 14 November, for publishing; private is WordPress's "privately
