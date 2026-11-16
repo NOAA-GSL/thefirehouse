@@ -38,19 +38,27 @@ independent one: it runs on the same model family that writes most commits here.
 doesn't replace GSL's security review, the privacy review, or Stephanie and Emily's
 sign-off.
 
-**When to run them.** Before reporting a change done or opening a PR, route it by the
-paths it touches and run each matching reviewer through the Agent tool, with
-`subagent_type` set to the name in the table exactly as written. Not after every edit:
-each run rereads the diff and the docs it cites. Every code change gets at least one
-reviewer: the specialist for each row it matches, or the `Code Reviewer` when none
-does. A change that matches several rows runs each of them; few need more than two.
-A change only to the plan docs (`WORDPRESS-PLAN.md`, `PLAN.md`, `WIREFRAME-BRIEF.md`)
-needs none. When the maintainer names an agent, run that one.
+**When to run them.** Once for each PR (decided by Eric, 16 November, to keep the time
+and cost down). A PR holds a whole feature, not one decision. Open the PR, and while
+GitHub's Copilot reviews it, run one reviewer through the Agent tool, with
+`subagent_type` set to the name in the table exactly as written: the specialist for
+the row that matters most to the change, or the `Code Reviewer` when none matches. Fix
+Copilot's findings and the reviewer's together, and don't run a reviewer again after
+the fixes unless one of them was High or Critical. Each run rereads the diff and the
+docs it cites. A change only to docs (`WORDPRESS-PLAN.md`, `PLAN.md`,
+`WIREFRAME-BRIEF.md`, this file) needs no agent: Copilot's review is enough. When the
+maintainer names an agent, run that one.
 
-- **High-scrutiny paths get two.** The survey form's submission handler, roles and
-  capabilities, the Import screen, anything that stores or reads private answers, and
-  the AI service client get their specialist plus the `Code Reviewer`. The PR says
-  whether a person outside the session has reviewed the change.
+- **Outside input gets two.** The survey form's submission handler, anything that
+  stores or reads private answers, and the AI service client get their specialist plus
+  the `Code Reviewer`. The PR says whether a person outside the session has reviewed
+  the change.
+- **What gets fixed.** Administrators are trusted. Fix what a visitor or a FireHouse
+  Editor can reach, and anything High or Critical. An edge case only an administrator
+  can cause gets a line in the plan, and any other Low or Info finding a line in the
+  PR; neither gets code.
+- **Docs, per PR, get a line:** in the plan, where the item is listed, and in
+  `readme.txt`'s changelog. `README.md` is brought up to date at the end of each phase.
 - **Reviewers report; they don't edit.** Each returns findings with `file:line`. You
   fix, and the maintainer decides what stands.
 - **The repo wins.** Where this file or `WORDPRESS-PLAN.md` sets a rule (its "Rules
@@ -73,7 +81,7 @@ Plugin paths below are under `wp-content/plugins/firehouse/`, laid out as in the
 | The synthesis prompt (`notebooklm/README.md`, and the plugin's prompt setting) | `Prompt Engineer`. Run the old and new prompts on the same projects before switching |
 | The plugin's render path: `templates/**`, each block's `render.php` and the classes it calls for each request (such as `includes/class-explorer-page.php`, `includes/class-coverage-map.php` and `domain/class-search.php`), asset and block registration (`includes/class-frame.php`, `includes/class-blocks.php`), anything cached | `WordPress Performance Engineer`. Ignore its hosting advice: GSL runs the servers |
 | `src/content/**`, `wp-content/plugins/firehouse/shared/**`, the plugin's `domain/**`, `scripts/**` not routed above, and any other code or config | `Code Reviewer` |
-| `README.md`, and the editor and administrator runbooks (Phase 8) | `Technical Writer` |
+| `README.md`, and the editor and administrator runbooks (Phase 8), at the end of each phase | `Technical Writer` |
 
 **Some routes follow the content, not the path.**
 
@@ -100,7 +108,7 @@ claim, not a sign-off.
 
 **At phase boundaries, not per change.** The `Codebase Archaeologist` checks the plan
 docs and the README against the code at the end of each phase; they have drifted
-before. The `Codebase Onboarding Engineer` writes a code-grounded guide when a second
+before. The README is brought up to date then, and the `Technical Writer` reviews it. The `Codebase Onboarding Engineer` writes a code-grounded guide when a second
 developer joins (after Phase 2 in the plan) and before maintenance passes to anyone
 else.
 
