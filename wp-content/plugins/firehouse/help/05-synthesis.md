@@ -2,13 +2,36 @@
 
 <!-- help audience: editors; screens: synthesis, topic-edit -->
 
-How to make a new synthesis of the top needs in NotebookLM, check it, and publish it to the topic pages and the landing page.
+How to make a new synthesis of the top needs, with Analyze results or in NotebookLM, check it, and publish it to the topic pages and the landing page.
 
 ## What the synthesis is
 
 The synthesis reads every published project together and lists up to five needs in each topic area, each with how many projects raise it and which ones. It's the one place the site puts researchers' findings in other words, so nothing reaches the site until someone on the FireHouse team has reviewed it.
 
 Make a new one when projects have been published or taken off the site since the last.
+
+There are two ways to make one. Either way, it goes through the same check and Mark reviewed step.
+
+- **Analyze results**, on FireHouse → Synthesis, has a model on Cloudflare Workers AI draft it. You see it only on a site an administrator has given a Workers AI key; see the next section.
+- **NotebookLM:** download the source, run the team's prompt in the notebook, and paste the result. Start at step 1.
+
+## Analyze results
+
+The model is sent the published projects, word for word, the four topic areas, and the prompt on FireHouse → Settings. Nothing private goes, and no earlier synthesis.
+
+1. On **FireHouse → Synthesis**, under **Analyze results**, pick a **Model** and choose **Analyze results**.
+2. The model drafts in the background, which takes a few minutes. Reload the page to see when it's done. One model drafts at a time.
+3. Each model's latest draft is kept under its name, so you can have several draft and compare them. **Its whole reply** shows everything the model wrote, with the entries each need draws on. **The prompt it was given** shows the prompt it ran.
+4. Choose **Check** under the draft you want. Its JSON goes into the box at the bottom and is checked, as in step 4 below, and **Made with** starts with the model's name.
+5. Review it as in step 3, with the model's whole reply, which stays under the needs while you check and edit, in place of NotebookLM's citations. Then mark it reviewed as in step 5.
+
+![The Analyze results section: a Model list with Llama 4 Scout (Meta) picked, the Analyze results button, and two kept drafts, each with its Check button](images/analyze-results.webp "Analyze results, on FireHouse → Synthesis.")
+
+To compare models, have each draft with the same prompt, then check each in turn: the screen shows the needs each would publish. Checking one drops the check before it, so mark reviewed only the one the team chooses.
+
+A draft that failed says why. Workers AI may have refused the request or be busy, or the reply may hold no JSON or have stopped at its length limit. Try again, or try another model. If one says it never started or didn't finish, tell an administrator: the site's scheduled tasks may not be running.
+
+The reply is the model's, not the team's: read it as a draft. If it holds a character that doesn't show, the screen says so, since it may then read differently from what it says. If a project was published or taken off the site after a model drafted, checking the draft says so: have the model draft again before you mark it reviewed.
 
 ## 1. Download the source
 
@@ -40,7 +63,7 @@ Keep a copy of your edited version until it's published.
 
 ## 5. Mark it reviewed
 
-When the screen says "Ready to mark reviewed", read the needs it shows. **Reviewed by** starts with the name your account shows, and the topic pages show it to visitors: type the names as the team wants them published. **Made with** starts with NotebookLM. Then choose **Mark reviewed and publish**.
+When the screen says "Ready to mark reviewed", read the needs it shows. **Reviewed by** starts with the name your account shows, and the topic pages show it to visitors: type the names as the team wants them published. **Made with** starts with NotebookLM, or with the model's name for a draft from Analyze results. Then choose **Mark reviewed and publish**.
 
 The topic pages and the landing page show the new synthesis at once, with today's date.
 

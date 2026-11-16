@@ -37,6 +37,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  * projects as they are, storing nothing unless it shows a new check instead of
  * publishing because something would differ. The comparison against the published
  * synthesis comes after launch. Anyone who may publish a topic may use the screen.
+ *
+ * When the site has a Workers AI key (Workers_Ai), **Analyze results** has a model the
+ * editor picks draft the synthesis in the background (Analysis), and the screen keeps
+ * each model's latest draft to compare. Checking one puts its JSON through step 2, with
+ * the model offered for Made with; nothing else about it differs from a paste.
  */
 final class Synthesis_Screen {
 
@@ -125,6 +130,17 @@ final class Synthesis_Screen {
 	 * The NotebookLM source: the projects a visitor may see, and the four topics.
 	 */
 	public static function source(): string {
+		list( $projects, $topics ) = self::published();
+		return Notebook_Source::build( $projects, $topics );
+	}
+
+	/**
+	 * What a synthesis reads, whichever tool makes it: the fields of the projects a
+	 * visitor may see, and of the published topics.
+	 *
+	 * @return array{0: list<array<string, mixed>>, 1: list<array<string, mixed>>}
+	 */
+	public static function published(): array {
 		$projects = array();
 		foreach ( get_posts( Store::public_projects_query( array( 'numberposts' => -1 ) ) ) as $post ) {
 			$projects[] = Store::project( $post )['fields'];
@@ -135,7 +151,7 @@ final class Synthesis_Screen {
 				$topics[] = $topic['fields'];
 			}
 		}
-		return Notebook_Source::build( $projects, $topics );
+		return array( $projects, $topics );
 	}
 
 	/**
@@ -150,17 +166,74 @@ final class Synthesis_Screen {
 			self::drop();
 			return;
 		}
-		$step = sanitize_key( wp_unslash( $_POST['firehouse_step'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Each step checks its nonce next.
+		$step  = sanitize_key( wp_unslash( $_POST['firehouse_step'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Each step checks its nonce next.
+		$field = static fn( string $name ): string => isset( $_POST[ $name ] ) && is_string( $_POST[ $name ] ) ? trim( sanitize_text_field( wp_unslash( $_POST[ $name ] ) ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read only after a step's nonce is checked.
 		if ( 'check' === $step ) {
 			check_admin_referer( 'firehouse_synthesis_check' );
 			// The JSON as pasted: it's parsed, and shown again only through esc_textarea().
 			$pasted      = isset( $_POST['firehouse_synthesis'] ) && is_string( $_POST['firehouse_synthesis'] ) ? wp_unslash( $_POST['firehouse_synthesis'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Parsed as JSON and checked by Synthesis; never printed raw.
-			self::$state = self::check( $pasted );
+			self::$state = self::from_draft( self::check( $pasted ), $field( 'firehouse_draft' ), (int) $field( 'firehouse_draft_started' ) );
 		} elseif ( 'publish' === $step ) {
 			check_admin_referer( 'firehouse_synthesis_publish' );
-			$field       = static fn( string $name ): string => isset( $_POST[ $name ] ) && is_string( $_POST[ $name ] ) ? trim( sanitize_text_field( wp_unslash( $_POST[ $name ] ) ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Checked above.
 			self::$state = self::publish( $field( 'firehouse_token' ), $field( 'firehouse_reviewer' ), $field( 'firehouse_model' ) );
+			if ( 'checked' === self::$state['step'] ) {
+				// Sent back to fix a field: Made with stays as typed.
+				self::$state = self::from_draft( self::$state, $field( 'firehouse_draft' ), (int) $field( 'firehouse_draft_started' ) );
+			}
+		} elseif ( 'analyze' === $step ) {
+			check_admin_referer( 'firehouse_synthesis_analyze' );
+			$problem = Analysis::start( $field( 'firehouse_analysis_model' ) );
+			if ( null === $problem ) {
+				// To the screen itself, so reloading it doesn't send the request again.
+				wp_safe_redirect( admin_url( Post_Types::MENU . '&page=' . self::PAGE ) );
+				exit;
+			}
+			self::$state = array(
+				'step'    => 'start',
+				'refused' => $problem,
+			);
+		} elseif ( 'take' === $step ) {
+			check_admin_referer( 'firehouse_synthesis_take' );
+			$model  = $field( 'firehouse_analysis_model' );
+			$result = Workers_Ai::offered( $model ) ? ( Analysis::state()['results'][ $model ] ?? null ) : null;
+			if ( ! is_array( $result ) || 'done' !== ( $result['state'] ?? null ) || ! is_string( $result['json'] ?? null ) ) {
+				self::$state = array(
+					'step'    => 'start',
+					'refused' => __( 'That draft isn’t kept any more. A newer one from the same model replaces it.', 'firehouse' ),
+					'not'     => 'checked',
+				);
+				return;
+			}
+			self::$state = self::from_draft( self::check( $result['json'] ), $model, (int) ( $result['started'] ?? 0 ) );
+			// The topic pages will say how many projects the site shows when it's marked
+			// reviewed, so a draft that read fewer, or more, says so.
+			$read = (int) ( $result['projects'] ?? 0 );
+			if ( Store::public_project_count() !== $read ) {
+				self::$state['read'] = $read;
+			}
 		}
+	}
+
+	/**
+	 * A check of a draft from Analyze results, which keeps saying which draft it is
+	 * through the checks after its JSON is edited: its model, offered for Made with
+	 * unless one was typed, and when it was started, so its whole reply stays in view.
+	 *
+	 * @param array<string, mixed> $state   The check.
+	 * @param string               $model   The draft's model, or "" for a paste.
+	 * @param int                  $started When the draft was started.
+	 * @return array<string, mixed>
+	 */
+	private static function from_draft( array $state, string $model, int $started ): array {
+		if ( ! Workers_Ai::offered( $model ) ) {
+			return $state;
+		}
+		$state['draft'] = array(
+			'model'   => $model,
+			'started' => $started,
+		);
+		/* translators: %s: a model, as "Llama 4 Scout (Meta)". */
+		return $state + array( 'model' => sprintf( __( '%s, on Cloudflare Workers AI', 'firehouse' ), Workers_Ai::label( $model ) ) );
 	}
 
 	/**
@@ -172,6 +245,7 @@ final class Synthesis_Screen {
 		$state  = self::$state ?? array();
 		$prefix = match ( true ) {
 			! isset( $state['step'] )                                       => '',
+			'start' === $state['step']                                      => isset( $state['refused'] ) ? ( 'checked' === ( $state['not'] ?? null ) ? __( 'Not checked:', 'firehouse' ) : __( 'Not started:', 'firehouse' ) ) : '',
 			! empty( $state['changed'] ) || ! empty( $state['missing'] )    => __( 'Not published:', 'firehouse' ),
 			'gone' === $state['step']                                       => __( 'Not published:', 'firehouse' ),
 			'problems' === $state['step']                                   => __( 'Not ready:', 'firehouse' ),
@@ -409,7 +483,9 @@ final class Synthesis_Screen {
 					array( __( 'Nothing was written. Fix each problem in the JSON below, then check it again.', 'firehouse' ) ),
 					$state['problems']
 				);
-				self::paste_form( (string) $state['pasted'] );
+				self::read_note( $state );
+				self::draft_reply( $state );
+				self::paste_form( (string) $state['pasted'], $state['draft'] ?? null, (string) ( $state['model'] ?? '' ) );
 				break;
 			case 'checked':
 				if ( ! empty( $state['changed'] ) ) {
@@ -419,9 +495,11 @@ final class Synthesis_Screen {
 				} else {
 					self::summary( 'success', __( 'Ready to mark reviewed', 'firehouse' ), array( __( 'Nothing is wrong with the synthesis. Review its needs below. Nothing reaches the site until you mark it reviewed.', 'firehouse' ) ) );
 				}
+				self::read_note( $state );
 				self::needs( $state['needs'] );
-				self::review_form( (string) $state['token'], (string) ( $state['reviewer'] ?? wp_get_current_user()->display_name ), (string) ( $state['model'] ?? 'NotebookLM' ) );
-				self::paste_form( (string) $state['pasted'] );
+				self::draft_reply( $state );
+				self::review_form( (string) $state['token'], (string) ( $state['reviewer'] ?? wp_get_current_user()->display_name ), (string) ( $state['model'] ?? 'NotebookLM' ), $state['draft'] ?? null );
+				self::paste_form( (string) $state['pasted'], $state['draft'] ?? null, (string) ( $state['model'] ?? '' ) );
 				break;
 			case 'done':
 				if ( array() === $state['saved'] ) {
@@ -443,19 +521,178 @@ final class Synthesis_Screen {
 					}
 					echo '</ul>';
 				}
+				self::analyze_section();
 				self::source_section();
 				self::paste_form( '' );
 				break;
 			case 'gone':
 				self::summary( 'info', __( 'Not published: this check isn’t waiting any more', 'firehouse' ), array( __( 'It was marked reviewed already, as by the first of a double click, or it waited more than thirty minutes. Check the synthesis again to mark it reviewed.', 'firehouse' ) ) );
+				self::analyze_section();
 				self::paste_form( '' );
 				break;
 			default:
-				echo '<p>' . esc_html__( 'Publishes a synthesis to the topic pages: up to five needs in each topic area, each with its project count and the projects it draws on. Make it in NotebookLM from the source below, with the team’s prompt, then paste the JSON it gives and check it. Nothing reaches the site until you mark it reviewed.', 'firehouse' ) . '</p>';
+				if ( isset( $state['refused'] ) ) {
+					self::summary( 'error', 'checked' === ( $state['not'] ?? null ) ? __( 'Not checked', 'firehouse' ) : __( 'Not started', 'firehouse' ), array( (string) $state['refused'] ) );
+				}
+				echo '<p>' . esc_html(
+					Workers_Ai::configured()
+						? __( 'Publishes a synthesis to the topic pages: up to five needs in each topic area, each with its project count and the projects it draws on. Have a model draft it with Analyze results, or make it in NotebookLM from the source below and paste the JSON it gives; either way it’s checked. Nothing reaches the site until you mark it reviewed.', 'firehouse' )
+						: __( 'Publishes a synthesis to the topic pages: up to five needs in each topic area, each with its project count and the projects it draws on. Make it in NotebookLM from the source below, with the team’s prompt, then paste the JSON it gives and check it. Nothing reaches the site until you mark it reviewed.', 'firehouse' )
+				) . '</p>';
+				self::analyze_section();
 				self::source_section();
 				self::paste_form( '' );
 		}
 		echo '</div>';
+	}
+
+	/**
+	 * When a draft from Analyze results read a different number of projects from the
+	 * number the site shows now, says so: the topic pages give the number the site shows
+	 * when it's marked reviewed.
+	 *
+	 * @param array<string, mixed> $state The check.
+	 */
+	private static function read_note( array $state ): void {
+		if ( ! isset( $state['read'] ) ) {
+			return;
+		}
+		$shows = Store::public_project_count();
+		echo '<div class="notice notice-warning inline"><p>' . esc_html(
+			sprintf(
+				/* translators: 1: how many projects the draft read, 2: how many the site shows now. */
+				_n( 'This draft read %1$d project, and the site shows %2$d now. The topic pages would say the synthesis read all %2$d, so have the model draft it again before you mark it reviewed.', 'This draft read %1$d projects, and the site shows %2$d now. The topic pages would say the synthesis read all %2$d, so have the model draft it again before you mark it reviewed.', (int) $state['read'], 'firehouse' ),
+				(int) $state['read'],
+				$shows
+			)
+		) . '</p></div>';
+	}
+
+	/**
+	 * Analyze results, when the site has a Workers AI key: the run going, or the form
+	 * that starts one; then each model's latest draft, to compare and to check.
+	 */
+	private static function analyze_section(): void {
+		if ( ! Workers_Ai::configured() ) {
+			return;
+		}
+		$state = Analysis::state();
+		$count = Store::public_project_count();
+		echo '<div id="firehouse-analyze"><h2>' . esc_html__( 'Analyze results', 'firehouse' ) . '</h2>';
+		echo '<p id="firehouse-analyze-description">' . esc_html(
+			sprintf(
+				/* translators: %d: how many projects the site shows. */
+				_n( 'Sends the %d published project, word for word, and the four topic areas to the model you pick on Cloudflare Workers AI, with the prompt on FireHouse → Settings. The model drafts a synthesis in the background, which takes a few minutes. Each model’s latest draft is kept below, so you can compare them; check one to review it.', 'Sends the %d published projects, word for word, and the four topic areas to the model you pick on Cloudflare Workers AI, with the prompt on FireHouse → Settings. The model drafts a synthesis in the background, which takes a few minutes. Each model’s latest draft is kept below, so you can compare them; check one to review it.', $count, 'firehouse' ),
+				$count
+			)
+		) . '</p>';
+
+		if ( null !== $state['running'] ) {
+			echo '<div class="notice notice-info inline"><p>' . esc_html(
+				sprintf(
+					/* translators: 1: a model, as "Llama 4 Scout (Meta)"; 2: a time; 3: who started it. */
+					__( '%1$s is drafting a synthesis, started at %2$s by %3$s. Reload this page to see when it’s done.', 'firehouse' ),
+					Workers_Ai::label( $state['running']['model'] ),
+					wp_date( (string) get_option( 'time_format' ), $state['running']['started'] ),
+					$state['running']['by']
+				)
+			) . ' <a href="' . esc_url( admin_url( Post_Types::MENU . '&page=' . self::PAGE ) ) . '">' . esc_html__( 'Reload', 'firehouse' ) . '</a></p></div>';
+		} else {
+			?>
+			<form method="post">
+				<?php wp_nonce_field( 'firehouse_synthesis_analyze' ); ?>
+				<input type="hidden" name="firehouse_step" value="analyze" />
+				<p>
+					<label for="firehouse-analysis-model"><?php esc_html_e( 'Model', 'firehouse' ); ?></label><br />
+					<select id="firehouse-analysis-model" name="firehouse_analysis_model" aria-describedby="firehouse-analyze-description">
+						<?php foreach ( Workers_Ai::MODELS as $model => $about ) : ?>
+							<option value="<?php echo esc_attr( $model ); ?>"<?php selected( $model, Workers_Ai::DEFAULT_MODEL ); ?>><?php echo esc_html( $about['label'] ); ?></option>
+						<?php endforeach; ?>
+					</select>
+				</p>
+				<?php submit_button( __( 'Analyze results', 'firehouse' ), 'secondary', 'submit', false ); ?>
+			</form>
+			<?php
+		}
+
+		foreach ( array_keys( Workers_Ai::MODELS ) as $model ) {
+			if ( isset( $state['results'][ $model ] ) ) {
+				self::draft( $model, $state['results'][ $model ] );
+			}
+		}
+		echo '</div>';
+	}
+
+	/**
+	 * One model's latest draft: when and from how many projects, what went wrong if it
+	 * failed, its whole reply and the prompt it was given; and, when its JSON was found,
+	 * the button that checks it.
+	 *
+	 * @param string               $model  The model.
+	 * @param array<string, mixed> $result Its latest result.
+	 */
+	private static function draft( string $model, array $result ): void {
+		$id      = 'firehouse-draft-' . sanitize_key( str_replace( array( '@', '/', '.' ), '-', $model ) );
+		$label   = Workers_Ai::label( $model );
+		$format  = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
+		$started = is_int( $result['started'] ?? null ) ? wp_date( $format, $result['started'] ) : '';
+		echo '<h3>' . esc_html( $label ) . '</h3>';
+		if ( 'done' === ( $result['state'] ?? null ) ) {
+			echo '<p>' . esc_html(
+				sprintf(
+					/* translators: 1: a date and time, 2: who started it, 3: how many projects it read. */
+					_n( 'Drafted %1$s, started by %2$s, from %3$d project.', 'Drafted %1$s, started by %2$s, from %3$d projects.', (int) ( $result['projects'] ?? 0 ), 'firehouse' ),
+					$started,
+					(string) ( $result['by'] ?? '' ),
+					(int) ( $result['projects'] ?? 0 )
+				)
+			) . '</p>';
+			?>
+			<form method="post">
+				<?php wp_nonce_field( 'firehouse_synthesis_take' ); ?>
+				<input type="hidden" name="firehouse_step" value="take" />
+				<input type="hidden" name="firehouse_analysis_model" value="<?php echo esc_attr( $model ); ?>" />
+				<?php
+				/* translators: %s: a model, as "Llama 4 Scout (Meta)". */
+				submit_button( sprintf( __( 'Check %s’s draft', 'firehouse' ), $label ), 'secondary', 'submit', false );
+				?>
+			</form>
+			<?php
+		} else {
+			echo '<p>' . esc_html(
+				sprintf(
+					/* translators: 1: a date and time, 2: who started it, 3: what went wrong. */
+					__( 'Failed, started %1$s by %2$s: %3$s', 'firehouse' ),
+					$started,
+					(string) ( $result['by'] ?? '' ),
+					(string) ( $result['problem'] ?? '' )
+				)
+			) . '</p>';
+		}
+		if ( is_string( $result['unseen'] ?? null ) ) {
+			echo '<p><strong>' . esc_html(
+				sprintf(
+					/* translators: %s: a character's code, as U+202E. */
+					__( 'Its reply holds a character that doesn’t show (%s), so it may read differently from what it says. Read it with care: nothing in it reaches the site except through the check.', 'firehouse' ),
+					$result['unseen']
+				)
+			) . '</strong></p>';
+		}
+		foreach ( array(
+			'reply'  => __( 'Its whole reply', 'firehouse' ),
+			'prompt' => __( 'The prompt it was given', 'firehouse' ),
+		) as $part => $summary ) {
+			if ( is_string( $result[ $part ] ?? null ) && '' !== $result[ $part ] ) {
+				printf(
+					'<details><summary>%1$s</summary><p><label for="%2$s">%3$s</label></p><textarea id="%2$s" class="large-text code" rows="12" readonly>%4$s</textarea></details>',
+					esc_html( $summary ),
+					esc_attr( $id . '-' . $part ),
+					/* translators: 1: "Its whole reply" or "The prompt it was given", 2: a model. */
+					esc_html( sprintf( __( '%1$s: %2$s', 'firehouse' ), $summary, $label ) ),
+					esc_textarea( (string) $result[ $part ] )
+				);
+			}
+		}
 	}
 
 	/**
@@ -502,17 +739,28 @@ final class Synthesis_Screen {
 	/**
 	 * The form a synthesis is pasted into.
 	 *
-	 * @param string $pasted What was pasted before, to fix.
+	 * @param string                                  $pasted What was pasted before, to fix.
+	 * @param array{model: string, started: int}|null $draft  The draft from Analyze results it came from, if it did.
+	 * @param string                                  $made   What Made with will start as.
 	 */
-	private static function paste_form( string $pasted ): void {
+	private static function paste_form( string $pasted, ?array $draft = null, string $made = '' ): void {
 		?>
 		<h2><?php esc_html_e( 'The synthesis', 'firehouse' ); ?></h2>
 		<form method="post">
 			<?php wp_nonce_field( 'firehouse_synthesis_check' ); ?>
 			<input type="hidden" name="firehouse_step" value="check" />
+			<?php self::draft_fields( $draft ); ?>
 			<p><label for="firehouse-synthesis"><?php esc_html_e( 'The JSON the prompt gave', 'firehouse' ); ?></label></p>
 			<textarea id="firehouse-synthesis" name="firehouse_synthesis" class="large-text code" rows="16" required aria-describedby="firehouse-synthesis-description"><?php echo esc_textarea( $pasted ); ?></textarea>
 			<p class="description" id="firehouse-synthesis-description"><?php esc_html_e( 'The four topic areas, each with up to five needs, by project count, highest first. Each need names its projects by page slug or response ID. Edit the wording here before checking: the published wording is the team’s, not the model’s.', 'firehouse' ); ?></p>
+			<?php if ( null !== $draft && '' !== $made ) : ?>
+				<p class="description">
+					<?php
+					/* translators: %s: what made the synthesis, as "Llama 4 Scout (Meta), on Cloudflare Workers AI". */
+					echo esc_html( sprintf( __( 'Made with will start as “%s” when you mark it reviewed. If you paste in a synthesis made some other way, change it there.', 'firehouse' ), $made ) );
+					?>
+				</p>
+			<?php endif; ?>
 			<?php submit_button( __( 'Check the synthesis', 'firehouse' ), 'secondary' ); ?>
 		</form>
 		<?php
@@ -548,17 +796,19 @@ final class Synthesis_Screen {
 	/**
 	 * The form that marks a check reviewed.
 	 *
-	 * @param string $token    The check's token.
-	 * @param string $reviewer Who reviewed it, as typed or first offered.
-	 * @param string $model    What made it, as typed or first offered.
+	 * @param string                                  $token    The check's token.
+	 * @param string                                  $reviewer Who reviewed it, as typed or first offered.
+	 * @param string                                  $model    What made it, as typed or first offered.
+	 * @param array{model: string, started: int}|null $draft    The draft from Analyze results it came from, if it did.
 	 */
-	private static function review_form( string $token, string $reviewer, string $model ): void {
+	private static function review_form( string $token, string $reviewer, string $model, ?array $draft = null ): void {
 		?>
 		<h2><?php esc_html_e( 'Mark it reviewed', 'firehouse' ); ?></h2>
 		<form method="post">
 			<?php wp_nonce_field( 'firehouse_synthesis_publish' ); ?>
 			<input type="hidden" name="firehouse_step" value="publish" />
 			<input type="hidden" name="firehouse_token" value="<?php echo esc_attr( $token ); ?>" />
+			<?php self::draft_fields( $draft ); ?>
 			<p>
 				<label for="firehouse-reviewer"><?php esc_html_e( 'Reviewed by', 'firehouse' ); ?></label><br />
 				<input type="text" id="firehouse-reviewer" name="firehouse_reviewer" class="regular-text" value="<?php echo esc_attr( $reviewer ); ?>" required />
@@ -571,6 +821,55 @@ final class Synthesis_Screen {
 			<?php submit_button( __( 'Mark reviewed and publish', 'firehouse' ), 'primary' ); ?>
 		</form>
 		<?php
+	}
+
+	/**
+	 * The fields that say which draft from Analyze results a form's synthesis came from.
+	 *
+	 * @param array{model: string, started: int}|null $draft The draft, if any.
+	 */
+	private static function draft_fields( ?array $draft ): void {
+		if ( null === $draft ) {
+			return;
+		}
+		printf(
+			'<input type="hidden" name="firehouse_draft" value="%1$s" /><input type="hidden" name="firehouse_draft_started" value="%2$d" />',
+			esc_attr( $draft['model'] ),
+			(int) $draft['started']
+		);
+	}
+
+	/**
+	 * While a draft from Analyze results is checked, its model's whole reply, with the
+	 * entries each need draws on, which the JSON leaves out: the reviewer traces each
+	 * need back with it. It's read from what the site keeps, never from the form, and
+	 * only while it's still that draft's.
+	 *
+	 * @param array<string, mixed> $state The check.
+	 */
+	private static function draft_reply( array $state ): void {
+		$draft = $state['draft'] ?? null;
+		if ( ! is_array( $draft ) ) {
+			return;
+		}
+		$result = Analysis::state()['results'][ $draft['model'] ] ?? null;
+		$label  = Workers_Ai::label( $draft['model'] );
+		if ( ! is_array( $result ) || ( $result['started'] ?? null ) !== $draft['started'] || ! is_string( $result['reply'] ?? null ) ) {
+			/* translators: %s: a model, as "Llama 4 Scout (Meta)". */
+			echo '<p>' . esc_html( sprintf( __( '%s’s whole reply for this draft isn’t kept any more: a newer draft from it replaced it.', 'firehouse' ), $label ) ) . '</p>';
+			return;
+		}
+		/* translators: %s: a model, as "Llama 4 Scout (Meta)". */
+		echo '<h2>' . esc_html( sprintf( __( '%s’s whole reply', 'firehouse' ), $label ) ) . '</h2>';
+		if ( is_string( $result['unseen'] ?? null ) ) {
+			/* translators: %s: a character's code, as U+202E. */
+			echo '<p><strong>' . esc_html( sprintf( __( 'It holds a character that doesn’t show (%s), so it may read differently from what it says. Read it with care: nothing in it reaches the site except through the check.', 'firehouse' ), $result['unseen'] ) ) . '</strong></p>';
+		}
+		printf(
+			'<p><label for="firehouse-draft-reply">%1$s</label></p><textarea id="firehouse-draft-reply" class="large-text code" rows="12" readonly>%2$s</textarea>',
+			esc_html__( 'Its needs with the entries each draws on, to trace each need back. It’s the model’s draft, not the team’s.', 'firehouse' ),
+			esc_textarea( $result['reply'] )
+		);
 	}
 
 	/**

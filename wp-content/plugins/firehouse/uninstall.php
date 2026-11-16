@@ -39,6 +39,10 @@ if ( $firehouse_administrator ) {
 delete_option( 'firehouse_installed_revision' );
 delete_option( 'rewrite_rules' );
 
+// Analyze results' drafts, and a run waiting to start (Analysis::OPTION, ::EVENT).
+delete_option( 'firehouse_analysis' );
+wp_unschedule_hook( 'firehouse_analyze' );
+
 // Dry runs, synthesis checks, refused saves and notices are transients named for
 // their user. Kept in the
 // database, they are found by name; kept in an object cache, they expire on their own.

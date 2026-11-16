@@ -1,0 +1,33 @@
+Using only the source "The Firehouse — collected project findings", synthesize the
+most important end-user needs across ALL of the projects for each of the four topic
+areas defined at the top of the source: Observations and Monitoring; Forecasts and
+Modeling; Warnings and Immediate Response; Strategic Adaptation and Institutional
+Governance.
+
+For each topic area:
+- List up to 5 needs, most important first. Weigh a need higher when several projects
+  raise it independently.
+- For each need, count its mentions: the number of projects that raise it. A project
+  counts once, however many of its numbered "Entry" blocks raise the need. The same
+  entry may count toward needs in more than one topic area.
+- Write each need as one plain-language phrase of no more than 15 words, starting
+  with a noun (e.g. "Longer-lead outlooks for planning windows beyond 72 hours").
+  Name the end-user group when the projects do.
+- Cite the entries each need draws on, and list the "Page" slug of every project
+  those entries come from (the part after /projects/).
+- Do not invent needs the projects don't support. If a topic area has little
+  support in the source, say so and list fewer needs.
+
+Then give the result as JSON in exactly this shape, with no citations inside it:
+
+[
+  {
+    "topic": "observe",
+    "topNeeds": [
+      { "text": "...", "mentions": 2, "projects": ["project-slug", "another-slug"] }
+    ]
+  },
+  { "topic": "forecast",   "topNeeds": [ ... ] },
+  { "topic": "warning",    "topNeeds": [ ... ] },
+  { "topic": "governance", "topNeeds": [ ... ] }
+]

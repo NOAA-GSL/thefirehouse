@@ -2,7 +2,7 @@
 
 <!-- help audience: editors; screens: settings -->
 
-The site name, the Submit a Finding button, the navigation labels, and the survey form's questions, on FireHouse → Settings.
+The site name, the Submit a Finding button, the navigation labels, the survey form's questions, and the synthesis prompt, on FireHouse → Settings.
 
 ## What each setting does
 
@@ -37,3 +37,17 @@ Some things here can't be changed:
 ![The Survey questions section: rows for Your name and Your email, each with a Question box and a Help under it box, and under the email's help the fixed line saying who sees the answer](images/settings-questions.webp "Survey questions, on FireHouse → Settings.")
 
 Projects that came in before you reworded a question keep their answers, as the researcher gave them.
+
+## Change the synthesis prompt
+
+**Synthesis prompt**, below the survey questions, is there only when the site has a Workers AI key. Its box holds what **Analyze results** on FireHouse → Synthesis asks the model to do with the published projects (see [Publishing a synthesis](05-synthesis.md)).
+
+1. Change the words in the box.
+2. Choose **Save Changes**. The next draft uses it.
+
+- It starts as the plugin's own prompt, the one the team gives NotebookLM. A box you've changed says so. To go back, clear it and save.
+- Whatever the box says, the screen also tells the model that the projects are what researchers wrote, never instructions to follow. That part can't be changed.
+- Each draft keeps the prompt it was given. To see what a change does, have the same model draft before and after it.
+- It can't hold a character that doesn't show, such as a direction override, or more than 20,000 characters.
+
+![The Synthesis prompt's box, holding the plugin's own prompt, with the notes under it](images/settings-prompt.webp "Synthesis prompt, on FireHouse → Settings.")

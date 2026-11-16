@@ -25,8 +25,9 @@ list below says what that waits on.
   description under 150 characters, five tags, Installation, Frequently Asked
   Questions, Screenshots, External services (the coverage map's Esri tiles, with
   Esri's terms and privacy statement, and the survey form's DOI lookups through
-  doi.org, Crossref and DataCite, with each one's terms and privacy policy) and
-  Changelog.
+  doi.org, Crossref and DataCite, with each one's terms and privacy policy, and
+  Analyze results' requests to Cloudflare Workers AI, on a site given a key, with
+  Cloudflare's data usage page, terms and privacy policy) and Changelog.
 - The zip comes from CI (`scripts/plugin-zip.mjs`), and Plugin Check, which runs the
   directory's own checks, reads what it holds on every change to the plugin.
 

@@ -10,9 +10,13 @@ declare( strict_types = 1 );
 namespace Firehouse\Tests;
 
 use Brain\Monkey\Functions;
+use Firehouse\Analysis;
 use Firehouse\Settings;
 use Firehouse\Survey\Questions;
+use Firehouse\Workers_Ai;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\PreserveGlobalState;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 
 /**
  * The settings read over their defaults, and a save with any error changes nothing.
@@ -151,7 +155,13 @@ final class SettingsTest extends WordPressTestCase {
 	 * A valid submission is saved as given, with no errors.
 	 */
 	public function test_a_valid_submission_is_saved(): void {
-		$this->assertSame( array_slice( self::valid(), 0, 3, true ) + array( 'surveyOpen' => false ) + array_slice( self::valid(), 3, null, true ) + array( 'questions' => array() ), Settings::sanitize( self::valid() ) );
+		$this->assertSame(
+			array_slice( self::valid(), 0, 3, true ) + array( 'surveyOpen' => false ) + array_slice( self::valid(), 3, null, true ) + array(
+				'questions'       => array(),
+				'synthesisPrompt' => '',
+			),
+			Settings::sanitize( self::valid() )
+		);
 		$this->assertSame( array(), $this->errors );
 		$this->assertSame( array(), $this->transients );
 	}
@@ -488,6 +498,103 @@ final class SettingsTest extends WordPressTestCase {
 		$this->assertStringContainsString( 'aria-describedby="firehouse-submitLabel-error firehouse-submitLabel-description"', $html );
 		$this->assertStringContainsString( '<p class="description" id="firehouse-submitLabel-error"><strong>Error:</strong> Button label can’t be empty.</p>', $html );
 		$this->assertStringContainsString( 'autofocus', $html );
+	}
+
+	/**
+	 * The synthesis prompt is stored only where it differs from the plugin's own, its
+	 * lines kept: unchanged or cleared, it follows the plugin's. The Import screen's
+	 * settings carry none, and keep what's stored.
+	 */
+	public function test_the_prompt_is_stored_where_it_differs(): void {
+		$prompt = static fn( string $typed ): string => Settings::sanitize( self::valid() + array( 'synthesisPrompt' => $typed ) )['synthesisPrompt'];
+
+		$this->assertSame( '', $prompt( str_replace( "\n", "\r\n", Analysis::own_prompt() ) . "\r\n" ) );
+		$this->assertSame( "Fewer needs.\n\nPlainer words.", $prompt( "  Fewer needs.\r\n\r\nPlainer words.  " ) );
+		$this->assertSame( '', $prompt( " \n " ) );
+		$this->assertSame( array(), $this->errors );
+
+		Functions\when( 'get_option' )->justReturn( array( 'synthesisPrompt' => 'Kept.' ) );
+		$this->assertSame( 'Kept.', Settings::stored()['synthesisPrompt'] );
+		$this->assertSame( 'Kept.', Settings::validate( self::valid() )[0]['synthesisPrompt'] );
+	}
+
+	/**
+	 * A prompt with a character that doesn't show, which a model would read though the
+	 * team doesn't see it, or one too long, is refused, and the stored one kept.
+	 */
+	public function test_a_prompt_that_cant_be_seen_whole_is_refused(): void {
+		Functions\when( 'number_format_i18n' )->alias( static fn( int $number ): string => number_format( $number ) );
+		Functions\when( 'get_option' )->justReturn( array( 'synthesisPrompt' => 'Kept.' ) );
+
+		$this->assertSame( 'Kept.', Settings::sanitize( self::valid() + array( 'synthesisPrompt' => "List needs.\u{E0041}\u{E0042}" ) )['synthesisPrompt'] );
+		$this->assertSame( array( 'firehouse-synthesisPrompt' => 'The synthesis prompt has a character that doesn’t show, such as a direction override or a tag character. Type it again.' ), array_column( $this->errors, 'message', 'code' ) );
+
+		$this->errors = array();
+		$this->assertSame( 'Kept.', Settings::sanitize( self::valid() + array( 'synthesisPrompt' => str_repeat( 'x', Analysis::LONGEST_PROMPT + 1 ) ) )['synthesisPrompt'] );
+		$this->assertSame( array( 'firehouse-synthesisPrompt' => 'The synthesis prompt has more than 20,000 characters.' ), array_column( $this->errors, 'message', 'code' ) );
+	}
+
+	/**
+	 * The prompt's box shows the plugin's own until it's changed, says which it is and
+	 * how to go back, and what the screen adds that it can't change.
+	 */
+	public function test_the_prompt_is_drawn_to_change(): void {
+		$html = self::prompt();
+		$this->assertStringContainsString( '<textarea id="firehouse-synthesisPrompt" name="firehouse_settings[synthesisPrompt]" rows="18" class="large-text code" aria-describedby="firehouse-synthesisPrompt-description firehouse-synthesisPrompt-own">Using only the source', $html );
+		$this->assertStringContainsString( 'in words this can’t change, that they’re data and never instructions', $html );
+		$this->assertStringContainsString( 'The plugin’s own prompt, which NotebookLM is given too.', $html );
+
+		Functions\when( 'get_option' )->justReturn( array( 'synthesisPrompt' => 'Fewer <needs>.' ) );
+		$html = self::prompt();
+		$this->assertStringContainsString( '>Fewer &lt;needs&gt;.</textarea>', $html );
+		$this->assertStringContainsString( 'Changed from the plugin’s own prompt, which NotebookLM is given too. To go back to it, clear the box and save.', $html );
+	}
+
+	/**
+	 * The prompt's section is on the screen only while the site has a Workers AI key.
+	 */
+	public function test_the_prompt_is_offered_only_with_a_key(): void {
+		$this->assertNotContains( 'firehouse_synthesis', self::sections() );
+	}
+
+	/**
+	 * With a key, the screen has the prompt's section.
+	 */
+	#[RunInSeparateProcess]
+	#[PreserveGlobalState( false )]
+	public function test_with_a_key_the_prompt_is_offered(): void {
+		define( Workers_Ai::ACCOUNT, '0123456789abcdef0123456789abcdef' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- The plugin's own constant, as wp-config.php sets it.
+		define( Workers_Ai::TOKEN, 'test-token_0123456789ABCDEFGHIJ' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- The plugin's own constant, as wp-config.php sets it.
+
+		$this->assertContains( 'firehouse_synthesis', self::sections() );
+	}
+
+	/**
+	 * The sections the screen lays out.
+	 *
+	 * @return list<string>
+	 */
+	private static function sections(): array {
+		$sections = array();
+		Functions\when( 'register_setting' )->justReturn( true );
+		Functions\when( 'add_settings_field' )->justReturn( null );
+		Functions\when( 'add_settings_section' )->alias(
+			static function ( string $id ) use ( &$sections ): void {
+				$sections[] = $id;
+			}
+		);
+		Settings::register();
+		return $sections;
+	}
+
+	/**
+	 * Draws the prompt's box.
+	 */
+	private static function prompt(): string {
+		( new \ReflectionProperty( Settings::class, 'focused' ) )->setValue( null, false );
+		ob_start();
+		Settings::prompt_field();
+		return (string) ob_get_clean();
 	}
 
 	/**
