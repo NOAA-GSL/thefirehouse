@@ -1331,7 +1331,10 @@ Apache listens on port 80. `docker-compose.yml` sends that call to port 80, stil
 asking for `localhost:8090`, through a `cron_request` filter set in `wp-config.php`,
 so they run locally as on GSL's sites; after changing it, `docker compose up -d`. To
 run a waiting event at once: `bin/wp cron event run firehouse_analyze` (from bash,
-since `bin/wp` is a bash script).
+since `bin/wp` is a bash script). The filter reroutes only WP-Cron's call, so on the
+local copy Site Health's FireHouse page-caching check, and WordPress's own loopback
+check, still say they couldn't load the site from its own address: that's the port,
+not a fault.
 
 CI runs all three on every change to the plugin: PHPCS and PHPUnit on PHP 8.1, and
 Plugin Check in a throwaway WordPress (`.github/workflows/wordpress-plugin.yml`), on
