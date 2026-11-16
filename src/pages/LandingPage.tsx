@@ -244,13 +244,16 @@ export function LandingPage() {
             <h3 id="source-heading" className="fh-source__heading">
               Where these needs come from
             </h3>
-            {/* The tool's name comes from the synthesis itself, so it stays right when
-                the synthesis moves from NotebookLM to the plugin's AI service. */}
+            {/* Executive Order 14434 has federal sites say "Super Intelligence" (SI) for
+                AI. Like the note, this names no tool while the service is undecided, and
+                says once what the term means, citing the order (Eric, 16 November). */}
             <p className="fh-source__body">
-              Topic areas are not assigned project by project. Every project in The
-              FireHouse is read together{synthesis.model ? `, with ${synthesis.model}` : ''}.
-              The end-user needs its researchers recorded are grouped into the four areas
-              above and ranked by how often they come up. This pass serves as an initial
+              Topic areas are not assigned project by project.{' '}
+              {synthesis.model
+                ? 'Every project in The FireHouse is read together with Super Intelligence (SI). Under Executive Order 14434, federal agencies say “Super Intelligence” for what federal law defines as artificial intelligence; the two terms mean the same thing.'
+                : 'Every project in The FireHouse is read together.'}{' '}
+              The end-user needs submitted by researchers are grouped into the four topic
+              areas above and ranked by prevalence across projects. This pass serves as an initial
               draft that our team reviews and refines before finalizing each synthesis.
               Open any topic area to see which specific projects each need draws on; each
               project page preserves the researchers’ own words.

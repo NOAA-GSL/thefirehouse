@@ -243,7 +243,7 @@ final class Topic_Page {
 				?>
 				</h2>
 				<?php echo Markup::synthesis_note( $sync( 'model' ), $sync( 'reviewedBy' ), $sync( 'updatedAt' ), $count, $published ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup escapes what it builds. ?>
-				<p class="fh-topic__how"><?php esc_html_e( 'Project count: the number of projects that raise each need.', 'firehouse' ); ?> <a href="<?php echo esc_url( home_url( $root . '#needs-source' ) ); ?>"><?php esc_html_e( 'How these needs are synthesized', 'firehouse' ); ?></a></p>
+				<p class="fh-topic__how"><?php esc_html_e( 'Project count: the number of projects that raise each need.', 'firehouse' ); ?> <?php echo '' !== (string) $sync( 'model' ) ? esc_html__( 'Under Executive Order 14434, federal agencies say “Super Intelligence” for artificial intelligence.', 'firehouse' ) . ' ' : ''; // The note is the only disclosure here, so the term is explained here too. ?><a href="<?php echo esc_url( home_url( $root . '#needs-source' ) ); ?>"><?php esc_html_e( 'How these needs are synthesized', 'firehouse' ); ?></a></p>
 			</div>
 
 			<?php if ( array() !== $needs ) : ?>

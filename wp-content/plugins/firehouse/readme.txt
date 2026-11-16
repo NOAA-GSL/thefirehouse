@@ -402,11 +402,23 @@ one is.
   and privacy statement. The plugin header's Update URI names GitHub, so WordPress never
   offers an update from WordPress.org for it, even if another plugin is listed there as
   firehouse.
+* The FireHouse guide: FireHouse → Help, for FireHouse Editors and administrators, in
+  plain language with screenshots, and on each FireHouse screen the part for that
+  screen under the Help tab. Pages for administrators show only to them. It comes from
+  Markdown pages in help/, so it describes the version installed.
 * The FireHouse survey form at /firehouse/submit/, off until an administrator ticks
   Accept submissions under FireHouse → Settings: each submission becomes a draft
   project, with the submitter's email, job title and how they shared their results kept
   apart, for FireHouse Editors and administrators only, and left out of WordPress's
   export. It takes a form sent only to its own address from the site's own pages.
+* The landing page's "Where these needs come from" in Stephanie and Emily's 11
+  November wording. Under Executive Order 14434 the site says "Super Intelligence
+  (SI)" for AI: the note on the landing and topic pages says "Drafted with Super
+  Intelligence (SI)", "Where these needs come from" and the topic pages say what the
+  term means, the project pages say the needs are drafted with it, and the survey
+  form's notice says it too. None names the tool. Their new landing heading and About
+  words reach a site with its next first import; a site imported before keeps its
+  words until an editor changes them in the block editor.
 * A survey form submission's papers given by DOI get their title, journal and year
   from doi.org just after it's saved, as the import gets them, and the team mailbox is told of each
   submission with a link to its draft and nothing the submitter typed (see External

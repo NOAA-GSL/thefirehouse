@@ -377,7 +377,7 @@ final class ProjectPageTest extends WordPressTestCase {
 			array_column( array_map( static fn( array $fact ): array => array( $fact[1], $fact[2] ), $facts ), 1, 0 )
 		);
 		$this->assertMatchesRegularExpression( '#<a href="https://repository.library.noaa.gov/view/noaa/12345" class="fh-btn fh-btn--secondary fh-btn--sm" target="_blank" rel="noopener noreferrer"><svg[^>]*width="14"[^>]*>.*?</svg>View full record<span class="fh-visually-hidden"> \(opens in a new tab\)</span></a>#s', $html );
-		$this->assertMatchesRegularExpression( '#<p class="fh-project__verbatim"><svg[^>]*width="14"[^>]*>.*?</svg><span>Takeaways, needs and recommendations on this page are reproduced as the researcher submitted them. The <a href="https://example.test/firehouse/\#top-needs">topic areas</a> are an AI-assisted synthesis across all projects, so no single project is filed under one.</span></p>#s', $html );
+		$this->assertMatchesRegularExpression( '#<p class="fh-project__verbatim"><svg[^>]*width="14"[^>]*>.*?</svg><span>Takeaways, needs and recommendations on this page are reproduced as the researcher submitted them. The needs in the <a href="https://example.test/firehouse/\#top-needs">topic areas</a> are drafted with Super Intelligence \(SI\) from all projects together, so no project is filed under a single area.</span></p>#s', $html );
 	}
 
 	/**
