@@ -2190,12 +2190,15 @@ review says when to delete them (open question 14).*
   draft with the fields an import of the same answers writes (`Submission`), a
   response ID of its own and no author. Each paper given by DOI gets its title,
   journal and year from doi.org as the import's `resolveDoi()` gets them
-  (`Doi_Lookup`), while the researcher waits: 5 seconds a request and 10 for them
-  all, redirects followed by the plugin only to api.crossref.org and
-  data.crosscite.org, over https, through `wp_safe_remote_get()`; a lookup that fails
-  keeps no title, and a title or journal with an email address, a character that
-  doesn't show or more than 1,000 characters is left out. A link without a DOI is
-  never fetched. The
+  (`Doi_Lookup`), just after the draft is saved, in a WP-Cron event, so a burst of
+  submissions queues its lookups rather than holding a PHP worker each (the AppSec
+  review on #67): 5 seconds a request and 10 for all of a draft's, each DOI once,
+  without a pasted link's query or fragment, redirects followed by the plugin only to
+  api.crossref.org and data.crosscite.org, over https, through
+  `wp_safe_remote_get()`. A lookup that fails keeps no title, and a title or journal
+  with an email address, a character that doesn't show or more than 1,000 characters
+  is left out. A link without a DOI is never fetched, and a submission without IRB
+  approval isn't looked up. The stored DOI keeps what was typed (rule 1). The
   email, job title and Q10 answer are one protected post meta field, in no schema, so
   in no revision or REST response, left out of WordPress's export by a
   `wxr_export_skip_postmeta` filter, and shown to editors in a Private answers box.

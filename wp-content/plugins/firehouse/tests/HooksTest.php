@@ -215,6 +215,7 @@ final class HooksTest extends WordPressTestCase {
 		Actions\expectAdded( 'update_option_' . Settings::OPTION )->once()->with( array( \Firehouse\Survey\Survey::class, 'opened' ), 10, 1 );
 		Filters\expectAdded( 'wxr_export_skip_postmeta' )->once()->with( array( \Firehouse\Survey\Survey::class, 'skip_in_export' ), 10, 2 );
 		Filters\expectAdded( 'pre_get_document_title' )->once()->with( array( \Firehouse\Survey\Survey::class, 'document_title' ), 20, 1 );
+		Actions\expectAdded( \Firehouse\Survey\Doi_Lookup::EVENT )->once()->with( array( \Firehouse\Survey\Doi_Lookup::class, 'run' ), 10, 1 );
 
 		\Firehouse\Survey\Survey::hook();
 	}

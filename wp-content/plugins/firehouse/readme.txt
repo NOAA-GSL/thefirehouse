@@ -99,13 +99,14 @@ personal-data export and erase tools don't find them yet. Beyond what a submissi
 says, the plugin keeps no record of the people who visit or send the form: no IP
 address, no cookie of its own.
 
-When a submission is saved, the server looks up the title of each paper given by its
-DOI (see External services), and tells the FireHouse team's mailbox
-(gsl.firehouse@noaa.gov), through the site's own mail, that a submission has arrived,
-with a link to its draft. That email is fixed text: nothing the submitter typed is
-in it, private or not. A developer can send it elsewhere, or stop it, with the
-`firehouse_survey_notify` filter; return "" to send none. The submitter is sent
-nothing; the page they're taken to thanks them.
+Once a submission is saved, the server looks up the title of each paper given by its
+DOI (see External services). It also tells the FireHouse team's mailbox
+(gsl.firehouse@noaa.gov), through the site's own mail, that a submission has arrived.
+That email is fixed text: a link to the draft, a link to every draft, and, when the
+submitter answered that the project has no IRB approval, a line saying so. Nothing
+the submitter typed is in it, private or not. A developer can send it elsewhere, or
+stop it, with the `firehouse_survey_notify` filter; return "" to send none. The
+submitter is sent nothing; the page they're taken to thanks them.
 
 = Deactivating and deleting =
 
@@ -237,23 +238,28 @@ statement: https://www.esri.com/en-us/privacy/privacy-statements/privacy-stateme
 When the survey form saves a submission that gives a paper by its DOI (typed, in a
 doi.org address, or in a Zenodo record's address), the server asks doi.org for that
 paper's citation metadata, so the project's page can show its title, journal and
-year. doi.org sends the request on to the metadata service of the agency that
-registered the DOI: Crossref (api.crossref.org) or DataCite (data.crosscite.org).
-Each request carries the DOI, a request for citation metadata, and the plugin's name
-as its user agent; it comes from the site's server, so these services see the
+year. doi.org answers with a redirect to the metadata service of the agency that
+registered the DOI, Crossref (api.crossref.org) or DataCite (data.crosscite.org), and
+the server then asks that service itself. Each request carries the DOI alone, without
+a pasted link's query or fragment; a request for citation metadata; and the plugin's
+name as its user agent. It comes from the site's server, so these services see the
 server's address, never the submitter's or a visitor's, and nothing else the
 submitter typed. A redirect to any other host is refused, and a link without a DOI is
-never fetched. A lookup has a few seconds; one that fails leaves the paper without a
-title, and the submission is saved all the same. There is no setting to turn the
-lookups off.
+never fetched. The lookups run just after the submission is saved, in WordPress's
+scheduled events, and have ten seconds for a submission. One that fails leaves the
+paper without a title. A submission without IRB approval, which is never published,
+isn't looked up. There is no setting to turn the lookups off.
 
-The DOI Foundation's privacy policy, which says it logs each DOI looked up and the
-address asking: https://www.doi.org/privacy-policy. Crossref's privacy policy:
-https://www.crossref.org/operations-and-sustainability/privacy/, and its REST API's
-documentation, which sets out how it may be used:
-https://www.crossref.org/documentation/retrieve-metadata/rest-api/. DataCite's privacy
-policy: https://datacite.org/privacy-policy/, and its content negotiation
-documentation: https://support.datacite.org/docs/doi-content-negotiation.
+doi.org: the DOI Foundation publishes no terms of use for looking up a DOI. Its
+privacy policy, which says it logs each DOI looked up and the address asking:
+https://www.doi.org/privacy-policy. Crossref: its REST API's documentation, which
+sets out the conditions of use, that the metadata may be used for any purpose:
+https://www.crossref.org/documentation/retrieve-metadata/rest-api/. Its privacy
+policy: https://www.crossref.org/operations-and-sustainability/privacy/. DataCite: its
+terms and conditions, which cover its website: https://datacite.org/terms-and-conditions/.
+Its content negotiation documentation:
+https://support.datacite.org/docs/doi-content-negotiation. Its privacy policy:
+https://datacite.org/privacy-policy/.
 
 == Changelog ==
 
@@ -402,7 +408,7 @@ one is.
   apart, for FireHouse Editors and administrators only, and left out of WordPress's
   export. It takes a form sent only to its own address from the site's own pages.
 * A survey form submission's papers given by DOI get their title, journal and year
-  from doi.org, as the import gets them, and the team mailbox is told of each
+  from doi.org just after it's saved, as the import gets them, and the team mailbox is told of each
   submission with a link to its draft and nothing the submitter typed (see External
   services and The survey form).
 

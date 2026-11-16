@@ -11,6 +11,9 @@ namespace Firehouse\Survey;
 
 use Firehouse\Domain\Email_Shape;
 use Firehouse\Domain\Synthesis;
+use Firehouse\Meta;
+use Firehouse\Post_Types;
+use Firehouse\Store;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -21,21 +24,33 @@ if ( ! defined( 'ABSPATH' ) ) {
  * (`scripts/import-survey.mjs`, resolveDoi()), so the project's page can show a
  * paper's title rather than a bare DOI. Only DOIs: the server never fetches a link a
  * researcher typed (the plan's Security review). It asks doi.org for CSL JSON, and
- * doi.org sends it on to the registration agency's metadata service: Crossref's
- * (api.crossref.org) or DataCite's (data.crosscite.org). A redirect to any other host
- * is refused, and WordPress's safe request refuses a private address on any of them.
+ * doi.org redirects the request to the registration agency's metadata service, which
+ * the server then asks itself: Crossref's (api.crossref.org) or DataCite's
+ * (data.crosscite.org). A redirect to any other host is refused, and WordPress's safe
+ * request refuses a private address on any of them.
  *
- * The researcher waits while it runs, so each request has a few seconds, and all of a
- * submission's together a few more; a DOI it can't look up in time, or at all, keeps
- * no title, as the import keeps none when its lookup fails. What comes back is checked
- * as a researcher's answers are: a title or journal with an email address, a character
- * that doesn't show, or more than a thousand characters is left out.
+ * It runs after the submission is saved, in WordPress's scheduled events (WP-Cron),
+ * not while the researcher waits: WordPress runs those one at a time, so a burst of
+ * submissions queues its lookups rather than holding a server process each. A
+ * submission without IRB approval, which is never published, isn't looked up.
+ *
+ * All of a submission's lookups have ten seconds, each request five, and a DOI given
+ * twice is looked up once; a DOI it can't look up in time, or at all, keeps no title,
+ * as the import keeps none when its lookup fails. A pasted link's query and fragment
+ * aren't sent: only the DOI before them. What comes back is checked as a researcher's
+ * answers are: a title or journal with an email address, a character that doesn't
+ * show, or more than a thousand characters is left out.
  */
 final class Doi_Lookup {
 
 	/**
-	 * The only hosts a lookup reaches: doi.org and the two services it sends a request
-	 * for metadata on to.
+	 * The scheduled event that looks up a draft's DOIs.
+	 */
+	public const EVENT = 'firehouse_doi_lookup';
+
+	/**
+	 * The only hosts a lookup reaches: doi.org and the two services it redirects a
+	 * request for metadata to.
 	 */
 	public const HOSTS = array( 'doi.org', 'api.crossref.org', 'data.crosscite.org' );
 
@@ -72,47 +87,112 @@ final class Doi_Lookup {
 	private const LONGEST = 1000;
 
 	/**
-	 * The papers, each with a DOI given its title, journal and year as far as they can
-	 * be looked up within the budget. A paper keeps its own DOI and link; what's looked
-	 * up only adds to them.
+	 * Hooks the scheduled lookup.
+	 */
+	public static function hook(): void {
+		add_action( self::EVENT, array( self::class, 'run' ) );
+	}
+
+	/**
+	 * Schedules the lookups for a draft the survey form has just saved, if it gives a
+	 * DOI.
 	 *
-	 * @param list<array<string, mixed>> $papers The papers, as Submission::project() gives them.
+	 * @param int                        $post_id The draft.
+	 * @param list<array<string, mixed>> $papers  Its papers.
+	 */
+	public static function schedule( int $post_id, array $papers ): void {
+		if ( array() !== array_filter( $papers, static fn( mixed $paper ): bool => is_array( $paper ) && is_string( $paper['doi'] ?? null ) ) ) {
+			wp_schedule_single_event( time(), self::EVENT, array( $post_id ) );
+		}
+	}
+
+	/**
+	 * The scheduled event: looks up the DOIs of a draft the survey form saved, and
+	 * stores what's found with its papers. Anything else, a project imported from the
+	 * survey's download included, is left alone.
+	 *
+	 * @param mixed $post_id The draft, as the event was given it.
+	 */
+	public static function run( mixed $post_id ): void {
+		$post = is_int( $post_id ) || ( is_string( $post_id ) && ctype_digit( $post_id ) ) ? get_post( (int) $post_id ) : null;
+		if ( ! $post instanceof \WP_Post || Post_Types::PROJECT !== $post->post_type ) {
+			return;
+		}
+		$id     = get_post_meta( $post->ID, Meta::key( 'id' ), true );
+		$papers = get_post_meta( $post->ID, Meta::key( 'papers' ), true );
+		if ( ! is_string( $id ) || ! str_starts_with( $id, Survey::RESPONSE_PREFIX ) || ! is_array( $papers ) || ! array_is_list( $papers ) ) {
+			return;
+		}
+		$found = self::papers( $papers );
+		if ( $found !== $papers && true === Meta::validate( Post_Types::PROJECT, 'papers', $found ) ) {
+			Store::update_fields( $post->ID, array( 'papers' => $found ), array() );
+		}
+	}
+
+	/**
+	 * The papers, each with a DOI given its title, journal and year as far as they can
+	 * be looked up within the budget, each DOI once. A paper keeps its own DOI and link,
+	 * and anything it already has; what's looked up only adds to them.
+	 *
+	 * @param list<array<string, mixed>> $papers The papers.
 	 * @param int                        $budget The seconds all the lookups may take.
 	 * @return list<array<string, mixed>>
 	 */
 	public static function papers( array $papers, int $budget = self::BUDGET ): array {
 		$deadline = microtime( true ) + $budget;
+		$found    = array();
 		foreach ( $papers as $index => $paper ) {
-			$left = $deadline - microtime( true );
-			if ( ! is_string( $paper['doi'] ?? null ) ) {
+			if ( ! is_array( $paper ) || ! is_string( $paper['doi'] ?? null ) ) {
 				continue;
 			}
-			if ( $left < 1 ) {
-				break;
+			$doi = self::doi( $paper['doi'] );
+			if ( '' === $doi ) {
+				continue;
 			}
-			$papers[ $index ] = $paper + self::lookup( $paper['doi'], (int) min( self::TIMEOUT, floor( $left ) ) );
+			if ( ! isset( $found[ $doi ] ) ) {
+				if ( $deadline - microtime( true ) < 1 ) {
+					break;
+				}
+				$found[ $doi ] = self::lookup( $doi, $deadline );
+			}
+			$papers[ $index ] = $paper + $found[ $doi ];
 		}
 		return $papers;
 	}
 
 	/**
-	 * One DOI's title, journal and year, each only if found and fit to keep; nothing
-	 * if the lookup fails.
+	 * The DOI to look up: the stored one without a pasted link's query or fragment,
+	 * which doi.org ignores and which may carry a token; "" for one that doesn't start
+	 * "10.", or has a "." or ".." step in its path, which an address would resolve out
+	 * of it.
 	 *
-	 * @param string $doi     The DOI, bare.
-	 * @param int    $timeout The seconds each request may take.
+	 * @param string $doi The DOI as stored.
+	 */
+	public static function doi( string $doi ): string {
+		$doi = (string) preg_replace( '/[?#].*/s', '', $doi );
+		return 1 === preg_match( '#^10\.\d{4,9}/#', $doi ) && 1 !== preg_match( '#(^|/)\.\.?(/|$)#', $doi ) ? $doi : '';
+	}
+
+	/**
+	 * One DOI's title, journal and year, each only if found and fit to keep; nothing
+	 * if the lookup fails or the time runs out.
+	 *
+	 * @param string     $doi      The DOI, as doi() gives it.
+	 * @param float|null $deadline When the time is up, as microtime( true ); by default, BUDGET from now.
 	 * @return array{title?: string, container?: string, year?: int}
 	 */
-	public static function lookup( string $doi, int $timeout = self::TIMEOUT ): array {
-		$url = 'https://doi.org/' . implode( '/', array_map( 'rawurlencode', explode( '/', $doi ) ) );
+	public static function lookup( string $doi, ?float $deadline = null ): array {
+		$deadline ??= microtime( true ) + self::BUDGET;
+		$url        = 'https://doi.org/' . implode( '/', array_map( 'rawurlencode', explode( '/', $doi ) ) );
 		for ( $hop = 0; $hop <= self::HOPS; $hop++ ) {
-			if ( ! self::allowed( $url ) ) {
+			$left = $deadline - microtime( true );
+			if ( $left < 1 || ! self::allowed( $url ) ) {
 				return array();
 			}
 			$response = wp_safe_remote_get(
 				$url,
 				array(
-					'timeout'             => max( 1, $timeout ),
+					'timeout'             => (int) min( self::TIMEOUT, floor( $left ) ),
 					'redirection'         => 0,
 					'headers'             => array( 'Accept' => self::ACCEPT ),
 					'user-agent'          => 'FireHouse WordPress plugin',

@@ -123,12 +123,40 @@ final class DoiLookupTest extends WordPressTestCase {
 	}
 
 	/**
-	 * A DOI's own characters are encoded in the address, so a "?" or "#" in one can't
-	 * become a query or a fragment, nor a "/.." step out of the path.
+	 * A DOI's own characters are encoded in the address, so none of them can become a
+	 * query, a fragment, a port or a user name.
 	 */
 	public function test_a_doi_is_encoded_in_the_address(): void {
-		Doi_Lookup::lookup( '10.1002/(SICI)1097-4571(199806)49:8<693::AID-ASI4>3.0.CO;2-0?x#y' );
-		$this->assertSame( 'https://doi.org/10.1002/%28SICI%291097-4571%28199806%2949%3A8%3C693%3A%3AAID-ASI4%3E3.0.CO%3B2-0%3Fx%23y', $this->requests[0][0] );
+		Doi_Lookup::lookup( '10.1002/(SICI)1097-4571(199806)49:8<693::AID-ASI4>3.0.CO;2-0@x%2e' );
+		$this->assertSame( 'https://doi.org/10.1002/%28SICI%291097-4571%28199806%2949%3A8%3C693%3A%3AAID-ASI4%3E3.0.CO%3B2-0%40x%252e', $this->requests[0][0] );
+	}
+
+	/**
+	 * What's looked up is the DOI without a pasted link's query or fragment, which may
+	 * carry a token; a DOI with a "." or ".." step, which an address would resolve out
+	 * of the path, or one that doesn't start "10.", isn't looked up at all.
+	 */
+	public function test_only_the_doi_itself_is_sent(): void {
+		$this->assertSame( '10.1002/wea.123', Doi_Lookup::doi( '10.1002/wea.123?casa_token=abc#section' ) );
+		$this->assertSame( '10.1175/WCAS-D-21-0042.1', Doi_Lookup::doi( '10.1175/WCAS-D-21-0042.1' ) );
+		foreach ( array( '10.1234/../../api/handles/10.1234', '10.1234/./x', '10.1234/a/..', '10.1234/..', 'not/a/doi', '' ) as $doi ) {
+			$this->assertSame( '', Doi_Lookup::doi( $doi ), $doi );
+		}
+
+		Doi_Lookup::papers( array( array( 'doi' => '10.1002/wea.123?casa_token=abc' ), array( 'doi' => '10.1234/../../api/handles/10.1234' ) ) );
+		$this->assertSame( array( 'https://doi.org/10.1002/wea.123' ), array_column( $this->requests, 0 ) );
+	}
+
+	/**
+	 * The time is the whole lookup's: a request starts only with a second left, and is
+	 * given no more than what's left.
+	 */
+	public function test_the_time_limit_holds_across_redirects(): void {
+		$this->assertSame( array(), Doi_Lookup::lookup( '10.1000/late', microtime( true ) + 0.5 ) );
+		$this->assertSame( array(), $this->requests, 'Under a second left: nothing asked.' );
+
+		Doi_Lookup::lookup( '10.1000/soon', microtime( true ) + 2.5 );
+		$this->assertSame( 2, $this->requests[0][1]['timeout'] );
 	}
 
 	/**
@@ -215,5 +243,73 @@ final class DoiLookupTest extends WordPressTestCase {
 		$this->requests = array();
 		$this->assertSame( $papers, Doi_Lookup::papers( $papers, 0 ) );
 		$this->assertSame( array(), $this->requests, 'No time left: nothing looked up.' );
+
+		$twice = Doi_Lookup::papers( array( array( 'doi' => '10.5281/zenodo.123' ), array( 'doi' => '10.5281/zenodo.123?x=1' ) ) );
+		$this->assertCount( 1, $this->requests, 'The same DOI twice: looked up once.' );
+		$this->assertSame( 'A dataset', $twice[1]['title'] );
+	}
+
+	/**
+	 * Only a draft with a DOI is scheduled for its lookups.
+	 */
+	public function test_a_draft_with_a_doi_is_scheduled(): void {
+		$scheduled = array();
+		Functions\when( 'wp_schedule_single_event' )->alias(
+			static function ( int $time, string $hook, array $args ) use ( &$scheduled ): bool {
+				$scheduled[] = array( $hook, $args );
+				return true;
+			}
+		);
+		Doi_Lookup::schedule( 30, array( array( 'url' => 'https://example.org/report' ) ) );
+		$this->assertSame( array(), $scheduled );
+		Doi_Lookup::schedule( 30, array( array( 'url' => 'https://example.org/report' ), array( 'doi' => '10.1000/x' ) ) );
+		$this->assertSame( array( array( Doi_Lookup::EVENT, array( 30 ) ) ), $scheduled );
+	}
+
+	/**
+	 * The scheduled lookup adds what it finds to the papers of a draft the survey form
+	 * saved, checked as every write is, and leaves anything else alone: a project from
+	 * the import, another post type, a missing post, or papers with nothing new.
+	 */
+	public function test_the_scheduled_lookup_stores_what_it_finds(): void {
+		$this->answers['https://doi.org/10.5281/zenodo.123'] = array( 200, self::csl( array( 'title' => 'A dataset' ) ) );
+		$posts   = array(
+			30 => array( 'fh_project', 'W_abcdefghijklmnop' ),
+			31 => array( 'fh_project', 'R_fromQualtrics' ),
+			32 => array( 'page', 'W_abcdefghijklmnop' ),
+			33 => array( 'fh_project', 'W_nothingToFind' ),
+		);
+		$written = array();
+		Functions\when( 'get_post' )->alias(
+			static fn( int $id ): ?\WP_Post => isset( $posts[ $id ] ) ? new \WP_Post(
+				array(
+					'ID'        => $id,
+					'post_type' => $posts[ $id ][0],
+				)
+			) : null
+		);
+		Functions\when( 'get_post_meta' )->alias(
+			static function ( int $id, string $key ) use ( $posts ): mixed {
+				if ( 'fh_id' === $key ) {
+					return $posts[ $id ][1];
+				}
+				return 33 === $id ? array( array( 'url' => 'https://example.org/report' ) ) : array( array( 'doi' => '10.5281/zenodo.123' ) );
+			}
+		);
+		Functions\when( 'rest_validate_value_from_schema' )->justReturn( true );
+		Functions\when( 'wp_slash' )->returnArg();
+		Functions\when( 'update_post_meta' )->alias(
+			static function ( int $id, string $key, mixed $value ) use ( &$written ): bool {
+				$written[] = array( $id, $key, $value );
+				return true;
+			}
+		);
+
+		foreach ( array( 30, '31', 32, 33, 99, 'x', null ) as $id ) {
+			Doi_Lookup::run( $id );
+		}
+		$this->assertCount( 1, $written );
+		$this->assertSame( array( 30, 'fh_papers' ), array_slice( $written[0], 0, 2 ) );
+		$this->assertSame( 'A dataset', $written[0][2][0]['title'] );
 	}
 }

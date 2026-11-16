@@ -588,14 +588,23 @@ final class SurveyTest extends WordPressTestCase {
 	}
 
 	/**
-	 * A paper given by its DOI is looked up as the submission is saved, through
-	 * doi.org; a link without one is never fetched. A lookup that fails keeps the
-	 * paper as it was sent.
+	 * A draft with a paper given by its DOI has its lookups scheduled once it's saved:
+	 * nothing is fetched while the researcher waits, and a link without a DOI never is.
+	 * A submission without IRB approval, never published, isn't looked up.
 	 */
-	public function test_a_doi_is_looked_up_and_a_link_never_is(): void {
-		self::send( array( 'links' => array( 'https://example.org/report', 'https://doi.org/10.1175/WCAS-D-21-0042.1' ) ) + self::good() );
+	public function test_a_dois_lookup_is_scheduled_after_the_save(): void {
+		$scheduled = array();
+		Functions\when( 'wp_schedule_single_event' )->alias(
+			static function ( int $time, string $hook, array $args ) use ( &$scheduled ): bool {
+				$scheduled[] = array( $hook, $args );
+				return true;
+			}
+		);
+		$links = array( 'links' => array( 'https://example.org/report', 'https://doi.org/10.1175/WCAS-D-21-0042.1' ) );
+		self::send( $links + self::good() );
 
-		$this->assertSame( array( 'https://doi.org/10.1175/WCAS-D-21-0042.1' ), $this->requests );
+		$this->assertSame( array(), $this->requests, 'Nothing fetched while the researcher waits.' );
+		$this->assertSame( array( array( \Firehouse\Survey\Doi_Lookup::EVENT, array( 30 ) ) ), $scheduled );
 		$this->assertSame(
 			array(
 				array( 'url' => 'https://example.org/report' ),
@@ -603,5 +612,9 @@ final class SurveyTest extends WordPressTestCase {
 			),
 			$this->inserted[0]['meta_input']['fh_papers']
 		);
+
+		self::send( array( 'irb' => 'no' ) + $links + self::good() );
+		self::send( array( 'links' => array( 'https://example.org/report' ) ) + self::good() );
+		$this->assertCount( 1, $scheduled, 'No IRB approval, or no DOI: nothing scheduled.' );
 	}
 }
