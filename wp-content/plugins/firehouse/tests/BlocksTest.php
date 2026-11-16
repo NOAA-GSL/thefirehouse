@@ -150,6 +150,8 @@ final class BlocksTest extends WordPressTestCase {
 				$translations[] = $args;
 			}
 		);
+		// Not editing a FireHouse page, so there are no portraits to offer.
+		Functions\when( 'get_post' )->justReturn( null );
 
 		Blocks::enqueue_editor();
 
@@ -160,7 +162,7 @@ final class BlocksTest extends WordPressTestCase {
 				array(
 					Blocks::EDITOR_SCRIPT,
 					'https://example.test/wp-content/plugins/firehouse/assets/js/block-editor.js',
-					array( 'wp-blocks', 'wp-block-editor', 'wp-components', 'wp-data', 'wp-element', 'wp-i18n' ),
+					array( 'wp-a11y', 'wp-blocks', 'wp-block-editor', 'wp-components', 'wp-data', 'wp-element', 'wp-i18n' ),
 					\Firehouse\VERSION . '-' . filemtime( $file ),
 					false,
 				),
@@ -174,8 +176,195 @@ final class BlocksTest extends WordPressTestCase {
 		}
 		$this->assertSame( array( 'eyebrow', 'heading', 'body', 'primaryCta', 'secondaryCta' ), $blocks['firehouse/hero'] );
 		$this->assertSame( array(), $blocks['firehouse/subnav'] );
-		$this->assertSame( array( array( Blocks::EDITOR_SCRIPT, 'window.firehouseBlocks = ' . json_encode( $blocks ) . ';', 'before' ) ), $inline );
+		$this->assertSame( array( array( Blocks::EDITOR_SCRIPT, 'window.firehouseBlocks = ' . json_encode( $blocks ) . '; window.firehousePortraits = [];', 'before' ) ), $inline );
 		$this->assertSame( array( array( Blocks::EDITOR_SCRIPT, 'firehouse' ) ), $translations );
+	}
+
+	/**
+	 * A portrait's title goes into the editor's inline script with < and & as escapes,
+	 * so nothing in a title can read as markup there.
+	 */
+	public function test_a_portraits_title_cant_read_as_markup(): void {
+		$inline = array();
+		Functions\when( 'plugins_url' )->justReturn( 'https://example.test/block-editor.js' );
+		Functions\when( 'wp_enqueue_script' )->justReturn();
+		Functions\when( 'wp_set_script_translations' )->justReturn( true );
+		Functions\when( 'wp_add_inline_script' )->alias(
+			static function ( string $handle, string $script ) use ( &$inline ): void {
+				$inline[] = $script;
+			}
+		);
+		Functions\when( 'wp_json_encode' )->alias( static fn( mixed $data, int $flags = 0 ): string => (string) json_encode( $data, $flags ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- standing in for wp_json_encode().
+		$about = new \WP_Post(
+			array(
+				'ID'          => 11,
+				'post_type'   => 'page',
+				'post_parent' => 10,
+			)
+		);
+		Functions\when( 'get_post' )->alias(
+			static fn( mixed $id = null ): ?\WP_Post => match ( null === $id ? 11 : (int) $id ) {
+				10 => new \WP_Post(
+					array(
+						'ID'        => 10,
+						'post_type' => 'page',
+					)
+				),
+				11 => $about,
+				50 => new \WP_Post(
+					array(
+						'ID'          => 50,
+						'post_type'   => 'attachment',
+						'post_status' => 'inherit',
+					)
+				),
+				default => null,
+			}
+		);
+		Functions\when( 'is_post_publicly_viewable' )->justReturn( true );
+		Functions\when( 'get_posts' )->alias( static fn( array $args ): array => 'attachment' === ( $args['post_type'] ?? null ) ? array( 50 ) : array( 10 ) );
+		Functions\when( '_prime_post_caches' )->justReturn();
+		Functions\when( 'get_post_ancestors' )->justReturn( array( 10 ) );
+		Functions\when( 'get_pages' )->justReturn( array( $about ) );
+		Functions\when( 'parse_blocks' )->justReturn( array() );
+		Functions\when( 'wp_attachment_is_image' )->justReturn( true );
+		Functions\when( 'wp_get_attachment_image_url' )->justReturn( 'https://example.test/50.webp' );
+		Functions\when( 'get_post_field' )->justReturn( '<!--<script> & x' );
+
+		Blocks::enqueue_editor();
+
+		// The title as JSON with < and & escaped, as it should appear.
+		$escaped = substr( (string) json_encode( '<!--<script> & x', JSON_HEX_TAG | JSON_HEX_AMP ), 1, -1 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- the expected encoding.
+		$this->assertStringNotContainsString( '<', $escaped );
+		$this->assertStringContainsString( 'window.firehousePortraits = [{"id":50,"title":"' . $escaped . '"', $inline[0] );
+		$this->assertStringNotContainsString( '<script', $inline[0] );
+	}
+
+	/**
+	 * A FireHouse page's editor is offered every portrait attached to the FireHouse pages
+	 * a visitor can see and those its team cards use, each only if the About page would
+	 * show it; any other post's editor, none.
+	 */
+	public function test_the_portraits_a_team_card_can_show(): void {
+		Functions\when( 'get_post_ancestors' )->alias( static fn( \WP_Post $post ): array => 0 === $post->post_parent ? array() : array( $post->post_parent ) );
+		// Under the root (10): the About page (11), a draft (12) and one with a password (13).
+		Functions\when( 'get_pages' )->justReturn(
+			array(
+				new \WP_Post( array( 'ID' => 11 ) ),
+				new \WP_Post( array( 'ID' => 12 ) ),
+				new \WP_Post( array( 'ID' => 13 ) ),
+			)
+		);
+		$asked = array();
+		Functions\when( 'get_posts' )->alias(
+			static function ( array $args ) use ( &$asked ): array {
+				if ( 'attachment' === ( $args['post_type'] ?? null ) ) {
+					$asked[] = $args;
+					return array( 50, 51 );
+				}
+				return array( 10 );
+			}
+		);
+		$primed = array();
+		Functions\when( '_prime_post_caches' )->alias(
+			static function ( array $ids, bool $terms, bool $meta ) use ( &$primed ): void {
+				$primed[] = array( $ids, $terms, $meta );
+			}
+		);
+		$team = array(
+			'blockName'    => 'firehouse/about-team',
+			'attrs'        => array(
+				'members' => array(
+					array( 'photoId' => 52 ),
+					array( 'photoId' => 50 ),
+					array( 'photoId' => '53' ),
+					'not a member',
+				),
+			),
+			'innerBlocks'  => array(),
+			'innerHTML'    => '',
+			'innerContent' => array(),
+		);
+		Functions\when( 'parse_blocks' )->justReturn(
+			array(
+				array(
+					'blockName'    => 'firehouse/about-sections',
+					'attrs'        => array(),
+					'innerBlocks'  => array( $team ),
+					'innerHTML'    => '',
+					'innerContent' => array( null ),
+				),
+			)
+		);
+		// The About page would show 50 and 52, not 51, attached to a page a visitor can't see.
+		Functions\when( 'get_post' )->alias(
+			static fn( mixed $id ): ?\WP_Post => match ( true ) {
+				in_array( (int) $id, array( 50, 51, 52 ), true ) => new \WP_Post(
+					array(
+						'ID'          => (int) $id,
+						'post_type'   => 'attachment',
+						'post_status' => 'inherit',
+						'post_parent' => 51 === (int) $id ? 12 : 0,
+					)
+				),
+				in_array( (int) $id, array( 10, 11, 12, 13 ), true ) => new \WP_Post(
+					array(
+						'ID'            => (int) $id,
+						'post_type'     => 'page',
+						'post_status'   => 12 === (int) $id ? 'draft' : 'publish',
+						'post_password' => 13 === (int) $id ? 'secret' : '',
+					)
+				),
+				default => null,
+			}
+		);
+		Functions\when( 'wp_attachment_is_image' )->justReturn( true );
+		$public = true;
+		Functions\when( 'is_post_publicly_viewable' )->alias(
+			static function ( \WP_Post $post ) use ( &$public ): bool {
+				return $public && 'publish' === $post->post_status;
+			}
+		);
+		// The title as stored; displayed, WordPress would have turned "--" into a dash entity.
+		Functions\when( 'get_post_field' )->alias( static fn( string $field, int $id, string $context ): string => 'raw' === $context ? 'Portrait ' . $id . " -- O'Brien & more" : 'texturized' );
+		Functions\when( 'wp_get_attachment_image_url' )->alias( static fn( int $id ): string => 'https://example.test/' . $id . '-150x150.webp' );
+		$about = new \WP_Post(
+			array(
+				'ID'          => 11,
+				'post_type'   => 'page',
+				'post_parent' => 10,
+			)
+		);
+
+		$this->assertSame(
+			array(
+				array(
+					'id'    => 50,
+					'title' => "Portrait 50 -- O'Brien & more",
+					'url'   => 'https://example.test/50-150x150.webp',
+				),
+				array(
+					'id'    => 52,
+					'title' => "Portrait 52 -- O'Brien & more",
+					'url'   => 'https://example.test/52-150x150.webp',
+				),
+			),
+			Blocks::portraits( $about )
+		);
+		$this->assertSame( array( 10, 11 ), $asked[0]['post_parent__in'], 'Attached to the FireHouse pages a visitor can see.' );
+		$this->assertSame( 'image', $asked[0]['post_mime_type'] );
+		$this->assertSame( -1, $asked[0]['numberposts'], 'Every one, none left off.' );
+		$this->assertSame( array( array( array( 50, 51, 52 ), false, true ) ), $primed, 'Every image and its metadata loaded at once, its terms not.' );
+
+		// With no FireHouse page a visitor can see, no image is asked for, since WordPress
+		// would take an empty `post_parent__in` as every image on the site; only the
+		// portraits the cards use are offered.
+		$public = false;
+		$asked  = array();
+		$this->assertSame( array( 52, 50 ), array_column( Blocks::portraits( $about ), 'id' ) );
+		$this->assertSame( array(), $asked );
+		$this->assertSame( array(), Blocks::portraits( new \WP_Post( array( 'post_type' => 'post' ) ) ), 'Not a page.' );
+		$this->assertSame( array(), Blocks::portraits( null ), 'No post.' );
 	}
 
 	/**

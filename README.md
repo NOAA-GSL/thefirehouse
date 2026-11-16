@@ -470,21 +470,29 @@ nothing from the database. Each class's docblock has the detail; this is the map
     words as text fields in place (`assets/js/block-editor.js`, also plain
     JavaScript): headings, text, button and link text, each count's label and caption,
     each audience card's, step's and team member's words, a paragraph at a time. The
-    layout, links, icons, counts and portraits stay as they are, shown beside the
-    fields, a list keeps the entries it has, and a button the page doesn't have stays
-    out. A field that can't be empty (a heading, a button's or link's text, a count's
-    label or words, an entry's title, a member's name) says so; while one is, it's
-    marked, the editor says which in a notice that goes to it, and holds the save. The
-    hold is a guide, not a control: the Code editor and an autosave don't keep it. The
-    box tells the page's own words from what FireHouse adds from its settings,
-    projects and topic areas, and says how to move between the page's parts by
-    keyboard. A block that stores nothing and holds no others says FireHouse adds it.
-    On a FireHouse page made of nothing but FireHouse blocks, whatever attributes they
-    hold, a note's included, the editor locks the layout (`Blocks::lock_layout()`,
-    with `Page_Words::only_firehouse_blocks()`): no part can be added, moved or
-    removed there, so Backspace or Enter on a part's outline changes nothing. An
-    empty page in the tree can still be written, and a page holding another block can
-    have it taken out.
+    layout, links, icons and counts stay as they are, shown beside the fields, and a
+    button the page doesn't have stays out. The audience cards and the steps keep the
+    entries they have; the team's cards can be added, removed and moved, and the
+    mission's and each biography's paragraphs added and removed (one left empty prints
+    nothing), the focus following each change and screen readers told. Each card's
+    portrait is chosen from the FireHouse portraits (`Blocks::portraits()`): the images
+    attached to a FireHouse page and those the page's cards already use, each one the
+    About page would show. The FireHouse Editor role has no Media Library; an
+    administrator adds a portrait by uploading it and attaching it to the About page
+    (Media → Library, list view, Attach). A field that can't be empty (a heading, a
+    button's or link's text, a count's label or words, an entry's title, a member's
+    name) says so; while one is, it's marked, the editor says which in a notice that
+    goes to it, and holds the save. The hold is a guide, not a control: the Code
+    editor and an autosave don't keep it. The box tells the page's own words from
+    what FireHouse adds from its settings, projects and topic areas, and says how to
+    move between the page's parts by keyboard. A block that stores nothing and holds
+    no others says FireHouse adds it. On a FireHouse page made of nothing but
+    FireHouse blocks, whatever attributes they hold, a note's included, the editor
+    locks the layout (`Blocks::lock_layout()`, with
+    `Page_Words::only_firehouse_blocks()`): no part can be added, moved or removed
+    there, so Backspace or Enter on a part's outline changes nothing. An empty page
+    in the tree can still be written, and a page holding another block can have it
+    taken out.
   - Every block saves its inner blocks and nothing else, so saving from the editor
     keeps the page's blocks: the hero keeps the live counts it holds, and the About
     sections block the four sections it holds. `scripts/block-editor.test.mjs` holds

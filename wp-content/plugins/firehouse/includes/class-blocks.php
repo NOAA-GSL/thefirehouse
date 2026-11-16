@@ -89,12 +89,111 @@ final class Blocks {
 		wp_enqueue_script(
 			self::EDITOR_SCRIPT,
 			plugins_url( 'assets/js/block-editor.js', $root . '/firehouse.php' ),
-			array( 'wp-blocks', 'wp-block-editor', 'wp-components', 'wp-data', 'wp-element', 'wp-i18n' ),
+			array( 'wp-a11y', 'wp-blocks', 'wp-block-editor', 'wp-components', 'wp-data', 'wp-element', 'wp-i18n' ),
 			VERSION . '-' . (int) filemtime( $root . '/assets/js/block-editor.js' ),
 			false
 		);
-		wp_add_inline_script( self::EDITOR_SCRIPT, 'window.firehouseBlocks = ' . wp_json_encode( self::attributes() ) . ';', 'before' );
+		// An image's title is the uploader's; with < and & written as escapes, nothing in
+		// one can read as markup in the inline script, whatever WordPress's own escaping.
+		wp_add_inline_script( self::EDITOR_SCRIPT, 'window.firehouseBlocks = ' . wp_json_encode( self::attributes() ) . '; window.firehousePortraits = ' . wp_json_encode( self::portraits( get_post() ), JSON_HEX_TAG | JSON_HEX_AMP ) . ';', 'before' );
 		wp_set_script_translations( self::EDITOR_SCRIPT, 'firehouse' );
+	}
+
+	/**
+	 * The portraits a team card on a FireHouse page can show, for its picker in the
+	 * block editor: every image attached to a page in the FireHouse tree that visitors
+	 * can see without a password, where a new one is attached by someone who can upload
+	 * (an administrator, as the README says), and those the page's cards already use,
+	 * as the import binds them. Only an image the About page would show
+	 * (About_Page::shows()). The FireHouse Editor role has no Media Library (decided 15
+	 * November), so this is the whole choice. None for any other post.
+	 *
+	 * @param mixed $post The post the editor edits.
+	 * @return list<array{id: int, title: string, url: string}>
+	 */
+	public static function portraits( mixed $post ): array {
+		if ( ! $post instanceof \WP_Post || 'page' !== $post->post_type || ! Capabilities::in_tree( $post ) ) {
+			return array();
+		}
+		// Only the FireHouse pages a visitor can see without a password: the About page
+		// wouldn't show an image attached to any other, so it isn't asked for.
+		$shown    = array_values(
+			array_filter(
+				Capabilities::tree_ids(),
+				static function ( int $id ): bool {
+					$page = get_post( $id );
+					return $page instanceof \WP_Post && About_Page::shows_attached_to( $page );
+				}
+			)
+		);
+		$attached = array();
+		// Asked for only with a page to ask about: WordPress ignores an empty
+		// `post_parent__in`, and would return every image on the site.
+		if ( array() !== $shown ) {
+			$attached = get_posts(
+				array(
+					'post_type'       => 'attachment',
+					'post_mime_type'  => 'image',
+					'post_status'     => 'inherit',
+					'post_parent__in' => $shown,
+					// All of them: the picker is the editor's only way to a portrait, so
+					// none may be left off. Only images attached to these pages are read.
+					'numberposts'     => -1,
+					'orderby'         => 'title',
+					'order'           => 'ASC',
+					'fields'          => 'ids',
+				)
+			);
+		}
+		$ids = array_values( array_unique( array_merge( array_map( 'intval', is_array( $attached ) ? $attached : array() ), self::used_portraits( parse_blocks( $post->post_content ) ) ) ) );
+		if ( array() === $ids ) {
+			return array();
+		}
+		// Two queries load the images not already loaded, then their metadata, rather
+		// than one or two for each image in the loop below.
+		_prime_post_caches( $ids, false, true );
+
+		$portraits = array();
+		foreach ( $ids as $id ) {
+			if ( ! About_Page::shows( $id ) ) {
+				continue;
+			}
+			$url         = wp_get_attachment_image_url( $id, 'thumbnail' );
+			$title       = get_post_field( 'post_title', $id, 'raw' );
+			$portraits[] = array(
+				'id'    => $id,
+				// The title as stored, without the typography WordPress adds for display.
+				'title' => is_string( $title ) ? $title : '',
+				'url'   => is_string( $url ) ? $url : '',
+			);
+		}
+		return $portraits;
+	}
+
+	/**
+	 * The portraits the team cards in parsed content use, by ID.
+	 *
+	 * @param array<int, mixed> $blocks The blocks, as parse_blocks() gives them.
+	 * @return list<int>
+	 */
+	private static function used_portraits( array $blocks ): array {
+		$ids = array();
+		foreach ( $blocks as $block ) {
+			if ( ! is_array( $block ) ) {
+				continue;
+			}
+			if ( 'firehouse/about-team' === ( $block['blockName'] ?? null ) && is_array( $block['attrs']['members'] ?? null ) ) {
+				foreach ( $block['attrs']['members'] as $member ) {
+					if ( is_array( $member ) && is_int( $member['photoId'] ?? null ) && $member['photoId'] > 0 ) {
+						$ids[] = $member['photoId'];
+					}
+				}
+			}
+			if ( is_array( $block['innerBlocks'] ?? null ) ) {
+				$ids = array_merge( $ids, self::used_portraits( $block['innerBlocks'] ) );
+			}
+		}
+		return $ids;
 	}
 
 	/**

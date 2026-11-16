@@ -33,6 +33,8 @@ const InnerBlocks = Object.assign(() => null, { Content: () => null });
 const Placeholder = () => null;
 const TextControl = () => null;
 const TextareaControl = () => null;
+const SelectControl = () => null;
+const Button = () => null;
 
 /** WordPress's sprintf, for %s, %d and numbered %1$s. */
 function sprintf(format, ...args) {
@@ -41,13 +43,16 @@ function sprintf(format, ...args) {
 }
 
 /**
- * Runs the script, with stores that record what's asked of them and a small stand-in for
- * React's effects: each mounted block keeps its effect's dependencies and clean-up, runs
- * the clean-up and the effect again when they change, and the clean-up when unmounted.
+ * Runs the script, with stores that record what's asked of them, what's spoken to screen
+ * readers, and a small stand-in for React's effects: each mounted block keeps each of its
+ * effects' dependencies and clean-up, by the order it calls them, runs the clean-up and
+ * the effect again when they change (or every draw, for one with none), and the
+ * clean-ups when unmounted.
  */
-function load(declared = DECLARED, { stores = true, focused = [], frame = null } = {}) {
+function load(declared = DECLARED, { stores = true, focused = [], frame = null, portraits = [], absent = [] } = {}) {
   const registered = new Map();
   const calls = [];
+  const spoken = [];
   let current = null;
   const record = (store) => new Proxy({}, { get: (target, action) => (...args) => calls.push([store, action, ...args]) });
   const wp = {
@@ -58,47 +63,58 @@ function load(declared = DECLARED, { stores = true, focused = [], frame = null }
     element: {
       createElement: (type, props, ...children) => ({ type, props: props ?? {}, children: children.flat() }),
       useEffect: (effect, deps) => {
-        const slot = current;
-        if (slot.deps && deps.length === slot.deps.length && deps.every((dep, index) => dep === slot.deps[index])) return;
+        const slots = current.slots;
+        const slot = (slots[current.index++] ??= { deps: null, cleanup: null });
+        if (deps && slot.deps && deps.length === slot.deps.length && deps.every((dep, index) => dep === slot.deps[index])) return;
         if (slot.cleanup) slot.cleanup();
-        slot.deps = deps;
+        slot.deps = deps ?? null;
         const cleanup = effect();
         slot.cleanup = typeof cleanup === 'function' ? cleanup : null;
       },
     },
     blockEditor: { useBlockProps: () => ({ className: 'wp-block' }), InnerBlocks },
-    components: { Placeholder, TextControl, TextareaControl },
+    components: { Placeholder, TextControl, TextareaControl, SelectControl, Button },
     data: stores ? { dispatch: (store) => record(store), select: () => null } : undefined,
     i18n: { __: (text) => text, _x: (text) => text, _n: (one, many, count) => (count === 1 ? one : many), sprintf },
+    a11y: { speak: (message) => spoken.push(message) },
   };
   const window = {
     wp,
     firehouseBlocks: declared,
+    firehousePortraits: portraits,
     setTimeout: (fn) => fn(),
     // The field "Go to" focuses, found by its data attribute, in the editor's frame if
     // there's one, else in the page.
-    document: { querySelector: (selector) => (selector.startsWith('iframe') ? frame : { focus: () => focused.push(selector) }) },
+    // An element the drawn block doesn't have (`absent`) isn't found.
+    document: {
+      querySelector: (selector) => (selector.startsWith('iframe') ? frame : absent.includes(selector) ? null : { focus: () => focused.push(selector) }),
+    },
   };
   new Function('window', SOURCE)(window);
 
   /** Mounts a block: its tree, its attribute changes, and how to render it again or remove it. */
   function mount(name, attributes, clientId = 'abc') {
-    const slot = { deps: null, cleanup: null };
+    const slots = [];
     const changes = [];
     const render = (next) => {
-      current = slot;
+      current = { slots, index: 0 };
       return registered.get(name).edit({ attributes: next, setAttributes: (change) => changes.push(change), clientId });
     };
-    return { tree: render(attributes), changes, rerender: render, unmount: () => slot.cleanup && slot.cleanup() };
+    return { tree: render(attributes), changes, rerender: render, unmount: () => slots.forEach((slot) => slot.cleanup && slot.cleanup()) };
   }
-  return { registered, calls, mount };
+  return { registered, calls, spoken, mount };
 }
 
-/** Renders a block's edit with its attributes; returns the tree, the changes and the stores' calls. */
+/** Renders a block's edit with its attributes; returns the tree, the changes, the stores' calls and what's spoken. */
 function edit(name, attributes, options) {
   const loaded = load(DECLARED, options);
   const mounted = loaded.mount(name, attributes);
-  return { ...mounted, calls: loaded.calls };
+  return { ...mounted, calls: loaded.calls, spoken: loaded.spoken };
+}
+
+/** Every one of the cards' buttons in a rendered tree, by its words. */
+function buttons(tree) {
+  return Object.fromEntries(find(tree, Button).map((node) => [text(node).join(''), node]));
 }
 
 /** Every string in a rendered tree, in order, the placeholder's label included. */
@@ -221,10 +237,173 @@ describe('the block editor script', () => {
     const fields = controls(team.tree);
     expect(Object.keys(fields)).toEqual(expect.arrayContaining(['Name', 'Biography, paragraph 1', 'Biography, paragraph 2', 'Portrait description', 'Email address']));
     expect(help(fields['Email address'])).toMatch(/@noaa\.gov/);
-    expect(text(team.tree)).toEqual(expect.arrayContaining(['Portrait (Media Library ID): ', '7']));
     fields['Biography, paragraph 2'].props.onChange('Later.');
     expect(team.changes).toEqual([{ members: [{ ...members[0], bio: ['First.', 'Later.'] }] }]);
-    expect(SOURCE).not.toMatch(/\.push\(|splice\(|concat\(/);
+    // The stored list isn't changed in place: the change is a new one.
+    expect(members[0].bio).toEqual(['First.', 'Second.']);
+  });
+
+  it('adds and removes a paragraph, putting the focus on it or the next, and says so', () => {
+    const focused = [];
+    const mission = edit('firehouse/about-mission', { heading: 'Mission', paragraphs: ['One.', 'Two.'] }, { focused });
+    const actions = buttons(mission.tree);
+    expect(Object.keys(actions)).toEqual(['Remove Paragraph 1', 'Remove Paragraph 2', 'Add a paragraph']);
+    actions['Add a paragraph'].props.onClick();
+    expect(mission.changes.at(-1)).toEqual({ paragraphs: ['One.', 'Two.', ''] });
+    mission.rerender({ heading: 'Mission', paragraphs: ['One.', 'Two.', ''] });
+    expect(focused.at(-1)).toBe('[data-firehouse-field="fh-abc-paragraphs-2"]');
+    expect(mission.spoken).toEqual(['Paragraph added.']);
+
+    actions['Remove Paragraph 1'].props.onClick();
+    expect(mission.changes.at(-1)).toEqual({ paragraphs: ['Two.'] });
+    mission.rerender({ heading: 'Mission', paragraphs: ['Two.'] });
+    expect(focused.at(-1)).toBe('[data-firehouse-field="fh-abc-paragraphs-0"]');
+    expect(mission.spoken.at(-1)).toBe('Paragraph 1 removed. Undo puts it back.');
+
+    // With none, there's still the button to add one.
+    expect(Object.keys(buttons(edit('firehouse/about-mission', { heading: 'Mission', paragraphs: [] }).tree))).toEqual(['Add a paragraph']);
+  });
+
+  it('adds, moves and removes a team member, the focus following, and leaves fixed lists fixed', () => {
+    const focused = [];
+    const members = [
+      { name: 'Ana', photoId: 7, bio: ['A.'] },
+      { name: 'Ben', bio: ['B.'] },
+    ];
+    const team = edit('firehouse/about-team', { heading: 'Team', members }, { focused });
+    const actions = buttons(team.tree);
+    // In each card, inside its group: its biography's, then its own; then one to add.
+    expect(find(team.tree, Button).map((node) => text(node).join(''))).toEqual([
+      'Remove Team member 1’s biography, paragraph 1',
+      'Add a paragraph to Team member 1’s biography',
+      'Move Team member 1 down',
+      'Remove Team member 1',
+      'Remove Team member 2’s biography, paragraph 1',
+      'Add a paragraph to Team member 2’s biography',
+      'Move Team member 2 up',
+      'Remove Team member 2',
+      'Add a team member',
+    ]);
+
+    actions['Move Team member 2 up'].props.onClick();
+    expect(team.changes.at(-1)).toEqual({ members: [members[1], members[0]] });
+    team.rerender({ heading: 'Team', members: [members[1], members[0]] });
+    expect(focused.at(-1)).toBe('[data-firehouse-action="fh-abc-members-0-up"]');
+    expect(team.spoken.at(-1)).toBe('Team member 2 moved: it’s now Team member 1.');
+
+    actions['Add a team member'].props.onClick();
+    expect(team.changes.at(-1)).toEqual({ members: [...members, { name: '', bio: [] }] });
+    const spokenBefore = team.spoken.length;
+    team.rerender({ heading: 'Team', members: [...members, { name: '', bio: [] }] });
+    // Nothing spoken of its own: the notice for its empty name says it, as the focus moves there.
+    expect(team.spoken).toHaveLength(spokenBefore);
+    expect(focused.at(-1)).toBe('[data-firehouse-field="fh-abc-members-2-name"]');
+    // A new member has no name yet, so the save is held until they're named.
+    expect(team.calls.filter((call) => call[1] === 'lockPostSaving')).toHaveLength(1);
+
+    actions['Remove Team member 1'].props.onClick();
+    expect(team.changes.at(-1)).toEqual({ members: [members[1]] });
+    expect(team.spoken.at(-1)).toBe('Team member 1 removed. Undo puts it back.');
+
+    // The audiences and the steps stay as many as they are.
+    const audiences = edit('firehouse/about-audiences', { heading: 'Who', items: [{ title: 'One' }, { title: 'Two' }] });
+    expect(find(audiences.tree, Button)).toEqual([]);
+  });
+
+  it('puts the focus where each change leaves it, at the ends of a list and inside a card', () => {
+    const focused = [];
+    const one = { name: 'Ana', bio: ['A.'] };
+    const two = { name: 'Ben', bio: [] };
+    const three = { name: 'Cal', bio: [] };
+    // What the drawn cards don't have: a Down on the last card, a name past the end.
+    const absent = ['[data-firehouse-action="fh-abc-members-2-down"]', '[data-firehouse-field="fh-abc-members--1-name"]'];
+    const team = edit('firehouse/about-team', { heading: 'Team', members: [one, two, three] }, { focused, absent });
+    const actions = buttons(team.tree);
+    const after = (members) => {
+      team.rerender({ heading: 'Team', members });
+      return focused.at(-1);
+    };
+
+    // Moved down to the last place, where it has no Down: its Up.
+    actions['Move Team member 2 down'].props.onClick();
+    expect(after([one, three, two])).toBe('[data-firehouse-action="fh-abc-members-2-up"]');
+    // Removing the last card: the card before it.
+    actions['Remove Team member 3'].props.onClick();
+    expect(after([one, two])).toBe('[data-firehouse-field="fh-abc-members-1-name"]');
+    // Adding a biography paragraph in the first card: that paragraph.
+    actions['Add a paragraph to Team member 1’s biography'].props.onClick();
+    expect(after([{ ...one, bio: ['A.', ''] }, two, three])).toBe('[data-firehouse-field="fh-abc-members-0-bio-1"]');
+
+    // Removing the only card: no card is left, so the button that adds one.
+    const alone = edit('firehouse/about-team', { heading: 'Team', members: [one] }, { focused, absent });
+    buttons(alone.tree)['Remove Team member 1'].props.onClick();
+    alone.rerender({ heading: 'Team', members: [] });
+    expect(focused.at(-1)).toBe('[data-firehouse-action="fh-abc-members-add"]');
+  });
+
+  it('keeps a pending focus for its own block, whatever another block draws first', () => {
+    const focused = [];
+    const { mount } = load(DECLARED, { focused });
+    const mission = mount('firehouse/about-mission', { heading: 'Mission', paragraphs: ['One.'] }, 'one');
+    const intro = mount('firehouse/about-intro', { heading: 'Intro' }, 'two');
+    buttons(mission.tree)['Add a paragraph'].props.onClick();
+    intro.rerender({ heading: 'Intro, again' });
+    expect(focused).toEqual([]);
+    mission.rerender({ heading: 'Mission', paragraphs: ['One.', ''] });
+    expect(focused).toEqual(['[data-firehouse-field="fh-one-paragraphs-1"]']);
+    mission.rerender({ heading: 'Mission', paragraphs: ['One.', 'x'] });
+    expect(focused).toHaveLength(1);
+  });
+
+  it('names a moved card’s empty name by its new place, and goes there', () => {
+    const team = edit('firehouse/about-team', { heading: 'Team', members: [{ name: 'Ana' }, { name: '' }] });
+    expect(team.calls.find((call) => call[1] === 'createNotice')[4].actions[0].label).toBe('Go to Team member 2: Name in FireHouse About team');
+    team.rerender({ heading: 'Team', members: [{ name: '' }, { name: 'Ana' }] });
+    const notice = team.calls.filter((call) => call[1] === 'createNotice').at(-1);
+    expect(notice[3]).toBe('FireHouse About team: fill in Team member 1: Name. The page can’t be saved while it’s empty.');
+  });
+
+  it('makes each add, move and remove its own undo step, apart from the typing around it', () => {
+    const team = edit('firehouse/about-team', { heading: 'Team', members: [{ name: 'Ana', bio: ['A.'] }, { name: 'Ben' }] });
+    const before = team.calls.length;
+    buttons(team.tree)['Remove Team member 1'].props.onClick();
+    // The step before it ends, the removal is made, then its own step ends.
+    expect(team.calls.slice(before).map((call) => call.slice(0, 2))).toEqual([
+      ['core/block-editor', '__unstableMarkLastChangeAsPersistent'],
+      ['core/block-editor', '__unstableMarkLastChangeAsPersistent'],
+    ]);
+    expect(team.changes).toHaveLength(1);
+
+    // A biography's paragraph names its card when it's removed.
+    buttons(team.tree)['Remove Team member 1’s biography, paragraph 1'].props.onClick();
+    expect(team.spoken.at(-1)).toBe('Team member 1: Biography, paragraph 1 removed. Undo puts it back.');
+  });
+
+  it('chooses a team member’s portrait from the FireHouse portraits, or none', () => {
+    const portraits = [
+      { id: 7, title: 'ana', url: 'https://example.org/ana-150x150.webp' },
+      { id: 9, title: 'ben', url: '' },
+    ];
+    const members = [{ name: 'Ana', photo: 'ana', photoId: 7, photoAlt: '', bio: [] }];
+    const team = edit('firehouse/about-team', { heading: 'Team', members }, { portraits });
+    const picker = find(team.tree, SelectControl)[0];
+    expect(picker.props.label).toBe('Portrait');
+    expect(picker.props.value).toBe('7');
+    expect(picker.props.options).toEqual([
+      { label: 'None: the card shows initials', value: '' },
+      { label: 'ana', value: '7' },
+      { label: 'ben', value: '9' },
+    ]);
+    expect(find(team.tree, 'img')[0].props).toMatchObject({ src: 'https://example.org/ana-150x150.webp', alt: '' });
+    picker.props.onChange('9');
+    // The import's name for the old portrait, and its description, go with it.
+    expect(team.changes.at(-1)).toEqual({ members: [{ name: 'Ana', photoId: 9, bio: [] }] });
+    picker.props.onChange('');
+    expect(team.changes.at(-1)).toEqual({ members: [{ name: 'Ana', bio: [] }] });
+
+    // A portrait set some other way is still named, so choosing again doesn't lose it.
+    const other = edit('firehouse/about-team', { heading: 'Team', members: [{ name: 'Ana', photoId: 42 }] }, { portraits });
+    expect(find(other.tree, SelectControl)[0].props.options.at(-1)).toEqual({ label: 'Image 42, not among the FireHouse portraits', value: '42' });
   });
 
   it('shows where a link goes, a page or an address, and one that goes nowhere as left out', () => {

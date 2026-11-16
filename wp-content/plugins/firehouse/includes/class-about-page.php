@@ -162,7 +162,10 @@ final class About_Page {
 	public static function mission( array $attributes ): string {
 		$paragraphs = '';
 		foreach ( self::strings( $attributes['paragraphs'] ?? null ) as $paragraph ) {
-			$paragraphs .= '<p>' . Markup::text( $paragraph ) . '</p>';
+			// A paragraph an editor added and left empty prints nothing.
+			if ( '' !== trim( $paragraph ) ) {
+				$paragraphs .= '<p>' . Markup::text( $paragraph ) . '</p>';
+			}
 		}
 		return sprintf(
 			'<section class="fh-about__section" aria-labelledby="about-mission"><h2 id="about-mission" class="fh-about__section-heading">%1$s</h2><div class="fh-about__prose">%2$s</div></section>',
@@ -253,7 +256,10 @@ final class About_Page {
 			$portrait = self::shows( $photo ) ? self::portrait( $photo, is_string( $member['photoAlt'] ?? null ) ? $member['photoAlt'] : '' ) : '';
 			$bio      = '';
 			foreach ( self::strings( $member['bio'] ?? null ) as $paragraph ) {
-				$bio .= '<p>' . Markup::text( $paragraph ) . '</p>';
+				// A paragraph an editor added and left empty prints nothing.
+				if ( '' !== trim( $paragraph ) ) {
+					$bio .= '<p>' . Markup::text( $paragraph ) . '</p>';
+				}
 			}
 			$cards .= sprintf(
 				'<li class="fh-person fh-glass"><div class="fh-person__head"><div class="fh-person__portrait">%1$s</div><div class="fh-person__id"><h3 class="fh-person__name">%2$s</h3></div></div><div class="fh-person__bio">%3$s</div></li>',
@@ -336,11 +342,10 @@ final class About_Page {
 	/**
 	 * Whether the page shows this image as a portrait: an image in the Media Library, in
 	 * the status uploads have (the import looks for no other), uploaded on its own or to
-	 * a post visitors may see without a password. One
-	 * attached to a draft, private or password-protected post isn't shown, whatever the
-	 * page's attributes say, so the page can't be used to show what WordPress keeps from
-	 * visitors. is_post_publicly_viewable() checks the post's type and status, not its
-	 * password, so that is checked here.
+	 * a post visitors may see without a password (shows_attached_to()). One attached to
+	 * a draft, private or password-protected post isn't shown, whatever the page's
+	 * attributes say, so the page can't be used to show what WordPress keeps from
+	 * visitors.
 	 *
 	 * @param int $id The image's ID.
 	 */
@@ -356,7 +361,19 @@ final class About_Page {
 			return true;
 		}
 		$parent = get_post( (int) $image->post_parent );
-		return $parent instanceof \WP_Post && '' === $parent->post_password && is_post_publicly_viewable( $parent );
+		return $parent instanceof \WP_Post && self::shows_attached_to( $parent );
+	}
+
+	/**
+	 * Whether the page may show an image attached to this post: one visitors may see
+	 * without a password. The portrait picker asks only about these pages
+	 * (Blocks::portraits()), so the two keep to one rule. is_post_publicly_viewable()
+	 * checks the post's type and status, not its password, so that is checked here.
+	 *
+	 * @param \WP_Post $post The post the image is attached to.
+	 */
+	public static function shows_attached_to( \WP_Post $post ): bool {
+		return '' === $post->post_password && is_post_publicly_viewable( $post );
 	}
 
 	/**
