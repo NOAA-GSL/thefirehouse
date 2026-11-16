@@ -49,7 +49,7 @@ function sprintf(format, ...args) {
  * the effect again when they change (or every draw, for one with none), and the
  * clean-ups when unmounted.
  */
-function load(declared = DECLARED, { stores = true, focused = [], frame = null, portraits = [] } = {}) {
+function load(declared = DECLARED, { stores = true, focused = [], frame = null, portraits = [], absent = [] } = {}) {
   const registered = new Map();
   const calls = [];
   const spoken = [];
@@ -85,7 +85,10 @@ function load(declared = DECLARED, { stores = true, focused = [], frame = null, 
     setTimeout: (fn) => fn(),
     // The field "Go to" focuses, found by its data attribute, in the editor's frame if
     // there's one, else in the page.
-    document: { querySelector: (selector) => (selector.startsWith('iframe') ? frame : { focus: () => focused.push(selector) }) },
+    // An element the drawn block doesn't have (`absent`) isn't found.
+    document: {
+      querySelector: (selector) => (selector.startsWith('iframe') ? frame : absent.includes(selector) ? null : { focus: () => focused.push(selector) }),
+    },
   };
   new Function('window', SOURCE)(window);
 
@@ -255,7 +258,7 @@ describe('the block editor script', () => {
     expect(mission.changes.at(-1)).toEqual({ paragraphs: ['Two.'] });
     mission.rerender({ heading: 'Mission', paragraphs: ['Two.'] });
     expect(focused.at(-1)).toBe('[data-firehouse-field="fh-abc-paragraphs-0"]');
-    expect(mission.spoken.at(-1)).toBe('Paragraph 1 removed.');
+    expect(mission.spoken.at(-1)).toBe('Paragraph 1 removed. Undo puts it back.');
 
     // With none, there's still the button to add one.
     expect(Object.keys(buttons(edit('firehouse/about-mission', { heading: 'Mission', paragraphs: [] }).tree))).toEqual(['Add a paragraph']);
@@ -271,12 +274,12 @@ describe('the block editor script', () => {
     const actions = buttons(team.tree);
     // In each card, inside its group: its biography's, then its own; then one to add.
     expect(find(team.tree, Button).map((node) => text(node).join(''))).toEqual([
-      'Remove Biography, paragraph 1',
-      'Add a paragraph to the biography',
+      'Remove Team member 1’s biography, paragraph 1',
+      'Add a paragraph to Team member 1’s biography',
       'Move Team member 1 down',
       'Remove Team member 1',
-      'Remove Biography, paragraph 1',
-      'Add a paragraph to the biography',
+      'Remove Team member 2’s biography, paragraph 1',
+      'Add a paragraph to Team member 2’s biography',
       'Move Team member 2 up',
       'Remove Team member 2',
       'Add a team member',
@@ -289,19 +292,75 @@ describe('the block editor script', () => {
     expect(team.spoken.at(-1)).toBe('Team member 2 moved: it’s now Team member 1.');
 
     actions['Add a team member'].props.onClick();
-    expect(team.changes.at(-1)).toEqual({ members: [...members, { name: '', bio: [''] }] });
-    team.rerender({ heading: 'Team', members: [...members, { name: '', bio: [''] }] });
+    expect(team.changes.at(-1)).toEqual({ members: [...members, { name: '', bio: [] }] });
+    const spokenBefore = team.spoken.length;
+    team.rerender({ heading: 'Team', members: [...members, { name: '', bio: [] }] });
+    // Nothing spoken of its own: the notice for its empty name says it, as the focus moves there.
+    expect(team.spoken).toHaveLength(spokenBefore);
     expect(focused.at(-1)).toBe('[data-firehouse-field="fh-abc-members-2-name"]');
     // A new member has no name yet, so the save is held until they're named.
     expect(team.calls.filter((call) => call[1] === 'lockPostSaving')).toHaveLength(1);
 
     actions['Remove Team member 1'].props.onClick();
     expect(team.changes.at(-1)).toEqual({ members: [members[1]] });
-    expect(team.spoken.at(-1)).toBe('Team member 1 removed.');
+    expect(team.spoken.at(-1)).toBe('Team member 1 removed. Undo puts it back.');
 
     // The audiences and the steps stay as many as they are.
     const audiences = edit('firehouse/about-audiences', { heading: 'Who', items: [{ title: 'One' }, { title: 'Two' }] });
     expect(find(audiences.tree, Button)).toEqual([]);
+  });
+
+  it('puts the focus where each change leaves it, at the ends of a list and inside a card', () => {
+    const focused = [];
+    const one = { name: 'Ana', bio: ['A.'] };
+    const two = { name: 'Ben', bio: [] };
+    const three = { name: 'Cal', bio: [] };
+    // What the drawn cards don't have: a Down on the last card, a name past the end.
+    const absent = ['[data-firehouse-action="fh-abc-members-2-down"]', '[data-firehouse-field="fh-abc-members--1-name"]'];
+    const team = edit('firehouse/about-team', { heading: 'Team', members: [one, two, three] }, { focused, absent });
+    const actions = buttons(team.tree);
+    const after = (members) => {
+      team.rerender({ heading: 'Team', members });
+      return focused.at(-1);
+    };
+
+    // Moved down to the last place, where it has no Down: its Up.
+    actions['Move Team member 2 down'].props.onClick();
+    expect(after([one, three, two])).toBe('[data-firehouse-action="fh-abc-members-2-up"]');
+    // Removing the last card: the card before it.
+    actions['Remove Team member 3'].props.onClick();
+    expect(after([one, two])).toBe('[data-firehouse-field="fh-abc-members-1-name"]');
+    // Adding a biography paragraph in the first card: that paragraph.
+    actions['Add a paragraph to Team member 1’s biography'].props.onClick();
+    expect(after([{ ...one, bio: ['A.', ''] }, two, three])).toBe('[data-firehouse-field="fh-abc-members-0-bio-1"]');
+
+    // Removing the only card: no card is left, so the button that adds one.
+    const alone = edit('firehouse/about-team', { heading: 'Team', members: [one] }, { focused, absent });
+    buttons(alone.tree)['Remove Team member 1'].props.onClick();
+    alone.rerender({ heading: 'Team', members: [] });
+    expect(focused.at(-1)).toBe('[data-firehouse-action="fh-abc-members-add"]');
+  });
+
+  it('keeps a pending focus for its own block, whatever another block draws first', () => {
+    const focused = [];
+    const { mount } = load(DECLARED, { focused });
+    const mission = mount('firehouse/about-mission', { heading: 'Mission', paragraphs: ['One.'] }, 'one');
+    const intro = mount('firehouse/about-intro', { heading: 'Intro' }, 'two');
+    buttons(mission.tree)['Add a paragraph'].props.onClick();
+    intro.rerender({ heading: 'Intro, again' });
+    expect(focused).toEqual([]);
+    mission.rerender({ heading: 'Mission', paragraphs: ['One.', ''] });
+    expect(focused).toEqual(['[data-firehouse-field="fh-one-paragraphs-1"]']);
+    mission.rerender({ heading: 'Mission', paragraphs: ['One.', 'x'] });
+    expect(focused).toHaveLength(1);
+  });
+
+  it('names a moved card’s empty name by its new place, and goes there', () => {
+    const team = edit('firehouse/about-team', { heading: 'Team', members: [{ name: 'Ana' }, { name: '' }] });
+    expect(team.calls.find((call) => call[1] === 'createNotice')[4].actions[0].label).toBe('Go to Team member 2: Name in FireHouse About team');
+    team.rerender({ heading: 'Team', members: [{ name: '' }, { name: 'Ana' }] });
+    const notice = team.calls.filter((call) => call[1] === 'createNotice').at(-1);
+    expect(notice[3]).toBe('FireHouse About team: fill in Team member 1: Name. The page can’t be saved while it’s empty.');
   });
 
   it('chooses a team member’s portrait from the FireHouse portraits, or none', () => {
@@ -321,10 +380,10 @@ describe('the block editor script', () => {
     ]);
     expect(find(team.tree, 'img')[0].props).toMatchObject({ src: 'https://example.org/ana-150x150.webp', alt: '' });
     picker.props.onChange('9');
-    expect(team.changes.at(-1)).toEqual({ members: [{ ...members[0], photoId: 9 }] });
+    // The import's name for the old portrait goes with it.
+    expect(team.changes.at(-1)).toEqual({ members: [{ name: 'Ana', photoId: 9, photoAlt: '', bio: [] }] });
     picker.props.onChange('');
-    expect(team.changes.at(-1).members[0]).not.toHaveProperty('photoId');
-    expect(team.changes.at(-1).members[0].photo).toBe('ana');
+    expect(team.changes.at(-1)).toEqual({ members: [{ name: 'Ana', photoAlt: '', bio: [] }] });
 
     // A portrait set some other way is still named, so choosing again doesn't lose it.
     const other = edit('firehouse/about-team', { heading: 'Team', members: [{ name: 'Ana', photoId: 42 }] }, { portraits });

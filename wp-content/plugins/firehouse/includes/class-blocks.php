@@ -93,7 +93,9 @@ final class Blocks {
 			VERSION . '-' . (int) filemtime( $root . '/assets/js/block-editor.js' ),
 			false
 		);
-		wp_add_inline_script( self::EDITOR_SCRIPT, 'window.firehouseBlocks = ' . wp_json_encode( self::attributes() ) . '; window.firehousePortraits = ' . wp_json_encode( self::portraits( get_post() ) ) . ';', 'before' );
+		// An image's title is the uploader's; with < and & written as escapes, nothing in
+		// one can read as markup in the inline script, whatever WordPress's own escaping.
+		wp_add_inline_script( self::EDITOR_SCRIPT, 'window.firehouseBlocks = ' . wp_json_encode( self::attributes() ) . '; window.firehousePortraits = ' . wp_json_encode( self::portraits( get_post() ), JSON_HEX_TAG | JSON_HEX_AMP ) . ';', 'before' );
 		wp_set_script_translations( self::EDITOR_SCRIPT, 'firehouse' );
 	}
 
@@ -124,17 +126,31 @@ final class Blocks {
 				'fields'          => 'ids',
 			)
 		);
-		$ids      = array_merge( array_map( 'intval', is_array( $attached ) ? $attached : array() ), self::used_portraits( parse_blocks( $post->post_content ) ) );
+		$ids      = array_values( array_unique( array_merge( array_map( 'intval', is_array( $attached ) ? $attached : array() ), self::used_portraits( parse_blocks( $post->post_content ) ) ) ) );
+		if ( array() === $ids ) {
+			return array();
+		}
+		// One query loads every image and its metadata, rather than one or two each.
+		get_posts(
+			array(
+				'post_type'   => 'attachment',
+				'post_status' => 'inherit',
+				'post__in'    => $ids,
+				'numberposts' => count( $ids ),
+			)
+		);
 
 		$portraits = array();
-		foreach ( array_unique( $ids ) as $id ) {
+		foreach ( $ids as $id ) {
 			if ( ! About_Page::shows( $id ) ) {
 				continue;
 			}
 			$url         = wp_get_attachment_image_url( $id, 'thumbnail' );
+			$title       = get_post_field( 'post_title', $id, 'raw' );
 			$portraits[] = array(
 				'id'    => $id,
-				'title' => wp_specialchars_decode( get_the_title( $id ), ENT_QUOTES ),
+				// The title as stored, without the typography WordPress adds for display.
+				'title' => is_string( $title ) ? $title : '',
 				'url'   => is_string( $url ) ? $url : '',
 			);
 		}

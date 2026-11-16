@@ -60,7 +60,7 @@
 	/** Something stored that isn't words, shown as it is, or as `shown( value, entry )` words it. */
 	const fixed = ( key, label, shown ) => ( { kind: 'fixed', key, label, shown } );
 	/** A team member's portrait, chosen from PORTRAITS, or none. */
-	const portrait = ( key, label ) => ( { kind: 'portrait', key, label } );
+	const portrait = ( key, label, clears ) => ( { kind: 'portrait', key, label, clears } );
 
 	const EYEBROW = text( 'eyebrow', __( 'Line above the heading', 'firehouse' ) );
 	const HEADING = text( 'heading', __( 'Heading', 'firehouse' ), { required: true } );
@@ -103,7 +103,14 @@
 		'firehouse/top-needs': [ EYEBROW, HEADING, BODY, fixed( 'needsPerCard', __( 'Needs shown per topic area', 'firehouse' ) ) ],
 		'firehouse/submit-band': [ HEADING, BODY, button( 'cta', __( 'Button', 'firehouse' ) ) ],
 		'firehouse/about-intro': [ EYEBROW, HEADING, BODY ],
-		'firehouse/about-mission': [ HEADING, paragraphs( 'paragraphs', PARAGRAPH, { add: __( 'Add a paragraph', 'firehouse' ) } ) ],
+		'firehouse/about-mission': [
+			HEADING,
+			paragraphs( 'paragraphs', PARAGRAPH, {
+				add: () => __( 'Add a paragraph', 'firehouse' ),
+				/* translators: %s: a paragraph, such as "Paragraph 2". */
+				remove: ( owner, name ) => sprintf( __( 'Remove %s', 'firehouse' ), name ),
+			} ),
+		],
 		'firehouse/about-audiences': [
 			EYEBROW,
 			HEADING,
@@ -138,13 +145,19 @@
 				MEMBER,
 				[
 					text( 'name', __( 'Name', 'firehouse' ), { required: true } ),
-					paragraphs( 'bio', BIO, { add: __( 'Add a paragraph to the biography', 'firehouse' ) } ),
-					portrait( 'photoId', __( 'Portrait', 'firehouse' ) ),
+					paragraphs( 'bio', BIO, {
+						/* translators: %s: a team member, such as "Team member 2". */
+						add: ( owner ) => sprintf( __( 'Add a paragraph to %s’s biography', 'firehouse' ), owner ),
+						/* translators: 1: a team member, such as "Team member 2", 2: the number of a paragraph of their biography. */
+						remove: ( owner, name, number ) => sprintf( __( 'Remove %1$s’s biography, paragraph %2$d', 'firehouse' ), owner, number ),
+					} ),
+					// The import's name for a portrait goes with it when another is chosen.
+					portrait( 'photoId', __( 'Portrait', 'firehouse' ), [ 'photo' ] ),
 					text( 'photoAlt', __( 'Portrait description', 'firehouse' ), {
 						help: __( 'Usually empty: the name follows the portrait, so describing the person would say who they are twice. Describe only what else it shows.', 'firehouse' ),
 					} ),
 				],
-				{ add: __( 'Add a team member', 'firehouse' ), empty: () => ( { name: '', bio: [ '' ] } ) }
+				{ add: __( 'Add a team member', 'firehouse' ), empty: () => ( { name: '', bio: [] } ) }
 			),
 		],
 		'firehouse/about-cta': [ HEADING, BODY, button( 'cta', __( 'Button', 'firehouse' ) ) ],
@@ -383,7 +396,8 @@
 
 	/** One of the cards' buttons: add, move, remove. */
 	function action( clientId, id, label, onClick ) {
-		return el( Button, { key: id, variant: 'secondary', 'data-firehouse-action': id, onClick, __next40pxDefaultSize: true }, label );
+		// A long name wraps, rather than running past the button's border on a phone.
+		return el( Button, { key: id, variant: 'secondary', 'data-firehouse-action': id, onClick, __next40pxDefaultSize: true, style: { whiteSpace: 'normal', height: 'auto', textAlign: 'center' } }, label );
 	}
 
 	/** The button that adds an entry or a paragraph, set apart from the last one. */
@@ -421,7 +435,7 @@
 	 * field per entry stored, and only those given `edit` words can add, remove or move
 	 * one; a button that doesn't exist says so. The page's layout is fixed otherwise.
 	 */
-	function render( field, stored, change, prefix, id, entry, clientId ) {
+	function render( field, stored, change, prefix, id, entry, clientId, owner ) {
 		switch ( field.kind ) {
 			case 'text':
 			case 'area':
@@ -443,7 +457,7 @@
 				const items = Array.isArray( stored ) ? stored : [];
 				const add = field.edit
 					? adding(
-							action( clientId, id + '-add', field.edit.add, () => {
+							action( clientId, id + '-add', field.edit.add( owner ), () => {
 								change( [ ...items, '' ] );
 								later( clientId, [ fieldAt( id + '-' + items.length ) ] );
 								speak( __( 'Paragraph added.', 'firehouse' ) );
@@ -472,13 +486,12 @@
 							'div',
 							{ key: field.key + '-' + index, style: { marginBottom: '1.5em' } },
 							one,
-							/* translators: %s: a paragraph, such as "Paragraph 2". */
-							action( clientId, id + '-' + index + '-remove', sprintf( __( 'Remove %s', 'firehouse' ), name ), () => {
+							action( clientId, id + '-' + index + '-remove', field.edit.remove( owner, name, index + 1 ), () => {
 								change( items.filter( ( item, at ) => at !== index ) );
 								// The paragraph after it, which takes its place, or the button to add one.
 								later( clientId, [ fieldAt( id + '-' + ( index < items.length - 1 ? index : index - 1 ) ), buttonAt( id + '-add' ) ] );
 								/* translators: %s: a paragraph, such as "Paragraph 2". */
-								speak( sprintf( __( '%s removed.', 'firehouse' ), name ) );
+								speak( sprintf( __( '%s removed. Undo puts it back.', 'firehouse' ), name ) );
 							} )
 						);
 					} ),
@@ -493,8 +506,8 @@
 							action( clientId, id + '-add', edit.add, () => {
 								change( [ ...items, edit.empty() ] );
 								later( clientId, [ fieldAt( id + '-' + items.length + '-' + field.fields[ 0 ].key ) ] );
-								/* translators: %s: a new entry, such as "Team member 3". */
-								speak( sprintf( __( '%s added.', 'firehouse' ), sprintf( field.item, items.length + 1 ) ) );
+								// No word of its own: the new entry's empty name raises the notice
+								// that says it, as the focus moves to that name.
 							} )
 					  )
 					: null;
@@ -520,7 +533,8 @@
 						if ( ! isEntry( item ) ) {
 							return shown( name, item, field.key + '-' + index );
 						}
-						const set = ( key, next ) => change( items.map( ( one, at ) => ( at === index ? withKey( one, key, next ) : one ) ) );
+						// A field's change, and the keys it clears with it.
+						const set = ( key, next, clears ) => change( items.map( ( one, at ) => ( at === index ? withKey( ( clears || [] ).reduce( ( kept, gone ) => withKey( kept, gone, undefined ), one ), key, next ) : one ) ) );
 						const actions = edit
 							? el(
 									'div',
@@ -535,7 +549,7 @@
 										const next = index < items.length - 1 ? index : index - 1;
 										later( clientId, [ fieldAt( id + '-' + next + '-' + field.fields[ 0 ].key ), buttonAt( id + '-add' ) ] );
 										/* translators: %s: an entry, such as "Team member 2". */
-										speak( sprintf( __( '%s removed.', 'firehouse' ), name ) );
+										speak( sprintf( __( '%s removed. Undo puts it back.', 'firehouse' ), name ) );
 									} )
 							  )
 							: null;
@@ -543,7 +557,7 @@
 							'fieldset',
 							{ key: field.key + '-' + index, style: GROUP },
 							el( 'legend', { style: { fontWeight: 600, padding: '0 0.25em' } }, name ),
-							shownFor( field.fields, item ).map( ( inner ) => render( inner, item[ inner.key ], ( next ) => set( inner.key, next ), '', id + '-' + index + '-' + inner.key, item, clientId ) ),
+							shownFor( field.fields, item ).map( ( inner ) => render( inner, item[ inner.key ], ( next ) => set( inner.key, next, inner.clears ), '', id + '-' + index + '-' + inner.key, item, clientId, name ) ),
 							actions
 						);
 					} ),

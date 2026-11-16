@@ -162,7 +162,10 @@ final class About_Page {
 	public static function mission( array $attributes ): string {
 		$paragraphs = '';
 		foreach ( self::strings( $attributes['paragraphs'] ?? null ) as $paragraph ) {
-			$paragraphs .= '<p>' . Markup::text( $paragraph ) . '</p>';
+			// A paragraph an editor added and left empty prints nothing.
+			if ( '' !== trim( $paragraph ) ) {
+				$paragraphs .= '<p>' . Markup::text( $paragraph ) . '</p>';
+			}
 		}
 		return sprintf(
 			'<section class="fh-about__section" aria-labelledby="about-mission"><h2 id="about-mission" class="fh-about__section-heading">%1$s</h2><div class="fh-about__prose">%2$s</div></section>',
@@ -253,7 +256,10 @@ final class About_Page {
 			$portrait = self::shows( $photo ) ? self::portrait( $photo, is_string( $member['photoAlt'] ?? null ) ? $member['photoAlt'] : '' ) : '';
 			$bio      = '';
 			foreach ( self::strings( $member['bio'] ?? null ) as $paragraph ) {
-				$bio .= '<p>' . Markup::text( $paragraph ) . '</p>';
+				// A paragraph an editor added and left empty prints nothing.
+				if ( '' !== trim( $paragraph ) ) {
+					$bio .= '<p>' . Markup::text( $paragraph ) . '</p>';
+				}
 			}
 			$cards .= sprintf(
 				'<li class="fh-person fh-glass"><div class="fh-person__head"><div class="fh-person__portrait">%1$s</div><div class="fh-person__id"><h3 class="fh-person__name">%2$s</h3></div></div><div class="fh-person__bio">%3$s</div></li>',

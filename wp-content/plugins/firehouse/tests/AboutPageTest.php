@@ -290,6 +290,35 @@ final class AboutPageTest extends WordPressTestCase {
 	}
 
 	/**
+	 * A paragraph an editor added and left empty, in the mission or a biography, prints
+	 * nothing; the others print as written.
+	 */
+	public function test_an_empty_paragraph_prints_nothing(): void {
+		Functions\when( 'wp_attachment_is_image' )->justReturn( false );
+		$mission = About_Page::mission(
+			array(
+				'heading'    => 'Mission',
+				'paragraphs' => array( 'One.', '', " \n ", 'Two.' ),
+			)
+		);
+		$this->assertStringContainsString( '<div class="fh-about__prose"><p>One.</p><p>Two.</p></div>', $mission );
+
+		$team = About_Page::team(
+			array(
+				'heading' => 'Team',
+				'members' => array(
+					array(
+						'name' => 'Ana Example',
+						'bio'  => array( '', 'Studies smoke.', ' ' ),
+					),
+				),
+			)
+		);
+		$this->assertStringContainsString( '<div class="fh-person__bio"><p>Studies smoke.</p></div>', $team );
+		$this->assertStringNotContainsString( '<p></p>', $team . $mission );
+	}
+
+	/**
 	 * The team's one mailbox is said once, trimmed, after its lead; with no address,
 	 * or one that isn't a team work address (rule 2), there's no line for it. Anything
 	 * in the address that a `mailto:` link would read as more than the address, such

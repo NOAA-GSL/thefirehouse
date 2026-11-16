@@ -1857,30 +1857,36 @@ behaves the same, and the accessibility snapshots match.
 
 Eric decided this phase's open questions on 14 November, asked one by one; each is
 marked below. He answered the questions that came up while building it on 15
-November, again one by one, choosing each time the option recommended:
+November, again one by one, choosing each time the option recommended. Those still
+to build say so:
 
 - **Email addresses in staff-typed words.** In the landing and About text fields, a
   word shaped like an email address holds the save, as an empty required word does,
-  except in the team's mailbox field (rule 2's spirit; a guide, not a control).
-- **Private.** A project without IRB approval still can't be made private (#51).
+  except in the team's mailbox field (rule 2's spirit; a guide, not a control). *To
+  build.*
+- **Private.** A project without IRB approval still can't be made private (#51), as
+  built.
 - **Paragraphs.** Editors can add and remove paragraphs in the About mission and in
-  each team member's biography.
+  each team member's biography. *Built with the team cards.*
 - **Preview.** A draft project's Publish box says Preview shows what's saved, since
-  no editor is its author (#52).
+  no editor is its author (#52). *To build.*
 - **The trash.** Another project may take a trashed project's address; a restored one
-  gets the next free address and its editor is told.
+  gets the next free address and its editor is told, as built (#51).
 - **Revisions.** The revisions comparison shows the team's fields as well as the
-  title, and the survey's labelled as not restored.
-- **Lengths.** No length limits on the team's fields.
-- **Quick Edit** is removed for topics.
+  title, and the survey's labelled as not restored. *To build.*
+- **Lengths.** No length limits on the team's fields, as built.
+- **Quick Edit** is removed for topics. *To build.*
 - **Notes.** `Page_Words` accepts `metadata` holding only a note's ID, so a note on a
-  block doesn't send the page's words back through kses.
+  block doesn't send the page's words back through kses. *To build.*
 - **The synthesis.** The Research Synthesist checks every topic area's need counts
-  against the projects each names, and Stephanie and Emily decide on its list.
+  against the projects each names, and Stephanie and Emily decide on its list. *Done
+  15 November: four counts carried over from the 17 September draft, one need with no
+  support left, and seven worded more strongly than a source; with Eric to pass on.*
 - **Portraits.** The team card's portrait picker lists the FireHouse portraits, the
   images attached to a FireHouse page and those a card already uses, not the
   Media Library: the FireHouse Editor role stays without `upload_files`. An
-  administrator uploads a new portrait and attaches it to the About page.
+  administrator uploads a new portrait and attaches it to the About page. *Built with
+  the team cards.*
 - **Order.** The team cards, then the allowed blocks and the landing page's trash
   rule; then each of the above its own change; then the synthesis screen.
 

@@ -192,8 +192,8 @@ final class BlocksTest extends WordPressTestCase {
 		Functions\when( 'get_posts' )->alias(
 			static function ( array $args ) use ( &$asked ): array {
 				if ( 'attachment' === ( $args['post_type'] ?? null ) ) {
-					$asked = $args;
-					return array( 50, 51 );
+					$asked[] = $args;
+					return isset( $args['post__in'] ) ? array() : array( 50, 51 );
 				}
 				return array( 10 );
 			}
@@ -237,8 +237,8 @@ final class BlocksTest extends WordPressTestCase {
 		Functions\when( 'wp_attachment_is_image' )->justReturn( true );
 		Functions\when( 'get_post_status' )->justReturn( 'draft' );
 		Functions\when( 'is_post_publicly_viewable' )->justReturn( false );
-		Functions\when( 'get_the_title' )->alias( static fn( int $id ): string => 'Portrait ' . $id . ' &amp; more' );
-		Functions\when( 'wp_specialchars_decode' )->alias( static fn( string $text ): string => htmlspecialchars_decode( $text, ENT_QUOTES ) );
+		// The title as stored; displayed, WordPress would have turned "--" into a dash entity.
+		Functions\when( 'get_post_field' )->alias( static fn( string $field, int $id, string $context ): string => 'raw' === $context ? 'Portrait ' . $id . " -- O'Brien & more" : 'texturized' );
 		Functions\when( 'wp_get_attachment_image_url' )->alias( static fn( int $id ): string => 'https://example.test/' . $id . '-150x150.webp' );
 		$about = new \WP_Post(
 			array(
@@ -252,19 +252,20 @@ final class BlocksTest extends WordPressTestCase {
 			array(
 				array(
 					'id'    => 50,
-					'title' => 'Portrait 50 & more',
+					'title' => "Portrait 50 -- O'Brien & more",
 					'url'   => 'https://example.test/50-150x150.webp',
 				),
 				array(
 					'id'    => 52,
-					'title' => 'Portrait 52 & more',
+					'title' => "Portrait 52 -- O'Brien & more",
 					'url'   => 'https://example.test/52-150x150.webp',
 				),
 			),
 			Blocks::portraits( $about )
 		);
-		$this->assertSame( array( 10, 11 ), $asked['post_parent__in'], 'Attached to the FireHouse pages.' );
-		$this->assertSame( 'image', $asked['post_mime_type'] );
+		$this->assertSame( array( 10, 11 ), $asked[0]['post_parent__in'], 'Attached to the FireHouse pages.' );
+		$this->assertSame( 'image', $asked[0]['post_mime_type'] );
+		$this->assertSame( array( 50, 51, 52 ), $asked[1]['post__in'], 'Every image loaded in one query.' );
 		$this->assertSame( array(), Blocks::portraits( new \WP_Post( array( 'post_type' => 'post' ) ) ), 'Not a page.' );
 		$this->assertSame( array(), Blocks::portraits( null ), 'No post.' );
 	}

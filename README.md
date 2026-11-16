@@ -473,8 +473,8 @@ nothing from the database. Each class's docblock has the detail; this is the map
     layout, links, icons and counts stay as they are, shown beside the fields, and a
     button the page doesn't have stays out. The audience cards and the steps keep the
     entries they have; the team's cards can be added, removed and moved, and the
-    mission's and each biography's paragraphs added and removed, the focus following
-    each change and screen readers told. Each card's portrait is chosen from the
+    mission's and each biography's paragraphs added and removed (one left empty prints
+    nothing), the focus following each change and screen readers told. Each card's portrait is chosen from the
     FireHouse portraits (`Blocks::portraits()`): the images attached to a FireHouse page
     and those the page's cards already use, each one the About page would show. The
     FireHouse Editor role has no Media Library; an administrator adds a portrait by
