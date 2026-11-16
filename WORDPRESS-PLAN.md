@@ -1311,7 +1311,7 @@ signed off on the frame.
     `/firehouse__trashed/about/`, as an ordinary page of GSL's theme with nothing in
     it, until the landing page is restored. Decided by Eric, 14 November: the landing
     page can't be trashed while a published page sits under it, and the notice names
-    them.*
+    them. Built 15 November (Phase 6).*
 - Description and Open Graph tags, and whether a Firehouse page's `<title>` names The
   Firehouse. *Done 12 November (`includes/class-head.php`). Decided by Eric, as GSL's
   web team, 12 November: a Firehouse page's title names both, the site's title for it
@@ -1888,7 +1888,8 @@ to build say so:
   administrator uploads a new portrait and attaches it to the About page. *Built with
   the team cards.*
 - **Order.** The team cards, then the allowed blocks and the landing page's trash
-  rule; then each of the above its own change; then the synthesis screen.
+  rule; then each of the above its own change; then the synthesis screen. *The team
+  cards, the allowed blocks and the trash rule built 15 November.*
 
 - Project and topic edit screens: survey fields read-only, editorial fields editable,
   publishing through WordPress's Publish button. *A project's slug is editable while
@@ -2036,9 +2037,42 @@ to build say so:
   italic face (Phase 4's weight work), so the browser would slant the upright one.
   Keep core text blocks out of the tree, or add the italic faces they use to
   `scripts/fetch-fonts.mjs`. *Decided: the landing and About pages accept only their
-  own FireHouse blocks, so no core block and no Custom HTML.*
+  own FireHouse blocks, so no core block and no Custom HTML. Built 15 November
+  (`includes/class-allowed-blocks.php`): every page in the tree, for everyone,
+  administrators too, including a page created under the landing page or moved
+  there, with the pages under it in any registered status, the trash included, which
+  the message names (Copilot's review, 16 November). A save is judged by the parent it
+  leaves the page with, so a limited editor, whose page keeps its parent, can't let
+  another block in by asking for another. The block editor offers only FireHouse
+  blocks there, and a save that would add anything else is refused, through the REST
+  API with a message the editor shows, by any other route by a backstop; the
+  revisions screen turns off Restore for a revision that would be refused. A save
+  that leaves a page in the tree with what it holds goes through, so a page holding
+  another block from before can still change status and have it taken out. While the
+  landing page is in the trash there's no tree, so nothing is checked, and restoring
+  it isn't checked either (below). My reading, for Eric to confirm:
+  any FireHouse block is accepted on any FireHouse page, not only the page's own (the
+  check is the layout lock's, `Page_Words::only_firehouse_blocks()`).*
 - *The landing page can't be trashed while a published page sits under it (decided;
-  Phase 4's About page note).*
+  Phase 4's About page note). Built 15 November (`Capabilities`): a published page
+  under it at any depth, below a page in the trash or any other registered status
+  too, through whose address it still opens (Copilot's review, 16 November). The Pages list's
+  Trash link and bulk action, the page's Move to Trash and the block editor's Move to
+  trash say why and name those pages, and any other route is refused too. My reading,
+  for Eric to confirm: a scheduled page counts as published, since it would open at
+  the trashed address once its time came; drafts, pending and private pages don't.
+  Left open, for Eric:*
+  - *The rule covers putting the landing page in the trash, not what follows: a draft
+    under a landing page already there can still be published, which reopens the same
+    address; and nothing under it is checked for other blocks while it's there, nor
+    when it's restored, which is the restore the moved-page check covers, at the root
+    (the Application Security Engineer agent's review, 16 November). A check on
+    `pre_untrash_post` could refuse the restore and name the pages.*
+  - *Deleting the landing page for good, skipping the trash, counts only the pages
+    under it outside the trash: one in the trash moves to the top of the site under
+    its trashed name, with any published page under it.*
+  - *A bulk trash that includes the landing page stops at it, leaving the pages before
+    it in the trash.*
 - The synthesis screen: paste, validation, the comparison against the published
   synthesis, and **Mark reviewed**. Validation includes the order: each topic area's
   needs by project count, highest first, since the About page says so (ties go by

@@ -162,22 +162,60 @@ if ( ! class_exists( 'WP_User' ) ) {
 
 if ( ! class_exists( 'WP_REST_Request' ) ) {
 	/**
-	 * A REST request: its route.
+	 * A REST request: its method, route and parameters, taken in WordPress's order.
 	 */
 	final class WP_REST_Request {
 
 		/**
-		 * Sets the route.
+		 * The parameters, from the address and the body, as set.
 		 *
-		 * @param string $route The route, such as "/wp/v2/pages/12".
+		 * @var array<string, mixed>
 		 */
-		public function __construct( private string $route = '' ) {}
+		private array $params = array();
+
+		/**
+		 * Sets the method and route. WordPress's third argument, the route's attributes,
+		 * isn't kept.
+		 *
+		 * @param string               $method     The HTTP method.
+		 * @param string               $route      The route, such as "/wp/v2/pages/12".
+		 * @param array<string, mixed> $attributes The route's attributes.
+		 */
+		public function __construct( private string $method = '', private string $route = '', array $attributes = array() ) {
+			unset( $attributes );
+		}
+
+		/**
+		 * Sets one parameter.
+		 *
+		 * @param string $key   The parameter.
+		 * @param mixed  $value Its value.
+		 */
+		public function set_param( string $key, mixed $value ): void {
+			$this->params[ $key ] = $value;
+		}
 
 		/**
 		 * The route.
 		 */
 		public function get_route(): string {
 			return $this->route;
+		}
+
+		/**
+		 * The HTTP method.
+		 */
+		public function get_method(): string {
+			return $this->method;
+		}
+
+		/**
+		 * One parameter, or null.
+		 *
+		 * @param string $key The parameter.
+		 */
+		public function get_param( string $key ): mixed {
+			return $this->params[ $key ] ?? null;
 		}
 	}
 }

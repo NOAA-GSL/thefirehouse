@@ -74,6 +74,7 @@ require_once __DIR__ . '/includes/class-markup.php';
 require_once __DIR__ . '/includes/class-not-found.php';
 require_once __DIR__ . '/includes/class-page-blocks.php';
 require_once __DIR__ . '/includes/class-page-words.php';
+require_once __DIR__ . '/includes/class-allowed-blocks.php';
 require_once __DIR__ . '/includes/class-landing-page.php';
 require_once __DIR__ . '/includes/class-about-page.php';
 require_once __DIR__ . '/includes/class-project-page.php';
@@ -178,6 +179,9 @@ require_once __DIR__ . '/includes/class-head.php';
  * - Blocks::lock_layout (`block_editor_settings_all`) locks the layout of a page in
  *   the Firehouse tree made of nothing but FireHouse blocks, and leaves every other
  *   editor's settings as they are.
+ * - Allowed_Blocks::offer (`allowed_block_types_all`) offers only the FireHouse
+ *   blocks in the editor of a page in the Firehouse tree, and leaves every other
+ *   editor's list as it is.
  *
  * From the permission and field filters (Capabilities, Meta), which run on every
  * capability check, save, sign-in and query:
@@ -193,6 +197,23 @@ require_once __DIR__ . '/includes/class-head.php';
  *   Firehouse landing page is refused, while pages outside the trash are under it, and
  *   only on the Pages screens does the refusal stop the request to say why. Any other
  *   deletion is WordPress's to decide.
+ * - Every move to the trash is checked (`pre_trash_post`), and every save that moves
+ *   a post there: only the landing page is refused, while a published or scheduled
+ *   page is under it, and only on the Pages screens does the refusal stop the request
+ *   to say why. Every REST request passes through Capabilities::refuse_rest_trash
+ *   (`rest_dispatch_request`), once its own permission check has passed: only a
+ *   request to put the landing page in the trash, while such a page is under it, is
+ *   answered, with why. Anything else is WordPress's to decide.
+ * - Every REST save of a page passes through Allowed_Blocks::refuse_rest
+ *   (`rest_pre_insert_page`), and every save of any post through
+ *   Allowed_Blocks::refuse_write (`wp_insert_post_empty_content`): only a save that
+ *   would leave a page in the Firehouse tree, by the parent the save gives it,
+ *   holding something other than FireHouse blocks is refused, unless it's a page in
+ *   the tree already keeping what it holds; and a move into the tree, while a page
+ *   under the one moved holds something else. Anything else is left as it is.
+ * - Every revision the revisions screen lists passes through
+ *   Allowed_Blocks::keep_from_restoring (`wp_prepare_revision_for_js`): only one of a
+ *   page in the Firehouse tree, which restoring would refuse, loses its Restore.
  * - Every list of a post type's revisioned meta (`wp_post_revision_meta_keys`) passes
  *   through Meta::revision_keys: only for a project or topic, and only while WordPress
  *   makes an autosave (it leaves the Firehouse fields out) or restores a revision (it
@@ -253,6 +274,7 @@ Project_Screen::hook();
 Project_Rules::hook();
 Topic_Screen::hook();
 Page_Words::hook();
+Allowed_Blocks::hook();
 Frame::hook();
 Visibility::hook();
 Blocks::hook();
