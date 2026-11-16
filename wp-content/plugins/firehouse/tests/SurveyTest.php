@@ -351,22 +351,55 @@ final class SurveyTest extends WordPressTestCase {
 			'through index.php'       => array( array( 'REQUEST_URI' => '/index.php/firehouse/submit/' ) ),
 			'another site, by origin' => array( array( 'HTTP_ORIGIN' => 'https://elsewhere.example' ) ),
 			'another site, by fetch'  => array( array( 'HTTP_SEC_FETCH_SITE' => 'cross-site' ) ),
-			'an origin with no host'  => array( array( 'HTTP_ORIGIN' => 'null' ) ),
+			'a null origin elsewhere' => array(
+				array(
+					'HTTP_ORIGIN'         => 'null',
+					'HTTP_SEC_FETCH_SITE' => 'cross-site',
+				),
+			),
+			'a neighbouring site'     => array(
+				array(
+					'HTTP_ORIGIN'         => 'https://other.example.test',
+					'HTTP_SEC_FETCH_SITE' => 'same-site',
+				),
+			),
 			'not a POST'              => array( array( 'REQUEST_METHOD' => 'PUT' ) ),
 		);
 	}
 
 	/**
-	 * The site's own page, whatever the scheme it's reached by, and a request that names
-	 * no origin, as a script's may, go on to the rest of the checks.
+	 * The site's own page goes on to the rest of the checks: by its host, whatever the
+	 * scheme it's reached by; by a browser saying it's the same origin; with an origin
+	 * of "null", which a browser sends from the site's own page when the page asks for
+	 * no referrer; or naming no origin, as a script's or an older browser's may not.
+	 *
+	 * @param array<string, string> $server What the request says of itself.
 	 */
-	public function test_a_form_sent_from_the_page_is_taken(): void {
-		$_SERVER['HTTP_ORIGIN']         = 'http://EXAMPLE.test';
-		$_SERVER['HTTP_SEC_FETCH_SITE'] = 'same-origin';
+	#[\PHPUnit\Framework\Attributes\DataProvider( 'here' )]
+	public function test_a_form_sent_from_the_page_is_taken( array $server ): void {
+		$_SERVER = $server + $_SERVER;
 		$this->assertSame( '303 https://example.test/firehouse/submit/?firehouse_sent=yes', self::send( self::good() ) );
-		unset( $_SERVER['HTTP_ORIGIN'], $_SERVER['HTTP_SEC_FETCH_SITE'] );
-		$this->assertSame( '303 https://example.test/firehouse/submit/?firehouse_sent=yes', self::send( self::good() ) );
-		$this->assertCount( 2, $this->inserted );
+		$this->assertCount( 1, $this->inserted );
+	}
+
+	/**
+	 * Requests from the Submit page itself.
+	 *
+	 * @return array<string, array{0: array<string, string>}>
+	 */
+	public static function here(): array {
+		return array(
+			'its host, another scheme'   => array( array( 'HTTP_ORIGIN' => 'http://EXAMPLE.test' ) ),
+			'the same origin'            => array( array( 'HTTP_SEC_FETCH_SITE' => 'same-origin' ) ),
+			'no referrer, by fetch'      => array(
+				array(
+					'HTTP_ORIGIN'         => 'null',
+					'HTTP_SEC_FETCH_SITE' => 'same-origin',
+				),
+			),
+			'no referrer, older browser' => array( array( 'HTTP_ORIGIN' => 'null' ) ),
+			'naming nothing'             => array( array() ),
+		);
 	}
 
 	/**

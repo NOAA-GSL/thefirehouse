@@ -131,7 +131,8 @@ final class Submission {
 			$name = (string) preg_replace( '/-\d+$/', '', $id );
 			if ( 1 === preg_match( self::HIDDEN, $text ) ) {
 				$problems[ $id ] = sprintf( '%s: holds a character that doesn’t show, perhaps from copying the text. Type that part again.', self::name( $name ) );
-			} elseif ( in_array( $name, self::PUBLIC_TEXT, true ) && Email_Shape::has_email( $text ) ) {
+			} elseif ( in_array( $name, self::PUBLIC_TEXT, true ) && ( Email_Shape::has_email( $text ) || Email_Shape::has_email( rawurldecode( $text ) ) ) ) {
+				// Decoded too: a link can carry an address as jane%40noaa.gov.
 				$problems[ $id ] = sprintf( '%s: holds an email address. Your email goes in its own question, and the site never shows it.', self::name( $name ) );
 			}
 		}

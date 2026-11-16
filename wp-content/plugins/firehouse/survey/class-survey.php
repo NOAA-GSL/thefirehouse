@@ -262,8 +262,10 @@ final class Survey {
 	/**
 	 * Whether this POST was sent to the Submit page's own address, as its permalink
 	 * spells it, and not from another site: a browser sending it from a page elsewhere
-	 * says so in `Origin` or `Sec-Fetch-Site`. A request that sends neither, as a
-	 * script may, is let through to the rest of the checks.
+	 * says so in `Sec-Fetch-Site`, or names that site in `Origin`. A request that says
+	 * neither, as a script's or an older browser's may, is let through to the rest of
+	 * the checks; so is an `Origin` of "null", which a browser sends from the site's own
+	 * page when the page asks for no referrer.
 	 *
 	 * @param \WP_Post $page The Submit page.
 	 */
@@ -279,8 +281,11 @@ final class Survey {
 		if ( 'cross-site' === $fetch ) {
 			return false;
 		}
+		if ( 'same-origin' === $fetch ) {
+			return true;
+		}
 		$origin = isset( $_SERVER['HTTP_ORIGIN'] ) && is_string( $_SERVER['HTTP_ORIGIN'] ) ? trim( sanitize_text_field( wp_unslash( $_SERVER['HTTP_ORIGIN'] ) ) ) : '';
-		if ( '' === $origin ) {
+		if ( '' === $origin || 'null' === $origin ) {
 			return true;
 		}
 		// The host alone: a site behind a proxy may not know its own scheme.

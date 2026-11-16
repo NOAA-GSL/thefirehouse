@@ -94,15 +94,17 @@ the survey form's answers, below, the plugin stores only what the site publishes
 The survey form at /firehouse/submit/ is off until an administrator ticks Accept
 submissions under FireHouse → Settings; only an administrator can change it. While
 it's on, each submission is kept as a draft project, unpublished until a FireHouse
-Editor publishes it. Three of its answers are private: the submitter's email, their
+Editor or an administrator publishes it; one without IRB approval never is. Three of
+its answers are private: the submitter's email, their
 job title, and how they've shared their results. They're kept apart from the
 project, in one protected field, and shown only on the project's edit screen, to
 FireHouse Editors and the site's administrators. They never appear on a page, in the
 REST API, in a revision or in WordPress's export (Tools → Export). They stay until
 someone deletes the project; when they should be deleted is a decision for NOAA's
 privacy review, and WordPress's personal-data export and erase tools don't find them
-yet. The plugin keeps nothing about the people who visit or send the form: no IP
-address, no cookie of its own. The form sends nothing to another site.
+yet. Beyond what a submission says, the plugin keeps no record of the people who
+visit or send the form: no IP address, no cookie of its own. The form sends nothing
+to another site.
 
 Deactivating the plugin keeps the FireHouse Editor role, which can then only sign in.
 Deleting the plugin removes the role and the plugin's capabilities, and users who had

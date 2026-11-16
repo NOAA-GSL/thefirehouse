@@ -148,6 +148,9 @@ final class SubmissionTest extends WordPressTestCase {
 		$problems = Submission::check( array( 'links' => array( 'https://example.org/data', 'https://example.org/report?contact=jane.doe@noaa.gov' ) ) + self::good() );
 		$this->assertSame( array( 'links-2' ), array_keys( $problems ) );
 		$this->assertSame( 'The links: holds an email address. Your email goes in its own question, and the site never shows it.', $problems['links-2'] );
+
+		$encoded = Submission::check( array( 'links' => array( 'https://example.org/report?contact=jane.doe%40noaa.gov' ) ) + self::good() );
+		$this->assertSame( array( 'links-1' ), array_keys( $encoded ), 'Written with %40 for the @.' );
 	}
 
 	/**
