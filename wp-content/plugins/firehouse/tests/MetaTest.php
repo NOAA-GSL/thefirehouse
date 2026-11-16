@@ -108,14 +108,14 @@ final class MetaTest extends WordPressTestCase {
 	 * @param string   $post_type The post type.
 	 * @param string[] $expected  The keys left.
 	 */
-	public function test_the_revisioned_keys_are_narrowed_where_written_back( string $doing, string $post_type, array $expected ): void {
+	public function test_the_revisioned_keys_are_narrowed_where_written_back_or_previewed( string $doing, string $post_type, array $expected ): void {
 		Functions\when( 'doing_action' )->alias( static fn( string $action ): bool => $doing === $action );
 		Functions\when( 'doing_filter' )->alias( static fn( string $filter ): bool => $doing === $filter );
 		$this->assertSame( $expected, Meta::revision_keys( array( 'fh_summary', 'other_key', 'fh_org', 'fh_reviewedBy' ), $post_type ) );
 	}
 
 	/**
-	 * The action under way, the post type, and the keys left.
+	 * The action or filter under way, the post type, and the keys left.
 	 *
 	 * @return array<string, array{0: string, 1: string, 2: string[]}>
 	 */

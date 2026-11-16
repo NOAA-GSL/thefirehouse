@@ -219,9 +219,10 @@ require_once __DIR__ . '/includes/class-head.php';
  *   page in the Firehouse tree, which restoring would refuse, loses its Restore.
  * - Every list of a post type's revisioned meta (`wp_post_revision_meta_keys`) passes
  *   through Meta::revision_keys: only for a project or topic, and only while WordPress
- *   makes an autosave (it leaves the Firehouse fields out) or restores a revision (it
- *   leaves a project's survey fields out), does it change. Other post types' lists,
- *   and every list anywhere else, are left as they are.
+ *   makes an autosave or reads a field (`get_post_metadata`, as a preview does: it
+ *   leaves the Firehouse fields out, so a preview reads the post's own) or restores a
+ *   revision (it leaves a project's survey fields out), does it change. Other post
+ *   types' lists, and every list anywhere else, are left as they are.
  * - Every save of any post passes through Capabilities::keep_in_place
  *   (`wp_insert_post_data`): a topic keeps its key and status, and a project or topic
  *   has no author, except in the plugin's own writes; a limited editor's page keeps

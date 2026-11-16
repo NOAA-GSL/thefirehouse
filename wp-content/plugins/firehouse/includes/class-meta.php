@@ -110,7 +110,7 @@ final class Meta {
 
 	/**
 	 * The revisioned keys of a project or topic, narrowed where WordPress would write
-	 * them back:
+	 * them back or read them from an autosave:
 	 *
 	 * - While it makes an autosave, none, so it copies none from the request into the
 	 *   autosave. The edit screen's own form never sends a field under its meta key,
@@ -118,12 +118,15 @@ final class Meta {
 	 *   write, is stopped.
 	 * - While it restores a revision, only the fields restored() names, so a restore
 	 *   never rolls back a survey field.
-	 * - While it reads a field for a preview (_wp_preview_meta_filter(), on
-	 *   get_post_metadata), none, so a preview shows the post's own fields, as the
-	 *   edit screens' preview notes say. WordPress would read the field from the
-	 *   autosave instead and, the field being single, keep only a list's first item
-	 *   and nothing of an object (a warning in meta.php). And the autosave's copy is
-	 *   the post's from when the autosave was made, never brought up to date.
+	 * - While any get_post_metadata callback runs, none. In WordPress the only one that
+	 *   asks for these keys is a preview's (_wp_preview_meta_filter()), so a preview
+	 *   shows the post's own fields, as the edit screens' preview notes say. WordPress
+	 *   would read the field from the autosave instead and, the field being single,
+	 *   keep only a list's first item and nothing of an object (a warning in
+	 *   meta.php). And the autosave's copy is the post's from when the autosave was
+	 *   made, never brought up to date. A revision saved or restored inside some other
+	 *   plugin's get_post_metadata callback would hold or restore no field; nothing in
+	 *   WordPress or the plugin does that.
 	 *
 	 * Everywhere else, saving a revision included, every field is kept.
 	 *
