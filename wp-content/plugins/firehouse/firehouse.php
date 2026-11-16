@@ -72,6 +72,7 @@ require_once __DIR__ . '/includes/class-import-screen.php';
 require_once __DIR__ . '/includes/class-synthesis-screen.php';
 require_once __DIR__ . '/survey/class-questions.php';
 require_once __DIR__ . '/survey/class-submission.php';
+require_once __DIR__ . '/survey/class-doi-lookup.php';
 require_once __DIR__ . '/survey/class-form.php';
 require_once __DIR__ . '/survey/class-survey.php';
 require_once __DIR__ . '/includes/class-edit-screen.php';

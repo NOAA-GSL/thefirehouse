@@ -97,7 +97,15 @@ WordPress's export (Tools → Export). They stay until someone deletes the proje
 when they should be deleted is a decision for NOAA's privacy review, and WordPress's
 personal-data export and erase tools don't find them yet. Beyond what a submission
 says, the plugin keeps no record of the people who visit or send the form: no IP
-address, no cookie of its own. The form sends nothing to another site.
+address, no cookie of its own.
+
+When a submission is saved, the server looks up the title of each paper given by its
+DOI (see External services), and tells the FireHouse team's mailbox
+(gsl.firehouse@noaa.gov), through the site's own mail, that a submission has arrived,
+with a link to its draft. That email is fixed text: nothing the submitter typed is
+in it, private or not. A developer can send it elsewhere, or stop it, with the
+`firehouse_survey_notify` filter; return "" to send none. The submitter is sent
+nothing; the page they're taken to thanks them.
 
 = Deactivating and deleting =
 
@@ -144,9 +152,10 @@ look in any theme.
 
 = Does it contact other sites? =
 
-Only through the visitor's browser, for the coverage map's basemap tiles: see External
-services. The plugin's own code on the server makes no request to another site, and
-its fonts, icons and scripts are served from the plugin.
+Twice: the visitor's browser loads the coverage map's basemap tiles from Esri, and
+the server looks up a paper's title by its DOI when a survey form submission gives
+one. See External services. The plugin's code on the server makes no other request to
+another site, and its fonts, icons and scripts are served from the plugin.
 
 = Who can change what? =
 
@@ -191,7 +200,12 @@ Editors keep it up to date in the dashboard.
 
 == External services ==
 
-The coverage map is the plugin's one outside service. Its basemap tiles come from
+The plugin uses two outside services: the coverage map's basemap tiles, which the
+visitor's browser loads, and DOI lookups, which the server makes for the survey form.
+
+= The coverage map's tiles =
+
+Its basemap tiles come from
 Esri (server.arcgisonline.com). On every view of the landing page with JavaScript (or
 of any page the coverage map block is placed on), without the visitor scrolling to
 the map or using it, the page's script has the browser connect to Esri as it starts
@@ -218,6 +232,29 @@ The tiles are Esri's World Light Gray Canvas and World Dark Gray Canvas basemaps
 terms of use: https://www.esri.com/en-us/legal/terms/master-agreement. Esri's privacy
 statement: https://www.esri.com/en-us/privacy/privacy-statements/privacy-statement.
 
+= DOI lookups =
+
+When the survey form saves a submission that gives a paper by its DOI (typed, in a
+doi.org address, or in a Zenodo record's address), the server asks doi.org for that
+paper's citation metadata, so the project's page can show its title, journal and
+year. doi.org sends the request on to the metadata service of the agency that
+registered the DOI: Crossref (api.crossref.org) or DataCite (data.crosscite.org).
+Each request carries the DOI, a request for citation metadata, and the plugin's name
+as its user agent; it comes from the site's server, so these services see the
+server's address, never the submitter's or a visitor's, and nothing else the
+submitter typed. A redirect to any other host is refused, and a link without a DOI is
+never fetched. A lookup has a few seconds; one that fails leaves the paper without a
+title, and the submission is saved all the same. There is no setting to turn the
+lookups off.
+
+The DOI Foundation's privacy policy, which says it logs each DOI looked up and the
+address asking: https://www.doi.org/privacy-policy. Crossref's privacy policy:
+https://www.crossref.org/operations-and-sustainability/privacy/, and its REST API's
+documentation, which sets out how it may be used:
+https://www.crossref.org/documentation/retrieve-metadata/rest-api/. DataCite's privacy
+policy: https://datacite.org/privacy-policy/, and its content negotiation
+documentation: https://support.datacite.org/docs/doi-content-negotiation.
+
 == Changelog ==
 
 = Unreleased =
@@ -241,8 +278,8 @@ one is.
   each, with a count for every region and the projects filed under the one chosen.
   With JavaScript, a choice on the map or in the list changes the page in place, and
   the address with it. Without it, the list works alone, and the map isn't shown. The
-  map's basemap tiles are the plugin's one outside service: the visitor's browser
-  loads them from Esri (see External services). A landing page imported before this
+  map's basemap tiles are an outside service: the visitor's browser loads them from
+  Esri (see External services). A landing page imported before this
   doesn't have that section: add `<!-- wp:firehouse/coverage-map /-->` before its
   submit band in the block editor's Code editor.
 * The About page, created by the Import screen under the landing page when there's
@@ -364,6 +401,10 @@ one is.
   project, with the submitter's email, job title and how they shared their results kept
   apart, for FireHouse Editors and administrators only, and left out of WordPress's
   export. It takes a form sent only to its own address from the site's own pages.
+* A survey form submission's papers given by DOI get their title, journal and year
+  from doi.org, as the import gets them, and the team mailbox is told of each
+  submission with a link to its draft and nothing the submitter typed (see External
+  services and The survey form).
 
 = 0.2.0 =
 * Project and topic post types at the Firehouse addresses, with their fields as post
