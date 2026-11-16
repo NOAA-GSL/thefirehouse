@@ -33,10 +33,11 @@ final class Frame {
 	/**
 	 * Style handles, in load order.
 	 */
-	public const FONTS = 'firehouse-fonts';
-	public const STYLE = 'firehouse';
-	public const MAP   = 'firehouse-coverage-map';
-	public const FRAME = 'firehouse-frame';
+	public const FONTS  = 'firehouse-fonts';
+	public const STYLE  = 'firehouse';
+	public const MAP    = 'firehouse-coverage-map';
+	public const SURVEY = 'firehouse-survey';
+	public const FRAME  = 'firehouse-frame';
 
 	/**
 	 * The class every Firehouse page's body carries, which frame.css keys on.
@@ -210,6 +211,9 @@ final class Frame {
 		$page = is_page() ? get_post() : null;
 		if ( $page instanceof \WP_Post && has_block( 'firehouse/coverage-map', $page ) ) {
 			self::style( self::MAP, 'coverage-map' . wp_scripts_get_suffix() . '.css', array( self::STYLE ) );
+		}
+		if ( $page instanceof \WP_Post && has_block( 'firehouse/survey-form', $page ) ) {
+			self::style( self::SURVEY, 'survey.css', array( self::STYLE ) );
 		}
 		self::style( self::FRAME, 'frame.css', array( self::STYLE ) );
 	}

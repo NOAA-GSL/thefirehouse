@@ -361,7 +361,7 @@ final class FrameTest extends WordPressTestCase {
 		Functions\when( 'has_block' )->alias(
 			static function ( string $name, \WP_Post $post ) use ( &$asked ): bool {
 				$asked[] = array( $name, $post->ID );
-				return str_contains( $post->post_content, '<!-- wp:firehouse/coverage-map /-->' );
+				return str_contains( $post->post_content, '<!-- wp:' . $name . ' /-->' );
 			}
 		);
 		$page   = static fn( int $id, bool $map ): \WP_Post => new \WP_Post(

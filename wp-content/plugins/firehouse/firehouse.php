@@ -11,6 +11,7 @@
  * License:           Apache-2.0
  * License URI:       https://www.apache.org/licenses/LICENSE-2.0
  * Text Domain:       firehouse
+ * Update URI:        https://github.com/NOAA-GSL/thefirehouse
  *
  * Registers the project and topic post types and their fields at the Firehouse
  * addresses, the FireHouse Editor role, and the Firehouse settings, Import, project and
@@ -23,7 +24,9 @@
  * holds what does. The comment above the hook calls below lists where the plugin acts
  * beyond the Firehouse pages.
  * WORDPRESS-PLAN.md in the repository describes what this plugin becomes, phase by
- * phase.
+ * phase. Update URI names a host that isn't WordPress.org, so WordPress never offers
+ * an update from there, even if another plugin is listed as firehouse; the plugin is
+ * updated by uploading a reviewed zip (wordpress-org/README.md).
  *
  * @package Firehouse
  */
@@ -67,6 +70,10 @@ require_once __DIR__ . '/includes/class-seed-bundle.php';
 require_once __DIR__ . '/includes/class-importer.php';
 require_once __DIR__ . '/includes/class-import-screen.php';
 require_once __DIR__ . '/includes/class-synthesis-screen.php';
+require_once __DIR__ . '/survey/class-questions.php';
+require_once __DIR__ . '/survey/class-submission.php';
+require_once __DIR__ . '/survey/class-form.php';
+require_once __DIR__ . '/survey/class-survey.php';
 require_once __DIR__ . '/includes/class-edit-screen.php';
 require_once __DIR__ . '/includes/class-project-screen.php';
 require_once __DIR__ . '/includes/class-project-rules.php';
@@ -169,6 +176,15 @@ require_once __DIR__ . '/includes/class-head.php';
  *   the `firehouse_head_tags` filter says no. Head::robots (`wp_robots`) asks search
  *   engines not to index the explorer at an address with a query, and changes nothing
  *   anywhere else.
+ * - Survey\Survey::handle (template_redirect, early) returns at once on anything but a
+ *   page, and does nothing on any page but the FireHouse Submit page. There it keeps
+ *   the page out of caches and handles a sent form. Survey\Survey::document_title
+ *   (`pre_get_document_title`, after Head's) puts "Error:" or "Thank you:" in front of
+ *   that page's title after a send, and changes no other title.
+ * - Survey\Survey::skip_in_export (`wxr_export_skip_postmeta`, Tools → Export) leaves
+ *   out one field, the survey form's private answers, and every other as it was.
+ * - Survey\Survey::opened runs whenever the FireHouse settings are added or updated:
+ *   while the form is open and there's no Submit page, it makes one.
  *
  * In every block editor on the site (for any post or page, the site editor and the
  * widgets), on enqueue_block_editor_assets:
@@ -219,9 +235,10 @@ require_once __DIR__ . '/includes/class-head.php';
  *   page in the Firehouse tree, which restoring would refuse, loses its Restore.
  * - Every list of a post type's revisioned meta (`wp_post_revision_meta_keys`) passes
  *   through Meta::revision_keys: only for a project or topic, and only while WordPress
- *   makes an autosave (it leaves the Firehouse fields out) or restores a revision (it
- *   leaves a project's survey fields out), does it change. Other post types' lists,
- *   and every list anywhere else, are left as they are.
+ *   makes an autosave or reads a field (`get_post_metadata`, as a preview does: it
+ *   leaves the Firehouse fields out, so a preview reads the post's own) or restores a
+ *   revision (it leaves a project's survey fields out), does it change. Other post
+ *   types' lists, and every list anywhere else, are left as they are.
  * - Every save of any post passes through Capabilities::keep_in_place
  *   (`wp_insert_post_data`): a topic keeps its key and status, and a project or topic
  *   has no author, except in the plugin's own writes; a limited editor's page keeps
@@ -278,6 +295,7 @@ Installer::hook( __FILE__ );
 Settings::hook();
 Import_Screen::hook();
 Synthesis_Screen::hook();
+Survey\Survey::hook();
 Project_Screen::hook();
 Project_Rules::hook();
 Topic_Screen::hook();

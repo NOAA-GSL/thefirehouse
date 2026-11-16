@@ -1,0 +1,182 @@
+/*
+ * The survey form on the Submit page (survey/class-form.php). Loaded after
+ * firehouse.css on a page holding the `firehouse/survey-form` block only
+ * (includes/class-frame.php). Written by hand, not generated: the React site has no
+ * form. Its fields are the design system's (`fh-field`, src/design-system/Field.css);
+ * these rules lay out the page around them. Every rule stays inside the wrapper.
+ */
+
+.fh-app .fh-survey {
+  padding-block: var(--space-2xl) var(--space-4xl);
+}
+
+.fh-app .fh-survey__inner {
+  max-width: 760px;
+  margin: 0 auto;
+  padding-inline: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.fh-app .fh-survey__heading {
+  font: var(--text-h1);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.fh-app .fh-survey__notice,
+.fh-app .fh-survey__group,
+.fh-app .fh-survey__problems,
+.fh-app .fh-survey__done {
+  background: var(--glass-panel);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+}
+
+.fh-app .fh-survey__notice h2,
+.fh-app .fh-survey__problems h2 {
+  font: var(--text-h3);
+  color: var(--color-text-primary);
+  margin: var(--space-md) 0 var(--space-xs);
+}
+
+.fh-app .fh-survey__notice h2:first-of-type,
+.fh-app .fh-survey__problems h2 {
+  margin-top: 0;
+}
+
+.fh-app .fh-survey__notice p,
+.fh-app .fh-survey__notice li,
+.fh-app .fh-survey__done p {
+  font: var(--text-body);
+  color: var(--color-text-secondary);
+}
+
+.fh-app .fh-survey__welcome {
+  font: var(--text-h4);
+  color: var(--color-text-primary);
+}
+
+.fh-app .fh-survey__problems {
+  border: 2px solid var(--color-error-text);
+  background: var(--color-error-bg);
+}
+
+.fh-app .fh-survey__problems a {
+  color: var(--color-error-text);
+  text-decoration: underline;
+}
+
+.fh-app .fh-survey__problems:focus,
+.fh-app .fh-survey__done:focus,
+.fh-app .fh-survey__group:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* A text box's edge at 3:1 against the panels behind it (WCAG 2.1 1.4.11), which the
+   design system's field border isn't on glass. A box in error keeps its own. */
+.fh-app .fh-survey .fh-field__control:not(.fh-field__control--error) {
+  border-color: var(--glass-control-border);
+}
+
+/* Reached from the problems' summary, a field or group stops below the sticky
+   FireHouse bar (65px), its label in view. */
+.fh-app .fh-survey .fh-field__control,
+.fh-app .fh-survey__group {
+  scroll-margin-top: calc(65px + 3em);
+}
+
+/* An entry's Add and Remove buttons name the entry, and wrap rather than run out of
+   the panel on a narrow screen or with wider text spacing (1.4.10, 1.4.12). */
+.fh-app .fh-survey .fh-btn {
+  white-space: normal;
+  text-align: start;
+  max-width: 100%;
+}
+
+.fh-app .fh-survey__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.fh-app .fh-survey__group {
+  margin: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.fh-app .fh-survey__group legend {
+  float: left;
+  width: 100%;
+  margin-bottom: var(--space-xs);
+}
+
+.fh-app .fh-survey__option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-xs);
+  font: var(--text-body);
+  color: var(--color-text-primary);
+}
+
+.fh-app .fh-survey__option input {
+  margin-top: 4px;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-brand-primary);
+}
+
+.fh-app .fh-survey__option input:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.fh-app .fh-survey__entry {
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--color-border);
+}
+
+.fh-app .fh-survey__remove {
+  align-self: flex-start;
+}
+
+.fh-app .fh-survey__send {
+  margin: 0;
+}
+
+/* The glass panels' accessibility fallbacks (firehouse.css's .fh-glass): opaque when
+   someone has asked for less transparency or more contrast. */
+@media (prefers-reduced-transparency: reduce) {
+  .fh-app .fh-survey__notice,
+  .fh-app .fh-survey__group,
+  .fh-app .fh-survey__done {
+    background: var(--color-bg-surface);
+    border-color: var(--color-border);
+  }
+}
+
+@media (prefers-contrast: more) {
+  .fh-app .fh-survey__notice,
+  .fh-app .fh-survey__group,
+  .fh-app .fh-survey__done {
+    background: var(--color-bg-surface);
+    border-color: var(--color-text-secondary);
+  }
+}
+
+/* The field people don't see, which a bot fills: off the screen and out of the
+   accessibility tree, but not display:none, which some bots skip. */
+.fh-app .fh-survey__trap {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}

@@ -203,4 +203,19 @@ final class HooksTest extends WordPressTestCase {
 
 		Verbatim::hook();
 	}
+
+	/**
+	 * The survey form's handler runs before anything is drawn, its title after Head's,
+	 * and WordPress's export is told to leave the private answers out (rule 2): without
+	 * that filter, Tools → Export would write them into its file.
+	 */
+	public function test_the_survey_hooks(): void {
+		Actions\expectAdded( 'template_redirect' )->once()->with( array( \Firehouse\Survey\Survey::class, 'handle' ), 1, 1 );
+		Actions\expectAdded( 'add_option_' . Settings::OPTION )->once()->with( array( \Firehouse\Survey\Survey::class, 'opened' ), 10, 1 );
+		Actions\expectAdded( 'update_option_' . Settings::OPTION )->once()->with( array( \Firehouse\Survey\Survey::class, 'opened' ), 10, 1 );
+		Filters\expectAdded( 'wxr_export_skip_postmeta' )->once()->with( array( \Firehouse\Survey\Survey::class, 'skip_in_export' ), 10, 2 );
+		Filters\expectAdded( 'pre_get_document_title' )->once()->with( array( \Firehouse\Survey\Survey::class, 'document_title' ), 20, 1 );
+
+		\Firehouse\Survey\Survey::hook();
+	}
 }
