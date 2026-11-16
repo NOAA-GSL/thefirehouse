@@ -24,7 +24,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * only their labels are settings.
  *
  * Firehouse Editors can change them, through their own capability rather than
- * manage_options, which would open every setting on the site.
+ * manage_options, which would open every setting on the site; all but the switch that
+ * opens the survey form, which takes manage_options, an administrator's.
  */
 final class Settings {
 
@@ -32,6 +33,11 @@ final class Settings {
 	 * The option, and the settings group.
 	 */
 	public const OPTION = 'firehouse_settings';
+
+	/**
+	 * The capability that opens and closes the survey form: an administrator's.
+	 */
+	public const OPEN_SURVEY = 'manage_options';
 
 	/**
 	 * The screen's slug.
@@ -68,13 +74,14 @@ final class Settings {
 	 * The settings before anyone has saved them: the React site's wording. The submit
 	 * address has no default, so a site can't point at a wrong one.
 	 *
-	 * @return array{siteName: string, submitLabel: string, submitFormUrl: string, navLabels: array<string, string>}
+	 * @return array{siteName: string, submitLabel: string, submitFormUrl: string, surveyOpen: bool, navLabels: array<string, string>}
 	 */
 	public static function defaults(): array {
 		return array(
 			'siteName'      => 'The FireHouse',
 			'submitLabel'   => 'Submit a Finding',
 			'submitFormUrl' => '',
+			'surveyOpen'    => false,
 			'navLabels'     => array(
 				'home'     => 'Home',
 				'projects' => 'Explore Projects',
@@ -84,14 +91,32 @@ final class Settings {
 	}
 
 	/**
-	 * The settings: what is stored, over the defaults. Anything stored that isn't a
-	 * setting is left out, and so is a survey address the screen would refuse, which
-	 * only a write that skipped it could have stored: the public pages show no Submit
-	 * button rather than one that goes nowhere (rule 6).
+	 * The settings as the pages use them: what is stored, except that while the survey
+	 * form takes submissions and its page exists, the survey address is that page's,
+	 * so every Submit a Finding button leads to it.
 	 *
-	 * @return array{siteName: string, submitLabel: string, submitFormUrl: string, navLabels: array<string, string>}
+	 * @return array{siteName: string, submitLabel: string, submitFormUrl: string, surveyOpen: bool, navLabels: array<string, string>}
 	 */
 	public static function get(): array {
+		$settings = self::stored();
+		if ( $settings['surveyOpen'] ) {
+			$page = Survey\Survey::page();
+			if ( null !== $page ) {
+				$settings['submitFormUrl'] = (string) get_permalink( $page );
+			}
+		}
+		return $settings;
+	}
+
+	/**
+	 * The settings as stored, over the defaults. Anything stored that isn't a setting is
+	 * left out, and so is a survey address the screen would refuse, which only a write
+	 * that skipped it could have stored: the public pages show no Submit button rather
+	 * than one that goes nowhere (rule 6).
+	 *
+	 * @return array{siteName: string, submitLabel: string, submitFormUrl: string, surveyOpen: bool, navLabels: array<string, string>}
+	 */
+	public static function stored(): array {
 		$defaults = self::defaults();
 		$stored   = get_option( self::OPTION, array() );
 		if ( ! is_array( $stored ) ) {
@@ -106,6 +131,7 @@ final class Settings {
 		if ( '' !== ( $stored['submitFormUrl'] ?? '' ) ) {
 			$settings['submitFormUrl'] = self::https_url( $stored['submitFormUrl'] ) ?? '';
 		}
+		$settings['surveyOpen'] = true === ( $stored['surveyOpen'] ?? false );
 		foreach ( array_keys( self::NAV ) as $key ) {
 			if ( is_string( $stored['navLabels'][ $key ] ?? null ) ) {
 				$settings['navLabels'][ $key ] = $stored['navLabels'][ $key ];
@@ -141,7 +167,14 @@ final class Settings {
 
 		add_settings_section( 'firehouse_submit', __( 'Submit a Finding', 'firehouse' ), '__return_null', self::PAGE );
 		self::add_field( 'firehouse_submit', array( 'submitLabel' ), __( 'Button label', 'firehouse' ), __( 'The words on the Submit a Finding button in the FireHouse bar and on the topic pages. The buttons on the landing and About pages keep the words stored with those pages.', 'firehouse' ) );
-		self::add_field( 'firehouse_submit', array( 'submitFormUrl' ), __( 'Survey address', 'firehouse' ), __( 'Where every Submit a Finding button goes: the survey form. It must start with https://.', 'firehouse' ), 'url' );
+		self::add_field( 'firehouse_submit', array( 'submitFormUrl' ), __( 'Survey address', 'firehouse' ), __( 'Where every Submit a Finding button goes while the FireHouse survey form doesn’t accept submissions: the survey form used until then. It must start with https://.', 'firehouse' ), 'url' );
+		add_settings_field(
+			self::field_id( array( 'surveyOpen' ) ),
+			__( 'Survey form', 'firehouse' ),
+			array( self::class, 'survey_field' ),
+			self::PAGE,
+			'firehouse_submit'
+		);
 
 		add_settings_section( 'firehouse_nav', __( 'Navigation', 'firehouse' ), array( self::class, 'nav_section' ), self::PAGE );
 		self::add_field( 'firehouse_nav', array( 'navLabels', 'home' ), __( 'Home link', 'firehouse' ), __( 'Goes to the FireHouse landing page.', 'firehouse' ) );
@@ -238,6 +271,30 @@ final class Settings {
 	}
 
 	/**
+	 * Draws the switch that opens the FireHouse survey form, with the mark that the
+	 * screen sent it.
+	 */
+	public static function survey_field(): void {
+		$id      = self::field_id( array( 'surveyOpen' ) );
+		$may     = current_user_can( self::OPEN_SURVEY );
+		$details = __( 'The FireHouse survey form at /firehouse/submit/ takes submissions, and every Submit a Finding button leads to it; turning this on creates that page if it’s missing. Leave it off on gsl.noaa.gov until the privacy review and the Paperwork Reduction Act answer are in hand.', 'firehouse' );
+		if ( $may ) {
+			printf( '<input type="hidden" name="%s" value="1" />', esc_attr( self::OPTION . '[surveyOpenShown]' ) );
+		} else {
+			$details .= ' ' . __( 'Only an administrator can change this.', 'firehouse' );
+		}
+		printf(
+			'<label for="%1$s"><input type="checkbox" id="%1$s" name="%2$s" value="1" aria-describedby="%1$s-description"%3$s%4$s /> %5$s</label>',
+			esc_attr( $id ),
+			esc_attr( self::OPTION . '[surveyOpen]' ),
+			checked( self::stored()['surveyOpen'], true, false ),
+			$may ? '' : ' disabled',
+			esc_html__( 'Accept submissions', 'firehouse' )
+		);
+		printf( '<p class="description" id="%1$s-description">%2$s</p>', esc_attr( $id ), esc_html( $details ) );
+	}
+
+	/**
 	 * Draws one text field, its label pointing at it and its description tied to it.
 	 *
 	 * @param array{path: string[], description: string, type: string} $args The field.
@@ -247,7 +304,7 @@ final class Settings {
 
 		$id        = self::field_id( $args['path'] );
 		$error     = self::errors()[ $id ] ?? null;
-		$value     = self::$rejected[ $id ] ?? self::value_at( self::get(), $args['path'] );
+		$value     = self::$rejected[ $id ] ?? self::value_at( self::stored(), $args['path'] );
 		$described = null === $error ? $id . '-description' : $id . '-error ' . $id . '-description';
 		$state     = '';
 		if ( null !== $error ) {
@@ -276,7 +333,7 @@ final class Settings {
 	 * show it again.
 	 *
 	 * @param mixed $input The submitted settings.
-	 * @return array{siteName: string, submitLabel: string, submitFormUrl: string, navLabels: array<string, string>}
+	 * @return array{siteName: string, submitLabel: string, submitFormUrl: string, surveyOpen: bool, navLabels: array<string, string>}
 	 */
 	public static function sanitize( mixed $input ): array {
 		list( $settings, $errors ) = self::validate( $input );
@@ -292,18 +349,18 @@ final class Settings {
 			}
 		}
 		set_transient( self::rejected_key(), self::typed( $input ), MINUTE_IN_SECONDS );
-		return self::get();
+		return self::stored();
 	}
 
 	/**
 	 * Checks settings, from the screen or the Import screen, without saving them.
 	 *
 	 * @param mixed $input The settings to check.
-	 * @return array{0: array{siteName: string, submitLabel: string, submitFormUrl: string, navLabels: array<string, string>}, 1: array<string, string>}
+	 * @return array{0: array{siteName: string, submitLabel: string, submitFormUrl: string, surveyOpen: bool, navLabels: array<string, string>}, 1: array<string, string>}
 	 *         The settings, with each valid field changed; and each error, by field ID.
 	 */
 	public static function validate( mixed $input ): array {
-		$settings = self::get();
+		$settings = self::stored();
 		$errors   = array();
 		if ( ! is_array( $input ) ) {
 			return array( $settings, $errors );
@@ -332,6 +389,13 @@ final class Settings {
 			$errors[ self::field_id( array( 'submitFormUrl' ) ) ] = __( 'Survey address has to be a web address that starts with https://.', 'firehouse' );
 		} else {
 			$settings['submitFormUrl'] = $url;
+		}
+		// Only the settings screen sends the switch, with a mark that it did: an unticked
+		// box sends nothing, and the Import screen's settings have no switch to keep.
+		// Only an administrator changes it: opening the form starts collecting people's
+		// details, which waits on the privacy review and the PRA answer.
+		if ( isset( $input['surveyOpenShown'] ) && current_user_can( self::OPEN_SURVEY ) ) {
+			$settings['surveyOpen'] = '1' === ( $input['surveyOpen'] ?? null );
 		}
 		foreach ( array_keys( self::NAV ) as $key ) {
 			$text = self::text( $input['navLabels'][ $key ] ?? null );

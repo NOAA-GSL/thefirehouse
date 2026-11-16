@@ -80,14 +80,31 @@ The Import screen keeps nothing it doesn't import: the uploaded file isn't saved
 the checked content waits briefly for the confirmation and is then cleared. The
 synthesis screen keeps a checked synthesis for at most thirty minutes; an edit screen
 keeps refused input for five minutes, and the settings screen for one; a refused
-publish's notice waits an hour; each only for the person it's for. The plugin
-stores only what the site publishes.
+publish's notice waits an hour; each only for the person it's for. Apart from
+the survey form's answers, below, the plugin stores only what the site publishes.
+
+= The survey form =
+
+The survey form at /firehouse/submit/ is off until an administrator ticks Accept
+submissions under FireHouse → Settings; only an administrator can change it. While
+it's on, each submission is kept as a draft project, unpublished until a FireHouse
+Editor or an administrator publishes it; one without IRB approval never is. Three of
+its answers are private: the submitter's email, their job title, and how they've
+shared their results. They're kept apart from the project, in one protected field,
+and shown only on the project's edit screen, to FireHouse Editors and the site's
+administrators. They never appear on a page, in the REST API, in a revision or in
+WordPress's export (Tools → Export). They stay until someone deletes the project;
+when they should be deleted is a decision for NOAA's privacy review, and WordPress's
+personal-data export and erase tools don't find them yet. Beyond what a submission
+says, the plugin keeps no record of the people who visit or send the form: no IP
+address, no cookie of its own. The form sends nothing to another site.
 
 = Deactivating and deleting =
 
 Deactivating the plugin keeps the FireHouse Editor role, which can then only sign in.
 Deleting the plugin removes the role and the plugin's capabilities, and users who had
-the role are left with no role on the site. The content stays.
+the role are left with no role on the site. The content stays, the survey form's
+draft projects and their private answers included.
 
 An update that changes the role or its capabilities applies the role, and the
 administrators' FireHouse capabilities, as the plugin defines them, so a change made
@@ -133,9 +150,10 @@ its fonts, icons and scripts are served from the plugin.
 
 = Who can change what? =
 
-Administrators can do everything, and only they can import. FireHouse Editors can edit
-and publish projects and topic areas, change the words on the landing and About pages,
-change the FireHouse settings, and publish a reviewed synthesis. They can't change the
+Administrators can do everything, and only they can import or open the survey form.
+FireHouse Editors can edit and publish projects and topic areas, change the words on
+the landing and About pages, change the other FireHouse settings, and publish a
+reviewed synthesis. They can't change the
 site's other posts, pages or menus, add or remove pages, or use the Media Library.
 
 = Does it change what researchers wrote? =
@@ -345,6 +363,19 @@ one is.
   plain language with screenshots, and on each FireHouse screen the part for that
   screen under the Help tab. Pages for administrators show only to them. It comes from
   Markdown pages in help/, so it describes the version installed.
+* The FireHouse survey form at /firehouse/submit/, off until an administrator ticks
+  Accept submissions under FireHouse → Settings: each submission becomes a draft
+  project, with the submitter's email, job title and how they shared their results kept
+  apart, for FireHouse Editors and administrators only, and left out of WordPress's
+  export. It takes a form sent only to its own address from the site's own pages.
+* The landing page's "Where these needs come from" in Stephanie and Emily's 11
+  November wording. Under Executive Order 14434 the site says "Super Intelligence
+  (SI)" for AI: the note on the landing and topic pages says "Drafted with Super
+  Intelligence (SI)", "Where these needs come from" and the topic pages say what the
+  term means, the project pages say the needs are drafted with it, and the survey
+  form's notice says it too. None names the tool. Their new landing heading and About
+  words reach a site with its next first import; a site imported before keeps its
+  words until an editor changes them in the block editor.
 
 = 0.2.0 =
 * Project and topic post types at the Firehouse addresses, with their fields as post

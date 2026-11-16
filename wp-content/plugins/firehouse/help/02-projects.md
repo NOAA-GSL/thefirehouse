@@ -8,6 +8,8 @@ How to review a project, add the FireHouse team's words, publish it, and take it
 
 Each project is one researcher's answers to the survey. An administrator brings new answers into WordPress on FireHouse → Import. A new project arrives with everything the researcher wrote, as a draft for you to review, unless the team decided before the import to publish it.
 
+If an administrator has turned on the FireHouse survey form (FireHouse → Settings), each submission also arrives as a draft.
+
 ## Open a project
 
 1. Go to **FireHouse → Projects**.
@@ -27,6 +29,8 @@ A project's screen has two boxes.
 - **Full record link:** where the full record is kept, starting with https:// or http://. The project's page links to it as "View full record".
 
 **From the survey** shows the researcher's answers, exactly as they submitted them. You can't change them here. If an answer needs correcting, tell the developer: the correction goes into the survey's records, you confirm it, and the next import brings it in.
+
+A project sent through the FireHouse survey form also has a **Private answers** box on the right: the submitter's email, their job title, and how they shared their results. Only the FireHouse team and the site's administrators see it. It never appears on the site, and you can't change it.
 
 ![A project's screen: the Editorial fields box above the From the survey box, with the Publish box on the right](images/project-screen.webp "A project's screen. The Publish box on the right saves, previews and publishes it.")
 
