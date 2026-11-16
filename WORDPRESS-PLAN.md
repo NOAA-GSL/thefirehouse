@@ -2088,8 +2088,18 @@ number of changes down: what isn't needed for it says *After launch*.
   screen marks the area as changed since its review.* *For the first release (Eric,
   16 November): the paste, its validation with the order, and Mark reviewed, with
   Download NotebookLM source, as one change. The comparison against the published
-  synthesis and the re-sort when the counts change come after launch.*
-- Download NotebookLM source, for the paste-in fallback.
+  synthesis and the re-sort when the counts change come after launch.* *Built 16
+  November (FireHouse → Synthesis, `includes/class-synthesis-screen.php`; the checks
+  in `domain/class-synthesis.php`): a check says every problem and writes nothing;
+  with none, it waits thirty minutes for its checker, in place of a stored draft, and
+  Mark reviewed checks it again, then saves the four topics with the reviewer and the
+  tool as typed, the date, and how many projects the site shows, each topic keeping a
+  revision. On the local copy, the 17 September draft's check found the four counts
+  the Research Synthesist had.*
+- Download NotebookLM source, for the paste-in fallback. *Built 16 November
+  (`domain/class-notebook-source.php`), held to `scripts/notebooklm-source.mjs` by
+  `shared/cases/notebooklm-source.json`; on the local copy the two documents are the
+  same, byte for byte.*
 - Submit buttons bound to the settings. *With the blocks staying and no core blocks
   allowed (above), no core button is on a FireHouse page: the blocks that print a
   Submit button store a link to the survey empty, and read the address from the

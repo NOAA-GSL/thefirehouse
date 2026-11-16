@@ -52,6 +52,8 @@ require_once __DIR__ . '/domain/class-map-colors.php';
 require_once __DIR__ . '/domain/class-search.php';
 require_once __DIR__ . '/domain/class-normalize.php';
 require_once __DIR__ . '/domain/class-email-shape.php';
+require_once __DIR__ . '/domain/class-notebook-source.php';
+require_once __DIR__ . '/domain/class-synthesis.php';
 
 require_once __DIR__ . '/includes/class-meta.php';
 require_once __DIR__ . '/includes/class-post-types.php';
@@ -64,6 +66,7 @@ require_once __DIR__ . '/includes/class-visibility.php';
 require_once __DIR__ . '/includes/class-seed-bundle.php';
 require_once __DIR__ . '/includes/class-importer.php';
 require_once __DIR__ . '/includes/class-import-screen.php';
+require_once __DIR__ . '/includes/class-synthesis-screen.php';
 require_once __DIR__ . '/includes/class-edit-screen.php';
 require_once __DIR__ . '/includes/class-project-screen.php';
 require_once __DIR__ . '/includes/class-project-rules.php';
@@ -257,10 +260,10 @@ require_once __DIR__ . '/includes/class-head.php';
  *   page capabilities are lent is narrowed.
  *
  * Beyond that, these change only Firehouse content and what Firehouse editors may do.
- * Settings, Import_Screen, Project_Screen, Topic_Screen and Project_Rules's screens
- * hook only the admin: Project_Rules's admin notices run on every admin screen and
- * print only on the projects list, and its Quick Edit check runs on every Quick Edit
- * and acts only on a project. Project_Screen and Topic_Screen save a project's or a
+ * Settings, Import_Screen, Synthesis_Screen, Project_Screen, Topic_Screen and
+ * Project_Rules's screens hook only the admin: Project_Rules's admin notices run on
+ * every admin screen and print only on the projects list, and its Quick Edit check
+ * runs on every Quick Edit and acts only on a project. Project_Screen and Topic_Screen save a project's or a
  * topic's fields only from their own form, on its edit screen.
  */
 Post_Types::hook();
@@ -270,6 +273,7 @@ Capabilities::hook();
 Installer::hook( __FILE__ );
 Settings::hook();
 Import_Screen::hook();
+Synthesis_Screen::hook();
 Project_Screen::hook();
 Project_Rules::hook();
 Topic_Screen::hook();

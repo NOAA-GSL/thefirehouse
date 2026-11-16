@@ -1,0 +1,187 @@
+{
+  "$comment": "Cases for Download NotebookLM source: the document `scripts/notebooklm-source.mjs` builds from these projects and topics, which the plugin's Notebook_Source::build() matches byte for byte. Projects and topics are as types.ts has them; a project not `published` is left out. Titles here sort the same with or without PHP's intl extension. Regenerate `expected` from the script, never by hand.",
+  "cases": [
+    {
+      "name": "every part of a project, and the order",
+      "projects": [
+        {
+          "authors": [
+            {
+              "name": "Jo Smith",
+              "affiliation": "Somewhere"
+            },
+            {
+              "name": "Lee Wong"
+            }
+          ],
+          "published": true,
+          "id": "R_older",
+          "slug": "older-study",
+          "title": "Older study",
+          "completionYear": 2023,
+          "org": "A university",
+          "projectType": "Research study",
+          "methods": [
+            "Survey",
+            "Interviews"
+          ],
+          "firePhases": [
+            "before",
+            "during"
+          ],
+          "geo": {
+            "regions": [
+              "AICC",
+              "NWCC"
+            ],
+            "states": [
+              "AK"
+            ]
+          },
+          "abstract": "An abstract, word for word: \"quoted\" & <kept>.",
+          "takeaways": [
+            "First takeaway",
+            "Second  takeaway, two spaces"
+          ],
+          "needs": [
+            {
+              "need": "Need for longer-lead outlooks",
+              "recommendation": "Recommend weekly briefings"
+            },
+            {
+              "need": "Need only, no recommendation"
+            },
+            {
+              "recommendation": "Recommendation only"
+            }
+          ],
+          "papers": [
+            {
+              "title": "A paper",
+              "container": "A journal",
+              "year": 2023,
+              "doi": "10.1000/xyz"
+            },
+            {
+              "title": "A report",
+              "url": "https://example.org/report"
+            },
+            {
+              "title": "Title only"
+            },
+            {
+              "container": "No title",
+              "year": 2022,
+              "url": "https://example.org/x"
+            }
+          ]
+        },
+        {
+          "authors": [
+            {
+              "name": "A. Researcher"
+            }
+          ],
+          "published": true,
+          "id": "R_beta",
+          "slug": "beta-study",
+          "title": "beta study",
+          "completionYear": 2025,
+          "needs": [],
+          "papers": []
+        },
+        {
+          "authors": [
+            {
+              "name": "A. Researcher"
+            }
+          ],
+          "published": true,
+          "id": "R_alpha",
+          "slug": "alpha-study",
+          "title": "Alpha study",
+          "completionYear": 2025,
+          "abstract": ""
+        },
+        {
+          "authors": [
+            {
+              "name": "A. Researcher"
+            }
+          ],
+          "published": false,
+          "id": "R_hidden",
+          "slug": "hidden-study",
+          "title": "Unpublished study",
+          "completionYear": 2026,
+          "abstract": "Not in the document."
+        }
+      ],
+      "topics": [
+        {
+          "key": "forecast",
+          "label": "Forecasts and Modeling",
+          "description": "Forecast products & tools.",
+          "covers": [
+            "Outlooks",
+            "Models <ensembles>"
+          ],
+          "order": 2
+        },
+        {
+          "key": "observe",
+          "label": "Observations and Monitoring",
+          "description": "What is measured.",
+          "covers": [
+            "Networks"
+          ],
+          "order": 1
+        },
+        {
+          "key": "warning",
+          "label": "Warnings and Immediate Response",
+          "order": 3
+        },
+        {
+          "key": "governance",
+          "label": "Strategic Adaptation and Institutional Governance",
+          "description": "Planning.",
+          "covers": [],
+          "order": 4
+        }
+      ],
+      "expected": "# The Firehouse — collected project findings\n\nSource document for the topic-area synthesis. It contains all 3 published projects in The Firehouse, NOAA Global Systems Laboratory's hub for fire weather social science. Each project's abstract, takeaways, needs and recommendations are reproduced exactly as the researchers submitted them.\n\nTopic areas are a lens across the whole collection. No project is assigned to a topic area; a single project may inform several areas or none.\n\n## The four topic areas\n\n### Observations and Monitoring\n\nWhat is measured.\n\nCovers:\n\n- Networks\n\n### Forecasts and Modeling\n\nForecast products & tools.\n\nCovers:\n\n- Outlooks\n- Models <ensembles>\n\n### Warnings and Immediate Response\n\n\n\n### Strategic Adaptation and Institutional Governance\n\nPlanning.\n\n---\n\n## Project 1: Alpha study\n\n- **Project ID:** R_alpha\n- **Page:** /projects/alpha-study\n- **Researchers:** A. Researcher\n- **Completed:** 2025\n\n---\n\n## Project 2: beta study\n\n- **Project ID:** R_beta\n- **Page:** /projects/beta-study\n- **Researchers:** A. Researcher\n- **Completed:** 2025\n\n---\n\n## Project 3: Older study\n\n- **Project ID:** R_older\n- **Page:** /projects/older-study\n- **Researchers:** Jo Smith, Lee Wong\n- **Organization:** A university\n- **Completed:** 2023\n- **Project type:** Research study\n- **Data collection:** Survey, Interviews\n- **Fire cycle phases:** Before (Pre-fire planning, prevention, and mitigation); During (Fire detection, active suppression, and downstream impacts)\n- **Geographic areas:** Alaska (AICC); Northwest — OR, WA (NWCC)\n\n### Abstract\n\nAn abstract, word for word: \"quoted\" & <kept>.\n\n### Major takeaways\n\n- First takeaway\n- Second  takeaway, two spaces\n\n### End-user needs and recommendations\n\n**Entry 1**\n\nNeed: Need for longer-lead outlooks\n\nRecommendation: Recommend weekly briefings\n\n**Entry 2**\n\nNeed: Need only, no recommendation\n\n**Entry 3**\n\nRecommendation: Recommendation only\n\n### Publications and resources\n\n- A paper — A journal, 2023 — https://doi.org/10.1000/xyz\n- A report — https://example.org/report\n- Title only\n- No title, 2022 — https://example.org/x\n"
+    },
+    {
+      "name": "no published project",
+      "projects": [
+        {
+          "authors": [
+            {
+              "name": "A. Researcher"
+            }
+          ],
+          "published": false,
+          "id": "R_hidden",
+          "slug": "hidden-study",
+          "title": "Unpublished study",
+          "completionYear": 2026,
+          "abstract": "Not in the document."
+        }
+      ],
+      "topics": [
+        {
+          "key": "forecast",
+          "label": "Forecasts and Modeling",
+          "description": "Forecast products & tools.",
+          "covers": [
+            "Outlooks",
+            "Models <ensembles>"
+          ],
+          "order": 2
+        }
+      ],
+      "expected": "# The Firehouse — collected project findings\n\nSource document for the topic-area synthesis. It contains all 0 published projects in The Firehouse, NOAA Global Systems Laboratory's hub for fire weather social science. Each project's abstract, takeaways, needs and recommendations are reproduced exactly as the researchers submitted them.\n\nTopic areas are a lens across the whole collection. No project is assigned to a topic area; a single project may inform several areas or none.\n\n## The four topic areas\n\n### Forecasts and Modeling\n\nForecast products & tools.\n\nCovers:\n\n- Outlooks\n- Models <ensembles>\n\n---\n\n\n"
+    }
+  ]
+}
