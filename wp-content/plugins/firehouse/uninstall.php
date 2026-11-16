@@ -8,8 +8,10 @@
  * addresses; and anything still waiting in a transient (a dry run, a synthesis check,
  * a refused save, a publishing rule's notice). The content stays: the projects,
  * topics and settings belong to the site, and reinstalling the plugin shows them
- * again. Deleting them is a decision for the site's administrators,
- * not this file.
+ * again. That includes the survey form's draft projects and their private answers
+ * (submitters' emails, job titles and how they shared their results), in the
+ * protected `_firehouse_private` post meta field. Deleting them is a decision for
+ * the site's administrators and NOAA's privacy review, not this file.
  *
  * @package Firehouse
  */

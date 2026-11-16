@@ -70,6 +70,10 @@ require_once __DIR__ . '/includes/class-seed-bundle.php';
 require_once __DIR__ . '/includes/class-importer.php';
 require_once __DIR__ . '/includes/class-import-screen.php';
 require_once __DIR__ . '/includes/class-synthesis-screen.php';
+require_once __DIR__ . '/survey/class-questions.php';
+require_once __DIR__ . '/survey/class-submission.php';
+require_once __DIR__ . '/survey/class-form.php';
+require_once __DIR__ . '/survey/class-survey.php';
 require_once __DIR__ . '/includes/class-edit-screen.php';
 require_once __DIR__ . '/includes/class-project-screen.php';
 require_once __DIR__ . '/includes/class-project-rules.php';
@@ -172,6 +176,15 @@ require_once __DIR__ . '/includes/class-head.php';
  *   the `firehouse_head_tags` filter says no. Head::robots (`wp_robots`) asks search
  *   engines not to index the explorer at an address with a query, and changes nothing
  *   anywhere else.
+ * - Survey\Survey::handle (template_redirect, early) returns at once on anything but a
+ *   page, and does nothing on any page but the FireHouse Submit page. There it keeps
+ *   the page out of caches and handles a sent form. Survey\Survey::document_title
+ *   (`pre_get_document_title`, after Head's) puts "Error:" or "Thank you:" in front of
+ *   that page's title after a send, and changes no other title.
+ * - Survey\Survey::skip_in_export (`wxr_export_skip_postmeta`, Tools → Export) leaves
+ *   out one field, the survey form's private answers, and every other as it was.
+ * - Survey\Survey::opened runs whenever the FireHouse settings are added or updated:
+ *   while the form is open and there's no Submit page, it makes one.
  *
  * In every block editor on the site (for any post or page, the site editor and the
  * widgets), on enqueue_block_editor_assets:
@@ -282,6 +295,7 @@ Installer::hook( __FILE__ );
 Settings::hook();
 Import_Screen::hook();
 Synthesis_Screen::hook();
+Survey\Survey::hook();
 Project_Screen::hook();
 Project_Rules::hook();
 Topic_Screen::hook();

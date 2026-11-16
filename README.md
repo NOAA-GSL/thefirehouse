@@ -331,6 +331,15 @@ overrides are isolated so a re-sync doesn't lose them.
       text describes the hub, not the image. Record who confirmed what text, and when.
 - [ ] **Build with the right variables** for each copy (see [Hosting](#hosting)), so
       `og:image` is emitted and the test-site copy isn't indexed.
+- [ ] **Open the survey form only once it's cleared:** the privacy review and the
+      written Paperwork Reduction Act answer (plan open questions 12 and 14). Then tick
+      Accept submissions under FireHouse → Settings, which makes the Submit page.
+- [ ] **Set the Cloudflare rate-limit rule** on POSTs to `/firehouse/submit/` on each
+      site, before its form opens: it limits repeat submissions, so the plugin keeps
+      nothing about visitors (Eric, 16 November). The plugin takes a submission at
+      that exact address only. Adding or removing an entry's box is a POST to the
+      same address, and a researcher filling in every box can send 20 or more in one
+      sitting, so the limit has to allow that.
 - [ ] **Check that deleting a transient reports whether it deleted one** on each
       WordPress site the plugin runs on, with whatever object cache it has. The
       synthesis screen's Mark reviewed relies on it to publish a check once

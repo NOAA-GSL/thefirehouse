@@ -27,6 +27,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( ! defined( 'MINUTE_IN_SECONDS' ) ) {
 	define( 'MINUTE_IN_SECONDS', 60 );
 }
+if ( ! defined( 'DAY_IN_SECONDS' ) ) {
+	define( 'DAY_IN_SECONDS', 86400 );
+}
 
 // firehouse.php adds its hooks as it loads. Brain Monkey takes them, and forgets them
 // before the first test, which hooks what it tests itself.
