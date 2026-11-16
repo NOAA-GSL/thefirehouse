@@ -85,8 +85,22 @@ final class AllowedBlocksTest extends WordPressTestCase {
 			self::OUTSIDE   => array( $intro, $core ),
 		);
 		Functions\when( 'get_post' )->alias( fn( mixed $id ): ?\WP_Post => $this->posts[ (int) $id ] ?? null );
-		Functions\when( 'get_posts' )->justReturn( array( 10 ) );
-		Functions\when( 'get_post_ancestors' )->alias( static fn( \WP_Post $post ): array => 0 === $post->post_parent ? array() : array( $post->post_parent ) );
+		// The root's ID, or the pages under a level of them, as WordPress would give them.
+		Functions\when( 'get_posts' )->alias(
+			fn( array $args ): array => isset( $args['post_parent__in'] )
+				? array_values( array_filter( $this->posts, static fn( \WP_Post $post ): bool => 'page' === $post->post_type && in_array( $post->post_parent, $args['post_parent__in'], true ) ) )
+				: array( 10 )
+		);
+		Functions\when( 'get_post_ancestors' )->alias(
+			function ( \WP_Post $post ): array {
+				$ancestors = array();
+				while ( $post->post_parent && isset( $this->posts[ $post->post_parent ] ) ) {
+					$ancestors[] = $post->post_parent;
+					$post        = $this->posts[ $post->post_parent ];
+				}
+				return $ancestors;
+			}
+		);
 		Functions\when( 'parse_blocks' )->alias( static fn( string $content ): array => $parsed[ $content ] ?? array( self::freeform( $content ) ) );
 		Functions\when( 'wp_unslash' )->alias( static fn( string $text ): string => stripslashes( $text ) );
 		Functions\when( 'wp_slash' )->alias( static fn( string $text ): string => addslashes( $text ) );
@@ -313,6 +327,61 @@ final class AllowedBlocksTest extends WordPressTestCase {
 			),
 			'A post, which no page tree holds.'
 		);
+	}
+
+	/**
+	 * A page moved into the tree brings the pages under it, unsaved, so the move is
+	 * refused while any of them, at any depth, holds another block, and says so. Pages
+	 * in the tree already aren't walked.
+	 */
+	public function test_a_page_moved_in_is_refused_while_a_page_under_it_holds_another_block(): void {
+		$page = static fn( int $id, int $parent_id, string $content ): \WP_Post => new \WP_Post(
+			array(
+				'ID'           => $id,
+				'post_type'    => 'page',
+				'post_parent'  => $parent_id,
+				'post_content' => $content,
+			)
+		);
+		// Outside the tree: 60, holding FireHouse blocks; under it 61, the same; under that 62, a paragraph.
+		$this->posts += array(
+			60 => $page( 60, 0, self::FIREHOUSE ),
+			61 => $page( 61, 60, self::FIREHOUSE ),
+			62 => $page( 62, 61, self::PARAGRAPH ),
+		);
+		$moving       = static fn(): \stdClass|\WP_Error => Allowed_Blocks::refuse_rest( self::prepared( 60, null, 10 ), new \WP_REST_Request( 'POST', '/wp/v2/pages/60' ) );
+
+		$refused = $moving();
+		$this->assertInstanceOf( \WP_Error::class, $refused );
+		$this->assertStringContainsString( 'This page wasn’t moved', $refused->get_error_message() );
+		$this->assertStringContainsString( 'a page under this one holds another block', $refused->get_error_message() );
+		$this->assertTrue(
+			Allowed_Blocks::refuse_write(
+				false,
+				array(
+					'ID'          => 60,
+					'post_type'   => 'page',
+					'post_parent' => 11,
+				)
+			),
+			'By any route, under About too.'
+		);
+		$this->assertFalse( Allowed_Blocks::refuse_write( false, array( 'ID' => 60 ) ), 'Left where it is.' );
+
+		$this->posts[62] = $page( 62, 61, self::FIREHOUSE );
+		$this->assertNotInstanceOf( \WP_Error::class, $moving(), 'Every page under it holds FireHouse blocks.' );
+
+		// A page in the tree already: the pages under it are there too, so none is read.
+		$this->posts[12] = $page( 12, 11, self::PARAGRAPH );
+		$walked          = 0;
+		Functions\when( 'get_posts' )->alias(
+			static function ( array $args ) use ( &$walked ): array {
+				$walked += isset( $args['post_parent__in'] ) ? 1 : 0;
+				return array( 10 );
+			}
+		);
+		$this->assertNotInstanceOf( \WP_Error::class, Allowed_Blocks::refuse_rest( self::prepared( 11, self::FIREHOUSE ), new \WP_REST_Request( 'POST', '/wp/v2/pages/11' ) ) );
+		$this->assertSame( 0, $walked );
 	}
 
 	/**

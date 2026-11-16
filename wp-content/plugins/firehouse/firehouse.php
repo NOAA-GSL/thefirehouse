@@ -207,8 +207,13 @@ require_once __DIR__ . '/includes/class-head.php';
  * - Every REST save of a page passes through Allowed_Blocks::refuse_rest
  *   (`rest_pre_insert_page`), and every save of any post through
  *   Allowed_Blocks::refuse_write (`wp_insert_post_empty_content`): only a save that
- *   would give a page in the Firehouse tree content other than FireHouse blocks, and
- *   other than what it holds, is refused. Anything else is left as it is.
+ *   would leave a page in the Firehouse tree, by the parent the save gives it,
+ *   holding something other than FireHouse blocks is refused, unless it's a page in
+ *   the tree already keeping what it holds; and a move into the tree, while a page
+ *   under the one moved holds something else. Anything else is left as it is.
+ * - Every revision the revisions screen lists passes through
+ *   Allowed_Blocks::keep_from_restoring (`wp_prepare_revision_for_js`): only one of a
+ *   page in the Firehouse tree, which restoring would refuse, loses its Restore.
  * - Every list of a post type's revisioned meta (`wp_post_revision_meta_keys`) passes
  *   through Meta::revision_keys: only for a project or topic, and only while WordPress
  *   makes an autosave (it leaves the Firehouse fields out) or restores a revision (it

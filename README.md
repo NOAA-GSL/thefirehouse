@@ -492,8 +492,8 @@ nothing from the database. Each class's docblock has the detail; this is the map
     `Page_Words::only_firehouse_blocks()`): no part can be added, moved or removed
     there, so Backspace or Enter on a part's outline changes nothing. A page holding
     another block isn't locked, so the block can be taken out. Nothing else can be
-    added to a FireHouse page, and an empty one can be written only in the Code
-    editor, with FireHouse blocks (`Allowed_Blocks`, below).
+    added to a FireHouse page, and an empty one can be written only with FireHouse
+    blocks, in the Code editor or pasted (`Allowed_Blocks`, below).
   - Every block saves its inner blocks and nothing else, so saving from the editor
     keeps the page's blocks: the hero keeps the live counts it holds, and the About
     sections block the four sections it holds. `scripts/block-editor.test.mjs` holds
@@ -821,10 +821,13 @@ nothing from the database. Each class's docblock has the detail; this is the map
   them is in the inserter, so it offers nothing to add. A save that would leave a page
   in the tree holding anything else is refused, whether the page is there already, is
   created under it, or is moved into it, with the parent the save gives it deciding.
+  A page moved in brings the pages under it, unsaved, so the move is refused while
+  any of them, at any depth, holds something else ("This page wasn’t moved…").
   Through the REST API, which the block editor saves with, the editor shows why ("This
   page wasn’t saved: a FireHouse page holds only its FireHouse blocks…"). On any other
-  route the backstop on `wp_insert_post_empty_content` refuses it, which WordPress
-  reports as "Content, title, and excerpt are empty."
+  route the backstop on `wp_insert_post_empty_content` refuses it. WordPress reports
+  that as "Content, title, and excerpt are empty." to a caller that asks for errors,
+  such as WP-CLI; Quick Edit reports nothing, and the row keeps its old parent.
   - A save that leaves a page in the tree with the content it holds goes through, so
     a page that already holds another block can still be published, unpublished,
     trashed or restored. That's recognized after WordPress's own filters too (kses,

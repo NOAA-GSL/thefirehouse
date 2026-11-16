@@ -2040,7 +2040,7 @@ to build say so:
   own FireHouse blocks, so no core block and no Custom HTML. Built 15 November
   (`includes/class-allowed-blocks.php`): every page in the tree, for everyone,
   administrators too, including a page created under the landing page or moved
-  there. The block editor offers only FireHouse blocks there, and a save that would
+  there, with the pages under it. The block editor offers only FireHouse blocks there, and a save that would
   add anything else is refused, through the REST API with a message the editor shows,
   by any other route by a backstop; the revisions screen turns off Restore for a
   revision that would be refused. A save that leaves a page in the tree with what it

@@ -26,10 +26,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   (Blocks::lock_layout()).
  * - A save through the REST API, which the block editor saves with, that would leave
  *   a page in the tree holding anything else is refused, and says why. That's a page
- *   in the tree already, one created under it, or one moved into it.
+ *   in the tree already, one created under it, or one moved into it, together with
+ *   the pages under that one, which come with it.
  * - Any other route (another plugin, XML-RPC, WP-CLI, Quick Edit's Parent) is
- *   refused by the backstop, which WordPress reports as "Content, title, and excerpt
- *   are empty."
+ *   refused by the backstop. WordPress reports that as "Content, title, and excerpt
+ *   are empty." to a caller that asks for errors; Quick Edit reports nothing, and
+ *   the row keeps its old parent.
  * - The revisions screen's Restore is turned off for a revision that would be
  *   refused, rather than letting WordPress say it restored one it didn't.
  *
@@ -92,10 +94,8 @@ final class Allowed_Blocks {
 		}
 		$parent_id = isset( $prepared->post_parent ) ? (int) $prepared->post_parent : ( $stored instanceof \WP_Post ? $stored->post_parent : 0 );
 		$content   = self::text( $prepared->post_content ?? null ) ?? ( $stored instanceof \WP_Post ? $stored->post_content : '' );
-		if ( ! self::refuses( $stored, 'page', $parent_id, $content, static fn( \WP_Post $page ): array => array( $page->post_content ) ) ) {
-			return $prepared;
-		}
-		return new \WP_Error( 'firehouse_only_firehouse_blocks', self::why(), array( 'status' => 400 ) );
+		$why       = self::refusal( $stored, 'page', $parent_id, $content, static fn( \WP_Post $page ): array => array( $page->post_content ) );
+		return null === $why ? $prepared : new \WP_Error( 'firehouse_only_firehouse_blocks', $why, array( 'status' => 400 ) );
 	}
 
 	/**
@@ -125,7 +125,7 @@ final class Allowed_Blocks {
 		$parent_id = isset( $postarr['post_parent'] ) ? (int) $postarr['post_parent'] : ( $stored instanceof \WP_Post ? $stored->post_parent : 0 );
 		$sent      = self::text( $postarr['post_content'] ?? null );
 		$content   = null === $sent ? ( $stored instanceof \WP_Post ? $stored->post_content : '' ) : wp_unslash( $sent );
-		return self::refuses(
+		return null !== self::refusal(
 			$stored,
 			$type,
 			$parent_id,
@@ -148,7 +148,7 @@ final class Allowed_Blocks {
 		if ( empty( $data['restoreUrl'] ) || ! $post instanceof \WP_Post ) {
 			return $data;
 		}
-		if ( self::refuses( $post, $post->post_type, $post->post_parent, $revision->post_content, array( $post->post_content ) ) ) {
+		if ( null !== self::refusal( $post, $post->post_type, $post->post_parent, $revision->post_content, array( $post->post_content ) ) ) {
 			$data['restoreUrl'] = false;
 		}
 		return $data;
@@ -166,24 +166,71 @@ final class Allowed_Blocks {
 	}
 
 	/**
-	 * Whether a save is refused: it leaves a page in the FireHouse tree holding
-	 * something other than FireHouse blocks, and isn't a page in the tree already
-	 * keeping what it holds.
+	 * Why a save is refused, or null when it isn't. It's refused when it leaves a page
+	 * in the FireHouse tree holding something other than FireHouse blocks, unless it's
+	 * a page in the tree already keeping what it holds; and when it moves a page into
+	 * the tree with a page under it that holds something else, since the pages under it
+	 * come into the tree with it, unsaved.
 	 *
-	 * @param \WP_Post|null     $stored  The post as stored, or null for a new one.
-	 * @param string            $type    Its type once saved.
-	 * @param int               $parent_id  Its parent once saved.
-	 * @param string            $content Its content once saved, unslashed.
-	 * @param string[]|\Closure $held    What counts as the content it holds now, or a function of the stored post that gives it.
+	 * @param \WP_Post|null     $stored    The post as stored, or null for a new one.
+	 * @param string            $type      Its type once saved.
+	 * @param int               $parent_id Its parent once saved.
+	 * @param string            $content   Its content once saved, unslashed.
+	 * @param string[]|\Closure $held      What counts as the content it holds now, or a function of the stored post that gives it.
 	 */
-	private static function refuses( ?\WP_Post $stored, string $type, int $parent_id, string $content, array|\Closure $held ): bool {
-		if ( ! self::lands_in_tree( $stored, $type, $parent_id ) || self::holds_only_firehouse_blocks( $content ) ) {
-			return false;
+	private static function refusal( ?\WP_Post $stored, string $type, int $parent_id, string $content, array|\Closure $held ): ?string {
+		if ( ! self::lands_in_tree( $stored, $type, $parent_id ) ) {
+			return null;
 		}
-		if ( ! $stored instanceof \WP_Post || 'page' !== $stored->post_type || ! Capabilities::in_tree( $stored ) ) {
-			return true;
+		$there = $stored instanceof \WP_Post && 'page' === $stored->post_type && Capabilities::in_tree( $stored );
+		if ( ! self::holds_only_firehouse_blocks( $content ) ) {
+			if ( ! $there || ! in_array( $content, $held instanceof \Closure ? $held( $stored ) : $held, true ) ) {
+				return self::why();
+			}
+			return null;
 		}
-		return ! in_array( $content, $held instanceof \Closure ? $held( $stored ) : $held, true );
+		if ( ! $there && $stored instanceof \WP_Post && self::holds_other_blocks_below( $stored->ID ) ) {
+			return __( 'This page wasn’t moved: a FireHouse page holds only its FireHouse blocks, and a page under this one holds another block, or text between them, which would come into FireHouse with it. Take those out of the pages under it, or move them elsewhere, then move this page again.', 'firehouse' );
+		}
+		return null;
+	}
+
+	/**
+	 * Whether any page under a page, at any depth and in any status but the trash
+	 * (Capabilities::TREE_STATUSES), holds something other than FireHouse blocks: one
+	 * query for each level, as Capabilities::tree_ids() walks the tree, run only when a
+	 * page comes into the tree from outside it. A page already walked isn't walked
+	 * again.
+	 *
+	 * @param int $id The page's ID.
+	 */
+	private static function holds_other_blocks_below( int $id ): bool {
+		$walked = array( $id );
+		$level  = array( $id );
+		while ( array() !== $level ) {
+			$children = get_posts(
+				array(
+					'post_type'       => 'page',
+					'post_parent__in' => $level,
+					'post_status'     => Capabilities::TREE_STATUSES,
+					'numberposts'     => -1,
+					'orderby'         => 'ID',
+					'order'           => 'ASC',
+				)
+			);
+			$level    = array();
+			foreach ( is_array( $children ) ? $children : array() as $child ) {
+				if ( ! $child instanceof \WP_Post || $child->ID <= 0 || in_array( $child->ID, $walked, true ) ) {
+					continue;
+				}
+				if ( ! self::holds_only_firehouse_blocks( $child->post_content ) ) {
+					return true;
+				}
+				$walked[] = $child->ID;
+				$level[]  = $child->ID;
+			}
+		}
+		return false;
 	}
 
 	/**
