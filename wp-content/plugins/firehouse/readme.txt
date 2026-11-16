@@ -229,6 +229,10 @@ one is.
   NotebookLM source, paste the JSON NotebookLM gives, check it, and mark it reviewed
   to publish it to the topic pages and the landing page. Each topic keeps a revision
   of the synthesis before; restoring it is the undo.
+* The landing page's "Where these needs come from" in Stephanie and Emily's 11
+  November wording. Their new landing heading and About words reach a site with its
+  next first import; a site imported before keeps its words until an editor changes
+  them in the block editor.
 
 = 0.2.0 =
 * Project and topic post types at the Firehouse addresses, with their fields as post

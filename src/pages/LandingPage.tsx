@@ -249,8 +249,8 @@ export function LandingPage() {
             <p className="fh-source__body">
               Topic areas are not assigned project by project. Every project in The
               FireHouse is read together{synthesis.model ? `, with ${synthesis.model}` : ''}.
-              The end-user needs its researchers recorded are grouped into the four areas
-              above and ranked by how often they come up. This pass serves as an initial
+              The end-user needs submitted by researchers are grouped into the four topic
+              areas above and ranked by prevalence across projects. This pass serves as an initial
               draft that our team reviews and refines before finalizing each synthesis.
               Open any topic area to see which specific projects each need draws on; each
               project page preserves the researchers’ own words.

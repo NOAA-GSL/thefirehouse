@@ -265,13 +265,14 @@ overrides are isolated so a re-sync doesn't lose them.
       added. Eric confirmed on 6 November that this is the approved wording: the
       sentence is Stephanie's own, given for that page. Still open, for when they
       review the pages:
-      - the three lines that say "how often" or "frequency": "ranked by frequency"
-        (`about.json`), "with how often each one came up" (`landing.json`) and
-        "ranked by how often they come up" (written into `LandingPage.tsx`, and separately
-        into the plugin's `includes/class-landing-page.php`: change both, since no test
-        keeps them the same). The first two also live in each imported site's landing
-        and About pages, which a later import leaves as they are and an editor changes in
-        the block editor;
+      - the last of the three lines that said "how often" or "frequency": "with how
+        often each one came up" (`landing.json`). In her review of the preview on 11
+        November Emily changed the other two, to "ranked by project count" (`about.json`)
+        and "ranked by prevalence across projects" (written into `LandingPage.tsx`, and
+        separately into the plugin's `includes/class-landing-page.php`: change both,
+        since no test keeps them the same). Wording from `landing.json` and `about.json`
+        also lives in each imported site's landing and About pages, which a later import
+        leaves as they are and an editor changes in the block editor;
       - whether the synthesis needs its own line saying whose it is;
       - the explorer's "Update results" button, which only the plugin has: without
         JavaScript it sends the search and filters. The Science Communicator suggests
