@@ -16,8 +16,8 @@ A FireHouse Editor can change the FireHouse and nothing else on the site: the pr
 
 FireHouse Editors choose team members' portraits from the images attached to the FireHouse pages. They can't upload images, so an administrator adds a new portrait first:
 
-1. Go to **Media → Add New Media File** and upload the photo: portrait-shaped, 4 wide by 5 high, and at least 336 by 420 pixels.
-2. Attach it to the About page: in **Media → Library**, switch to the list view, and in the photo's **Uploaded to** column choose **Attach**, then the About page.
+1. Name the photo's file after the person, then go to **Media → Add New Media File** and upload it: portrait-shaped, 4 wide by 5 high, and at least 336 by 420 pixels. The editors' Portrait menu lists portraits by Title, which WordPress takes from the file name; change the Title if it isn't the person's name.
+2. Attach it to the About page: in **Media → Library**, switch to the list view, and in the photo's **Uploaded to** column choose **Attach**. Search for About, select the About page, and choose **Select**.
 3. Tell the editor. In the block editor, the team member's **Portrait** now offers it.
 
 ## Remove someone

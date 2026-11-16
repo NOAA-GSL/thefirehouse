@@ -6,7 +6,7 @@ How to change a topic area's short label, description and what it covers.
 
 ## The four topic areas
 
-Every need is grouped into one of four topic areas: Observations and Monitoring; Forecasts and Modeling; Warnings and Immediate Response; and Strategic Adaptation and Institutional Governance. There are always these four: they can't be added or removed, and their addresses don't change.
+Every need is grouped into one of four topic areas: Observations and Monitoring; Forecasts and Modeling; Warnings and Immediate Response; and Strategic Adaptation and Institutional Governance. There are always these four: they can't be added or removed, and their addresses don't change. The **Edit** button beside the Permalink changes nothing.
 
 Go to **FireHouse → Topics** and choose an area's title to open it.
 
@@ -21,7 +21,7 @@ The **Topic fields** box holds the FireHouse team's words for the area:
 
 ![A topic's screen, with its label at the top and the Topic fields box under it](images/topic-fields.webp "A topic area's screen.")
 
-Choose **Update** to save. The fields are saved together, all or none. If one has a problem, the screen says which, keeps what you typed, and saves none of them.
+Choose **Update** to save. The label is saved on its own, and can't be empty: an empty one is put back as it was. The Topic fields are saved together, all or none: if one has a problem, the screen says which, keeps what you typed, and saves none of them.
 
 > Preview Changes shows the label as you typed it, but the area's other words as they were last updated. Update the topic to see them.
 
@@ -33,4 +33,4 @@ Until someone has reviewed the synthesis, "Reviewed by" says "No one yet", and t
 
 ## Undo a change
 
-Each update keeps a revision. Choose **Browse** next to Revisions in the Publish box to compare versions and restore one. Restoring a revision also puts back the synthesis the area had then.
+Each update keeps a revision. Choose **Browse** next to Revisions in the Publish box, move the slider to the version you want, and choose **Restore This Revision**. Restoring a revision also puts back the synthesis the area had then.

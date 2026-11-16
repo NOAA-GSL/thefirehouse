@@ -15,7 +15,7 @@ A zip of any other commit is on that commit's "WordPress plugin" run in the repo
 1. In the dashboard, go to **Plugins → Add New Plugin** and choose **Upload Plugin**.
 2. Choose the zip, then **Install Now**.
 3. Choose **Activate Plugin**. The FireHouse menu appears.
-4. Load the content on **FireHouse → Import**: see [Importing content](08-importing.md).
+4. Upload the team's portraits under **Media → Add New Media File**, then load the content on **FireHouse → Import**: see [Importing content](08-importing.md).
 5. Check **FireHouse → Settings**, above all the survey address the Submit a Finding buttons go to.
 6. Give the people who keep the FireHouse up to date the FireHouse Editor role: see [People and portraits](09-people-and-portraits.md).
 

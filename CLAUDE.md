@@ -29,8 +29,9 @@ change.
   fails on a page wider than the window).
 - **The guide follows the screens.** `wp-content/plugins/firehouse/help/` is the
   FireHouse guide that FireHouse → Help and each FireHouse screen's Help tab show. A
-  change to what an editor or administrator sees or does on a FireHouse screen changes
-  its page there in the same pull request, with `npm run plugin:help`, and its
+  change to what an editor or administrator sees or does on a FireHouse screen, or in
+  the landing and About pages' fields in the block editor (`assets/js/block-editor.js`),
+  changes its page there in the same pull request, with `npm run plugin:help`, and its
   screenshot (`node scripts/help-screenshots.mjs`) when the screen looks different.
 
 ## Review agents

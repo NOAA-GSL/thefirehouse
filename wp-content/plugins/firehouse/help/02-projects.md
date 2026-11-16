@@ -6,7 +6,7 @@ How to review a project, add the FireHouse team's words, publish it, and take it
 
 ## Where projects come from
 
-Each project is one researcher's answers to the survey. An administrator brings new answers into WordPress on FireHouse → Import. A new project arrives with everything the researcher wrote, and is published only if the survey's records say so; otherwise it waits as a draft for you.
+Each project is one researcher's answers to the survey. An administrator brings new answers into WordPress on FireHouse → Import. A new project arrives with everything the researcher wrote, as a draft for you to review, unless the team decided before the import to publish it.
 
 ## Open a project
 
@@ -26,7 +26,7 @@ A project's screen has two boxes.
 - **Geography note:** a few words beside the project's regions on its page, such as "Front Range". Leave it empty if the survey names no region.
 - **Full record link:** where the full record is kept, starting with https:// or http://. The project's page links to it as "View full record".
 
-**From the survey** shows the researcher's answers, exactly as they submitted them. You can't change them here. If an answer needs correcting, the correction is made in the survey's records and brought in with the next import.
+**From the survey** shows the researcher's answers, exactly as they submitted them. You can't change them here. If an answer needs correcting, tell the developer: the correction goes into the survey's records, you confirm it, and the next import brings it in.
 
 ![A project's screen: the Editorial fields box above the From the survey box, with the Publish box on the right](images/project-screen.webp "A project's screen. The Publish box on the right saves, previews and publishes it.")
 
@@ -35,10 +35,11 @@ When you've made your changes, choose **Update** (or **Save Draft** for a draft)
 ## Publish a project
 
 1. Read the researcher's answers and fill in the editorial fields.
-2. Choose **Preview** to see the project's page as visitors will. Preview shows the project as last saved, so save it first to see your changes.
-3. Choose **Publish**.
+2. Choose **Save Draft**.
+3. Choose **Preview** to see the project's page as visitors will. Preview shows the project as last saved, which is why you save first.
+4. Choose **Publish**.
 
-The project then appears in the project explorer, on the landing page's counts, and on the topic pages under the needs it's named in.
+The project then appears in the project explorer and in the landing page's counts, and on the topic pages once a synthesis names it.
 
 A project can be published only if the researcher recorded IRB approval or an exemption in the survey. If they didn't, the Publish box says "This project can't be published", the Projects list marks it "No IRB approval", and you can still save it as a draft. Approval comes from the survey's records, not this screen.
 
@@ -47,14 +48,16 @@ A project can be published only if the researcher recorded IRB approval or an ex
 ## Take a project off the site
 
 - **To hide it for now:** in the Publish box, next to Status, choose **Edit**, choose **Draft**, then **OK** and **Update**. It leaves the site, and you can publish it again later.
-- **To remove it:** choose **Move to Trash**. It leaves the site, and you can restore it from the Trash.
+- **To remove it:** choose **Move to Trash**. It leaves the site. To bring it back, open **Trash** in FireHouse → Projects and choose **Restore** under its title. It comes back as a draft, so publish it again.
 - **To delete it for good:** in FireHouse → Projects, open **Trash**, and choose **Delete Permanently** under its title. That removes it with its fields and its revisions, and can't be undone.
+
+Either way, it also leaves the needs that name it on the topic pages, and their project counts go down until the next synthesis.
 
 Before you delete a project for good, tell an administrator. The next import brings back any project that's still in the survey's records, as a new project. And while a project is in the Trash, the import stops until it's restored or deleted.
 
 ## Undo a change
 
-Each save keeps a revision. In the Publish box, next to Revisions, choose **Browse** to compare versions. Restoring one puts back the summary, the publication status and the full record link as they were. It never changes the researcher's answers.
+Each save keeps a revision. In the Publish box, next to Revisions, choose **Browse** to compare versions. Move the slider to the version you want and choose **Restore This Revision**. That puts back the summary, the publication status and the full record link as they were, but not the geography note. It never changes the researcher's answers.
 
 ## If something isn't saved
 

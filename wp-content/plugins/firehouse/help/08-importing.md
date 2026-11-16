@@ -6,7 +6,7 @@ How to load the FireHouse's content from a seed bundle on FireHouse → Import.
 
 ## What an import does
 
-A seed bundle is one JSON file holding the FireHouse's content: its projects, topic areas, synthesis and settings, and the landing and About pages. A developer makes it from the survey's records with `npm run seed`. Only administrators can import.
+A seed bundle is one JSON file holding the FireHouse's content: its projects, topic areas, synthesis and settings, and the landing and About pages. A developer makes it with `npm run seed` from the site's content files, which hold the survey's records. Only administrators can import.
 
 An import adds what's missing and refreshes each project's survey answers. It keeps what the FireHouse team owns:
 
@@ -16,6 +16,10 @@ An import adds what's missing and refreshes each project's survey answers. It ke
 - **A project that isn't in the bundle** is left as it is.
 
 The first import on a site loads everything. Later ones bring in new survey answers.
+
+## Before the first import
+
+Upload the About page's portraits under **Media → Add New Media File** first. WordPress sets each image's Title from its file name, and the import gives each team member the newest image whose Title matches their portrait's name in the bundle. Once the About page exists, later imports leave its portraits alone. The dry run's notes name the image each person will get, or say their card will show initials: check them.
 
 ## Run an import
 
@@ -31,8 +35,8 @@ The first import on a site loads everything. Later ones bring in new survey answ
 
 ## When an import stops
 
-- **"It is in the trash in WordPress"**: a project in the bundle is in the Trash. Restore it, or delete it permanently, then import again. A project deleted permanently comes back as a new project if it's still in the bundle.
+- **"It is in the trash in WordPress"**: a project in the bundle is in the Trash. Restore it (it comes back as a draft, and the import keeps it one), or delete it permanently, then import again. A project deleted permanently comes back as a new project if it's still in the bundle.
 - **"A landing page is in the trash"**, or an About page: restore it, or delete it permanently, then import again.
-- **"WordPress changed since your dry run"**: someone saved something in between. Upload the bundle again to see what an import would change now.
+- **"WordPress changed since your dry run"**: someone saved something in between. Nothing was written, and the screen shows a new dry run as things stand now: check it, then choose **Import** again. If it asks you to upload the bundle again, do that.
 
-The uploaded file isn't kept, and the dry run waits only briefly for the import.
+The uploaded file isn't kept, and the dry run waits thirty minutes for the import; after that, upload the bundle again.

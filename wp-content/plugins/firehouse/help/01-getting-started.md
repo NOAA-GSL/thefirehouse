@@ -32,12 +32,12 @@ The landing and About pages are under **Pages**, as "The FireHouse" and the page
 
 The FireHouse Editor role can change the FireHouse and nothing else on the site:
 
-- You can edit and publish projects and topic areas, change the words on the landing and About pages, change the FireHouse settings, and publish a synthesis.
+- You can edit and publish projects, edit the topic areas, change the words on the landing and About pages, change the FireHouse settings, and publish a synthesis.
 - You can't change the site's other pages or posts, add or remove pages, or upload images. An administrator does those.
 - You can't change what a researcher wrote. Their answers are shown exactly as they submitted them.
 
 ## Getting help
 
-On each FireHouse screen, choose **Help** at the top right of the screen. It opens the part of this guide for that screen. FireHouse → Help has the whole guide, with screenshots.
+On each FireHouse screen, choose **Help** at the top right of the screen. It opens the part of this guide for that screen. FireHouse → Help has the whole guide, with screenshots. The editor for the landing and About pages has no Help tab: see [Changing the landing and About pages](05-landing-and-about-pages.md).
 
 > This guide comes with the plugin, so it matches the version installed on this site.

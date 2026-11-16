@@ -2158,7 +2158,8 @@ number of changes down: what isn't needed for it says *After launch*.
 as editor tasks, in a walkthrough with Eric on his local copy. The checklist is the
 first draft of Phase 8's editor runbook, and takes the place of `README.md`, which holds
 no editor tasks; the synthesis steps are in `notebooklm/README.md` too, under "Under the
-WordPress plugin" (Eric, 16 November). Doing them on their
+WordPress plugin" (Eric, 16 November). The runbook it drafts is now the FireHouse guide
+in `help/` (Phase 8). Doing them on their
 own, without a developer, is checked on the test site with the first release (Eric, 9
 November; see Where each phase is reviewed).
 
