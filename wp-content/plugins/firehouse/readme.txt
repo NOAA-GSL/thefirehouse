@@ -80,8 +80,11 @@ The Import screen keeps nothing it doesn't import: the uploaded file isn't saved
 the checked content waits briefly for the confirmation and is then cleared. The
 synthesis screen keeps a checked synthesis for at most thirty minutes; an edit screen
 keeps refused input for five minutes, and the settings screen for one; a refused
-publish's notice waits an hour; each only for the person it's for. Apart from
-the survey form's answers, below, the plugin stores only what the site publishes.
+publish's notice waits an hour; each only for the person it's for. Analyze results keeps
+each model's latest draft, with its whole reply and the prompt it was given, until a
+newer draft from the same model replaces it; it never stores the Workers AI key. Apart
+from those and the survey form's answers, below, the plugin stores only what the site
+publishes.
 
 = The survey form =
 
@@ -118,8 +121,9 @@ answer are fixed in the plugin.
 
 Deactivating the plugin keeps the FireHouse Editor role, which can then only sign in.
 Deleting the plugin removes the role and the plugin's capabilities, and users who had
-the role are left with no role on the site. The content stays, the survey form's
-draft projects and their private answers included.
+the role are left with no role on the site, and Analyze results' drafts are removed.
+The content stays, the survey form's draft projects and their private answers
+included.
 
 An update that changes the role or its capabilities applies the role, and the
 administrators' FireHouse capabilities, as the plugin defines them, so a change made
@@ -161,9 +165,11 @@ look in any theme.
 
 = Does it contact other sites? =
 
-Twice: the visitor's browser loads the coverage map's basemap tiles from Esri, and
+Three times: the visitor's browser loads the coverage map's basemap tiles from Esri;
 the server looks up a paper's title by its DOI when a survey form submission gives
-one. See External services. The plugin's code on the server makes no other request to
+one; and, only on a site given a Workers AI key, the server sends the published
+projects to Cloudflare Workers AI when an editor chooses Analyze results. See
+External services. The plugin's code on the server makes no other request to
 another site, and its fonts, icons and scripts are served from the plugin.
 
 = Who can change what? =
@@ -171,7 +177,8 @@ another site, and its fonts, icons and scripts are served from the plugin.
 Administrators can do everything, and only they can import or open the survey form.
 FireHouse Editors can edit and publish projects and topic areas, change the words on
 the landing and About pages, change the other FireHouse settings (the survey form's
-questions among them), and publish a reviewed synthesis. They can't change the
+questions and the synthesis prompt among them), and have a model draft a synthesis
+and publish a reviewed one. They can't change the
 site's other posts, pages or menus, add or remove pages, or use the Media Library.
 
 = Does it change what researchers wrote? =
@@ -210,8 +217,10 @@ each survey form submission arrives as a draft project for them to review.
 
 == External services ==
 
-The plugin uses two outside services: the coverage map's basemap tiles, which the
-visitor's browser loads, and DOI lookups, which the server makes for the survey form.
+The plugin uses three outside services: the coverage map's basemap tiles, which the
+visitor's browser loads; DOI lookups, which the server makes for the survey form; and
+Cloudflare Workers AI, which the server asks for a synthesis, only on a site given a
+key.
 
 = The coverage map's tiles =
 
@@ -270,6 +279,30 @@ terms and conditions, which cover its website: https://datacite.org/terms-and-co
 Its content negotiation documentation:
 https://support.datacite.org/docs/doi-content-negotiation. Its privacy policy:
 https://datacite.org/privacy-policy/.
+
+= Cloudflare Workers AI =
+
+Only on a site whose wp-config.php defines FIREHOUSE_WORKERS_AI_ACCOUNT and
+FIREHOUSE_WORKERS_AI_TOKEN, a Cloudflare account ID and an API token limited to
+Workers AI. Without them the plugin never contacts it, and FireHouse → Synthesis
+offers only the paste. When a FireHouse Editor or an administrator chooses Analyze
+results there, the server sends one request to api.cloudflare.com, for that account
+and the model they picked, with the token in its Authorization header. It carries
+every published project as its page shows it, word for word (its title, ID and page
+address, the researchers' names, organization, year, project type, methods, fire
+phases, regions, abstract, takeaways, needs and recommendations, and publications),
+the four topic areas, and the prompt on FireHouse → Settings. No unpublished
+submission, no private answer, no earlier synthesis and nothing about visitors is
+sent. It runs in WordPress's scheduled events, one at a time, and waits up to five
+minutes for the reply, which the site keeps as that model's latest draft. The key is
+never stored in the database or shown. The models are Meta's, OpenAI's, Google's and
+NVIDIA's, run by Cloudflare.
+
+Cloudflare's Workers AI data usage, which says it does not use the content it
+processes to train models or keep inputs and outputs after a request:
+https://developers.cloudflare.com/workers-ai/platform/data-usage/. Its terms:
+https://www.cloudflare.com/terms/. Its privacy policy:
+https://www.cloudflare.com/privacypolicy/.
 
 == Changelog ==
 
@@ -443,6 +476,13 @@ one is.
   its answers can't be changed on the site, where it used to point to the Import screen,
   which never changes a submission, and a "No" to the IRB question shows as no approval
   or exemption rather than "Not recorded".
+* Analyze results on FireHouse → Synthesis, on a site with a Workers AI key in
+  wp-config.php: a model picked from Meta's Llama 4 Scout, OpenAI's gpt-oss-120b,
+  Google's Gemma 4 26B and NVIDIA's Nemotron 3 120B drafts a synthesis in the
+  background from the published projects and the prompt under FireHouse → Settings,
+  which can be changed there. Each model's latest draft is kept, to compare; checking
+  one puts it through the screen's check and Mark reviewed, with the model under Made
+  with. The guide's synthesis and settings pages say how (see External services).
 
 = 0.2.0 =
 * Project and topic post types at the Firehouse addresses, with their fields as post

@@ -10,7 +10,11 @@ declare( strict_types = 1 );
 namespace Firehouse\Tests;
 
 use Brain\Monkey\Functions;
+use Firehouse\Analysis;
 use Firehouse\Synthesis_Screen;
+use Firehouse\Workers_Ai;
+use PHPUnit\Framework\Attributes\PreserveGlobalState;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 
 /**
  * The synthesis screen checks a pasted synthesis and, once nothing is wrong, marks it
@@ -53,6 +57,16 @@ final class SynthesisScreenTest extends WordPressTestCase {
 	 * @var list<array<string, mixed>>
 	 */
 	private array $updated = array();
+
+	/**
+	 * Options by name, with the site's date and time formats.
+	 *
+	 * @var array<string, mixed>
+	 */
+	private array $options = array(
+		'date_format' => 'j F Y',
+		'time_format' => 'g:i a',
+	);
 
 	/**
 	 * A WordPress with two projects and the four topics.
@@ -152,6 +166,32 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		);
 		Functions\stubEscapeFunctions();
 		Functions\when( 'esc_textarea' )->alias( static fn( string $text ): string => htmlspecialchars( $text, ENT_QUOTES ) );
+		Functions\when( 'get_option' )->alias( fn( string $name, mixed $fallback = false ): mixed => $this->options[ $name ] ?? $fallback );
+		Functions\when( 'update_option' )->alias(
+			function ( string $name, mixed $value ): bool {
+				$this->options[ $name ] = $value;
+				return true;
+			}
+		);
+		Functions\when( 'selected' )->alias(
+			static function ( mixed $selected, mixed $current ): string {
+				$attribute = (string) $selected === (string) $current ? " selected='selected'" : '';
+				echo $attribute; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- A test's stand-in for selected().
+				return $attribute;
+			}
+		);
+		Functions\when( 'wp_schedule_single_event' )->justReturn( true );
+		Functions\when( 'spawn_cron' )->justReturn( null );
+		Functions\when( 'wp_json_encode' )->alias( static fn( mixed $data ): string => (string) json_encode( $data ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- Standing in for wp_json_encode().
+		Functions\when( 'wp_remote_retrieve_response_code' )->alias( static fn( array $response ): int => $response['response']['code'] );
+		Functions\when( 'wp_remote_retrieve_body' )->alias( static fn( array $response ): string => $response['body'] );
+		// The redirect ends the request; the test catches it where exit would come.
+		Functions\when( 'wp_safe_redirect' )->alias(
+			static function ( string $url ): void {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- A test's stand-in; the message goes to the test, never a page.
+				throw new \RuntimeException( 'redirect ' . $url );
+			}
+		);
 	}
 
 	/**
@@ -539,6 +579,285 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		$this->assertStringNotContainsString( 'Draft study', $source );
 		$this->assertStringContainsString( "### Observe\n", $source );
 		$this->assertLessThan( strpos( $source, '### Forecast' ), strpos( $source, '### Observe' ), 'By their order.' );
+	}
+
+	/**
+	 * Gives the site a Workers AI key, as wp-config.php would. Only for a test in its own
+	 * process: a constant can't be taken away again.
+	 */
+	private static function key(): void {
+		define( Workers_Ai::ACCOUNT, '0123456789abcdef0123456789abcdef' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- The plugin's own constant, as wp-config.php sets it.
+		define( Workers_Ai::TOKEN, 'test-token_0123456789ABCDEFGHIJ' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- The plugin's own constant, as wp-config.php sets it.
+	}
+
+	/**
+	 * A model's latest draft, done, with the synthesis's JSON.
+	 *
+	 * @param string $project How the need names its project.
+	 * @return array<string, mixed>
+	 */
+	private static function draft( string $project = 'smoke-study' ): array {
+		return array(
+			'state'    => 'done',
+			'started'  => 1700000000,
+			'finished' => 1700000100,
+			'by'       => 'Pat Reviewer',
+			'projects' => 1,
+			'prompt'   => 'The team’s prompt.',
+			'reply'    => "Needs, cited.\n\n```json\n" . self::synthesis( $project ) . "\n```",
+			'json'     => self::synthesis( $project ),
+		);
+	}
+
+	/**
+	 * Without a Workers AI key, the screen offers only the paste, as before.
+	 */
+	public function test_without_a_key_it_offers_only_the_paste(): void {
+		$page = self::drawn();
+
+		$this->assertStringNotContainsString( 'Analyze results', $page );
+		$this->assertStringContainsString( 'Make it in NotebookLM from the source below', $page );
+		$this->assertSame( 'The site has no Workers AI key.', Analysis::start( Workers_Ai::DEFAULT_MODEL ) );
+		$this->assertArrayNotHasKey( Analysis::OPTION, $this->options );
+	}
+
+	/**
+	 * With a key, the screen offers the models, the first picked, and each model's latest
+	 * draft: one done, with the button that checks it, its reply and its prompt; one
+	 * failed, with why.
+	 */
+	#[RunInSeparateProcess]
+	#[PreserveGlobalState( false )]
+	public function test_with_a_key_it_offers_the_models_and_their_drafts(): void {
+		self::key();
+		$this->options[ Analysis::OPTION ] = array(
+			'running' => null,
+			'results' => array(
+				'@cf/nvidia/nemotron-3-120b-a12b' => array(
+					'state'   => 'failed',
+					'started' => 1700000000,
+					'by'      => 'Pat Reviewer',
+					'problem' => 'Workers AI refused the request (429).',
+				),
+				Workers_Ai::DEFAULT_MODEL         => self::draft(),
+			),
+		);
+		$page                              = self::drawn();
+
+		$this->assertStringContainsString( '<label for="firehouse-analysis-model">Model</label>', $page );
+		$this->assertSame( 4, substr_count( $page, '<option ' ) );
+		$this->assertStringContainsString( "value=\"@cf/meta/llama-4-scout-17b-16e-instruct\" selected='selected'>Llama 4 Scout (Meta)</option>", $page );
+		$this->assertStringContainsString( '<button>Analyze results</button>', $page );
+		$this->assertLessThan( strpos( $page, '<h3>Nemotron 3 120B (NVIDIA)</h3>' ), strpos( $page, '<h3>Llama 4 Scout (Meta)</h3>' ), 'In the list’s order.' );
+		$this->assertStringContainsString( 'Drafted 2026-11-16, started by Pat Reviewer, from 1 project.', $page );
+		$this->assertStringContainsString( '<button>Check Llama 4 Scout (Meta)’s draft</button>', $page );
+		$this->assertStringContainsString( 'Failed, started 2026-11-16 by Pat Reviewer: Workers AI refused the request (429).', $page );
+		$this->assertStringContainsString( '<label for="firehouse-draft--cf-meta-llama-4-scout-17b-16e-instruct-reply">Its whole reply: Llama 4 Scout (Meta)</label>', $page );
+		$this->assertStringContainsString( 'The team’s prompt.</textarea>', $page );
+	}
+
+	/**
+	 * While a run goes, the screen says so in place of the form.
+	 */
+	#[RunInSeparateProcess]
+	#[PreserveGlobalState( false )]
+	public function test_a_run_going_shows_in_place_of_the_form(): void {
+		self::key();
+		$this->options[ Analysis::OPTION ] = array(
+			'running' => array(
+				'model'   => '@cf/google/gemma-4-26b-a4b-it',
+				'started' => time(),
+				'by'      => 'Pat Reviewer',
+			),
+			'results' => array(),
+		);
+		$page                              = self::drawn();
+
+		$this->assertStringContainsString( 'Gemma 4 26B (Google) is drafting a synthesis, started at 2026-11-16 by Pat Reviewer.', $page );
+		$this->assertStringNotContainsString( '<select', $page );
+	}
+
+	/**
+	 * Analyze results starts a run in the background with the model picked, and returns
+	 * to the screen, so reloading it doesn't start another; while it goes, another is
+	 * refused.
+	 */
+	#[RunInSeparateProcess]
+	#[PreserveGlobalState( false )]
+	public function test_analyze_starts_one_run_at_a_time(): void {
+		self::key();
+		$scheduled = array();
+		Functions\when( 'wp_schedule_single_event' )->alias(
+			function ( int $time, string $hook ) use ( &$scheduled ): bool {
+				$scheduled[] = $hook;
+				return true;
+			}
+		);
+		try {
+			self::send(
+				array(
+					'firehouse_step'           => 'analyze',
+					'firehouse_analysis_model' => '@cf/openai/gpt-oss-120b',
+				)
+			);
+			$this->fail( 'It should return to the screen.' );
+		} catch ( \RuntimeException $e ) {
+			$this->assertSame( 'redirect /wp-admin/edit.php?post_type=fh_project&page=firehouse-synthesis', $e->getMessage() );
+		}
+		$this->assertSame( '@cf/openai/gpt-oss-120b', $this->options[ Analysis::OPTION ]['running']['model'] );
+		$this->assertSame( 'Pat Reviewer', $this->options[ Analysis::OPTION ]['running']['by'] );
+		$this->assertSame( array( Analysis::EVENT ), $scheduled );
+
+		self::send(
+			array(
+				'firehouse_step'           => 'analyze',
+				'firehouse_analysis_model' => Workers_Ai::DEFAULT_MODEL,
+			)
+		);
+		$this->assertSame( 'Not started: FireHouse synthesis', Synthesis_Screen::title( 'FireHouse synthesis' ) );
+		$this->assertStringContainsString( 'gpt-oss-120b (OpenAI) is still drafting one.', self::drawn() );
+	}
+
+	/**
+	 * The run sends the published projects, between markers, and the prompt, and keeps
+	 * the reply's JSON as the model's latest draft; the run is then over.
+	 */
+	#[RunInSeparateProcess]
+	#[PreserveGlobalState( false )]
+	public function test_the_run_keeps_the_models_draft(): void {
+		self::key();
+		$this->options[ Analysis::OPTION ] = array(
+			'running' => array(
+				'model'   => Workers_Ai::DEFAULT_MODEL,
+				'started' => time(),
+				'by'      => 'Pat Reviewer',
+			),
+			'results' => array(),
+		);
+		$sent                              = array();
+		Functions\when( 'wp_safe_remote_post' )->alias(
+			function ( string $url, array $args ) use ( &$sent ): array {
+				$sent = json_decode( $args['body'], true );
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => (string) json_encode( array( 'result' => array( 'response' => "Needs.\n\n```json\n" . self::synthesis() . "\n```" ) ) ), // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- A test's response.
+				);
+			}
+		);
+
+		Analysis::run();
+
+		$user = $sent['messages'][1]['content'];
+		$this->assertStringContainsString( '## Project 1: Smoke study', $user );
+		$this->assertStringNotContainsString( 'Draft study', $user );
+		$this->assertStringEndsWith( Analysis::own_prompt(), $user );
+		$kept = $this->options[ Analysis::OPTION ];
+		$this->assertNull( $kept['running'] );
+		$this->assertSame( 'done', $kept['results'][ Workers_Ai::DEFAULT_MODEL ]['state'] );
+		$this->assertSame( self::synthesis(), $kept['results'][ Workers_Ai::DEFAULT_MODEL ]['json'] );
+		$this->assertSame( 1, $kept['results'][ Workers_Ai::DEFAULT_MODEL ]['projects'] );
+	}
+
+	/**
+	 * A run that fails is kept as the model's latest, with why; one already asked, as by
+	 * an event that fired twice, isn't asked again.
+	 */
+	public function test_a_run_that_fails_says_why(): void {
+		$this->options[ Analysis::OPTION ] = array(
+			'running' => array(
+				'model'   => Workers_Ai::DEFAULT_MODEL,
+				'started' => time(),
+				'by'      => 'Pat Reviewer',
+				'asked'   => true,
+			),
+			'results' => array(),
+		);
+		Analysis::run();
+		$this->assertSame( array(), $this->options[ Analysis::OPTION ]['results'], 'Asked already.' );
+
+		unset( $this->options[ Analysis::OPTION ]['running']['asked'] );
+		Analysis::run();
+		$result = $this->options[ Analysis::OPTION ]['results'][ Workers_Ai::DEFAULT_MODEL ];
+		$this->assertSame( 'failed', $result['state'] );
+		$this->assertSame( 'The site has no Workers AI key.', $result['problem'] );
+		$this->assertNull( $this->options[ Analysis::OPTION ]['running'] );
+	}
+
+	/**
+	 * A run still going long after a request would have given up is kept as failed.
+	 */
+	public function test_a_run_going_too_long_failed(): void {
+		$this->options[ Analysis::OPTION ] = array(
+			'running' => array(
+				'model'   => Workers_Ai::DEFAULT_MODEL,
+				'started' => time() - 3600,
+				'by'      => 'Pat Reviewer',
+			),
+			'results' => array(),
+		);
+
+		$state = Analysis::state();
+
+		$this->assertNull( $state['running'] );
+		$this->assertStringStartsWith( 'It didn’t finish.', $state['results'][ Workers_Ai::DEFAULT_MODEL ]['problem'] );
+		$this->assertSame( $state, $this->options[ Analysis::OPTION ] );
+	}
+
+	/**
+	 * Checking a model's draft puts its JSON through the check and offers the model for
+	 * Made with, which a check after editing the JSON keeps.
+	 */
+	public function test_checking_a_draft_offers_its_model(): void {
+		$this->options[ Analysis::OPTION ] = array(
+			'running' => null,
+			'results' => array( Workers_Ai::DEFAULT_MODEL => self::draft() ),
+		);
+		self::send(
+			array(
+				'firehouse_step'           => 'take',
+				'firehouse_analysis_model' => Workers_Ai::DEFAULT_MODEL,
+			)
+		);
+		$page = self::drawn();
+
+		$this->assertSame( 'Ready to mark reviewed: FireHouse synthesis', Synthesis_Screen::title( 'FireHouse synthesis' ) );
+		$this->assertStringContainsString( 'id="firehouse-model" name="firehouse_model" class="regular-text" value="Llama 4 Scout (Meta), on Cloudflare Workers AI"', $page );
+		$this->assertStringContainsString( '<input type="hidden" name="firehouse_made_with" value="Llama 4 Scout (Meta), on Cloudflare Workers AI" />', $page );
+
+		self::send(
+			array(
+				'firehouse_step'      => 'check',
+				'firehouse_synthesis' => self::synthesis( 'R_smoke' ),
+				'firehouse_made_with' => 'Llama 4 Scout (Meta), on Cloudflare Workers AI',
+			)
+		);
+		$this->assertStringContainsString( 'value="Llama 4 Scout (Meta), on Cloudflare Workers AI"', self::drawn() );
+
+		self::send(
+			array(
+				'firehouse_step'      => 'check',
+				'firehouse_synthesis' => self::synthesis( 'R_smoke' ),
+				'firehouse_made_with' => "Llama\u{202E}",
+			)
+		);
+		$this->assertStringContainsString( 'value="NotebookLM"', self::drawn(), 'A name that wouldn’t show as typed isn’t offered.' );
+	}
+
+	/**
+	 * A draft that isn't kept, or a model not offered, starts nothing and says so.
+	 */
+	public function test_a_draft_not_kept_says_so(): void {
+		foreach ( array( Workers_Ai::DEFAULT_MODEL, '@cf/qwen/qwq-32b' ) as $model ) {
+			self::send(
+				array(
+					'firehouse_step'           => 'take',
+					'firehouse_analysis_model' => $model,
+				)
+			);
+			$this->assertSame( 'Not started: FireHouse synthesis', Synthesis_Screen::title( 'FireHouse synthesis' ) );
+			$this->assertStringContainsString( 'That draft isn’t kept any more.', self::drawn() );
+			$this->assertSame( array(), $this->transients );
+		}
 	}
 
 	/**

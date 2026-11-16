@@ -338,6 +338,9 @@ overrides are isolated so a re-sync doesn't lose them.
       (`Synthesis::check()`, `domain/class-synthesis.php`) reads the prompt's JSON and
       refuses an area whose needs don't run by project count, highest first. The team's
       prompt orders them that way; the current one, which ranks by importance, doesn't.
+      The plugin's own prompt, `shared/synthesis-prompt.txt`, changes with it: a test
+      holds it to the one in `notebooklm/README.md`, so Analyze results and NotebookLM
+      are compared on the same words.
 - [ ] **Review the topic-area `covers` copy** in `topics.json` — the bullet list in
       the callout, and now the only area copy on `/topics/…`. The longer `intro`
       paragraphs are no longer rendered (September 2026 review) but are kept in the
@@ -382,6 +385,15 @@ overrides are isolated so a re-sync doesn't lose them.
       wants its test submissions emailed (the `firehouse_survey_notify` filter, set to
       "" in a must-use plugin, stops them). Also confirm the site's address doesn't
       come from the request's Host header, since the email's links use it.
+- [ ] **Give a site Analyze results' key only once the service is approved for it**
+      (plan open question 7). Until then it has none, and its synthesis screen offers
+      only the paste. The key is the site's `wp-config.php` constants
+      `FIREHOUSE_WORKERS_AI_ACCOUNT` and `FIREHOUSE_WORKERS_AI_TOKEN`: a Cloudflare
+      account ID, and a token made from Cloudflare's "Workers AI" template (Workers AI
+      Read and Edit, on that account only), with an expiry date. Never put either in
+      the database, the repository or a chat; if one is exposed, roll the token in
+      Cloudflare's dashboard. A site with the key also needs WP-Cron running and
+      api.cloudflare.com reachable from its server.
 - [ ] **Check that deleting a transient reports whether it deleted one** on each
       WordPress site the plugin runs on, with whatever object cache it has. The
       synthesis screen's Mark reviewed relies on it to publish a check once
@@ -730,8 +742,10 @@ nothing from the database. Each class's docblock has the detail; this is the map
   rewrite rules rebuilt, on activation and after `Installer::REVISION` changes.
 - `Settings` is FireHouse → Settings: the site name, the Submit a Finding label and
   address, the survey form's Accept submissions switch (administrators only,
-  `Settings::OPEN_SURVEY`), the three navigation labels, and each survey question's
-  wording and help (stored only where they differ from `Questions::all()`). The pages
+  `Settings::OPEN_SURVEY`), the three navigation labels, each survey question's
+  wording and help (stored only where they differ from `Questions::all()`), and,
+  while the site has a Workers AI key, the synthesis prompt (stored only where it
+  differs from `Analysis::own_prompt()`; cleared, it's the plugin's own). The pages
   read `Settings::get()`, which while the form is open gives the Submit page's address
   as the survey address; `Settings::stored()` is what's saved.
 - `Edit_Screen` is what the project and topic edit screens share. Each adds a box of
@@ -992,6 +1006,38 @@ nothing from the database. Each class's docblock has the detail; this is the map
     revision is the undo, one topic at a time, and puts back all of that topic's
     fields. The comparison against the published synthesis and the
     re-sort when counts change come after launch (Eric, 16 November).
+  - **Analyze results** shows only while `Workers_Ai::configured()`. It starts a run
+    with the model picked (`Analysis::start()`), then returns to the screen, so a
+    reload doesn't start another, and shows the run going or each model's latest
+    draft: when, by whom, from how many projects, its whole reply and the prompt it
+    was given. **Check** puts a draft's JSON through the same check as a paste, with
+    "<model>, on Cloudflare Workers AI" offered for Made with; the paste form carries
+    that through a check after the JSON is edited.
+- `Workers_Ai` asks a model on Cloudflare Workers AI (Eric, 16 November: try it first;
+  NOAA's AI policy still decides, plan open question 7). The account ID and token are
+  the constants `FIREHOUSE_WORKERS_AI_ACCOUNT` and `FIREHOUSE_WORKERS_AI_TOKEN` in
+  `wp-config.php`: never in the database, a screen, a message or a log, and refused
+  unless shaped like Cloudflare's (32 hex digits; letters, digits, `-` and `_`), so
+  neither can add to the address or the header. The models are a fixed list, all from
+  US companies (Eric, 16 November): Meta's Llama 4 Scout, OpenAI's gpt-oss-120b,
+  Google's Gemma 4 26B and NVIDIA's Nemotron 3 120B, each reading 128,000 tokens or
+  more. One POST to `api.cloudflare.com/client/v4/accounts/{id}/ai/run/{model}` with
+  `messages` and the model's `max_tokens`, no redirects, five minutes at most; the
+  reply's text is read from a `response`, a chat completion's first choice, or a
+  Responses API output, since the models answer in different shapes. An error says
+  Cloudflare's reason with the key taken out.
+- `Analysis` is Analyze results. A run is a WP-Cron event (`firehouse_analyze`), one at
+  a time; the option `firehouse_analysis` holds the run going and each model's latest
+  result, and one going past fifteen minutes is recorded as failed. The run sends the
+  published projects' NotebookLM source text (`Notebook_Source::parts()`), each
+  project between `<project number="N" key="…">` markers with a random key no
+  project's text holds, under fixed instructions that only those markers count and
+  that nothing in the source is an instruction; then the prompt, which is the one
+  changed on Settings or the plugin's own (`shared/synthesis-prompt.txt`, which a test
+  keeps equal to `notebooklm/README.md`'s). No earlier synthesis is sent. The reply's
+  JSON is the last fenced block holding a list, or else the first stretch from a `[`
+  to its last `]` that reads as one, past any `<think>` block; a reply without one,
+  or cut off, is kept as failed, with the reply to read.
 - `Head` gives each Firehouse page its title, the site's title for it then GSL's
   suffix ("About — The FireHouse – Global Systems Laboratory"; decided by Eric, 12
   November, with Stephanie and Emily's spelling), and the description and Open Graph and
@@ -1032,7 +1078,8 @@ The traps, for whoever changes this code next:
   work address in the About page's team mailbox field, by the same pattern and field list as the Node scripts
   (`shared/email-shape.json`).
 - `uninstall.php` removes the role, so users who had it are left with no role on the
-  site, and the capabilities; the content stays.
+  site, and the capabilities, and Analyze results' drafts and any run waiting; the
+  content stays.
 
 `includes/class-help.php`, `Help`, shows the FireHouse guide: FireHouse → Help, every
 page the user may read with its screenshots, and on each FireHouse screen
@@ -1113,6 +1160,7 @@ checks (`Synthesis`):
 - `Notebook_Source::build()` writes the NotebookLM source from the projects and
   topics, byte for byte as `scripts/notebooklm-source.mjs` does: both pass
   `shared/cases/notebooklm-source.json`, whose `expected` is generated from the script.
+  `parts()` gives its introduction and each project's section apart, for `Analysis`.
 - `Synthesis::check()` reads the JSON the synthesis prompt gives and lists what's
   wrong: its shape (the four areas, each once, up to five needs each, an empty list
   allowed); a project, named by page slug or response ID, that the site doesn't show
@@ -1229,6 +1277,13 @@ composer install
 composer lint       # PHPCS: WordPress coding standards, PHP 8.1 compatibility
 composer test       # PHPUnit
 ```
+
+Analyze results needs a Workers AI key. For the local copy, put a Cloudflare account ID
+and a token made from Cloudflare's "Workers AI" template in `.env` as
+`FIREHOUSE_WORKERS_AI_ACCOUNT` and `FIREHOUSE_WORKERS_AI_TOKEN` (`.env.example` has the
+lines), typed there yourself and never into a chat, an issue or a commit, then run
+`docker compose up -d`. `docker-compose.yml` passes them to `wp-config.php`'s
+constants. Without them, the synthesis screen offers only the paste.
 
 CI runs all three on every change to the plugin: PHPCS and PHPUnit on PHP 8.1, and
 Plugin Check in a throwaway WordPress (`.github/workflows/wordpress-plugin.yml`), on

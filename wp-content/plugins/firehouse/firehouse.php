@@ -70,6 +70,8 @@ require_once __DIR__ . '/includes/class-visibility.php';
 require_once __DIR__ . '/includes/class-seed-bundle.php';
 require_once __DIR__ . '/includes/class-importer.php';
 require_once __DIR__ . '/includes/class-import-screen.php';
+require_once __DIR__ . '/includes/class-workers-ai.php';
+require_once __DIR__ . '/includes/class-analysis.php';
 require_once __DIR__ . '/includes/class-synthesis-screen.php';
 require_once __DIR__ . '/includes/class-help.php';
 require_once __DIR__ . '/survey/class-questions.php';
@@ -292,7 +294,8 @@ require_once __DIR__ . '/includes/class-head.php';
  * filter (`title_edit_pre`) runs wherever a title is edited and acts only on a topic.
  * Project_Screen and Topic_Screen save a project's or a topic's fields only from their
  * own form, on its edit screen. Help's `current_screen` hook runs on every admin screen
- * and adds a Help tab only on a FireHouse one.
+ * and adds a Help tab only on a FireHouse one. Analysis hooks only its own scheduled
+ * event, which an editor starts from the Synthesis screen.
  */
 Post_Types::hook();
 Meta::hook();
@@ -302,6 +305,7 @@ Installer::hook( __FILE__ );
 Settings::hook();
 Import_Screen::hook();
 Synthesis_Screen::hook();
+Analysis::hook();
 Help::hook();
 Survey\Survey::hook();
 Project_Screen::hook();

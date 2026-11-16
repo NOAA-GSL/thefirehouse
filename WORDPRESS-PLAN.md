@@ -58,11 +58,11 @@ that produced it).
 | Caching | **Cloudflare doesn't cache HTML** on either site (`cf-cache-status: DYNAMIC` on both, checked 1 November), so publishing shows up immediately and the plugin needs no purge step (see [Caching](#caching)). |
 | Install path | Security reviews each plugin release; developers install it. |
 | WP-CLI | **Not relied on.** Everything, including the first data load, is done in wp-admin. |
-| Outbound network | Believed allowed (doi.org). DOI lookups also reach api.crossref.org and data.crosscite.org, where doi.org forwards them. The AI service adds one more host. A Site Health check confirms them on the test site. |
+| Outbound network | Believed allowed (doi.org). DOI lookups also reach api.crossref.org and data.crosscite.org, where doi.org forwards them. The AI service adds api.cloudflare.com, on a site given its key. A Site Health check confirms them on the test site. |
 | Survey tool | **A form built into the plugin** (29 October), in its own `survey/` folder (31 October), which uses the plugin's storage, settings and markup classes. See [The survey form](#the-survey-form). Until the plugin launches, researchers submit through the **Google Form** that replaced Colorado State's Qualtrics; it belongs to Emily's account in NOAA's Google Workspace. Its responses go into the site's files through the existing import script, as today, and reach WordPress in the seed bundle at launch (see [Importing the Google Form until launch](#importing-the-google-form-until-launch)). |
 | Responses so far | Qualtrics is closed, and every real submission was re-entered through the Google Form (28 October), so the form's Sheet is the complete record. |
 | Survey API sync | **Dropped** (29 October). With the form in the plugin there is no Sheet to sync. |
-| AI synthesis | **Runs from the plugin** (agreed with Stephanie and Emily, 28 October). An **Analyze results** button sends the published projects and the team's prompt to an approved AI service, and the result waits as a draft for review. The service will likely be Cloudflare Workers AI or Amazon Bedrock, and either needs approval under NOAA's AI policy (open question 7). The model is still open (1 November) and is chosen by checking its output. Until then, and as the fallback, the synthesis screen takes NotebookLM's output by paste. See [The AI service](#the-ai-service). |
+| AI synthesis | **Runs from the plugin** (agreed with Stephanie and Emily, 28 October). An **Analyze results** button sends the published projects and the team's prompt to an approved AI service, and the result waits as a draft for review. The service will likely be Cloudflare Workers AI or Amazon Bedrock, and either needs approval under NOAA's AI policy (open question 7). The model is still open (1 November) and is chosen by checking its output. Until then, and as the fallback, the synthesis screen takes NotebookLM's output by paste. See [The AI service](#the-ai-service). *Cloudflare Workers AI is tried first (Eric, 16 November), with its key in `wp-config.php` and a choice of models from US companies only (Eric, 16 November). It stays a trial until NOAA's AI policy approves it.* |
 | Need counts | **Once per project** (28 October): a need mentioned several times in one project counts once. |
 | Link previews through Cloudflare | Found out during testing (see [Link previews](#page-titles-descriptions-and-link-previews)). |
 | AMS bridge | Probably possible, and recommended, starting on the test site for the mid-November WPO meeting (see [The AMS bridge](#the-ams-bridge)). |
@@ -225,8 +225,8 @@ wp-content/plugins/firehouse/
                    note); the editing screens (Edit_Screen, Project_Screen,
                    Topic_Screen), the publishing rules (Project_Rules), the page
                    words and allowed blocks (Page_Words, Allowed_Blocks) and the
-                   synthesis screen (Synthesis_Screen);
-                   later, the AI service client
+                   synthesis screen (Synthesis_Screen), the AI service client
+                   (Workers_Ai) and Analyze results (Analysis)
   survey/          the survey form, on the plugin's Meta, Store, Settings and
                    Markup (see The survey form)
   domain/          PHP versions of the vocabularies, validation (normalize), derive,
@@ -721,6 +721,26 @@ Cloudflare Workers AI or Amazon Bedrock, and either needs approval under NOAA's 
 policy (open question 7). The model isn't chosen yet (1 November): Llama 4, another
 open model, or a commercial one. Either service fits the client as planned: one
 host, and one key in `wp-config.php`.
+
+*Cloudflare Workers AI is tried first (Eric, 16 November). It is a trial: NOAA's AI
+policy still decides whether a site uses it (open question 7), and a site without the
+key offers only the paste.*
+
+- **The key** is two constants in the site's `wp-config.php`,
+  `FIREHOUSE_WORKERS_AI_ACCOUNT` and `FIREHOUSE_WORKERS_AI_TOKEN`: a Cloudflare account
+  ID and a token made from Cloudflare's "Workers AI" template. They're never in the
+  database, so no backup, export or screen holds them, and the plugin sends them only
+  to api.cloudflare.com. The local copy reads them from its ignored `.env`.
+- **The models** are a fixed list, from US companies only (Eric, 16 November), each
+  reading at least 128,000 tokens: Meta's Llama 4 Scout, OpenAI's gpt-oss-120b,
+  Google's Gemma 4 26B and NVIDIA's Nemotron 3 120B. Llama 3.3 70B is left out: its
+  24,000 would run out as projects arrive. The editor picks one on the synthesis
+  screen, and the screen keeps each model's latest draft, so the team can compare
+  them. Commercial models, such as OpenAI's GPT or Anthropic's Claude, can be reached
+  through Cloudflare's AI Gateway, but the projects would then go to that company too,
+  so they aren't offered.
+- **It runs in the background,** in a scheduled event, since a reply takes minutes.
+  Each model's sampling settings are its own; only the reply's length is set.
 
 - **Analyze results** sends the published projects' text and the team's prompt, and
   the reply lands on the synthesis screen with the same checks and **Mark
@@ -2264,7 +2284,7 @@ review says when to delete them (open question 14).*
   and the team to delete the first draft, since a form submission has no survey record
   for the import to correct (rule 1); one that has been published keeps its address,
   editorial fields and synthesis links, so the team tells the developer instead
-  (Copilot on #69). Awaiting Eric's decision.*
+  (Copilot on #69). Kept for now (Eric, 16 November).*
 - If the form uses the design system's `TextField` or `TextArea`, take `Field.css` off
   `UNUSED` in `scripts/plugin-css-sources.mjs`, which leaves it out of the plugin's
   stylesheet; a test fails until then if the form's markup uses its classes. *Done:
@@ -2279,15 +2299,20 @@ hand.
 ### Phase 7b — Analyze results (1–1.5 weeks)
 
 - The AI service client: one host, a key in `wp-config.php`, only published text sent
-  (see [The AI service](#the-ai-service)). *From the synthesis screen's security
+  (see [The AI service](#the-ai-service)). *Done: `Workers_Ai` and `Analysis`. Each
+  project is wrapped in markers with a key made for the run, under fixed instructions
+  the prompt setting can't change, and no earlier synthesis is sent.* *From the synthesis screen's security
   review (16 November): the NotebookLM source puts researchers' text straight into
   its Markdown, so a submitted abstract could fake another project's section. Before
   that text goes to an AI service, wrap each project in a delimiter its text can't
   fake, tell the model the projects are data, not instructions, and never send it an
   earlier synthesis: compare syntheses on the server.*
-- The Analyze results button and the prompt on the settings screen.
+- The Analyze results button and the prompt on the settings screen. *Done, with a
+  choice of models (Eric, 16 November); the prompt shows on Settings only while the
+  site has a key.*
 - The comparison with NotebookLM: both run on the same published projects, and
-  Stephanie and Emily judge the results.
+  Stephanie and Emily judge the results. *The screen keeps each model's latest draft
+  and the prompt it was given; the runs wait on Eric's key.*
 - Site Health checks: outbound reach to doi.org, api.crossref.org, data.crosscite.org
   and the AI service, `noindex` on test, and HTML caching status.
 
@@ -2471,7 +2496,9 @@ Phases 6–7.
    commercial one) is picked after its output is checked. A colleague of Stephanie's
    received OAR clearance for similar work, and she has the contacts that colleague
    worked with. Until a service is approved, the synthesis is pasted in from
-   NotebookLM (see [The AI service](#the-ai-service)).
+   NotebookLM (see [The AI service](#the-ai-service)). *Cloudflare Workers AI is
+   tried first, with models from US companies only (Eric, 16 November); approval
+   still decides whether a site uses it.*
 
 **For the team**
 

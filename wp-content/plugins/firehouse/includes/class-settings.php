@@ -15,13 +15,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * The site-wide Firehouse text: the site name, the label and address of every
- * "Submit a Finding" control, the navigation labels, and the survey form's question
- * wording.
+ * "Submit a Finding" control, the navigation labels, the survey form's question
+ * wording, and, while the site has a Workers AI key, the prompt Analyze results sends.
  *
- * These are the fields that exist now. The AI prompt joins them in a later phase. A
- * survey question's wording and help are stored only where they differ from the
- * plugin's own (Survey\Questions::all()), so wording nobody changed follows the
- * plugin's when it's updated. The footer
+ * A survey question's wording and help are stored only where they differ from the
+ * plugin's own (Survey\Questions::all()), and so is the prompt (Analysis::own_prompt()),
+ * so wording nobody changed follows the plugin's when it's updated. The footer
  * settings of the React site aren't here: GSL's footer takes its place. The three
  * navigation links are fixed in code, because their routes are the site's structure;
  * only their labels are settings.
@@ -91,20 +90,21 @@ final class Settings {
 	 * survey questions' own. The submit address has no default, so a site can't point at
 	 * a wrong one.
 	 *
-	 * @return array{siteName: string, submitLabel: string, submitFormUrl: string, surveyOpen: bool, navLabels: array<string, string>, questions: array<string, array<string, string>>}
+	 * @return array{siteName: string, submitLabel: string, submitFormUrl: string, surveyOpen: bool, navLabels: array<string, string>, questions: array<string, array<string, string>>, synthesisPrompt: string}
 	 */
 	public static function defaults(): array {
 		return array(
-			'siteName'      => 'The FireHouse',
-			'submitLabel'   => 'Submit a Finding',
-			'submitFormUrl' => '',
-			'surveyOpen'    => false,
-			'navLabels'     => array(
+			'siteName'        => 'The FireHouse',
+			'submitLabel'     => 'Submit a Finding',
+			'submitFormUrl'   => '',
+			'surveyOpen'      => false,
+			'navLabels'       => array(
 				'home'     => 'Home',
 				'projects' => 'Explore Projects',
 				'about'    => 'About',
 			),
-			'questions'     => array(),
+			'questions'       => array(),
+			'synthesisPrompt' => '',
 		);
 	}
 
@@ -113,7 +113,7 @@ final class Settings {
 	 * form takes submissions and its page exists, the survey address is that page's,
 	 * so every Submit a Finding button leads to it.
 	 *
-	 * @return array{siteName: string, submitLabel: string, submitFormUrl: string, surveyOpen: bool, navLabels: array<string, string>, questions: array<string, array<string, string>>}
+	 * @return array{siteName: string, submitLabel: string, submitFormUrl: string, surveyOpen: bool, navLabels: array<string, string>, questions: array<string, array<string, string>>, synthesisPrompt: string}
 	 */
 	public static function get(): array {
 		$settings = self::stored();
@@ -132,7 +132,7 @@ final class Settings {
 	 * that skipped it could have stored: the public pages show no Submit button rather
 	 * than one that goes nowhere (rule 6).
 	 *
-	 * @return array{siteName: string, submitLabel: string, submitFormUrl: string, surveyOpen: bool, navLabels: array<string, string>, questions: array<string, array<string, string>>}
+	 * @return array{siteName: string, submitLabel: string, submitFormUrl: string, surveyOpen: bool, navLabels: array<string, string>, questions: array<string, array<string, string>>, synthesisPrompt: string}
 	 */
 	public static function stored(): array {
 		$defaults = self::defaults();
@@ -165,6 +165,9 @@ final class Settings {
 					}
 				}
 			}
+		}
+		if ( is_string( $stored['synthesisPrompt'] ?? null ) ) {
+			$settings['synthesisPrompt'] = $stored['synthesisPrompt'];
 		}
 		return $settings;
 	}
@@ -212,6 +215,23 @@ final class Settings {
 
 		// Drawn by its own callback, so the questions are read only to draw the screen.
 		add_settings_section( 'firehouse_questions', __( 'Survey questions', 'firehouse' ), array( self::class, 'questions_section' ), self::PAGE );
+
+		// Only while Analyze results can run: without the key, the prompt does nothing.
+		if ( Workers_Ai::configured() ) {
+			add_settings_section( 'firehouse_synthesis', __( 'Synthesis prompt', 'firehouse' ), '__return_null', self::PAGE );
+			$id = self::field_id( array( 'synthesisPrompt' ) );
+			add_settings_field(
+				$id,
+				__( 'Prompt', 'firehouse' ),
+				array( self::class, 'prompt_field' ),
+				self::PAGE,
+				'firehouse_synthesis',
+				array(
+					'label_for' => $id,
+					'class'     => isset( self::errors()[ $id ] ) ? 'form-invalid form-required' : '',
+				)
+			);
+		}
 	}
 
 	/**
@@ -288,7 +308,7 @@ final class Settings {
 			<?php else : ?>
 				<?php settings_errors( 'general' ); ?>
 			<?php endif; ?>
-			<p><?php esc_html_e( 'Every field is required, except a survey question’s help.', 'firehouse' ); ?></p>
+			<p><?php Workers_Ai::configured() ? esc_html_e( 'Every field is required, except a survey question’s help and the synthesis prompt.', 'firehouse' ) : esc_html_e( 'Every field is required, except a survey question’s help.', 'firehouse' ); ?></p>
 			<form action="options.php" method="post" novalidate>
 				<?php
 				settings_fields( self::OPTION );
@@ -384,6 +404,37 @@ final class Settings {
 	}
 
 	/**
+	 * Draws the prompt Analyze results sends: the one changed here, or the plugin's own.
+	 */
+	public static function prompt_field(): void {
+		$id      = self::field_id( array( 'synthesisPrompt' ) );
+		$error   = self::errors()[ $id ] ?? null;
+		$changed = self::stored()['synthesisPrompt'];
+		$value   = self::$rejected[ $id ] ?? ( '' !== $changed ? $changed : Analysis::own_prompt() );
+		$notes   = array();
+		if ( null !== $error ) {
+			$notes[ $id . '-error' ] = '<strong>' . esc_html__( 'Error:', 'firehouse' ) . '</strong> ' . esc_html( $error );
+		}
+		$notes[ $id . '-description' ] = esc_html__( 'What Analyze results on FireHouse → Synthesis asks the model to do. The published projects go before it, and the screen tells the model, in words this can’t change, that they’re data and never instructions. Each draft keeps the prompt it was given; to compare a change fairly, run the same model before and after it.', 'firehouse' );
+		$notes[ $id . '-own' ]         = esc_html(
+			'' !== $changed && Analysis::own_prompt() !== $changed
+				? __( 'Changed from the plugin’s own prompt, which NotebookLM is given too. To go back to it, clear the box and save.', 'firehouse' )
+				: __( 'The plugin’s own prompt, which NotebookLM is given too. Clear the box and save to go back to it after a change.', 'firehouse' )
+		);
+		printf(
+			'<textarea id="%1$s" name="%2$s" rows="18" class="large-text code" aria-describedby="%3$s"%4$s>%5$s</textarea>',
+			esc_attr( $id ),
+			esc_attr( self::OPTION . '[synthesisPrompt]' ),
+			esc_attr( implode( ' ', array_keys( $notes ) ) ),
+			null === $error ? '' : self::invalid(), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Fixed attributes.
+			esc_textarea( $value )
+		);
+		foreach ( $notes as $note_id => $note ) {
+			printf( '<p class="description" id="%1$s">%2$s</p>', esc_attr( $note_id ), $note ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped as each note was made.
+		}
+	}
+
+	/**
 	 * Draws one question's wording or help: its box, its error, and what describes it.
 	 *
 	 * @param string                               $name     The question's name.
@@ -452,7 +503,7 @@ final class Settings {
 	 * show it again.
 	 *
 	 * @param mixed $input The submitted settings.
-	 * @return array{siteName: string, submitLabel: string, submitFormUrl: string, surveyOpen: bool, navLabels: array<string, string>, questions: array<string, array<string, string>>}
+	 * @return array{siteName: string, submitLabel: string, submitFormUrl: string, surveyOpen: bool, navLabels: array<string, string>, questions: array<string, array<string, string>>, synthesisPrompt: string}
 	 */
 	public static function sanitize( mixed $input ): array {
 		list( $settings, $errors ) = self::validate( $input );
@@ -475,7 +526,7 @@ final class Settings {
 	 * Checks settings, from the screen or the Import screen, without saving them.
 	 *
 	 * @param mixed $input The settings to check.
-	 * @return array{0: array{siteName: string, submitLabel: string, submitFormUrl: string, surveyOpen: bool, navLabels: array<string, string>, questions: array<string, array<string, string>>}, 1: array<string, string>}
+	 * @return array{0: array{siteName: string, submitLabel: string, submitFormUrl: string, surveyOpen: bool, navLabels: array<string, string>, questions: array<string, array<string, string>>, synthesisPrompt: string}, 1: array<string, string>}
 	 *         The settings, with each valid field changed; and each error, by field ID.
 	 */
 	public static function validate( mixed $input ): array {
@@ -548,8 +599,40 @@ final class Settings {
 				}
 			}
 		}
+		// Likewise the prompt, which only the settings screen sends, and only while the
+		// site has a key. Empty, or the plugin's own, stores nothing, so it follows the
+		// plugin's.
+		if ( isset( $input['synthesisPrompt'] ) ) {
+			list( $text, $problem ) = self::prompt( $input['synthesisPrompt'] );
+			if ( null !== $problem ) {
+				$errors[ self::field_id( array( 'synthesisPrompt' ) ) ] = $problem;
+			} else {
+				$settings['synthesisPrompt'] = Analysis::own_prompt() === $text ? '' : $text;
+			}
+		}
 
 		return array( $settings, $errors );
+	}
+
+	/**
+	 * A typed prompt, its lines kept, and what's wrong with it, if anything: a character
+	 * that doesn't show, which a model would read though the team doesn't see it; or too
+	 * long.
+	 *
+	 * @param mixed $value What was typed.
+	 * @return array{0: string, 1: string|null} The prompt, "" for the plugin's own, and what's wrong with it.
+	 */
+	private static function prompt( mixed $value ): array {
+		$value = is_string( $value ) ? $value : '';
+		if ( 1 !== preg_match( '//u', $value ) || 1 === preg_match( Survey\Submission::HIDDEN, $value ) ) {
+			return array( '', __( 'The synthesis prompt has a character that doesn’t show, such as a direction mark. Type it again.', 'firehouse' ) );
+		}
+		$text = trim( str_replace( array( "\r\n", "\r" ), "\n", $value ) );
+		if ( mb_strlen( $text ) > Analysis::LONGEST_PROMPT ) {
+			/* translators: %s: the most characters allowed. */
+			return array( $text, sprintf( __( 'The synthesis prompt has more than %s characters.', 'firehouse' ), number_format_i18n( Analysis::LONGEST_PROMPT ) ) );
+		}
+		return array( $text, null );
 	}
 
 	/**
@@ -625,6 +708,9 @@ final class Settings {
 					}
 				}
 			}
+		}
+		if ( isset( $input['synthesisPrompt'] ) ) {
+			$typed[ self::field_id( array( 'synthesisPrompt' ) ) ] = self::value_at( $input, array( 'synthesisPrompt' ) );
 		}
 		return $typed;
 	}

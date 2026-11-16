@@ -17,6 +17,12 @@ assigned to a topic area. This folder holds what the notebook reads.
 Everything happens on **FireHouse → Synthesis**. FireHouse Editors and administrators
 can use it.
 
+On a site with a Workers AI key, **Analyze results** on the same screen has a model
+draft the synthesis in place of steps 1 to 3; the FireHouse guide's synthesis page says
+how. Its prompt starts as the one below: the plugin's copy,
+`wp-content/plugins/firehouse/shared/synthesis-prompt.txt`, is held to it by a test,
+and FireHouse → Settings can change what the plugin sends.
+
 1. **Press Download NotebookLM source.** In the notebook, delete the old
    `firehouse-findings.md` source and upload the one you downloaded. Keep it the only
    source. It holds the projects the site shows, word for word.

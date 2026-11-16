@@ -31,12 +31,31 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class Notebook_Source {
 
 	/**
+	 * The document's title, which the synthesis prompt names it by.
+	 */
+	public const TITLE = 'The Firehouse — collected project findings';
+
+	/**
 	 * The document.
 	 *
 	 * @param list<array<string, mixed>> $projects Projects as types.ts has them; those not `published` are left out.
 	 * @param list<array<string, mixed>> $topics   Topics as types.ts has them: label, description, covers, order.
 	 */
 	public static function build( array $projects, array $topics ): string {
+		$parts = self::parts( $projects, $topics );
+		return $parts['intro'] . "\n\n---\n\n" . implode( "\n\n---\n\n", $parts['projects'] ) . "\n";
+	}
+
+	/**
+	 * The document's parts: its introduction, ending with the four topic areas, and each
+	 * published project's section, most recent first. build() joins them with rules;
+	 * Analysis puts each between markers its text can't fake.
+	 *
+	 * @param list<array<string, mixed>> $projects Projects as types.ts has them; those not `published` are left out.
+	 * @param list<array<string, mixed>> $topics   Topics as types.ts has them: label, description, covers, order.
+	 * @return array{intro: string, projects: list<string>}
+	 */
+	public static function parts( array $projects, array $topics ): array {
 		$published = array_values( array_filter( $projects, static fn( array $project ): bool => true === ( $project['published'] ?? false ) ) );
 		usort( $published, array( Derive::class, 'by_recency' ) );
 
@@ -56,28 +75,27 @@ final class Notebook_Source {
 			$sections[] = self::project( $project, $index );
 		}
 
-		return implode(
-			"\n",
-			array(
-				'# The Firehouse — collected project findings',
-				'',
-				'Source document for the topic-area synthesis. It contains all ' . count( $published ) . ' '
-					. 'published projects in The Firehouse, NOAA Global Systems Laboratory\'s hub for '
-					. 'fire weather social science. Each project\'s abstract, takeaways, needs and '
-					. 'recommendations are reproduced exactly as the researchers submitted them.',
-				'',
-				'Topic areas are a lens across the whole collection. No project is assigned to a '
-					. 'topic area; a single project may inform several areas or none.',
-				'',
-				'## The four topic areas',
-				'',
-				implode( "\n\n", $definitions ),
-				'',
-				'---',
-				'',
-				implode( "\n\n---\n\n", $sections ),
-			)
-		) . "\n";
+		return array(
+			'intro'    => implode(
+				"\n",
+				array(
+					'# ' . self::TITLE,
+					'',
+					'Source document for the topic-area synthesis. It contains all ' . count( $published ) . ' '
+						. 'published projects in The Firehouse, NOAA Global Systems Laboratory\'s hub for '
+						. 'fire weather social science. Each project\'s abstract, takeaways, needs and '
+						. 'recommendations are reproduced exactly as the researchers submitted them.',
+					'',
+					'Topic areas are a lens across the whole collection. No project is assigned to a '
+						. 'topic area; a single project may inform several areas or none.',
+					'',
+					'## The four topic areas',
+					'',
+					implode( "\n\n", $definitions ),
+				)
+			),
+			'projects' => $sections,
+		);
 	}
 
 	/**

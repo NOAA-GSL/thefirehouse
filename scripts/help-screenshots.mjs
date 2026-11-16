@@ -61,9 +61,13 @@ const SHOTS = {
   'project-screen': { project: true, element: '#wpbody-content', height: 1150 },
   'topic-fields': { topic: TOPIC, element: '#wpbody-content', height: 760 },
   'synthesis-screen': { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-synthesis', element: '#wpbody-content', height: 440 },
+  // Only on a site with a Workers AI key, and with drafts kept to show.
+  'analyze-results': { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-synthesis', element: '#firehouse-analyze', height: 700 },
   // The survey form's switch as a new site has it, whatever this copy's is.
   settings: { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-settings', element: '#wpbody-content', height: 900, untick: '#firehouse-surveyOpen' },
   'settings-questions': { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-settings', element: '#firehouse-questions', height: 560 },
+  // Only on a site with a Workers AI key.
+  'settings-prompt': { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-settings', element: 'tr:has(#firehouse-synthesisPrompt)', height: 640 },
   import: { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-import', element: '#wpbody-content', height: 320 },
   'landing-hero-fields': { landing: true, block: 'firehouse/hero', height: 600 },
 };
