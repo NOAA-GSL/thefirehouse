@@ -230,9 +230,10 @@ one is.
   to publish it to the topic pages and the landing page. Each topic keeps a revision
   of the synthesis before; restoring it is the undo.
 * The landing page's "Where these needs come from" in Stephanie and Emily's 11
-  November wording, which says "with super intelligence" for any model rather than
-  naming it, and the synthesis note's "SI-synthesized", on the landing page and the
-  topic pages. Their new landing heading and About words reach a site with its
+  November wording. Under Executive Order 14434 the synthesis says "Super
+  Intelligence (SI)" for AI: the note on the landing and topic pages says "Drafted
+  with [the tool], a Super Intelligence (SI) tool", "Where these needs come from" names
+  the tool and says what the term means, and the project pages say the same. Their new landing heading and About words reach a site with its
   next first import; a site imported before keeps its words until an editor changes
   them in the block editor.
 

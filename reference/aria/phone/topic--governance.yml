@@ -21,7 +21,7 @@
   - region "Top 5 needs":
     - heading "Top 5 needs" [level=2]
     - paragraph:
-      - strong: SI-synthesized
+      - strong: Drafted with Claude, a Super Intelligence (SI) tool,
       - text: across 4 of 8 projects.
       - strong: Draft, pending team review
       - text: · updated

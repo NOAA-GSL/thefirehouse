@@ -319,12 +319,12 @@ final class LandingPageTest extends WordPressTestCase {
 	/**
 	 * The top needs: the section's words, the synthesis note without its review status,
 	 * a card for each published area in order with its first needs, counted among the
-	 * projects a visitor may see, and where the needs come from, saying a model read them.
+	 * projects a visitor may see, and where the needs come from, naming the tool.
 	 */
 	public function test_the_top_needs(): void {
 		$html = Landing_Page::top_needs( self::landing()['topicSection'] + array( 'needsPerCard' => 2 ) );
 
-		$this->assertStringStartsWith( '<section class="fh-topics fh-container" id="top-needs" aria-labelledby="topics-heading"><div class="fh-topics__intro"><span class="fh-eyebrow">Synthesized across every project</span><h2 id="topics-heading" class="fh-topics__heading">Top needs across submitted projects</h2><p class="fh-topics__body">Read together &lt;as one body of evidence&gt;.</p><p class="fh-synthesis-note fh-topics__note"><span class="fh-synthesis-note__dot" aria-hidden="true"></span><span><strong>SI-synthesized</strong> across all 2 projects.</span></p></div>', $html );
+		$this->assertStringStartsWith( '<section class="fh-topics fh-container" id="top-needs" aria-labelledby="topics-heading"><div class="fh-topics__intro"><span class="fh-eyebrow">Synthesized across every project</span><h2 id="topics-heading" class="fh-topics__heading">Top needs across submitted projects</h2><p class="fh-topics__body">Read together &lt;as one body of evidence&gt;.</p><p class="fh-synthesis-note fh-topics__note"><span class="fh-synthesis-note__dot" aria-hidden="true"></span><span><strong>Drafted with Claude, a Super Intelligence (SI) tool,</strong> across all 2 projects.</span></p></div>', $html );
 
 		$this->assertSame( 2, substr_count( $html, '<article class="fh-topic-card fh-glass"' ) );
 		$this->assertLessThan( strpos( $html, 'href="https://example.test/firehouse/topics/warning/"' ), strpos( $html, 'href="https://example.test/firehouse/topics/observe/"' ) );
@@ -335,8 +335,7 @@ final class LandingPageTest extends WordPressTestCase {
 		$this->assertStringContainsString( '<a class="fh-topic-card__link" href="https://example.test/firehouse/topics/warning/">Warnings &amp; Response</a></h3><p class="fh-topic-card__empty">No needs have been published for this area yet.</p>', $html );
 		$this->assertMatchesRegularExpression( '#<div class="fh-topic-card__foot"><span class="fh-topic-card__cue" aria-hidden="true">View topic area and sources<svg[^>]*width="15"[^>]*>.*?</svg></span></div></article>#s', $html );
 
-		$this->assertStringContainsString( '<aside class="fh-source" id="needs-source" aria-labelledby="source-heading"><div class="fh-source__copy"><h3 id="source-heading" class="fh-source__heading">Where these needs come from</h3><p class="fh-source__body">Topic areas are not assigned project by project. Every project in The FireHouse is read together, with super intelligence. The end-user needs submitted by researchers are grouped into the four topic areas above and ranked by prevalence across projects. This pass', $html );
-		$this->assertStringNotContainsString( 'Claude', $html, 'The words name no tool, whichever model the synthesis records.' );
+		$this->assertStringContainsString( '<aside class="fh-source" id="needs-source" aria-labelledby="source-heading"><div class="fh-source__copy"><h3 id="source-heading" class="fh-source__heading">Where these needs come from</h3><p class="fh-source__body">Topic areas are not assigned project by project. Every project in The FireHouse is read together with Claude, a Super Intelligence (SI) tool. Super Intelligence is the federal term, under Executive Order 14434, for the technology formerly called artificial intelligence. The end-user needs submitted by researchers are grouped into the four topic areas above and ranked by prevalence across projects. This pass', $html );
 		$this->assertMatchesRegularExpression( '#</p></div><a href="https://example.test/firehouse/projects/" class="fh-btn fh-btn--secondary fh-btn--md">Explore all projects<svg[^>]*>.*?</svg></a></aside></section>$#s', $html );
 	}
 

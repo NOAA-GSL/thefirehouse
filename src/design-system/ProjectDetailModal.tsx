@@ -184,7 +184,7 @@ export function ProjectDetailModal({
         {abstract && (
           <Section title="Abstract">
             {/* Verbatim, always. The researcher's own words are the point of this
-                surface — the AI-synthesized phrasing lives on the landing page and
+                surface — the synthesized phrasing lives on the landing page and
                 must not leak down here. */}
             <p className="fh-modal__prose fh-modal__prose--clamped">{abstract}</p>
           </Section>

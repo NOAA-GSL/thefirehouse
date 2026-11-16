@@ -721,9 +721,9 @@ host, and one key in `wp-config.php`.
   stronger than the entries. A model may need the prompt adjusted, and the old and
   new prompts run on the same projects before switching. Changing tools or models
   halfway through would otherwise change the results, so each synthesis records the
-  model that wrote it. The landing page doesn't name it: it says "with super
-  intelligence" (Stephanie and Emily's wording, 11 November; Eric chose on 16 November
-  to apply it as written).
+  model that wrote it, and the site's notice names it, as "a Super Intelligence (SI)
+  tool": Executive Order 14434 has federal sites say "Super Intelligence" for AI (Eric,
+  16 November).
 - **The fallback stays.** Until the service is approved, and whenever it is
   unavailable, the team runs the prompt in NotebookLM and pastes the result in.
 

@@ -273,11 +273,15 @@ overrides are isolated so a re-sync doesn't lose them.
         since no test keeps them the same). Wording from `landing.json` and `about.json`
         also lives in each imported site's landing and About pages, which a later import
         leaves as they are and an editor changes in the block editor. Her review also
-        made the synthesis note "SI-synthesized" in place of "AI-synthesized", and
-        "Where these needs come from" say the projects are read together "with super
-        intelligence" in place of the tool's name; Eric chose on 16 November to apply
-        both as written. Both are the synthesis's AI disclosure, so they go through
-        clearance with the reviewed synthesis before gsl.noaa.gov;
+        changed "AI" to "SI", as Executive Order 14434 requires of federal sites
+        ("Super Intelligence" and "SI" in place of "artificial intelligence" and "AI").
+        On 16 November Eric chose how: the note says "Drafted with [the synthesis's
+        tool], a Super Intelligence (SI) tool, across …", "Where these needs come from"
+        names the tool the same way and says what the term means, citing the order, and
+        the project pages say the topic areas are "drafted across all projects with a
+        Super Intelligence (SI) tool". Stephanie and Emily to confirm the wording. It is
+        the synthesis's disclosure, so it goes through clearance with the reviewed
+        synthesis before gsl.noaa.gov;
       - whether the synthesis needs its own line saying whose it is;
       - the explorer's "Update results" button, which only the plugin has: without
         JavaScript it sends the search and filters. The Science Communicator suggests

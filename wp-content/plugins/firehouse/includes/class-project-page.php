@@ -227,7 +227,7 @@ final class Project_Page {
 				Icons::svg( 'quote', 14 ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- one of the plugin's checked icons.
 				sprintf(
 					/* translators: %s: a link whose words are "topic areas". */
-					esc_html__( 'Takeaways, needs and recommendations on this page are reproduced as the researcher submitted them. The %s are an AI-assisted synthesis across all projects, so no single project is filed under one.', 'firehouse' ),
+					esc_html__( 'Takeaways, needs and recommendations on this page are reproduced as the researcher submitted them. The %s are drafted across all projects with a Super Intelligence (SI) tool, so no single project is filed under one.', 'firehouse' ),
 					'<a href="' . esc_url( home_url( $root . '#top-needs' ) ) . '">' . esc_html__( 'topic areas', 'firehouse' ) . '</a>'
 				) // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- the translated words escaped, and an escaped link.
 			);

@@ -47,7 +47,13 @@ export function SynthesisNote({
     <p className={['fh-synthesis-note', draft && 'fh-synthesis-note--draft', className].filter(Boolean).join(' ')}>
       <span className="fh-synthesis-note__dot" aria-hidden="true" />
       <span>
-        <strong>{model ? 'SI-synthesized' : 'Synthesized'}</strong> across {projects}.
+        {/* Executive Order 14434 has federal sites say "Super Intelligence" (SI) for
+            AI. The note spells the term out and names the tool, so it still reads as
+            a plain disclosure where a visitor sees nothing else (Eric, 16 November). */}
+        <strong>
+          {model ? `Drafted with ${model}, a Super Intelligence (SI) tool,` : 'Synthesized'}
+        </strong>{' '}
+        across {projects}.
         {showStatus &&
           (reviewedBy ? (
             <>
