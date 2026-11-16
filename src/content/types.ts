@@ -107,9 +107,9 @@ export interface TopicSummary {
   sourceCount?: number;
   /**
    * Tool or model that produced the synthesis, e.g. "NotebookLM". Presence of this
-   * field is what turns the note's "Drafted with <model>, a Super Intelligence (SI)
-   * tool," on, and names the tool in it and on the landing page. Executive Order 14434
-   * has federal sites say "Super Intelligence" (SI) for AI.
+   * field is what turns the note's "Drafted with Super Intelligence (SI)" on; the site
+   * doesn't show the name while the service is undecided. Executive Order 14434 has
+   * federal sites say "Super Intelligence" (SI) for AI.
    *
    * This is not decoration. The landing page is the one surface where the site
    * paraphrases researchers instead of quoting them (project pages stay verbatim),

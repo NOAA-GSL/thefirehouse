@@ -48,10 +48,11 @@ export function SynthesisNote({
       <span className="fh-synthesis-note__dot" aria-hidden="true" />
       <span>
         {/* Executive Order 14434 has federal sites say "Super Intelligence" (SI) for
-            AI. The note spells the term out and names the tool, so it still reads as
-            a plain disclosure where a visitor sees nothing else (Eric, 16 November). */}
+            AI. The note spells the term out, so it still reads as a plain disclosure
+            where a visitor sees nothing else. It names no tool while the service is
+            undecided (Eric, 16 November). */}
         <strong>
-          {model ? `Drafted with ${model}, a Super Intelligence (SI) tool,` : 'Synthesized'}
+          {model ? 'Drafted with Super Intelligence (SI)' : 'Synthesized'}
         </strong>{' '}
         across {projects}.
         {showStatus &&

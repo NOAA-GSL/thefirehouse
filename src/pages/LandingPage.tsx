@@ -245,12 +245,12 @@ export function LandingPage() {
               Where these needs come from
             </h3>
             {/* Executive Order 14434 has federal sites say "Super Intelligence" (SI) for
-                AI. Like the note, this names the tool the synthesis records, and says
-                once what the term means, citing the order (Eric, 16 November). */}
+                AI. Like the note, this names no tool while the service is undecided, and
+                says once what the term means, citing the order (Eric, 16 November). */}
             <p className="fh-source__body">
               Topic areas are not assigned project by project.{' '}
               {synthesis.model
-                ? `Every project in The FireHouse is read together with ${synthesis.model}, a Super Intelligence (SI) tool. Super Intelligence is the federal term, under Executive Order 14434, for the technology formerly called artificial intelligence.`
+                ? 'Every project in The FireHouse is read together with Super Intelligence (SI). Super Intelligence is the federal term, under Executive Order 14434, for the technology formerly called artificial intelligence.'
                 : 'Every project in The FireHouse is read together.'}{' '}
               The end-user needs submitted by researchers are grouped into the four topic
               areas above and ranked by prevalence across projects. This pass serves as an initial

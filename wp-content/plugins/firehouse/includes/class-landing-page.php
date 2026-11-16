@@ -187,11 +187,10 @@ final class Landing_Page {
 			esc_html__( 'Where these needs come from', 'firehouse' ),
 			esc_html__( 'Topic areas are not assigned project by project.', 'firehouse' ) . ' ' .
 			// Executive Order 14434 has federal sites say "Super Intelligence" (SI) for AI.
-			// Like the note, this names the tool the synthesis records, and says once what
-			// the term means, citing the order (Eric, 16 November).
+			// Like the note, this names no tool while the service is undecided, and says once
+			// what the term means, citing the order (Eric, 16 November).
 			( null !== $model && '' !== $model
-				/* translators: %s: the tool that drafted the synthesis, e.g. "Claude". */
-				? sprintf( esc_html__( 'Every project in The FireHouse is read together with %s, a Super Intelligence (SI) tool. Super Intelligence is the federal term, under Executive Order 14434, for the technology formerly called artificial intelligence.', 'firehouse' ), Markup::text( $model ) )
+				? esc_html__( 'Every project in The FireHouse is read together with Super Intelligence (SI). Super Intelligence is the federal term, under Executive Order 14434, for the technology formerly called artificial intelligence.', 'firehouse' )
 				: esc_html__( 'Every project in The FireHouse is read together.', 'firehouse' ) ) . ' ' .
 			esc_html__( 'The end-user needs submitted by researchers are grouped into the four topic areas above and ranked by prevalence across projects. This pass serves as an initial draft that our team reviews and refines before finalizing each synthesis. Open any topic area to see which specific projects each need draws on; each project page preserves the researchers’ own words.', 'firehouse' ),
 			Markup::button( __( 'Explore all projects', 'firehouse' ), home_url( $root . 'projects/' ), 'secondary', 'md', array( 1 => 'arrow-right' ) )

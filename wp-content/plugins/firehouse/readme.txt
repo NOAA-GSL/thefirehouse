@@ -232,8 +232,8 @@ one is.
 * The landing page's "Where these needs come from" in Stephanie and Emily's 11
   November wording. Under Executive Order 14434 the synthesis says "Super
   Intelligence (SI)" for AI: the note on the landing and topic pages says "Drafted
-  with [the tool], a Super Intelligence (SI) tool", "Where these needs come from" names
-  the tool and says what the term means, and the project pages say the same. Their new landing heading and About words reach a site with its
+  with Super Intelligence (SI)", "Where these needs come from" says the same and what
+  the term means, and so do the project pages. None names the tool. Their new landing heading and About words reach a site with its
   next first import; a site imported before keeps its words until an editor changes
   them in the block editor.
 

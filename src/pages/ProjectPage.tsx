@@ -436,8 +436,8 @@ export function ProjectPage() {
             <span>
               Takeaways, needs and recommendations on this page are reproduced as the
               researcher submitted them. The <Link to="/#top-needs">topic areas</Link>{' '}
-              are drafted across all projects with a Super Intelligence (SI) tool, so no
-              single project is filed under one.
+              are drafted across all projects with Super Intelligence (SI), so no single
+              project is filed under one.
             </span>
           </p>
         </aside>
