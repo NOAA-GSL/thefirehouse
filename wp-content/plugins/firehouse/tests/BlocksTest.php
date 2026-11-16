@@ -203,14 +203,25 @@ final class BlocksTest extends WordPressTestCase {
 			)
 		);
 		Functions\when( 'get_post' )->alias(
-			static fn( mixed $id = null ): ?\WP_Post => ( null === $id ) ? $about : ( 50 === (int) $id ? new \WP_Post(
-				array(
-					'ID'          => 50,
-					'post_type'   => 'attachment',
-					'post_status' => 'inherit',
-				)
-			) : null )
+			static fn( mixed $id = null ): ?\WP_Post => match ( null === $id ? 11 : (int) $id ) {
+				10 => new \WP_Post(
+					array(
+						'ID'        => 10,
+						'post_type' => 'page',
+					)
+				),
+				11 => $about,
+				50 => new \WP_Post(
+					array(
+						'ID'          => 50,
+						'post_type'   => 'attachment',
+						'post_status' => 'inherit',
+					)
+				),
+				default => null,
+			}
 		);
+		Functions\when( 'is_post_publicly_viewable' )->justReturn( true );
 		Functions\when( 'get_posts' )->alias( static fn( array $args ): array => 'attachment' === ( $args['post_type'] ?? null ) ? array( 50 ) : array( 10 ) );
 		Functions\when( '_prime_post_caches' )->justReturn();
 		Functions\when( 'get_post_ancestors' )->justReturn( array( 10 ) );
@@ -230,13 +241,20 @@ final class BlocksTest extends WordPressTestCase {
 	}
 
 	/**
-	 * A FireHouse page's editor is offered the portraits attached to the FireHouse pages
-	 * and those its team cards use, each only if the About page would show it; any other
-	 * post's editor, none.
+	 * A FireHouse page's editor is offered every portrait attached to the FireHouse pages
+	 * a visitor can see and those its team cards use, each only if the About page would
+	 * show it; any other post's editor, none.
 	 */
 	public function test_the_portraits_a_team_card_can_show(): void {
 		Functions\when( 'get_post_ancestors' )->alias( static fn( \WP_Post $post ): array => 0 === $post->post_parent ? array() : array( $post->post_parent ) );
-		Functions\when( 'get_pages' )->justReturn( array( new \WP_Post( array( 'ID' => 11 ) ) ) );
+		// Under the root (10): the About page (11), a draft (12) and one with a password (13).
+		Functions\when( 'get_pages' )->justReturn(
+			array(
+				new \WP_Post( array( 'ID' => 11 ) ),
+				new \WP_Post( array( 'ID' => 12 ) ),
+				new \WP_Post( array( 'ID' => 13 ) ),
+			)
+		);
 		$asked = array();
 		Functions\when( 'get_posts' )->alias(
 			static function ( array $args ) use ( &$asked ): array {
@@ -278,20 +296,35 @@ final class BlocksTest extends WordPressTestCase {
 				),
 			)
 		);
-		// The About page would show 50 and 52, not 51.
+		// The About page would show 50 and 52, not 51, attached to a page a visitor can't see.
 		Functions\when( 'get_post' )->alias(
-			static fn( mixed $id ): ?\WP_Post => in_array( (int) $id, array( 50, 51, 52 ), true ) ? new \WP_Post(
-				array(
-					'ID'          => (int) $id,
-					'post_type'   => 'attachment',
-					'post_status' => 'inherit',
-					'post_parent' => 51 === (int) $id ? 99 : 0,
-				)
-			) : null
+			static fn( mixed $id ): ?\WP_Post => match ( true ) {
+				in_array( (int) $id, array( 50, 51, 52 ), true ) => new \WP_Post(
+					array(
+						'ID'          => (int) $id,
+						'post_type'   => 'attachment',
+						'post_status' => 'inherit',
+						'post_parent' => 51 === (int) $id ? 12 : 0,
+					)
+				),
+				in_array( (int) $id, array( 10, 11, 12, 13 ), true ) => new \WP_Post(
+					array(
+						'ID'            => (int) $id,
+						'post_type'     => 'page',
+						'post_status'   => 12 === (int) $id ? 'draft' : 'publish',
+						'post_password' => 13 === (int) $id ? 'secret' : '',
+					)
+				),
+				default => null,
+			}
 		);
 		Functions\when( 'wp_attachment_is_image' )->justReturn( true );
-		Functions\when( 'get_post_status' )->justReturn( 'draft' );
-		Functions\when( 'is_post_publicly_viewable' )->justReturn( false );
+		$public = true;
+		Functions\when( 'is_post_publicly_viewable' )->alias(
+			static function ( \WP_Post $post ) use ( &$public ): bool {
+				return $public && 'publish' === $post->post_status;
+			}
+		);
 		// The title as stored; displayed, WordPress would have turned "--" into a dash entity.
 		Functions\when( 'get_post_field' )->alias( static fn( string $field, int $id, string $context ): string => 'raw' === $context ? 'Portrait ' . $id . " -- O'Brien & more" : 'texturized' );
 		Functions\when( 'wp_get_attachment_image_url' )->alias( static fn( int $id ): string => 'https://example.test/' . $id . '-150x150.webp' );
@@ -318,9 +351,18 @@ final class BlocksTest extends WordPressTestCase {
 			),
 			Blocks::portraits( $about )
 		);
-		$this->assertSame( array( 10, 11 ), $asked[0]['post_parent__in'], 'Attached to the FireHouse pages.' );
+		$this->assertSame( array( 10, 11 ), $asked[0]['post_parent__in'], 'Attached to the FireHouse pages a visitor can see.' );
 		$this->assertSame( 'image', $asked[0]['post_mime_type'] );
+		$this->assertSame( -1, $asked[0]['numberposts'], 'Every one, none left off.' );
 		$this->assertSame( array( array( array( 50, 51, 52 ), false, true ) ), $primed, 'Every image and its metadata loaded at once, its terms not.' );
+
+		// With no FireHouse page a visitor can see, no image is asked for, since WordPress
+		// would take an empty `post_parent__in` as every image on the site; only the
+		// portraits the cards use are offered.
+		$public = false;
+		$asked  = array();
+		$this->assertSame( array( 52, 50 ), array_column( Blocks::portraits( $about ), 'id' ) );
+		$this->assertSame( array(), $asked );
 		$this->assertSame( array(), Blocks::portraits( new \WP_Post( array( 'post_type' => 'post' ) ) ), 'Not a page.' );
 		$this->assertSame( array(), Blocks::portraits( null ), 'No post.' );
 	}
