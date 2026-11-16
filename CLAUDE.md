@@ -22,10 +22,16 @@ change.
   is read by the TypeScript site now and by the plugin's PHP later. Change values
   there rather than in code, and keep the test cases language-neutral.
 - **Before reporting a change done,** run the checks it touches: `npm run typecheck`,
-  `npm test`, `npm run schema:check`, `npm run build`, `npm run plugin:css:check` and
-  `npm run plugin:assets:check` for the site (CI runs all six); `composer lint` and
+  `npm test`, `npm run schema:check`, `npm run build`, `npm run plugin:css:check`,
+  `npm run plugin:assets:check` and `npm run plugin:help:check` for the site (CI runs
+  all seven); `composer lint` and
   `composer test` for the plugin; `npm run reference` when a page changes (it also
   fails on a page wider than the window).
+- **The guide follows the screens.** `wp-content/plugins/firehouse/help/` is the
+  FireHouse guide that FireHouse → Help and each FireHouse screen's Help tab show. A
+  change to what an editor or administrator sees or does on a FireHouse screen changes
+  its page there in the same pull request, with `npm run plugin:help`, and its
+  screenshot (`node scripts/help-screenshots.mjs`) when the screen looks different.
 
 ## Review agents
 
@@ -81,7 +87,7 @@ Plugin paths below are under `wp-content/plugins/firehouse/`, laid out as in the
 | The synthesis prompt (`notebooklm/README.md`, and the plugin's prompt setting), and the format of the source it reads (`scripts/notebooklm-source.mjs`, `domain/class-notebook-source.php`, `shared/cases/notebooklm-source.json`) | `Prompt Engineer`. Run the old and new prompts on the same projects before switching |
 | The plugin's render path: `templates/**`, each block's `render.php` and the classes it calls for each request (such as `includes/class-explorer-page.php`, `includes/class-coverage-map.php` and `domain/class-search.php`), asset and block registration (`includes/class-frame.php`, `includes/class-blocks.php`), anything cached | `WordPress Performance Engineer`. Ignore its hosting advice: GSL runs the servers |
 | `src/content/**`, `wp-content/plugins/firehouse/shared/**`, the plugin's `domain/**`, `scripts/**` not routed above, and any other code or config | `Code Reviewer` |
-| `README.md`, and the editor and administrator runbooks (Phase 8), at the end of each phase | `Technical Writer` |
+| `README.md`, and the editor and administrator runbooks (Phase 8; the FireHouse guide in `help/`), at the end of each phase, and a new or rewritten page of the guide | `Technical Writer` |
 
 **Some routes follow the content, not the path.**
 

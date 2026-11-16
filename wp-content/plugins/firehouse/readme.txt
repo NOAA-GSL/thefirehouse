@@ -229,6 +229,10 @@ one is.
   NotebookLM source, paste the JSON NotebookLM gives, check it, and mark it reviewed
   to publish it to the topic pages and the landing page. Each topic keeps a revision
   of the synthesis before; restoring it is the undo.
+* The FireHouse guide: FireHouse → Help, for FireHouse Editors and administrators, in
+  plain language with screenshots, and on each FireHouse screen the part for that
+  screen under the Help tab. Pages for administrators show only to them. It comes from
+  Markdown pages in help/, so it describes the version installed.
 
 = 0.2.0 =
 * Project and topic post types at the Firehouse addresses, with their fields as post

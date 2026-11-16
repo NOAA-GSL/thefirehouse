@@ -28,6 +28,10 @@ npm run plugin:assets
 npm run plugin:blocks
                    # write the plugin's block manifest from its block.json files
                    # (plugin:blocks:check only compares)
+npm run plugin:help
+                   # build the FireHouse guide the plugin shows, help/help.json and
+                   # help/README.md, from its Markdown pages in help/ (plugin:help:check
+                   # only compares; CI runs it)
 npm run reference  # capture the reference the plugin matches (reference/README.md)
 npm run plugin:compare
                    # compare each built page's main landmark with the reference's

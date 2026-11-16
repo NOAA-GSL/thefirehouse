@@ -73,5 +73,10 @@ jobs:
       - name: Plugin's generated scripts, icons and logos are current
         run: npm run plugin:assets:check
 
+      # The FireHouse guide the plugin shows (help/help.json and help/README.md) is
+      # built from its Markdown pages.
+      - name: Plugin's guide is current
+        run: npm run plugin:help:check
+
       - name: Production build
         run: npm run build

@@ -247,6 +247,9 @@ wp-content/plugins/firehouse/
   shared/          vocabulary.json, the coverage map's colour ramps and basemap, the project and
                    topic schemas, the email pattern, the icon allowlist and test
                    cases, read by PHP and JS
+  help/            the FireHouse guide: Markdown pages and their screenshots, and
+                   help.json, built from them (npm run plugin:help), which FireHouse →
+                   Help and each FireHouse screen's Help tab show (Help)
   tests/           PHPUnit tests, run without WordPress through Brain Monkey
   uninstall.php    removes the role and the capabilities; the content stays
 ```
@@ -2169,6 +2172,9 @@ November; see Where each phase is reviewed).
   repeat-submission limits and spam protection, with the Submit page never cached.
 - Editable question wording on the settings screen.
 - Emails to the editors and the submitter.
+- A page in the FireHouse guide (`help/`) on reviewing a submission, and the project
+  page's "Where projects come from" brought up to date, with the form's screens added
+  to `Help::SCREENS` and `scripts/plugin-help.mjs`.
 - If the form uses the design system's `TextField` or `TextArea`, take `Field.css` off
   `UNUSED` in `scripts/plugin-css-sources.mjs`, which leaves it out of the plugin's
   stylesheet; a test fails until then if the form's markup uses its classes.
@@ -2207,7 +2213,15 @@ ships.
 - CI that builds the versioned plugin zip, without `tests/`.
 - A runbook for editors and for administrators, including how to remove a project
   for good (trash, then Delete Permanently, which takes its fields and revisions
-  with it).
+  with it). *Started 16 November, ahead of the phase at Eric's request, as the
+  FireHouse guide in the plugin (`help/`): Markdown pages, six for FireHouse Editors
+  and three for administrators, with screenshots, which `npm run plugin:help` builds
+  into `help/help.json`. The plugin shows them at FireHouse → Help and, page by
+  page, in each FireHouse screen's Help tab (`includes/class-help.php`). CI fails if
+  `help.json` falls behind the pages, or if a FireHouse screen has no page, and a
+  change to a screen changes its page in the same pull request (CLAUDE.md). The
+  editors' pages draw on Phase 6's review checklist; Stephanie and Emily check them in
+  their review, and the survey form adds its own page in Phase 7a.*
 - Launch: close the Google Form and run the import script one last time, build the
   seed bundle, install on prod and run the seed import (which builds the page tree
   behind the bridge), remove the static directory, and point Submit a Finding at the
