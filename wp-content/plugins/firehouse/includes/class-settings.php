@@ -625,7 +625,7 @@ final class Settings {
 	private static function prompt( mixed $value ): array {
 		$value = is_string( $value ) ? $value : '';
 		if ( 1 !== preg_match( '//u', $value ) || 1 === preg_match( Survey\Submission::HIDDEN, $value ) ) {
-			return array( '', __( 'The synthesis prompt has a character that doesn’t show, such as a direction mark. Type it again.', 'firehouse' ) );
+			return array( '', __( 'The synthesis prompt has a character that doesn’t show, such as a direction override or a tag character. Type it again.', 'firehouse' ) );
 		}
 		$text = trim( str_replace( array( "\r\n", "\r" ), "\n", $value ) );
 		if ( mb_strlen( $text ) > Analysis::LONGEST_PROMPT ) {

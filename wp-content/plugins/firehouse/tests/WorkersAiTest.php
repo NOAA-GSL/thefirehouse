@@ -233,6 +233,32 @@ final class WorkersAiTest extends WordPressTestCase {
 			)
 		);
 		$this->assertSame( array( 'problem' => 'Workers AI answered, but with no reply the screen can read.' ), Workers_Ai::ask( Workers_Ai::DEFAULT_MODEL, array() ) );
+
+		// Llama's shape says nothing of why it stopped, but its count of tokens does.
+		$this->answer(
+			200,
+			array(
+				'success' => true,
+				'result'  => array(
+					'response' => 'Partly [',
+					'usage'    => array( 'completion_tokens' => 8192 ),
+				),
+			)
+		);
+		$this->assertTrue( Workers_Ai::ask( Workers_Ai::DEFAULT_MODEL, array() )['cut'] );
+
+		// A reasoning model that spent its whole limit thinking gives no reply at all.
+		$this->answer(
+			200,
+			array(
+				'success' => true,
+				'result'  => array(
+					'status' => 'incomplete',
+					'output' => array( array( 'type' => 'reasoning' ) ),
+				),
+			)
+		);
+		$this->assertSame( array( 'problem' => 'The model used its whole length limit before it gave a reply, as a reasoning model can. Try again, or try another model.' ), Workers_Ai::ask( '@cf/openai/gpt-oss-120b', array() ) );
 	}
 
 	/**

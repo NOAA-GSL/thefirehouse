@@ -196,11 +196,18 @@ final class Synthesis_Screen {
 				self::$state = array(
 					'step'    => 'start',
 					'refused' => __( 'That draft isn’t kept any more. A newer one from the same model replaces it.', 'firehouse' ),
+					'not'     => 'checked',
 				);
 				return;
 			}
 			/* translators: %s: a model, as "Llama 4 Scout (Meta)". */
 			self::$state = self::made_with( self::check( $result['json'] ), sprintf( __( '%s, on Cloudflare Workers AI', 'firehouse' ), Workers_Ai::label( $model ) ) );
+			// The topic pages will say how many projects the site shows when it's marked
+			// reviewed, so a draft that read fewer, or more, says so.
+			$read = (int) ( $result['projects'] ?? 0 );
+			if ( Store::public_project_count() !== $read ) {
+				self::$state['read'] = $read;
+			}
 		}
 	}
 
@@ -229,7 +236,7 @@ final class Synthesis_Screen {
 		$state  = self::$state ?? array();
 		$prefix = match ( true ) {
 			! isset( $state['step'] )                                       => '',
-			'start' === $state['step']                                      => isset( $state['refused'] ) ? __( 'Not started:', 'firehouse' ) : '',
+			'start' === $state['step']                                      => isset( $state['refused'] ) ? ( 'checked' === ( $state['not'] ?? null ) ? __( 'Not checked:', 'firehouse' ) : __( 'Not started:', 'firehouse' ) ) : '',
 			! empty( $state['changed'] ) || ! empty( $state['missing'] )    => __( 'Not published:', 'firehouse' ),
 			'gone' === $state['step']                                       => __( 'Not published:', 'firehouse' ),
 			'problems' === $state['step']                                   => __( 'Not ready:', 'firehouse' ),
@@ -467,6 +474,7 @@ final class Synthesis_Screen {
 					array( __( 'Nothing was written. Fix each problem in the JSON below, then check it again.', 'firehouse' ) ),
 					$state['problems']
 				);
+				self::read_note( $state );
 				self::paste_form( (string) $state['pasted'], (string) ( $state['model'] ?? '' ) );
 				break;
 			case 'checked':
@@ -477,6 +485,7 @@ final class Synthesis_Screen {
 				} else {
 					self::summary( 'success', __( 'Ready to mark reviewed', 'firehouse' ), array( __( 'Nothing is wrong with the synthesis. Review its needs below. Nothing reaches the site until you mark it reviewed.', 'firehouse' ) ) );
 				}
+				self::read_note( $state );
 				self::needs( $state['needs'] );
 				self::review_form( (string) $state['token'], (string) ( $state['reviewer'] ?? wp_get_current_user()->display_name ), (string) ( $state['model'] ?? 'NotebookLM' ) );
 				self::paste_form( (string) $state['pasted'], (string) ( $state['model'] ?? '' ) );
@@ -512,7 +521,7 @@ final class Synthesis_Screen {
 				break;
 			default:
 				if ( isset( $state['refused'] ) ) {
-					self::summary( 'error', __( 'Not started', 'firehouse' ), array( (string) $state['refused'] ) );
+					self::summary( 'error', 'checked' === ( $state['not'] ?? null ) ? __( 'Not checked', 'firehouse' ) : __( 'Not started', 'firehouse' ), array( (string) $state['refused'] ) );
 				}
 				echo '<p>' . esc_html(
 					Workers_Ai::configured()
@@ -524,6 +533,28 @@ final class Synthesis_Screen {
 				self::paste_form( '' );
 		}
 		echo '</div>';
+	}
+
+	/**
+	 * When a draft from Analyze results read a different number of projects from the
+	 * number the site shows now, says so: the topic pages give the number the site shows
+	 * when it's marked reviewed.
+	 *
+	 * @param array<string, mixed> $state The check.
+	 */
+	private static function read_note( array $state ): void {
+		if ( ! isset( $state['read'] ) ) {
+			return;
+		}
+		$shows = Store::public_project_count();
+		echo '<div class="notice notice-warning inline"><p>' . esc_html(
+			sprintf(
+				/* translators: 1: how many projects the draft read, 2: how many the site shows now. */
+				_n( 'This draft read %1$d project, and the site shows %2$d now. The topic pages would say the synthesis read all %2$d, so have the model draft it again before you mark it reviewed.', 'This draft read %1$d projects, and the site shows %2$d now. The topic pages would say the synthesis read all %2$d, so have the model draft it again before you mark it reviewed.', (int) $state['read'], 'firehouse' ),
+				(int) $state['read'],
+				$shows
+			)
+		) . '</p></div>';
 	}
 
 	/**
@@ -627,6 +658,15 @@ final class Synthesis_Screen {
 				)
 			) . '</p>';
 		}
+		if ( is_string( $result['unseen'] ?? null ) ) {
+			echo '<p><strong>' . esc_html(
+				sprintf(
+					/* translators: %s: a character's code, as U+202E. */
+					__( 'Its reply holds a character that doesn’t show (%s), so it may read differently from what it says. Read it with care: nothing in it reaches the site except through the check.', 'firehouse' ),
+					$result['unseen']
+				)
+			) . '</strong></p>';
+		}
 		foreach ( array(
 			'reply'  => __( 'Its whole reply', 'firehouse' ),
 			'prompt' => __( 'The prompt it was given', 'firehouse' ),
@@ -703,6 +743,14 @@ final class Synthesis_Screen {
 			<p><label for="firehouse-synthesis"><?php esc_html_e( 'The JSON the prompt gave', 'firehouse' ); ?></label></p>
 			<textarea id="firehouse-synthesis" name="firehouse_synthesis" class="large-text code" rows="16" required aria-describedby="firehouse-synthesis-description"><?php echo esc_textarea( $pasted ); ?></textarea>
 			<p class="description" id="firehouse-synthesis-description"><?php esc_html_e( 'The four topic areas, each with up to five needs, by project count, highest first. Each need names its projects by page slug or response ID. Edit the wording here before checking: the published wording is the team’s, not the model’s.', 'firehouse' ); ?></p>
+			<?php if ( '' !== $made ) : ?>
+				<p class="description">
+					<?php
+					/* translators: %s: what made the synthesis, as "Llama 4 Scout (Meta), on Cloudflare Workers AI". */
+					echo esc_html( sprintf( __( 'Made with will start as “%s” when you mark it reviewed. If you paste in a synthesis made some other way, change it there.', 'firehouse' ), $made ) );
+					?>
+				</p>
+			<?php endif; ?>
 			<?php submit_button( __( 'Check the synthesis', 'firehouse' ), 'secondary' ); ?>
 		</form>
 		<?php

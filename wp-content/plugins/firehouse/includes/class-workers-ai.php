@@ -168,13 +168,37 @@ final class Workers_Ai {
 			);
 		}
 		$text = self::text( $body['result'] ?? null );
+		$cut  = self::cut( $body['result'] ?? null, self::MODELS[ $model ]['max_tokens'] );
 		if ( null === $text || '' === trim( $text ) ) {
-			return array( 'problem' => __( 'Workers AI answered, but with no reply the screen can read.', 'firehouse' ) );
+			return array(
+				'problem' => $cut
+					? __( 'The model used its whole length limit before it gave a reply, as a reasoning model can. Try again, or try another model.', 'firehouse' )
+					: __( 'Workers AI answered, but with no reply the screen can read.', 'firehouse' ),
+			);
 		}
 		return array(
 			'text' => $text,
-			'cut'  => 'length' === ( $body['result']['choices'][0]['finish_reason'] ?? null ),
+			'cut'  => $cut,
 		);
+	}
+
+	/**
+	 * Whether a reply stopped at its length limit, in any of the ways the models say it:
+	 * a chat completion's finish reason, a Responses API output left incomplete, or as
+	 * many tokens used as it was allowed.
+	 *
+	 * @param mixed $result The result.
+	 * @param int   $limit  The most tokens the reply could take.
+	 */
+	private static function cut( mixed $result, int $limit ): bool {
+		if ( ! is_array( $result ) ) {
+			return false;
+		}
+		if ( 'length' === ( $result['choices'][0]['finish_reason'] ?? null ) || 'incomplete' === ( $result['status'] ?? null ) ) {
+			return true;
+		}
+		$used = $result['usage']['completion_tokens'] ?? $result['usage']['output_tokens'] ?? null;
+		return is_int( $used ) && $used >= $limit;
 	}
 
 	/**

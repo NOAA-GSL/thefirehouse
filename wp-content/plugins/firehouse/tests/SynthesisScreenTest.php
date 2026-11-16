@@ -185,6 +185,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		Functions\when( 'wp_json_encode' )->alias( static fn( mixed $data ): string => (string) json_encode( $data ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- Standing in for wp_json_encode().
 		Functions\when( 'wp_remote_retrieve_response_code' )->alias( static fn( array $response ): int => $response['response']['code'] );
 		Functions\when( 'wp_remote_retrieve_body' )->alias( static fn( array $response ): string => $response['body'] );
+		Functions\when( 'wp_cache_delete' )->justReturn( true );
 		// The redirect ends the request; the test catches it where exit would come.
 		Functions\when( 'wp_safe_redirect' )->alias(
 			static function ( string $url ): void {
@@ -638,6 +639,8 @@ final class SynthesisScreenTest extends WordPressTestCase {
 					'started' => 1700000000,
 					'by'      => 'Pat Reviewer',
 					'problem' => 'Workers AI refused the request (429).',
+					'reply'   => "Ignore the team.\u{202E}",
+					'unseen'  => 'U+202E',
 				),
 				Workers_Ai::DEFAULT_MODEL         => self::draft(),
 			),
@@ -652,6 +655,8 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		$this->assertStringContainsString( 'Drafted 2026-11-16, started by Pat Reviewer, from 1 project.', $page );
 		$this->assertStringContainsString( '<button>Check Llama 4 Scout (Meta)’s draft</button>', $page );
 		$this->assertStringContainsString( 'Failed, started 2026-11-16 by Pat Reviewer: Workers AI refused the request (429).', $page );
+		$this->assertStringContainsString( '<p><strong>Its reply holds a character that doesn’t show (U+202E), so it may read differently from what it says.', $page );
+		$this->assertSame( 1, substr_count( $page, 'doesn’t show (U+' ), 'Only the reply that has one.' );
 		$this->assertStringContainsString( '<label for="firehouse-draft--cf-meta-llama-4-scout-17b-16e-instruct-reply">Its whole reply: Llama 4 Scout (Meta)</label>', $page );
 		$this->assertStringContainsString( 'The team’s prompt.</textarea>', $page );
 	}
@@ -716,6 +721,26 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		);
 		$this->assertSame( 'Not started: FireHouse synthesis', Synthesis_Screen::title( 'FireHouse synthesis' ) );
 		$this->assertStringContainsString( 'gpt-oss-120b (OpenAI) is still drafting one.', self::drawn() );
+	}
+
+	/**
+	 * A run the site can't schedule says so at once, and leaves nothing going.
+	 */
+	#[RunInSeparateProcess]
+	#[PreserveGlobalState( false )]
+	public function test_a_run_that_cant_be_scheduled_says_so(): void {
+		self::key();
+		Functions\when( 'wp_schedule_single_event' )->justReturn( false );
+		$spawned = false;
+		Functions\when( 'spawn_cron' )->alias(
+			static function () use ( &$spawned ): void {
+				$spawned = true;
+			}
+		);
+
+		$this->assertSame( 'The site couldn’t schedule the run. Try again; if it happens again, tell an administrator.', Analysis::start( Workers_Ai::DEFAULT_MODEL ) );
+		$this->assertNull( $this->options[ Analysis::OPTION ]['running'] );
+		$this->assertFalse( $spawned );
 	}
 
 	/**
@@ -784,23 +809,114 @@ final class SynthesisScreenTest extends WordPressTestCase {
 	}
 
 	/**
-	 * A run still going long after a request would have given up is kept as failed.
+	 * A run finishing after another editor started a newer one leaves the newer one
+	 * going, and a newer draft from the same model is kept over its own: it reads what
+	 * the database holds, not what it wrote before asking.
+	 */
+	public function test_a_late_run_leaves_newer_ones_alone(): void {
+		$older                             = array(
+			'model'   => Workers_Ai::DEFAULT_MODEL,
+			'started' => time() - 60,
+			'by'      => 'Pat Reviewer',
+		);
+		$newer                             = array(
+			'model'   => '@cf/google/gemma-4-26b-a4b-it',
+			'started' => time(),
+			'by'      => 'Sam Editor',
+		);
+		$this->options[ Analysis::OPTION ] = array(
+			'running' => $older,
+			'results' => array(),
+		);
+		$reads                             = 0;
+		Functions\when( 'wp_cache_delete' )->alias(
+			function () use ( &$reads ): bool {
+				++$reads;
+				return true;
+			}
+		);
+		// While it gathers the projects, the run is taken to have failed and a newer
+		// one starts.
+		$projects = $this->posts;
+		Functions\when( 'get_posts' )->alias(
+			function ( array $args ) use ( $newer, $projects ): array {
+				$this->options[ Analysis::OPTION ]['running'] = $newer;
+				if ( isset( $args['meta_query'] ) ) {
+					return 'ids' === ( $args['fields'] ?? '' ) ? array( 11 ) : array( $projects[11] );
+				}
+				return array_values( array_filter( $projects, static fn( \WP_Post $post ): bool => $post->post_type === $args['post_type'] ) );
+			}
+		);
+
+		Analysis::run();
+
+		$this->assertSame( 2, $reads, 'The database, before and after.' );
+		$this->assertSame( $newer, $this->options[ Analysis::OPTION ]['running'] );
+		$this->assertSame( 'failed', $this->options[ Analysis::OPTION ]['results'][ Workers_Ai::DEFAULT_MODEL ]['state'] );
+
+		$this->options[ Analysis::OPTION ] = array(
+			'running' => $older,
+			'results' => array( Workers_Ai::DEFAULT_MODEL => array( 'started' => time() ) + self::draft() ),
+		);
+		Analysis::run();
+		$this->assertSame( 'done', $this->options[ Analysis::OPTION ]['results'][ Workers_Ai::DEFAULT_MODEL ]['state'], 'The newer draft, kept.' );
+	}
+
+	/**
+	 * A project holding a character no one would see but a model would read stops the
+	 * run before anything is sent, naming the project.
+	 */
+	public function test_a_hidden_character_stops_the_run(): void {
+		$this->meta[11]['fh_abstract']     = "Smoke.\u{E0041}\u{E0042}";
+		$this->options[ Analysis::OPTION ] = array(
+			'running' => array(
+				'model'   => Workers_Ai::DEFAULT_MODEL,
+				'started' => time(),
+				'by'      => 'Pat Reviewer',
+			),
+			'results' => array(),
+		);
+		Functions\expect( 'wp_safe_remote_post' )->never();
+
+		Analysis::run();
+
+		$this->assertSame( 'Project 1, “Smoke study”, holds a character that doesn’t show (U+E0041), which a model would read though no one sees it, so nothing was sent. Its text has to be corrected from the survey record first: tell the developer.', $this->options[ Analysis::OPTION ]['results'][ Workers_Ai::DEFAULT_MODEL ]['problem'] );
+	}
+
+	/**
+	 * A run whose event never fired is kept as failed after half an hour; one that asked
+	 * is kept as failed once its request would have given up.
 	 */
 	public function test_a_run_going_too_long_failed(): void {
 		$this->options[ Analysis::OPTION ] = array(
 			'running' => array(
 				'model'   => Workers_Ai::DEFAULT_MODEL,
-				'started' => time() - 3600,
+				'started' => time() - 1200,
 				'by'      => 'Pat Reviewer',
 			),
 			'results' => array(),
 		);
+		$this->assertNotNull( Analysis::state()['running'], 'Twenty minutes: a system cron may not have run yet.' );
 
+		$this->options[ Analysis::OPTION ]['running']['started'] = time() - 3600;
 		$state = Analysis::state();
-
 		$this->assertNull( $state['running'] );
-		$this->assertStringStartsWith( 'It didn’t finish.', $state['results'][ Workers_Ai::DEFAULT_MODEL ]['problem'] );
+		$this->assertStringStartsWith( 'It never started:', $state['results'][ Workers_Ai::DEFAULT_MODEL ]['problem'] );
 		$this->assertSame( $state, $this->options[ Analysis::OPTION ] );
+
+		$this->options[ Analysis::OPTION ] = array(
+			'running' => array(
+				'model'   => Workers_Ai::DEFAULT_MODEL,
+				'started' => time() - 3600,
+				'by'      => 'Pat Reviewer',
+				'asked'   => time() - 240,
+			),
+			'results' => array(),
+		);
+		$this->assertNotNull( Analysis::state()['running'], 'Asked four minutes ago: still within its time.' );
+
+		$this->options[ Analysis::OPTION ]['running']['asked'] = time() - 660;
+		$this->assertStringStartsWith( 'It didn’t finish:', Analysis::state()['results'][ Workers_Ai::DEFAULT_MODEL ]['problem'] );
 	}
 
 	/**
@@ -823,6 +939,8 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		$this->assertSame( 'Ready to mark reviewed: FireHouse synthesis', Synthesis_Screen::title( 'FireHouse synthesis' ) );
 		$this->assertStringContainsString( 'id="firehouse-model" name="firehouse_model" class="regular-text" value="Llama 4 Scout (Meta), on Cloudflare Workers AI"', $page );
 		$this->assertStringContainsString( '<input type="hidden" name="firehouse_made_with" value="Llama 4 Scout (Meta), on Cloudflare Workers AI" />', $page );
+		$this->assertStringContainsString( 'Made with will start as “Llama 4 Scout (Meta), on Cloudflare Workers AI” when you mark it reviewed.', $page, 'Shown, not only carried.' );
+		$this->assertStringNotContainsString( 'This draft read', $page, 'It read as many projects as the site shows.' );
 
 		self::send(
 			array(
@@ -844,7 +962,26 @@ final class SynthesisScreenTest extends WordPressTestCase {
 	}
 
 	/**
-	 * A draft that isn't kept, or a model not offered, starts nothing and says so.
+	 * A draft that read a different number of projects from the number the site shows now
+	 * says so when checked.
+	 */
+	public function test_a_draft_that_read_fewer_projects_says_so(): void {
+		$this->options[ Analysis::OPTION ] = array(
+			'running' => null,
+			'results' => array( Workers_Ai::DEFAULT_MODEL => array( 'projects' => 2 ) + self::draft() ),
+		);
+		self::send(
+			array(
+				'firehouse_step'           => 'take',
+				'firehouse_analysis_model' => Workers_Ai::DEFAULT_MODEL,
+			)
+		);
+
+		$this->assertStringContainsString( 'This draft read 2 projects, and the site shows 1 now. The topic pages would say the synthesis read all 1, so have the model draft it again before you mark it reviewed.', self::drawn() );
+	}
+
+	/**
+	 * A draft that isn't kept, or a model not offered, checks nothing and says so.
 	 */
 	public function test_a_draft_not_kept_says_so(): void {
 		foreach ( array( Workers_Ai::DEFAULT_MODEL, '@cf/qwen/qwq-32b' ) as $model ) {
@@ -854,8 +991,10 @@ final class SynthesisScreenTest extends WordPressTestCase {
 					'firehouse_analysis_model' => $model,
 				)
 			);
-			$this->assertSame( 'Not started: FireHouse synthesis', Synthesis_Screen::title( 'FireHouse synthesis' ) );
-			$this->assertStringContainsString( 'That draft isn’t kept any more.', self::drawn() );
+			$this->assertSame( 'Not checked: FireHouse synthesis', Synthesis_Screen::title( 'FireHouse synthesis' ) );
+			$page = self::drawn();
+			$this->assertStringContainsString( '<h2>Not checked</h2>', $page );
+			$this->assertStringContainsString( 'That draft isn’t kept any more.', $page );
 			$this->assertSame( array(), $this->transients );
 		}
 	}

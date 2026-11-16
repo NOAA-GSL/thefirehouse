@@ -527,7 +527,7 @@ final class SettingsTest extends WordPressTestCase {
 		Functions\when( 'get_option' )->justReturn( array( 'synthesisPrompt' => 'Kept.' ) );
 
 		$this->assertSame( 'Kept.', Settings::sanitize( self::valid() + array( 'synthesisPrompt' => "List needs.\u{E0041}\u{E0042}" ) )['synthesisPrompt'] );
-		$this->assertSame( array( 'firehouse-synthesisPrompt' => 'The synthesis prompt has a character that doesn’t show, such as a direction mark. Type it again.' ), array_column( $this->errors, 'message', 'code' ) );
+		$this->assertSame( array( 'firehouse-synthesisPrompt' => 'The synthesis prompt has a character that doesn’t show, such as a direction override or a tag character. Type it again.' ), array_column( $this->errors, 'message', 'code' ) );
 
 		$this->errors = array();
 		$this->assertSame( 'Kept.', Settings::sanitize( self::valid() + array( 'synthesisPrompt' => str_repeat( 'x', Analysis::LONGEST_PROMPT + 1 ) ) )['synthesisPrompt'] );

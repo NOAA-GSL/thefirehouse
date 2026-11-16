@@ -10,6 +10,7 @@ declare( strict_types = 1 );
 namespace Firehouse;
 
 use Firehouse\Domain\Notebook_Source;
+use Firehouse\Domain\Synthesis;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -50,10 +51,16 @@ final class Analysis {
 	public const LONGEST_PROMPT = 20000;
 
 	/**
-	 * How long a run may go before it's taken to have failed: a request gives up after
-	 * Workers_Ai::TIMEOUT, so one still going after this never will finish.
+	 * How long a run's event may wait to fire before the run is taken to have failed:
+	 * long enough for a site whose system cron runs WP-Cron every quarter of an hour.
 	 */
-	private const STALE = 15 * MINUTE_IN_SECONDS;
+	private const WAITS = 30 * MINUTE_IN_SECONDS;
+
+	/**
+	 * How long past Workers_Ai::TIMEOUT, counted from its request, a run may go before
+	 * it's taken to have failed: the request gives up by then.
+	 */
+	private const MARGIN = 5 * MINUTE_IN_SECONDS;
 
 	/**
 	 * The most of a reply kept, in bytes: the synthesis screen reads no longer paste.
@@ -91,12 +98,17 @@ final class Analysis {
 	}
 
 	/**
-	 * What's kept: the run going, if any, and each model's latest result. A run going
-	 * too long is recorded as failed.
+	 * What's kept: the run going, if any, and each model's latest result. A run whose
+	 * event never fired, or whose request has gone past its time, is recorded as failed.
 	 *
-	 * @return array{running: array{model: string, started: int, by: string, asked?: bool}|null, results: array<string, array<string, mixed>>}
+	 * @param bool $fresh Whether to read the database rather than this request's cache,
+	 *                    which holds what this request last wrote.
+	 * @return array{running: array{model: string, started: int, by: string, asked?: int}|null, results: array<string, array<string, mixed>>}
 	 */
-	public static function state(): array {
+	public static function state( bool $fresh = false ): array {
+		if ( $fresh ) {
+			wp_cache_delete( self::OPTION, 'options' );
+		}
 		$stored  = get_option( self::OPTION, array() );
 		$stored  = is_array( $stored ) ? $stored : array();
 		$running = $stored['running'] ?? null;
@@ -109,15 +121,19 @@ final class Analysis {
 				$state['results'][ $model ] = $result;
 			}
 		}
-		if ( null !== $state['running'] && $state['running']['started'] < time() - self::STALE ) {
-			$state['results'][ $state['running']['model'] ] = array(
+		$running = $state['running'];
+		$asked   = is_int( $running['asked'] ?? null ) ? $running['asked'] : null;
+		if ( null !== $running && ( null === $asked ? $running['started'] < time() - self::WAITS : $asked < time() - Workers_Ai::TIMEOUT - self::MARGIN ) ) {
+			$state['results'][ $running['model'] ] = array(
 				'state'    => 'failed',
-				'started'  => $state['running']['started'],
+				'started'  => $running['started'],
 				'finished' => time(),
-				'by'       => (string) ( $state['running']['by'] ?? '' ),
-				'problem'  => __( 'It didn’t finish. The site’s scheduled events (WP-Cron) may not be running, or the request was cut off. Try again; if it happens again, tell the developer.', 'firehouse' ),
+				'by'       => (string) ( $running['by'] ?? '' ),
+				'problem'  => null === $asked
+					? __( 'It never started: the site’s scheduled events (WP-Cron) may not be running. Tell an administrator.', 'firehouse' )
+					: __( 'It didn’t finish: the request may have been cut off. Try again; if it happens again, tell an administrator.', 'firehouse' ),
 			);
-			$state['running']                               = null;
+			$state['running']                      = null;
 			update_option( self::OPTION, $state, false );
 		}
 		return $state;
@@ -147,9 +163,16 @@ final class Analysis {
 			'by'      => wp_get_current_user()->display_name,
 		);
 		update_option( self::OPTION, $state, false );
-		wp_schedule_single_event( time(), self::EVENT );
-		// Now, rather than when someone next opens a page.
-		spawn_cron();
+		if ( true !== wp_schedule_single_event( time(), self::EVENT ) ) {
+			$state['running'] = null;
+			update_option( self::OPTION, $state, false );
+			return __( 'The site couldn’t schedule the run. Try again; if it happens again, tell an administrator.', 'firehouse' );
+		}
+		// Now, rather than when someone next opens a page, unless the site runs its
+		// scheduled events from a system cron instead.
+		if ( ! ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ) ) {
+			spawn_cron();
+		}
 		return null;
 	}
 
@@ -158,14 +181,16 @@ final class Analysis {
 	 * nothing, as that model's latest.
 	 */
 	public static function run(): void {
-		$state = self::state();
+		$state = self::state( true );
 		$run   = $state['running'];
 		if ( null === $run || ! empty( $run['asked'] ) ) {
 			return;
 		}
-		// Marked first, so an event that fires twice asks once. PHP's time limit doesn't
-		// count the wait for the reply, which is nearly all of a run, on a Linux server.
-		$state['running']['asked'] = true;
+		// Claimed, with the time, before asking, so an event that finds it claimed doesn't
+		// ask again; two at the very same moment could both ask, which WP-Cron's own lock
+		// makes rare. PHP's time limit doesn't count the wait for the reply, which is
+		// nearly all of a run, on a Linux server.
+		$state['running']['asked'] = time();
 		update_option( self::OPTION, $state, false );
 
 		list( $projects, $topics ) = Synthesis_Screen::published();
@@ -177,10 +202,16 @@ final class Analysis {
 			'projects' => count( $parts['projects'] ),
 			'prompt'   => $prompt,
 		);
+		$unseen                    = self::unseen( $parts );
 		if ( array() === $parts['projects'] ) {
 			$result += array(
 				'state'   => 'failed',
 				'problem' => __( 'No project is published, so there was nothing to send.', 'firehouse' ),
+			);
+		} elseif ( null !== $unseen ) {
+			$result += array(
+				'state'   => 'failed',
+				'problem' => $unseen,
 			);
 		} else {
 			$reply   = Workers_Ai::ask( $run['model'], self::messages( $parts, $prompt, self::key( $parts ) ) );
@@ -188,17 +219,47 @@ final class Analysis {
 		}
 		$result['finished'] = time();
 
-		// Read again: only this run's own record changes.
-		$now = self::state();
-		if ( ( $now['running']['started'] ?? null ) === $run['started'] ) {
+		// Read again from the database: another editor may have started a run since this
+		// one was taken to have failed, and only this run's own record changes. A newer
+		// draft from the same model is kept over this one.
+		$now = self::state( true );
+		if ( ( $now['running']['started'] ?? null ) === $run['started'] && ( $now['running']['model'] ?? null ) === $run['model'] ) {
 			$now['running'] = null;
 		}
-		$now['results'][ $run['model'] ] = $result;
+		$newer = $now['results'][ $run['model'] ]['started'] ?? null;
+		if ( ! is_int( $newer ) || $newer <= $run['started'] ) {
+			$now['results'][ $run['model'] ] = $result;
+		}
 		update_option( self::OPTION, $now, false );
 	}
 
 	/**
-	 * What a reply comes to: done, with its JSON; or failed, with why.
+	 * Why the source can't be sent, if it can't: a part of it holds a character no one
+	 * would see but a model would read, such as a tag character or a direction override.
+	 * A researcher's text isn't changed here (rule 1): it's corrected from the survey
+	 * record. Null when nothing does.
+	 *
+	 * @param array{intro: string, projects: list<string>} $parts The source's parts.
+	 */
+	public static function unseen( array $parts ): ?string {
+		if ( 1 === preg_match( Survey\Submission::HIDDEN, $parts['intro'], $found ) ) {
+			/* translators: %s: a character's code, as U+202E. */
+			return sprintf( __( 'A topic area’s words hold a character that doesn’t show (%s), which a model would read though no one sees it, so nothing was sent. Correct it under FireHouse → Topics, then try again.', 'firehouse' ), (string) Synthesis::hidden( $found[0] ) );
+		}
+		foreach ( $parts['projects'] as $index => $section ) {
+			if ( 1 === preg_match( Survey\Submission::HIDDEN, $section, $found ) ) {
+				$title = (string) preg_replace( array( '/\A## Project \d+: /', Survey\Submission::HIDDEN ), '', (string) strtok( $section, "\n" ) );
+				/* translators: 1: the project's place in the source, 2: its title, 3: a character's code, as U+202E. */
+				return sprintf( __( 'Project %1$d, “%2$s”, holds a character that doesn’t show (%3$s), which a model would read though no one sees it, so nothing was sent. Its text has to be corrected from the survey record first: tell the developer.', 'firehouse' ), $index + 1, $title, (string) Synthesis::hidden( $found[0] ) );
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * What a reply comes to: done, with its JSON; or failed, with why. Either way the
+	 * first character in the reply that wouldn't show is noted, as U+ and its code, since
+	 * the reply may then read differently on the screen from what it says.
 	 *
 	 * @param array{text: string, cut: bool}|array{problem: string} $reply The reply.
 	 * @return array<string, mixed>
@@ -210,8 +271,9 @@ final class Analysis {
 				'problem' => $reply['problem'],
 			);
 		}
-		$text = mb_strcut( $reply['text'], 0, self::LONGEST_REPLY );
-		$json = self::json( $text );
+		$text   = mb_strcut( $reply['text'], 0, self::LONGEST_REPLY );
+		$json   = self::json( $text );
+		$unseen = 1 === preg_match( '/[\x{0000}-\x{0008}\x{000B}\x{000C}\x{000E}-\x{001F}\x{007F}-\x{009F}\p{Cf}]/u', $text, $found ) ? array( 'unseen' => (string) Synthesis::hidden( $found[0] ) ) : array();
 		if ( '' === $json ) {
 			return array(
 				'state'   => 'failed',
@@ -219,13 +281,13 @@ final class Analysis {
 				'problem' => ! empty( $reply['cut'] ) || strlen( $reply['text'] ) > self::LONGEST_REPLY
 					? __( 'The reply stopped at its length limit before its JSON was complete. Try again, or try another model.', 'firehouse' )
 					: __( 'The reply holds no JSON list of the four topic areas. Its whole reply is below.', 'firehouse' ),
-			);
+			) + $unseen;
 		}
 		return array(
 			'state' => 'done',
 			'reply' => $text,
 			'json'  => $json,
-		);
+		) + $unseen;
 	}
 
 	/**
@@ -279,40 +341,57 @@ final class Analysis {
 	}
 
 	/**
-	 * The JSON list in a reply: the last fenced code block that holds one, or else the
-	 * first stretch from a [ to the reply's last ] that reads as one; "" when there's
-	 * none. A reasoning model's thinking, between <think> tags, is left out.
+	 * The synthesis's JSON in a reply: the last fenced code block that holds one, or
+	 * else the first stretch from a [ followed by a { to a later ], the furthest first,
+	 * that reads as one; "" when there's none. Only a list of topic areas counts, so a
+	 * citation such as [7] after the JSON isn't taken for it. A reasoning model's
+	 * thinking, between <think> tags, is left out.
 	 *
 	 * @param string $reply The reply.
 	 */
 	public static function json( string $reply ): string {
 		$text = (string) preg_replace( '#<think>.*?</think>#s', '', $reply );
-		if ( preg_match_all( '/```[a-zA-Z]*[ \t]*\r?\n(.*?)\r?\n[ \t]*```/s', $text, $blocks ) ) {
+		if ( preg_match_all( '/```[a-zA-Z]*[ \t]*\r?\n(.*?)```/s', $text, $blocks ) ) {
 			foreach ( array_reverse( $blocks[1] ) as $block ) {
-				if ( self::is_list( $block ) ) {
+				if ( self::is_synthesis( $block ) ) {
 					return trim( $block );
 				}
 			}
 		}
-		$end   = strrpos( $text, ']' );
-		$start = strpos( $text, '[' );
-		for ( $tries = 0; false !== $end && false !== $start && $start < $end && $tries < self::TRIES; $tries++ ) {
-			$candidate = substr( $text, $start, $end - $start + 1 );
-			if ( self::is_list( $candidate ) ) {
-				return $candidate;
+		preg_match_all( '/\[\s*\{/', $text, $starts, PREG_OFFSET_CAPTURE );
+		preg_match_all( '/\]/', $text, $ends, PREG_OFFSET_CAPTURE );
+		$ends  = array_reverse( array_column( $ends[0], 1 ) );
+		$tries = 0;
+		foreach ( array_column( $starts[0], 1 ) as $start ) {
+			foreach ( $ends as $end ) {
+				if ( $end <= $start || ++$tries > self::TRIES ) {
+					break;
+				}
+				$candidate = substr( $text, $start, $end - $start + 1 );
+				if ( self::is_synthesis( $candidate ) ) {
+					return $candidate;
+				}
 			}
-			$start = strpos( $text, '[', $start + 1 );
 		}
 		return '';
 	}
 
 	/**
-	 * Whether text is a JSON list with something in it.
+	 * Whether text is shaped like the prompt's JSON: a list of topic areas, each an object
+	 * with a topic. The synthesis screen's check says what else is wrong with it.
 	 *
 	 * @param string $text The text.
 	 */
-	private static function is_list( string $text ): bool {
+	private static function is_synthesis( string $text ): bool {
 		$data = json_decode( trim( $text ), true, 64 );
-		return is_array( $data ) && array() !== $data && array_is_list( $data );
+		if ( ! is_array( $data ) || array() === $data || ! array_is_list( $data ) ) {
+			return false;
+		}
+		foreach ( $data as $area ) {
+			if ( ! is_array( $area ) || ! isset( $area['topic'] ) ) {
+				return false;
+			}
+		}
+		return true;
 	}
 }

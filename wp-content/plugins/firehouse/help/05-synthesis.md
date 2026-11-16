@@ -29,7 +29,9 @@ The model is sent the published projects, word for word, the four topic areas, a
 
 To compare models, have each draft with the same prompt, then check each in turn: the screen shows the needs each would publish. Checking one drops the check before it, so mark reviewed only the one the team chooses.
 
-A draft that failed says why. Workers AI may have refused the request or be busy, or the reply may hold no JSON or have stopped at its length limit. Try again, or try another model. If one says it didn't finish, tell an administrator: the site's scheduled tasks may not be running.
+A draft that failed says why. Workers AI may have refused the request or be busy, or the reply may hold no JSON or have stopped at its length limit. Try again, or try another model. If one says it never started or didn't finish, tell an administrator: the site's scheduled tasks may not be running.
+
+The reply is the model's, not the team's: read it as a draft. If it holds a character that doesn't show, the screen says so, since it may then read differently from what it says. If a project was published or taken off the site after a model drafted, checking the draft says so: have the model draft again before you mark it reviewed.
 
 ## 1. Download the source
 

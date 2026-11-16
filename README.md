@@ -392,8 +392,12 @@ overrides are isolated so a re-sync doesn't lose them.
       account ID, and a token made from Cloudflare's "Workers AI" template (Workers AI
       Read and Edit, on that account only), with an expiry date. Never put either in
       the database, the repository or a chat; if one is exposed, roll the token in
-      Cloudflare's dashboard. A site with the key also needs WP-Cron running and
-      api.cloudflare.com reachable from its server.
+      Cloudflare's dashboard. Any other plugin on the site can see the token in
+      WordPress's HTTP hooks (`http_request_args`, `http_api_debug`), as it can any
+      request's headers, so its narrow scope is what limits the harm: GSL's security
+      review should know. Set a spending alert on the account too: an editor can start
+      run after run, each sending every published project. A site with the key also
+      needs WP-Cron running and api.cloudflare.com reachable from its server.
 - [ ] **Check that deleting a transient reports whether it deleted one** on each
       WordPress site the plugin runs on, with whatever object cache it has. The
       synthesis screen's Mark reviewed relies on it to publish a check once
