@@ -134,7 +134,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		Functions\when( 'wp_unslash' )->returnArg();
 		Functions\when( 'wp_slash' )->returnArg();
 		Functions\when( 'sanitize_text_field' )->alias( static fn( string $text ): string => trim( $text ) );
-		Functions\when( 'wp_generate_password' )->justReturn( 'the-token' );
+		Functions\when( 'wp_generate_password' )->justReturn( 'TheToken000000000001' );
 		Functions\when( 'wp_date' )->justReturn( '2026-11-16' );
 		Functions\when( 'get_permalink' )->alias( fn( int $id ): string => '/firehouse/topics/' . $this->posts[ $id ]->post_name . '/' );
 		Functions\when( 'rest_validate_value_from_schema' )->justReturn( true );
@@ -242,8 +242,8 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		$this->assertStringContainsString( '<td>Clearer smoke forecasts</td><td>1</td><td>Smoke study</td>', $page );
 		$this->assertStringContainsString( 'value="Pat Reviewer"', $page );
 		$this->assertStringContainsString( 'value="NotebookLM"', $page );
-		$this->assertSame( 'the-token', $this->transients['firehouse_synthesis_6']['token'] );
-		$this->assertSame( array( 11 ), $this->transients['firehouse_synthesis_6']['needs']['forecast'][0]['projects'] );
+		$this->assertSame( 'TheToken000000000001', $this->transients['firehouse_synthesis_6'], 'The latest check, by its token.' );
+		$this->assertSame( array( 11 ), $this->transients['firehouse_synthesis_6_TheToken000000000001']['needs']['forecast'][0]['projects'] );
 		$this->assertSame( array(), $this->updated );
 	}
 
@@ -261,7 +261,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		self::send(
 			array(
 				'firehouse_step'     => 'publish',
-				'firehouse_token'    => 'the-token',
+				'firehouse_token'    => 'TheToken000000000001',
 				'firehouse_reviewer' => ' Stephanie Hoekstra and Emily Wells ',
 				'firehouse_model'    => 'NotebookLM',
 			)
@@ -299,7 +299,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		self::send(
 			array(
 				'firehouse_step'     => 'publish',
-				'firehouse_token'    => 'the-token',
+				'firehouse_token'    => 'TheToken000000000001',
 				'firehouse_reviewer' => 'Pat',
 				'firehouse_model'    => 'NotebookLM',
 			)
@@ -315,7 +315,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		self::send(
 			array(
 				'firehouse_step'     => 'publish',
-				'firehouse_token'    => 'another-token',
+				'firehouse_token'    => 'AnotherToken00000002',
 				'firehouse_reviewer' => 'Pat',
 				'firehouse_model'    => 'NotebookLM',
 			)
@@ -335,13 +335,13 @@ final class SynthesisScreenTest extends WordPressTestCase {
 				'firehouse_synthesis' => self::synthesis(),
 			)
 		);
-		$kept = $this->transients['firehouse_synthesis_6'];
+		$kept = $this->transients['firehouse_synthesis_6_TheToken000000000001'];
 		Functions\when( 'get_transient' )->justReturn( $kept );
 		Functions\when( 'delete_transient' )->justReturn( false );
 		self::send(
 			array(
 				'firehouse_step'     => 'publish',
-				'firehouse_token'    => 'the-token',
+				'firehouse_token'    => 'TheToken000000000001',
 				'firehouse_reviewer' => 'Pat',
 				'firehouse_model'    => 'NotebookLM',
 			)
@@ -349,6 +349,66 @@ final class SynthesisScreenTest extends WordPressTestCase {
 
 		$this->assertSame( 'Not published: FireHouse synthesis', Synthesis_Screen::title( 'FireHouse synthesis' ) );
 		$this->assertSame( array(), $this->updated );
+	}
+
+	/**
+	 * Two clicks that both read the waiting check before either claims it: the first
+	 * publishes, and checking it again stores nothing for the second to claim, so the
+	 * second publishes nothing. A click with an older token can't claim a newer check.
+	 */
+	public function test_a_click_can_claim_only_its_own_check(): void {
+		self::send(
+			array(
+				'firehouse_step'      => 'check',
+				'firehouse_synthesis' => self::synthesis(),
+			)
+		);
+		$kept   = $this->transients['firehouse_synthesis_6_TheToken000000000001'];
+		$read   = function ( string $name ) use ( $kept ): mixed {
+			return 'firehouse_synthesis_6_TheToken000000000001' === $name ? $kept : ( $this->transients[ $name ] ?? false );
+		};
+		$review = array(
+			'firehouse_step'     => 'publish',
+			'firehouse_token'    => 'TheToken000000000001',
+			'firehouse_reviewer' => 'Pat',
+			'firehouse_model'    => 'NotebookLM',
+		);
+		Functions\when( 'get_transient' )->alias( $read );
+
+		self::send( $review );
+		$this->assertCount( 4, $this->updated, 'The first click publishes.' );
+		$this->assertSame( array(), $this->transients, 'Checking it again stored nothing.' );
+		self::send( $review );
+		$this->assertCount( 4, $this->updated, 'The second, which read the check too, publishes nothing.' );
+		$this->assertSame( 'Not published: FireHouse synthesis', Synthesis_Screen::title( 'FireHouse synthesis' ) );
+
+		// A newer check, waiting under its own token, isn't the older click's to claim.
+		Functions\when( 'wp_generate_password' )->justReturn( 'NewerToken0000000003' );
+		self::send(
+			array(
+				'firehouse_step'      => 'check',
+				'firehouse_synthesis' => self::synthesis(),
+			)
+		);
+		self::send( $review );
+		$this->assertCount( 4, $this->updated );
+		$this->assertArrayHasKey( 'firehouse_synthesis_6_NewerToken0000000003', $this->transients );
+	}
+
+	/**
+	 * A token not shaped like one is never looked up.
+	 */
+	public function test_a_token_not_shaped_like_one_publishes_nothing(): void {
+		Functions\expect( 'get_transient' )->never();
+		self::send(
+			array(
+				'firehouse_step'     => 'publish',
+				'firehouse_token'    => 'x_TheToken000000000001',
+				'firehouse_reviewer' => 'Pat',
+				'firehouse_model'    => 'NotebookLM',
+			)
+		);
+		$this->assertSame( 'Not published: FireHouse synthesis', Synthesis_Screen::title( 'FireHouse synthesis' ) );
 	}
 
 	/**
@@ -365,7 +425,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		self::send(
 			array(
 				'firehouse_step'     => 'publish',
-				'firehouse_token'    => 'the-token',
+				'firehouse_token'    => 'TheToken000000000001',
 				'firehouse_reviewer' => "\u{200B}",
 				'firehouse_model'    => "NotebookLM\u{202E}" . str_repeat( 'x', 200 ),
 			)
@@ -408,7 +468,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		self::send(
 			array(
 				'firehouse_step'     => 'publish',
-				'firehouse_token'    => 'the-token',
+				'firehouse_token'    => 'TheToken000000000001',
 				'firehouse_reviewer' => ' ',
 				'firehouse_model'    => '',
 			)
@@ -418,7 +478,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		$this->assertSame( 'Not published: FireHouse synthesis', Synthesis_Screen::title( 'FireHouse synthesis' ) );
 		$this->assertStringContainsString( 'Reviewed by is empty', $page );
 		$this->assertStringContainsString( 'Made with is empty', $page );
-		$this->assertArrayHasKey( 'firehouse_synthesis_6', $this->transients );
+		$this->assertArrayHasKey( 'firehouse_synthesis_6_TheToken000000000001', $this->transients );
 		$this->assertSame( array(), $this->updated );
 	}
 
@@ -437,7 +497,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		self::send(
 			array(
 				'firehouse_step'     => 'publish',
-				'firehouse_token'    => 'the-token',
+				'firehouse_token'    => 'TheToken000000000001',
 				'firehouse_reviewer' => 'Pat',
 				'firehouse_model'    => 'NotebookLM',
 			)

@@ -29,10 +29,13 @@ if ( ! defined( 'ABSPATH' ) ) {
  *    four topics, with today's date, how many projects the site shows, and the tool
  *    that made it. Each topic's revisions keep the synthesis it had.
  *
- * A check with no problems waits for at most thirty minutes in a transient keyed to
- * the person who checked it, with what they saw. Marking it reviewed checks it again
- * against the projects as they are then, and shows the new check instead of
- * publishing if anything would differ. The comparison against the published
+ * A check with no problems waits for at most thirty minutes in a transient named for
+ * the person who checked it and the check's own token, with what they saw; a second
+ * transient names their latest check, so a new check or opening the screen afresh
+ * drops the one before. Marking it reviewed claims that check by deleting its
+ * transient, which only one request can do, then checks it again against the
+ * projects as they are, storing nothing unless it shows a new check instead of
+ * publishing because something would differ. The comparison against the published
  * synthesis comes after launch. Anyone who may publish a topic may use the screen.
  */
 final class Synthesis_Screen {
@@ -144,7 +147,7 @@ final class Synthesis_Screen {
 			wp_die( esc_html__( 'Only FireHouse editors can publish a synthesis.', 'firehouse' ), '', array( 'response' => 403 ) );
 		}
 		if ( ! isset( $_POST['firehouse_step'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Only checks whether a form was sent; each form's nonce is checked below.
-			delete_transient( self::transient() );
+			self::drop();
 			return;
 		}
 		$step = sanitize_key( wp_unslash( $_POST['firehouse_step'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Each step checks its nonce next.
@@ -181,12 +184,56 @@ final class Synthesis_Screen {
 	}
 
 	/**
-	 * A check of what was pasted, kept for marking reviewed when nothing is wrong.
+	 * A check of what was pasted, waiting to be marked reviewed when nothing is wrong.
 	 *
 	 * @param string $pasted What was pasted.
 	 * @return array<string, mixed>
 	 */
 	private static function check( string $pasted ): array {
+		$state = self::evaluate( $pasted );
+		return 'checked' === $state['step'] ? self::wait( $state ) : $state;
+	}
+
+	/**
+	 * Keeps a check with nothing wrong waiting, under a new token, in place of the
+	 * person's last one.
+	 *
+	 * @param array<string, mixed> $state The check.
+	 * @return array<string, mixed> The check, with its token.
+	 */
+	private static function wait( array $state ): array {
+		self::drop();
+		$token = wp_generate_password( 20, false );
+		set_transient(
+			self::transient( $token ),
+			array(
+				'pasted' => $state['pasted'],
+				'needs'  => $state['needs'],
+			),
+			self::EXPIRES
+		);
+		set_transient( self::transient(), $token, self::EXPIRES );
+		return array( 'token' => $token ) + $state;
+	}
+
+	/**
+	 * Drops the person's waiting check, if any.
+	 */
+	private static function drop(): void {
+		$token = get_transient( self::transient() );
+		if ( is_string( $token ) && self::is_token( $token ) ) {
+			delete_transient( self::transient( $token ) );
+		}
+		delete_transient( self::transient() );
+	}
+
+	/**
+	 * What a check of what was pasted finds, storing nothing.
+	 *
+	 * @param string $pasted What was pasted.
+	 * @return array<string, mixed>
+	 */
+	private static function evaluate( string $pasted ): array {
 		if ( strlen( $pasted ) > self::LONGEST ) {
 			return array(
 				'step'     => 'problems',
@@ -202,21 +249,10 @@ final class Synthesis_Screen {
 				'problems' => $result['problems'],
 			);
 		}
-		$token = wp_generate_password( 20, false );
-		set_transient(
-			self::transient(),
-			array(
-				'token'  => $token,
-				'pasted' => $pasted,
-				'needs'  => $result['needs'],
-			),
-			self::EXPIRES
-		);
 		return array(
 			'step'   => 'checked',
 			'pasted' => $pasted,
 			'needs'  => $result['needs'],
-			'token'  => $token,
 		);
 	}
 
@@ -230,8 +266,8 @@ final class Synthesis_Screen {
 	 * @return array<string, mixed>
 	 */
 	private static function publish( string $token, string $reviewer, string $model ): array {
-		$kept = get_transient( self::transient() );
-		if ( ! is_array( $kept ) || ! is_string( $kept['token'] ?? null ) || ! hash_equals( $kept['token'], $token ) ) {
+		$kept = self::is_token( $token ) ? get_transient( self::transient( $token ) ) : false;
+		if ( ! is_array( $kept ) || ! is_string( $kept['pasted'] ?? null ) || ! is_array( $kept['needs'] ?? null ) ) {
 			return array( 'step' => 'gone' );
 		}
 		$missing = array();
@@ -260,7 +296,7 @@ final class Synthesis_Screen {
 				'step'     => 'checked',
 				'pasted'   => $kept['pasted'],
 				'needs'    => $kept['needs'],
-				'token'    => $kept['token'],
+				'token'    => $token,
 				'reviewer' => $reviewer,
 				'model'    => $model,
 				'missing'  => $missing,
@@ -268,15 +304,18 @@ final class Synthesis_Screen {
 		}
 
 		// Claimed before anything is written: of two clicks at once, only one request
-		// deletes the transient, and the other publishes nothing.
-		if ( ! delete_transient( self::transient() ) ) {
+		// deletes this check's transient, and the other publishes nothing. Checking it
+		// again stores nothing, so no click can claim a check made after its own.
+		if ( ! delete_transient( self::transient( $token ) ) ) {
 			return array( 'step' => 'gone' );
 		}
-		$again = self::check( (string) $kept['pasted'] );
-		if ( 'checked' !== $again['step'] || $again['needs'] !== $kept['needs'] ) {
-			return array( 'changed' => true ) + $again;
+		if ( get_transient( self::transient() ) === $token ) {
+			delete_transient( self::transient() );
 		}
-		delete_transient( self::transient() );
+		$again = self::evaluate( $kept['pasted'] );
+		if ( 'checked' !== $again['step'] || $again['needs'] !== $kept['needs'] ) {
+			return array( 'changed' => true ) + ( 'checked' === $again['step'] ? self::wait( $again ) : $again );
+		}
 
 		$set      = array(
 			'updatedAt'   => wp_date( 'Y-m-d' ),
@@ -535,9 +574,22 @@ final class Synthesis_Screen {
 	}
 
 	/**
-	 * The transient a check waits in, keyed to the person who checked it.
+	 * The transient a check waits in, named for the person who checked it and its
+	 * token; or, with no token, the one naming their latest check.
+	 *
+	 * @param string $token The check's token, or "" for the person's latest.
 	 */
-	private static function transient(): string {
-		return 'firehouse_synthesis_' . get_current_user_id();
+	private static function transient( string $token = '' ): string {
+		return 'firehouse_synthesis_' . get_current_user_id() . ( '' === $token ? '' : '_' . $token );
+	}
+
+	/**
+	 * Whether text is shaped like a check's token: twenty letters and digits, as
+	 * wp_generate_password( 20, false ) makes it.
+	 *
+	 * @param string $token The text.
+	 */
+	private static function is_token( string $token ): bool {
+		return 1 === preg_match( '/\A[A-Za-z0-9]{20}\z/', $token );
 	}
 }
