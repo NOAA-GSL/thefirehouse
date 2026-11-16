@@ -40,6 +40,55 @@ final class Synthesis {
 	public const MOST = 5;
 
 	/**
+	 * The most problems listed; the rest are counted.
+	 */
+	private const LISTED = 50;
+
+	/**
+	 * How much of a need's text a problem quotes.
+	 */
+	private const QUOTED = 80;
+
+	/**
+	 * Characters that show nothing on their own, beyond spaces, controls and format
+	 * characters, as Edit_Screen::blank() has them.
+	 */
+	private const INVISIBLE = '\x{034F}\x{115F}\x{1160}\x{17B4}\x{17B5}\x{180B}-\x{180F}\x{2800}\x{3164}\x{FE00}-\x{FE0F}\x{FFA0}\x{E0100}-\x{E01EF}';
+
+	/**
+	 * Whether text would show nothing: only spaces, control and format characters, and
+	 * other characters that show nothing on their own.
+	 *
+	 * @param string $text The text.
+	 */
+	public static function blank( string $text ): bool {
+		return 1 !== preg_match( '/[^\p{Z}\p{Cc}\p{Cf}' . self::INVISIBLE . ']/u', $text );
+	}
+
+	/**
+	 * The first character in text that a visitor wouldn't see but that would still be
+	 * there, as U+ and its code: a control character, or a format character such as a
+	 * zero-width space, a direction override, which turns what follows it around, or a
+	 * tag character, which a language model reads though no one sees it. Null when
+	 * there's none.
+	 *
+	 * @param string $text The text.
+	 */
+	public static function hidden( string $text ): ?string {
+		if ( 1 !== preg_match( '/[\p{Cc}\p{Cf}]/u', $text, $found ) ) {
+			return null;
+		}
+		$bytes = array_values( (array) unpack( 'C*', $found[0] ) );
+		$code  = match ( count( $bytes ) ) {
+			1       => $bytes[0],
+			2       => ( ( $bytes[0] & 0x1F ) << 6 ) | ( $bytes[1] & 0x3F ),
+			3       => ( ( $bytes[0] & 0x0F ) << 12 ) | ( ( $bytes[1] & 0x3F ) << 6 ) | ( $bytes[2] & 0x3F ),
+			default => ( ( $bytes[0] & 0x07 ) << 18 ) | ( ( $bytes[1] & 0x3F ) << 12 ) | ( ( $bytes[2] & 0x3F ) << 6 ) | ( $bytes[3] & 0x3F ),
+		};
+		return sprintf( 'U+%04X', $code );
+	}
+
+	/**
 	 * What's wrong with a pasted synthesis, and its needs if nothing is.
 	 *
 	 * @param string                     $pasted   What was pasted: the JSON, perhaps in a Markdown code fence.
@@ -149,10 +198,15 @@ final class Synthesis {
 			$problems[] = sprintf( '%1$s, need %2$d: isn’t a need: each is { "text": …, "mentions": …, "projects": [ … ] }.', $label, $number );
 			return null;
 		}
-		$text  = is_string( $need['text'] ?? null ) ? trim( $need['text'] ) : '';
-		$where = '' === $text ? sprintf( '%1$s, need %2$d', $label, $number ) : sprintf( '%1$s, need %2$d (“%3$s”)', $label, $number, $text );
-		if ( '' === $text ) {
+		$text   = is_string( $need['text'] ?? null ) ? trim( $need['text'] ) : '';
+		$blank  = self::blank( $text );
+		$quoted = mb_strlen( $text ) > self::QUOTED ? mb_substr( $text, 0, self::QUOTED - 1 ) . '…' : $text;
+		$where  = $blank ? sprintf( '%1$s, need %2$d', $label, $number ) : sprintf( '%1$s, need %2$d (“%3$s”)', $label, $number, $quoted );
+		$hidden = self::hidden( $text );
+		if ( $blank ) {
 			$problems[] = $where . ': has no text.';
+		} elseif ( null !== $hidden ) {
+			$problems[] = sprintf( '%1$s: holds a character visitors wouldn’t see (%2$s), such as a zero-width space or a direction override. Take it out and check again.', $where, $hidden );
 		}
 
 		$refs  = $need['projects'] ?? null;
@@ -223,6 +277,12 @@ final class Synthesis {
 	 * @return array{problems: list<string>, needs: array<string, list<array{text: string, mentions: int, projects: list<int>}>>}
 	 */
 	private static function result( array $problems, array $needs ): array {
+		if ( count( $problems ) > self::LISTED ) {
+			$more     = count( $problems ) - self::LISTED;
+			$problems = array_slice( $problems, 0, self::LISTED );
+			/* The rest wait for the next check. */
+			$problems[] = sprintf( '…and %d more. Fix these and check again to see them.', $more );
+		}
 		return array(
 			'problems' => $problems,
 			'needs'    => $needs,

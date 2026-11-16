@@ -115,8 +115,9 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		);
 		Functions\when( 'delete_transient' )->alias(
 			function ( string $name ): bool {
+				$was = isset( $this->transients[ $name ] );
 				unset( $this->transients[ $name ] );
-				return true;
+				return $was;
 			}
 		);
 		Functions\when( 'wp_update_post' )->alias(
@@ -286,7 +287,9 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		);
 		$this->assertSame( array(), $this->updated[0]['meta_input']['fh_topNeeds'], 'An area with no need.' );
 		$this->assertSame( array(), $this->transients, 'The check is cleared.' );
-		$this->assertStringContainsString( 'Published: the synthesis reviewed by Stephanie Hoekstra and Emily Wells', self::drawn() );
+		$page = self::drawn();
+		$this->assertStringContainsString( 'Published: the synthesis reviewed by Stephanie Hoekstra and Emily Wells', $page );
+		$this->assertStringContainsString( 'Marked reviewed by Pat Reviewer, who was signed in', $page );
 	}
 
 	/**
@@ -319,6 +322,76 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		);
 		$this->assertStringContainsString( 'Not published: this check isn’t waiting any more', self::drawn() );
 		$this->assertSame( array(), $this->updated );
+	}
+
+	/**
+	 * Of two clicks at once, only the request that deletes the waiting check publishes:
+	 * the other finds it gone, though it read it first.
+	 */
+	public function test_of_two_clicks_at_once_one_publishes(): void {
+		self::send(
+			array(
+				'firehouse_step'      => 'check',
+				'firehouse_synthesis' => self::synthesis(),
+			)
+		);
+		$kept = $this->transients['firehouse_synthesis_6'];
+		Functions\when( 'get_transient' )->justReturn( $kept );
+		Functions\when( 'delete_transient' )->justReturn( false );
+		self::send(
+			array(
+				'firehouse_step'     => 'publish',
+				'firehouse_token'    => 'the-token',
+				'firehouse_reviewer' => 'Pat',
+				'firehouse_model'    => 'NotebookLM',
+			)
+		);
+
+		$this->assertSame( 'Not published: FireHouse synthesis', Synthesis_Screen::title( 'FireHouse synthesis' ) );
+		$this->assertSame( array(), $this->updated );
+	}
+
+	/**
+	 * Reviewed by and Made with that would show nothing, hold a character visitors
+	 * wouldn't see, or run past 200 characters publish nothing.
+	 */
+	public function test_reviewed_by_and_made_with_must_show_as_typed(): void {
+		self::send(
+			array(
+				'firehouse_step'      => 'check',
+				'firehouse_synthesis' => self::synthesis(),
+			)
+		);
+		self::send(
+			array(
+				'firehouse_step'     => 'publish',
+				'firehouse_token'    => 'the-token',
+				'firehouse_reviewer' => "\u{200B}",
+				'firehouse_model'    => "NotebookLM\u{202E}" . str_repeat( 'x', 200 ),
+			)
+		);
+		$page = self::drawn();
+
+		$this->assertStringContainsString( 'Reviewed by is empty', $page );
+		$this->assertStringContainsString( 'Made with holds a character visitors wouldn’t see (U+202E)', $page );
+		$this->assertStringContainsString( 'Made with is longer than 200 characters.', $page );
+		$this->assertSame( array(), $this->updated );
+	}
+
+	/**
+	 * The review shows a need's text and its projects' titles as the pages will:
+	 * "R&amp;D" as typed, not as "R&D".
+	 */
+	public function test_the_review_shows_text_as_the_pages_will(): void {
+		$this->meta[11]['fh_title'] = 'Smoke &amp; heat';
+		self::send(
+			array(
+				'firehouse_step'      => 'check',
+				'firehouse_synthesis' => str_replace( 'Clearer smoke forecasts', 'R&amp;D <forecasts>', self::synthesis() ),
+			)
+		);
+
+		$this->assertStringContainsString( '<td>R&amp;amp;D &lt;forecasts&gt;</td><td>1</td><td>Smoke &amp;amp; heat</td>', self::drawn() );
 	}
 
 	/**

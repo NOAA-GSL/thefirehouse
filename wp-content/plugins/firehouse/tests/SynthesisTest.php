@@ -123,6 +123,54 @@ final class SynthesisTest extends DomainTestCase {
 	}
 
 	/**
+	 * A need whose text shows nothing has none; one holding a character visitors
+	 * wouldn't see, which a direction override or a model's hidden tag characters
+	 * would be, says which; a long one is quoted in part; and past fifty problems the
+	 * rest are counted.
+	 */
+	public function test_text_visitors_wouldnt_see_is_a_problem(): void {
+		$synthesis = self::good();
+		$texts     = array(
+			"\u{200B}\u{3164} ",
+			"Clearer outlooks\u{202E}",
+			"Clearer outlooks\u{E0041}\u{E0042}",
+			"Clearer\u{0000} outlooks",
+			str_repeat( 'Long text ', 20 ),
+		);
+		foreach ( $texts as $index => $text ) {
+			$synthesis[0]['topNeeds'][ $index ] = array(
+				'text'     => $text,
+				'mentions' => 1,
+				'projects' => array( 'smoke-study' ),
+			);
+		}
+		$problems = self::problems( $synthesis );
+
+		$this->assertSame( 'Forecasts and Modeling, need 1: has no text.', $problems[0] );
+		$this->assertStringContainsString( 'need 2 (“Clearer outlooks', $problems[1] );
+		$this->assertStringEndsWith( ': holds a character visitors wouldn’t see (U+202E), such as a zero-width space or a direction override. Take it out and check again.', $problems[1] );
+		$this->assertStringContainsString( '(U+E0041)', $problems[2] );
+		$this->assertStringContainsString( '(U+0000)', $problems[3] );
+		$this->assertSame( 3 + 1, count( $problems ), 'The long need is fine; one problem each.' );
+
+		$synthesis[0]['topNeeds'] = array(
+			array(
+				'text'     => str_repeat( 'Long text ', 20 ),
+				'mentions' => 60,
+				'projects' => array_fill( 0, 60, 7 ),
+			),
+		);
+		$problems                 = self::problems( $synthesis );
+		$this->assertCount( 51, $problems );
+		$this->assertStringStartsWith( 'Forecasts and Modeling, need 1 (“' . mb_substr( str_repeat( 'Long text ', 20 ), 0, 79 ) . '…”): names a project by something other', $problems[0] );
+		$this->assertSame( '…and 10 more. Fix these and check again to see them.', $problems[50] );
+
+		$this->assertTrue( Synthesis::blank( "\u{00A0}\u{FE0F}" ) );
+		$this->assertFalse( Synthesis::blank( "\u{2615}\u{FE0F}" ), 'An emoji with its variation.' );
+		$this->assertNull( Synthesis::hidden( 'R&D for <10 km' ) );
+	}
+
+	/**
 	 * What can't be read as a synthesis at all says so, and nothing else.
 	 */
 	public function test_what_isnt_a_synthesis_says_so(): void {

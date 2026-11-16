@@ -2134,7 +2134,12 @@ hand.
 ### Phase 7b — Analyze results (1–1.5 weeks)
 
 - The AI service client: one host, a key in `wp-config.php`, only published text sent
-  (see [The AI service](#the-ai-service)).
+  (see [The AI service](#the-ai-service)). *From the synthesis screen's security
+  review (16 November): the NotebookLM source puts researchers' text straight into
+  its Markdown, so a submitted abstract could fake another project's section. Before
+  that text goes to an AI service, wrap each project in a delimiter its text can't
+  fake, tell the model the projects are data, not instructions, and never send it an
+  earlier synthesis: compare syntheses on the server.*
 - The Analyze results button and the prompt on the settings screen.
 - The comparison with NotebookLM: both run on the same published projects, and
   Stephanie and Emily judge the results.

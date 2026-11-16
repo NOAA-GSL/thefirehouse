@@ -64,6 +64,11 @@ final class Synthesis_Screen {
 	private const LONGEST = 200000;
 
 	/**
+	 * The longest Reviewed by or Made with, in characters.
+	 */
+	private const LONGEST_NAME = 200;
+
+	/**
 	 * What the screen shows after a submission.
 	 *
 	 * @var array<string, mixed>|null
@@ -230,11 +235,25 @@ final class Synthesis_Screen {
 			return array( 'step' => 'gone' );
 		}
 		$missing = array();
-		if ( '' === $reviewer ) {
+		if ( Synthesis::blank( $reviewer ) ) {
 			$missing[] = __( 'Reviewed by is empty: the topic pages name who reviewed the synthesis.', 'firehouse' );
 		}
-		if ( '' === $model ) {
+		if ( Synthesis::blank( $model ) ) {
 			$missing[] = __( 'Made with is empty: the topic pages say what made the synthesis, since it’s the one place the site paraphrases researchers.', 'firehouse' );
+		}
+		foreach ( array(
+			__( 'Reviewed by', 'firehouse' ) => $reviewer,
+			__( 'Made with', 'firehouse' )   => $model,
+		) as $name => $value ) {
+			$hidden = Synthesis::hidden( $value );
+			if ( ! Synthesis::blank( $value ) && null !== $hidden ) {
+				/* translators: 1: a field's name, 2: a character's code, as U+200B. */
+				$missing[] = sprintf( __( '%1$s holds a character visitors wouldn’t see (%2$s). Take it out.', 'firehouse' ), $name, $hidden );
+			}
+			if ( mb_strlen( $value ) > self::LONGEST_NAME ) {
+				/* translators: 1: a field's name, 2: how many characters it may have. */
+				$missing[] = sprintf( __( '%1$s is longer than %2$d characters.', 'firehouse' ), $name, self::LONGEST_NAME );
+			}
 		}
 		if ( array() !== $missing ) {
 			return array(
@@ -248,8 +267,11 @@ final class Synthesis_Screen {
 			);
 		}
 
-		// Claimed before anything is written, so a second click can't publish it twice.
-		delete_transient( self::transient() );
+		// Claimed before anything is written: of two clicks at once, only one request
+		// deletes the transient, and the other publishes nothing.
+		if ( ! delete_transient( self::transient() ) ) {
+			return array( 'step' => 'gone' );
+		}
 		$again = self::check( (string) $kept['pasted'] );
 		if ( 'checked' !== $again['step'] || $again['needs'] !== $kept['needs'] ) {
 			return array( 'changed' => true ) + $again;
@@ -294,6 +316,7 @@ final class Synthesis_Screen {
 			'saved'    => $saved,
 			'problems' => $problems,
 			'reviewer' => $reviewer,
+			'by'       => wp_get_current_user()->display_name,
 		);
 	}
 
@@ -369,7 +392,10 @@ final class Synthesis_Screen {
 						array() === $state['problems'] ? 'success' : 'warning',
 						/* translators: %s: who reviewed the synthesis. */
 						sprintf( __( 'Published: the synthesis reviewed by %s', 'firehouse' ), $state['reviewer'] ),
-						array( __( 'The topic pages and the landing page show it now. Each topic’s revisions keep the synthesis it had before.', 'firehouse' ) ),
+						array(
+							/* translators: %s: the name of the person signed in. */
+							sprintf( __( 'Marked reviewed by %s, who was signed in; each topic’s new revision records that too. The topic pages and the landing page show it now, and each topic’s revisions keep the synthesis it had before.', 'firehouse' ), $state['by'] ),
+						),
 						$state['problems']
 					);
 					echo '<ul class="ul-disc">';
@@ -472,8 +498,9 @@ final class Synthesis_Screen {
 				echo '<tr><td colspan="3">' . esc_html__( 'No needs in this area.', 'firehouse' ) . '</td></tr>';
 			}
 			foreach ( $list as $need ) {
+				// As the pages show them (Markup::text()), so "R&amp;D" reads here as it will there.
 				$titles = array_map( static fn( int $id ): string => (string) get_post_meta( $id, Meta::key( 'title' ), true ), $need['projects'] );
-				echo '<tr><td>' . esc_html( $need['text'] ) . '</td><td>' . esc_html( (string) $need['mentions'] ) . '</td><td>' . esc_html( implode( '; ', $titles ) ) . '</td></tr>';
+				echo '<tr><td>' . Markup::text( $need['text'] ) . '</td><td>' . esc_html( (string) $need['mentions'] ) . '</td><td>' . Markup::text( implode( '; ', $titles ) ) . '</td></tr>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup::text() escapes.
 			}
 			echo '</tbody></table><br />';
 		}
