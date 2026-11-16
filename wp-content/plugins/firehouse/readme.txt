@@ -142,7 +142,9 @@ request's code, which may come from outside the repository: don't install its zi
    dry run first, then the import. It creates the projects, the topic areas, the
    settings, and the landing and About pages.
 4. Go to FireHouse → Settings and check the site name, the Submit a Finding button's
-   label and address, and the navigation labels.
+   label and address, the navigation labels, and the survey form's questions. Leave
+   Accept submissions off until the survey form may take submissions (see The survey
+   form, above).
 5. Give the people who keep the FireHouse up to date the FireHouse Editor role.
 
 To update, upload the new version's zip the same way, and choose Replace current with
@@ -188,7 +190,8 @@ map's list of regions works on its own.
 
 The first load comes from a seed bundle, built from the source repository's content
 files, which an administrator loads on the Import screen. After that, FireHouse
-Editors keep it up to date in the dashboard.
+Editors keep it up to date in the dashboard, and, once an administrator opens it,
+each survey form submission arrives as a draft project for them to review.
 
 == Screenshots ==
 
@@ -423,7 +426,8 @@ one is.
   (SI)" for AI: the note on the landing and topic pages says "Drafted with Super
   Intelligence (SI)", "Where these needs come from" and the topic pages say what the
   term means, the project pages say the needs are drafted with it, and the survey
-  form's notice says it too. None names the tool. Their new landing heading and About
+  form's notice says it too. None of the site's own notes names the tool; the survey
+  form's notice keeps the Google Form's naming of it. Their new landing heading and About
   words reach a site with its next first import; a site imported before keeps its
   words until an editor changes them in the block editor.
 * A survey form submission's papers given by DOI get their title, journal and year
@@ -434,6 +438,10 @@ one is.
   FireHouse → Settings; a private question's line saying who sees the answer can't be.
   The FireHouse guide's Settings page says how, and the FireHouse menu's screenshot
   shows Help.
+* The FireHouse guide has a page on reviewing a survey form submission, on the
+  projects list's and a project's Help tabs. A submission's From the survey box says
+  its answers can't be changed on the site, where it used to point to the Import screen,
+  which never changes a submission.
 
 = 0.2.0 =
 * Project and topic post types at the Firehouse addresses, with their fields as post

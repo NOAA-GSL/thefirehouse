@@ -525,6 +525,24 @@ final class ProjectScreenTest extends WordPressTestCase {
 	}
 
 	/**
+	 * The box says how the answers change: through the Import screen for a project from
+	 * the survey's records, and not at all for a survey form submission, which the
+	 * import never touches.
+	 */
+	public function test_the_box_says_how_the_answers_change(): void {
+		ob_start();
+		Project_Screen::survey_box( self::post() );
+		$this->assertStringContainsString( '<p>The researcher’s answers, exactly as submitted. They change only when the survey record does, through the Import screen.</p>', (string) ob_get_clean() );
+
+		$this->stored['fh_id'] = 'W_abcdefghijklmnop';
+		ob_start();
+		Project_Screen::survey_box( self::post() );
+		$html = (string) ob_get_clean();
+		$this->assertStringContainsString( '<p>The researcher’s answers, exactly as sent through the FireHouse survey form. They can’t be changed here.</p>', $html );
+		$this->assertStringNotContainsString( 'Import screen', $html );
+	}
+
+	/**
 	 * A project without IRB approval says visitors can't see it.
 	 */
 	public function test_a_project_without_approval_says_so(): void {

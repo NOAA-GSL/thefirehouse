@@ -27,7 +27,7 @@ Choose **Update** to save. The label is saved on its own, and can't be empty: an
 
 ## The synthesis of needs
 
-Below the topic fields, **Synthesis of needs** shows the area's top needs from the last synthesis, who reviewed it, and when. You can't change them here: a new synthesis replaces them, on FireHouse → Synthesis. See [Publishing a synthesis](04-synthesis.md).
+Below the topic fields, **Synthesis of needs** shows the area's top needs from the last synthesis, who reviewed it, and when. You can't change them here: a new synthesis replaces them, on FireHouse → Synthesis. See [Publishing a synthesis](05-synthesis.md).
 
 Until someone has reviewed the synthesis, "Reviewed by" says "No one yet", and the area's page marks its needs "Draft, pending team review".
 

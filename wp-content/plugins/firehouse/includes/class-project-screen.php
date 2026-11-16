@@ -23,7 +23,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   full-record link. They're saved with the post, by WordPress's Publish or Update
  *   button, and kept exactly as typed: they're meta, which kses doesn't touch.
  * - **From the survey**, the researcher's answers, shown read-only, as stored (rule
- *   1). They change only when the survey record does, through the Import screen.
+ *   1). They change only when the survey record does, through the Import screen; a
+ *   survey form submission's don't change at all.
  *
  * A save checks every editorial field first, and saves none of them if any is wrong
  * (rule 6): the screen comes back with what was typed, each problem beside its field
@@ -297,7 +298,12 @@ final class Project_Screen extends Edit_Screen {
 		$list   = static fn( string $name ): array => is_array( $fields[ $name ] ?? null ) ? array_values( $fields[ $name ] ) : array();
 		$geo    = is_array( $fields['geo'] ?? null ) ? $fields['geo'] : array();
 
-		echo '<p>' . esc_html__( 'The researcher’s answers, exactly as submitted. They change only when the survey record does, through the Import screen.', 'firehouse' ) . '</p>';
+		// A form submission has no survey record for the import to correct.
+		echo '<p>' . esc_html(
+			str_starts_with( $text( 'id' ), Survey\Survey::RESPONSE_PREFIX )
+				? __( 'The researcher’s answers, exactly as sent through the FireHouse survey form. They can’t be changed here.', 'firehouse' )
+				: __( 'The researcher’s answers, exactly as submitted. They change only when the survey record does, through the Import screen.', 'firehouse' )
+		) . '</p>';
 		echo '<dl class="fh-edit-readonly">';
 		self::row( __( 'Title', 'firehouse' ), Markup::text( $text( 'title' ) ) );
 		self::row( __( 'Authors', 'firehouse' ), self::items( array_map( array( self::class, 'author' ), $list( 'authors' ) ) ) );

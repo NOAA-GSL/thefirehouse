@@ -24,7 +24,9 @@ list below says what that waits on.
 - The plugin's `readme.txt` is already in the directory's format: its header, a short
   description under 150 characters, five tags, Installation, Frequently Asked
   Questions, Screenshots, External services (the coverage map's Esri tiles, with
-  Esri's terms and privacy statement) and Changelog.
+  Esri's terms and privacy statement, and the survey form's DOI lookups through
+  doi.org, Crossref and DataCite, with each one's terms and privacy policy) and
+  Changelog.
 - The zip comes from CI (`scripts/plugin-zip.mjs`), and Plugin Check, which runs the
   directory's own checks, reads what it holds on every change to the plugin.
 

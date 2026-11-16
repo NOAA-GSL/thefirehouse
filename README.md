@@ -86,17 +86,20 @@ wp-content/plugins/firehouse/
                     The WordPress plugin, below). So far: firehouse.php, which
                     loads the content logic in PHP (domain/) and what hooks
                     into WordPress (includes/), the admin screens among them
-                    (Settings, Import, the project and topic edit screens and
-                    Synthesis); templates/frame.php, the frame
+                    (Settings, Import, the project and topic edit screens,
+                    Synthesis and Help); survey/, the survey form and what
+                    happens to a submission; templates/frame.php, the frame
                     every Firehouse page sits in; blocks/, the server-rendered
-                    blocks the templates and pages place (so far the Firehouse
-                    bar, the not-found page, the project pages, the topic
-                    pages, the landing page, the About page, the explorer and
-                    the coverage map); the shared vocabularies and test cases;
-                    and the PHP tests.
+                    blocks the templates and pages place (the Firehouse bar,
+                    the not-found page, the project pages, the topic pages,
+                    the landing page, the About page, the explorer, the
+                    coverage map and the survey form); help/, the FireHouse
+                    guide, as Markdown pages and the help.json built from
+                    them; the shared vocabularies and test cases; and the PHP
+                    tests.
                     assets/css/firehouse.min.css, coverage-map.min.css and their
                     readable copies are generated from src/, and
-                    assets/css/frame.css is written by hand;
+                    assets/css/frame.css and survey.css are written by hand;
                     assets/fonts/ and assets/css/fonts.css hold the fonts;
                     assets/js/block-editor.js, which shows the blocks and their
                     words' fields in the block editor, is written by hand;
@@ -287,7 +290,9 @@ overrides are isolated so a re-sync doesn't lose them.
         together "with Super Intelligence (SI)" and, citing the order, that it means the
         same as artificial intelligence, as the topic pages also say beside the note;
         the project pages say the needs in the topic areas "are drafted with Super
-        Intelligence (SI)". None names the tool while the service is undecided. Stephanie and Emily to confirm the wording. It is
+        Intelligence (SI)". None of these names the tool while the service is undecided;
+        the survey form's notice does, as the Google Form's did (see the survey form's
+        wording, below). Stephanie and Emily to confirm the wording. It is
         the synthesis's disclosure, so it goes through clearance with the reviewed
         synthesis before gsl.noaa.gov;
       - whether the synthesis needs its own line saying whose it is;
@@ -346,9 +351,18 @@ overrides are isolated so a re-sync doesn't lose them.
       text describes the hub, not the image. Record who confirmed what text, and when.
 - [ ] **Build with the right variables** for each copy (see [Hosting](#hosting)), so
       `og:image` is emitted and the test-site copy isn't indexed.
-- [ ] **Open the survey form only once it's cleared:** the privacy review and the
-      written Paperwork Reduction Act answer (plan open questions 12 and 14). Then tick
-      Accept submissions under FireHouse → Settings, which makes the Submit page.
+- [ ] **Confirm the survey form's wording** with Stephanie and Emily, then clear it.
+      The form keeps the Google Form's notice and questions (`survey/class-questions.php`),
+      with "AI" made "SI" (Executive Order 14434). Its SI disclosure still names the
+      tool ("Google Gemini within a secure NOAA Gemini / NotebookLM workspace"), which
+      the plan expects to name the approved service instead (plan open question 7).
+      The disclosure goes through clearance before gsl.noaa.gov (CLAUDE.md). A
+      question's wording and help can be changed under FireHouse → Settings; the
+      notice and the thank-you messages are in code.
+- [ ] **Open the survey form only once it's cleared:** the privacy review, the
+      written Paperwork Reduction Act answer (plan open questions 12 and 14), and GSL's
+      security review of the release that carries it. Then tick Accept submissions
+      under FireHouse → Settings, which makes the Submit page.
 - [ ] **Set the Cloudflare rate-limit rule** on POSTs to `/firehouse/submit/` on each
       site, before its form opens: it limits repeat submissions, so the plugin keeps
       nothing about visitors (Eric, 16 November). The plugin takes a submission at
@@ -421,7 +435,8 @@ Named so it's clear these are gaps, not oversights:
 - **CMS.** The content layer is ready and two adapters are written, but no Sanity or
   Strapi instance exists and neither adapter has been run against a live backend.
   A matching schema still has to be authored on whichever is chosen.
-- **Submission pipeline.** The Google Form is an outbound link. Nothing yet moves a
+- **Submission pipeline.** On this React site the Google Form is an outbound link; the
+  plugin has its own survey form, off until it's cleared. Nothing yet moves a
   processed submission into `topicSummaries.json` — brief §9.1 allows this to be
   manual at first, and the brief's own risk list recommends a human review step.
 - **The rest of explorer search.** Search and filters are in (`src/content/search.ts`);
@@ -460,7 +475,8 @@ nothing from the database. Each class's docblock has the detail; this is the map
     in the Firehouse tree its own blocks (not through `the_content`), and an empty page
     in the tree a placeholder.
   - **Stylesheets:** it loads `fonts.css`, `firehouse.min.css`, `coverage-map.min.css`
-    on a page whose content holds the coverage map's block, and `frame.css`, after the
+    on a page whose content holds the coverage map's block, `survey.css` on a page whose
+    content holds the survey form's block, and `frame.css`, after the
     theme's stylesheet, at the plugin's version and each file's modified time, and adds
     `fh-page` to the body. Under `SCRIPT_DEBUG` it loads `firehouse.css` and
     `coverage-map.css`, the same rules readable, in place of the minified copies. The local WordPress turns
@@ -568,8 +584,9 @@ nothing from the database. Each class's docblock has the detail; this is the map
 - `Subnav` is the Firehouse bar, `firehouse/subnav`: the site's `SiteHeader` without
   the NOAA and GSL logos and the theme toggle, which the theme's header already has.
   - It has the wordmark, the Settings screen's link labels, and the Submit a Finding
-    button, which is left out until a survey address is set. A survey on another site
-    opens in a new tab and tells screen readers so.
+    button, which is left out until a survey address is set or the survey form is
+    open (`Settings::get()`). A survey on another site opens in a new tab and tells
+    screen readers so.
   - It marks the current page's link with `aria-current="page"`: Home on the landing
     page, Explore Projects on the explorer and every project, About on the About page
     and any page under it. A topic or a missing address marks none.
@@ -595,8 +612,8 @@ nothing from the database. Each class's docblock has the detail; this is the map
   address goes through `Markup::url()`.
 - `Topic_Page` is a topic area's page, the `firehouse/topic` block: the site's
   `TopicPage`, with the area's top five needs, the published projects behind each,
-  what the area covers, the Submit button once a survey address is set, and the other
-  three areas. A need that names a project a visitor may not see leaves it out and
+  what the area covers, the Submit button once a survey address is set or the survey
+  form is open, and the other three areas. A need that names a project a visitor may not see leaves it out and
   counts only the projects that remain, as the site's normalize step does.
 - `Explorer_Page` is the project explorer, the `firehouse/explorer` block: the site's
   `ProjectsPage`, drawn on the server so it works without JavaScript. Every control belongs to one `GET`
@@ -708,7 +725,11 @@ nothing from the database. Each class's docblock has the detail; this is the map
 - `Installer` stores the role and the administrators' capabilities and has the
   rewrite rules rebuilt, on activation and after `Installer::REVISION` changes.
 - `Settings` is FireHouse → Settings: the site name, the Submit a Finding label and
-  address, and the three navigation labels, read with `Settings::get()`.
+  address, the survey form's Accept submissions switch (administrators only,
+  `Settings::OPEN_SURVEY`), the three navigation labels, and each survey question's
+  wording and help (stored only where they differ from `Questions::all()`). The pages
+  read `Settings::get()`, which while the form is open gives the Submit page's address
+  as the survey address; `Settings::stored()` is what's saved.
 - `Edit_Screen` is what the project and topic edit screens share. Each adds a box of
   the team's fields to WordPress's own edit screen, saved whenever the screen saves
   the post (Save Draft, Publish or Update), through `Store::update_fields()`, kept as typed (line endings aside). A save
@@ -726,11 +747,14 @@ nothing from the database. Each class's docblock has the detail; this is the map
   signing in again in the session-expired dialog; if it has gone stale anyway,
   WordPress's save of the post still goes through, and the screen says the fields
   weren't saved and shows what was typed.
-- `Project_Screen` is a project's, in two boxes. **Editorial fields** (the summary,
+- `Project_Screen` is a project's, in two boxes, and a third for a survey form
+  submission. **Editorial fields** (the summary,
   publication status, geography note and full-record link, which is trimmed) are the
   team's, never touched by a re-import (rule 4). The geography is written only when
   its note changes, so a save never stands or falls on the survey's regions. **From
-  the survey** shows the researcher's answers read-only, as stored. WordPress has
+  the survey** shows the researcher's answers read-only, as stored. **Private
+  answers**, on a form submission only, shows the submitter's email, job title and how
+  they shared their results, to FireHouse Editors and administrators. WordPress has
   saved the project's status by the time a save is refused.
 - `Topic_Screen` is a topic's, in two boxes under its label, WordPress's title box.
   **Topic fields** are the team's words for the area: its short label, which can't be
@@ -762,8 +786,8 @@ nothing from the database. Each class's docblock has the detail; this is the map
 - `Project_Rules` holds three rules on every save of a project through WordPress's
   editing routes (the edit screen, Quick Edit, bulk edit, a restore, XML-RPC), on
   `wp_insert_post_data`, late, so another plugin's filter can't undo them. The
-  plugin's own writes through `Store` are left alone: the importer and, later, the
-  survey form set a project's status themselves.
+  plugin's own writes through `Store` are left alone: the importer and the survey form
+  set a project's status themselves.
   - A project without IRB approval isn't published, scheduled or made private: it stays
     a draft or pending, or becomes a draft if it was public, with its dates and the
     slug it asked for. Its edit screen says why at the top and in the Publish box,
@@ -1005,6 +1029,40 @@ The traps, for whoever changes this code next:
 - `uninstall.php` removes the role, so users who had it are left with no role on the
   site, and the capabilities; the content stays.
 
+`includes/class-help.php`, `Help`, shows the FireHouse guide: FireHouse → Help, every
+page the user may read with its screenshots, and on each FireHouse screen
+(`Help::SCREENS`) a Help tab with that screen's pages. The guide's Markdown pages in
+`help/` are the source; `npm run plugin:help` builds `help/help.json` and
+`help/README.md` from them, and CI fails if they fall behind (`plugin:help:check`).
+Pages for administrators show only to those who may import. When a screen changes, its
+page changes in the same pull request (CLAUDE.md), and its screenshot is taken again
+with `node scripts/help-screenshots.mjs`, which crops each to its subject and hides
+the toolbar, other plugins' notices and anything private.
+
+`survey/` is the survey form, off until an administrator ticks Accept submissions
+(WORDPRESS-PLAN.md, Phase 7a):
+
+- `Questions` holds the questions in the Google Form's order and wording, with the
+  site's own choices for fire phases and regions; `Questions::worded()` gives them as
+  reworded under FireHouse → Settings. Each private question's line saying who sees
+  the answer is fixed here.
+- `Form` draws the `firehouse/survey-form` block on the Submit page
+  (`/firehouse/submit/`): the notice, every question with its label, help and
+  problem tied to it, one box per entry added and removed without JavaScript, a
+  summary of what's wrong that takes the focus, and the thanks.
+- `Submission` reads a sent form into the fields an import of the same answers would
+  write, and lists what's wrong: required answers, counts, lengths, an email address
+  in a public answer, a character that doesn't show.
+- `Survey` handles the POST, only at the page's own address and from the site's own
+  pages, with a nonce, a field people don't see and a minimum time; saves the draft
+  (response ID `W_…`, no author), with the email, job title and sharing answer apart
+  in protected meta (`_firehouse_private`) left out of WordPress's export; and emails
+  the team mailbox fixed text with a link to the draft (`firehouse_survey_notify`
+  changes the address, or with "" sends none).
+- `Doi_Lookup` looks up each DOI's title, journal and year from doi.org, Crossref and
+  DataCite only, in a WP-Cron event just after the save, and stores them only while the
+  submission is still a draft.
+
 `domain/` holds the PHP versions of `src/content/derive.ts`, `format.ts`,
 `normalize.ts` and `search.ts`, of `src/design-system/heat.ts` (`Map_Colors`) and
 `scripts/notebooklm-source.mjs` (`Notebook_Source`), and the synthesis screen's
@@ -1169,6 +1227,9 @@ CI runs all three on every change to the plugin: PHPCS and PHPUnit on PHP 8.1, a
 Plugin Check in a throwaway WordPress (`.github/workflows/wordpress-plugin.yml`), on
 what the plugin's zip holds.
 
+The local WordPress listens only on this computer and is never exposed beyond it,
+because Firehouse isn't hosted outside GSL, even for a demo.
+
 ### The plugin's zip
 
 `npm run plugin:zip` (`scripts/plugin-zip.mjs`) builds the zip WordPress installs at
@@ -1191,9 +1252,6 @@ review can record exactly what it passed. Publish the draft once it has.
 
 `wordpress-org/` holds what a WordPress.org listing would need beyond the zip, and
 what submitting it waits on (`wordpress-org/README.md`). The plugin isn't submitted.
-
-It listens only on this computer and is never exposed beyond it, because Firehouse
-isn't hosted outside GSL, even for a demo.
 
 ## The coverage map
 

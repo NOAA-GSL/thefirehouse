@@ -20,7 +20,7 @@ Tab moves through a part's fields, and the Down arrow at the end of a field move
 - **You can change the words:** headings, text, button and link text, the counts' labels, and each card's, step's and team member's words.
 - **You can't change the layout:** the parts can't be added, moved or removed, and no other kind of block can be added. FireHouse adds everything else, such as the top needs, the map and the projects, from the projects and the synthesis.
 - **Fields marked "Required." can't be empty:** headings, button text, names, titles and labels. An empty one is outlined in red, and a message at the top says which field to fill in, with a **Go to** button that takes you there. The page can't be saved until it's filled.
-- **The Submit a Finding buttons** go to the address in FireHouse → Settings, wherever they are.
+- **The Submit a Finding buttons** go to the survey address in FireHouse → Settings, wherever they are, or to the FireHouse survey form while it's open.
 
 ## The hero's counts
 
