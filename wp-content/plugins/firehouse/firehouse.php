@@ -11,6 +11,7 @@
  * License:           Apache-2.0
  * License URI:       https://www.apache.org/licenses/LICENSE-2.0
  * Text Domain:       firehouse
+ * Update URI:        https://github.com/NOAA-GSL/thefirehouse
  *
  * Registers the project and topic post types and their fields at the Firehouse
  * addresses, the FireHouse Editor role, and the Firehouse settings, Import, project and
@@ -23,7 +24,9 @@
  * holds what does. The comment above the hook calls below lists where the plugin acts
  * beyond the Firehouse pages.
  * WORDPRESS-PLAN.md in the repository describes what this plugin becomes, phase by
- * phase.
+ * phase. Update URI names a host that isn't WordPress.org, so WordPress never offers
+ * an update from there, even if another plugin is listed as firehouse; the plugin is
+ * updated by uploading a reviewed zip (wordpress-org/README.md).
  *
  * @package Firehouse
  */

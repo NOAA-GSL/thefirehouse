@@ -7,6 +7,8 @@ vendor/
 
 # Build
 dist/
+# The plugin's installable zip (npm run plugin:zip)
+release/
 dist-ssr/
 *.tsbuildinfo
 # The seed bundle (npm run seed): built from src/content/data/, never committed
