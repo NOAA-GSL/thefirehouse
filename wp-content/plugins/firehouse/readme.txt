@@ -359,6 +359,10 @@ one is.
   and privacy statement. The plugin header's Update URI names GitHub, so WordPress never
   offers an update from WordPress.org for it, even if another plugin is listed there as
   firehouse.
+* The FireHouse guide: FireHouse → Help, for FireHouse Editors and administrators, in
+  plain language with screenshots, and on each FireHouse screen the part for that
+  screen under the Help tab. Pages for administrators show only to them. It comes from
+  Markdown pages in help/, so it describes the version installed.
 * The FireHouse survey form at /firehouse/submit/, off until an administrator ticks
   Accept submissions under FireHouse → Settings: each submission becomes a draft
   project, with the submitter's email, job title and how they shared their results kept

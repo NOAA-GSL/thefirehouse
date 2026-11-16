@@ -15,7 +15,8 @@
  *
  * Registers the project and topic post types and their fields at the Firehouse
  * addresses, the FireHouse Editor role, and the Firehouse settings, Import, project and
- * topic edit, and Synthesis screens; keeps WordPress's `year` query variable off Firehouse pages, and keeps
+ * topic edit, Synthesis and Help screens, and the guide in each FireHouse screen's Help
+ * tab (help/); keeps WordPress's `year` query variable off Firehouse pages, and keeps
  * projects a visitor may not see off the public site (Visibility); and puts every
  * Firehouse page (the landing, About, project, topic and not-found pages, and the
  * project explorer) in the theme's header and footer, with its own stylesheets, the
@@ -70,6 +71,7 @@ require_once __DIR__ . '/includes/class-seed-bundle.php';
 require_once __DIR__ . '/includes/class-importer.php';
 require_once __DIR__ . '/includes/class-import-screen.php';
 require_once __DIR__ . '/includes/class-synthesis-screen.php';
+require_once __DIR__ . '/includes/class-help.php';
 require_once __DIR__ . '/survey/class-questions.php';
 require_once __DIR__ . '/survey/class-submission.php';
 require_once __DIR__ . '/survey/class-form.php';
@@ -295,6 +297,7 @@ Installer::hook( __FILE__ );
 Settings::hook();
 Import_Screen::hook();
 Synthesis_Screen::hook();
+Help::hook();
 Survey\Survey::hook();
 Project_Screen::hook();
 Project_Rules::hook();

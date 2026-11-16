@@ -31,6 +31,10 @@ npm run plugin:blocks
 npm run plugin:zip # build release/firehouse-<version>-<commit>.zip, the file WordPress
                    # installs, from the last commit, without the tests (CI builds it
                    # on every change to the plugin; see "The plugin's zip" below)
+npm run plugin:help
+                   # build the FireHouse guide the plugin shows, help/help.json and
+                   # help/README.md, from its Markdown pages in help/ (plugin:help:check
+                   # only compares; CI runs it)
 npm run reference  # capture the reference the plugin matches (reference/README.md)
 npm run plugin:compare
                    # compare each built page's main landmark with the reference's
