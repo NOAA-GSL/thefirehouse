@@ -1,4 +1,5 @@
 === The FireHouse ===
+Tags: research, social science, fire weather, wildfire, science communication
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 8.1
@@ -10,8 +11,18 @@ Public-facing hub for NOAA GSL's fire weather social science needs and findings.
 
 == Description ==
 
+The FireHouse gathers completed fire weather social science research in one place:
+each project in its researchers' own words, and, across all of them, what forecasters,
+land managers and emergency managers need, by topic area. Visitors read and search
+the projects. FireHouse Editors, a role the plugin adds, review and publish them, keep
+the topic areas' words and the landing and About pages up to date, and publish a
+reviewed synthesis of the needs. It is built for NOAA's Global Systems Laboratory
+(GSL) and GSL's classic theme.
+
 The FireHouse is a section of GSL's WordPress site, at /firehouse. It is built in
 phases; WORDPRESS-PLAN.md in https://github.com/NOAA-GSL/thefirehouse describes them.
+
+= What it adds =
 
 It registers the project and topic post types and their fields. Projects are at
 /firehouse/projects/ and topics at /firehouse/topics/{key}/. It adds the FireHouse
@@ -50,6 +61,117 @@ under each, a count for every region, and the projects filed under the one chose
 With JavaScript, a choice on the map or in the list changes the page in place;
 without it, the list works on its own and the map isn't shown.
 
+= Third-party code and fonts =
+
+The fonts in assets/fonts/, Archivo and Public Sans, are third-party, under the SIL
+Open Font License 1.1, whose text is beside them. assets/fonts/SOURCES.json records
+where each file came from.
+
+The icons in assets/icons/ are Lucide's, under the ISC License, whose text is beside
+them in LICENSE.txt. Lucide credits portions of them to Feather (MIT) there.
+
+The coverage map's drawing in assets/map/ includes Leaflet, under the BSD 2-Clause
+License, whose text is beside it in LICENSE.txt. The map's region boundaries are
+simplified from the National Interagency Fire Center's National GACC Boundaries.
+
+= What it stores =
+
+The Import screen keeps nothing it doesn't import: the uploaded file isn't saved, and
+the checked content waits briefly for the confirmation and is then cleared. The
+synthesis screen keeps a checked synthesis for at most thirty minutes; an edit screen
+keeps refused input for five minutes, and the settings screen for one; a refused
+publish's notice waits an hour; each only for the person it's for. The plugin
+stores only what the site publishes.
+
+= Deactivating and deleting =
+
+Deactivating the plugin keeps the FireHouse Editor role, which can then only sign in.
+Deleting the plugin removes the role and the plugin's capabilities, and users who had
+the role are left with no role on the site. The content stays.
+
+An update that changes the role or its capabilities applies the role, and the
+administrators' FireHouse capabilities, as the plugin defines them, so a change made
+to either with a role editor doesn't last past it.
+
+== Installation ==
+
+The plugin is installed from its zip, the file WordPress takes at Plugins → Add New
+Plugin → Upload Plugin. Each version's zip is attached to its release in the source
+repository (https://github.com/NOAA-GSL/thefirehouse/releases). A zip of any commit is
+on that commit's "WordPress plugin" run in the repository's Actions, under Artifacts;
+it hasn't been through GSL's security review, so it belongs only on a local or test
+site.
+
+1. In the dashboard, go to Plugins → Add New Plugin, choose Upload Plugin, choose the
+   zip, and choose Install Now.
+2. Activate the plugin. The FireHouse menu appears in the dashboard.
+3. As an administrator, go to FireHouse → Import and load the site's seed bundle: a
+   dry run first, then the import. It creates the projects, the topic areas, the
+   settings, and the landing and About pages.
+4. Go to FireHouse → Settings and check the site name, the Submit a Finding button's
+   label and address, and the navigation labels.
+5. Give the people who keep the FireHouse up to date the FireHouse Editor role.
+
+To update, upload the new version's zip the same way, and choose Replace current with
+uploaded. The content and the settings stay.
+
+== Frequently Asked Questions ==
+
+= Does it work with any theme? =
+
+It is built for, and tested with, GSL's classic theme. It draws each FireHouse page
+between the theme's own header and footer (get_header() and get_footer()), so it needs
+a classic theme; it isn't built for block themes. The FireHouse area keeps its own
+look in any theme.
+
+= Does it contact other sites? =
+
+Only through the visitor's browser, for the coverage map's basemap tiles: see External
+services. The plugin's own code on the server makes no request to another site, and
+its fonts, icons and scripts are served from the plugin.
+
+= Who can change what? =
+
+Administrators can do everything, and only they can import. FireHouse Editors can edit
+and publish projects and topic areas, change the words on the landing and About pages,
+change the FireHouse settings, and publish a reviewed synthesis. They can't change the
+site's other posts, pages or menus, add or remove pages, or use the Media Library.
+
+= Does it change what researchers wrote? =
+
+No. A project's survey answers are shown read-only on its edit screen, and printed on
+its page as submitted. The FireHouse team's own fields (a summary, the publication
+status, a geography note and a full-record link) are kept apart from them.
+
+= Does it work without JavaScript? =
+
+Yes. With JavaScript, the explorer's results follow the search as you type and the
+coverage map is drawn. Without it, the filters apply when the form is sent, and the
+map's list of regions works on its own.
+
+= Where does the content come from? =
+
+The first load comes from a seed bundle, built from the source repository's content
+files, which an administrator loads on the Import screen. After that, FireHouse
+Editors keep it up to date in the dashboard.
+
+== Screenshots ==
+
+1. The landing page: the hub's counts and the top needs in each of the four topic
+   areas.
+2. Where the research comes from: the coverage map, coloured by how many projects are
+   filed under each Geographic Area Coordination Center, with a count for every
+   region.
+3. The project explorer, with its search, filters and sort.
+4. A project's page, in its researchers' own words, with its facts at a glance.
+5. A topic area's page: its top needs, and the published projects behind each.
+6. A project's edit screen: the FireHouse team's fields above the researcher's
+   answers, which are read-only.
+7. FireHouse → Synthesis, where an editor checks a synthesis and publishes it once it
+   has been reviewed.
+
+== External services ==
+
 The coverage map is the plugin's one outside service. Its basemap tiles come from
 Esri (server.arcgisonline.com). On every view of the landing page with JavaScript (or
 of any page the coverage map block is placed on), without the visitor scrolling to
@@ -73,31 +195,9 @@ the basemap in shared/coverage-map.json and rebuilding the map's script; no tile
 all also means changing the map's drawing code and its early connection. The source
 repository's README describes both.
 
-The fonts in assets/fonts/, Archivo and Public Sans, are third-party, under the SIL
-Open Font License 1.1, whose text is beside them. assets/fonts/SOURCES.json records
-where each file came from.
-
-The icons in assets/icons/ are Lucide's, under the ISC License, whose text is beside
-them in LICENSE.txt. Lucide credits portions of them to Feather (MIT) there.
-
-The coverage map's drawing in assets/map/ includes Leaflet, under the BSD 2-Clause
-License, whose text is beside it in LICENSE.txt. The map's region boundaries are
-simplified from the National Interagency Fire Center's National GACC Boundaries.
-
-The Import screen keeps nothing it doesn't import: the uploaded file isn't saved, and
-the checked content waits briefly for the confirmation and is then cleared. The
-synthesis screen keeps a checked synthesis for at most thirty minutes; an edit screen
-keeps refused input for five minutes, and the settings screen for one; a refused
-publish's notice waits an hour; each only for the person it's for. The plugin
-stores only what the site publishes.
-
-Deactivating the plugin keeps the FireHouse Editor role, which can then only sign in.
-Deleting the plugin removes the role and the plugin's capabilities, and users who had
-the role are left with no role on the site. The content stays.
-
-An update that changes the role or its capabilities applies the role, and the
-administrators' FireHouse capabilities, as the plugin defines them, so a change made
-to either with a role editor doesn't last past it.
+The tiles are Esri's World Light Gray Canvas and World Dark Gray Canvas basemaps. Esri's
+terms of use: https://www.esri.com/en-us/legal/terms/master-agreement. Esri's privacy
+statement: https://www.esri.com/en-us/privacy/privacy-statements/privacy-statement.
 
 == Changelog ==
 
@@ -123,7 +223,7 @@ one is.
   With JavaScript, a choice on the map or in the list changes the page in place, and
   the address with it. Without it, the list works alone, and the map isn't shown. The
   map's basemap tiles are the plugin's one outside service: the visitor's browser
-  loads them from Esri (see the Description). A landing page imported before this
+  loads them from Esri (see External services). A landing page imported before this
   doesn't have that section: add `<!-- wp:firehouse/coverage-map /-->` before its
   submit band in the block editor's Code editor.
 * The About page, created by the Import screen under the landing page when there's
@@ -229,6 +329,12 @@ one is.
   NotebookLM source, paste the JSON NotebookLM gives, check it, and mark it reviewed
   to publish it to the topic pages and the landing page. Each topic keeps a revision
   of the synthesis before; restoring it is the undo.
+* The plugin's zip, the file Plugins → Add New Plugin → Upload Plugin takes, is built
+  by CI from each commit (npm run plugin:zip), without the tests, and Plugin Check
+  reads what it holds. A version tag drafts a GitHub release with it. This readme has
+  WordPress.org's sections: Installation, Frequently Asked Questions, Screenshots, and
+  External services, which describes the coverage map's tiles and links Esri's terms
+  and privacy statement.
 
 = 0.2.0 =
 * Project and topic post types at the Firehouse addresses, with their fields as post

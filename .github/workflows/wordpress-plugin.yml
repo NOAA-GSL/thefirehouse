@@ -1,12 +1,26 @@
 name: WordPress plugin
 
 # Coding standards and unit tests for wp-content/plugins/firehouse, on the oldest PHP
-# the plugin supports ("Requires PHP" in firehouse.php), and WordPress's Plugin Check
-# against a throwaway WordPress. Every release has to pass all three before it goes to
+# the plugin supports ("Requires PHP" in firehouse.php); the plugin's installable zip
+# (scripts/plugin-zip.mjs); and WordPress's Plugin Check, against a throwaway WordPress,
+# on what the zip holds. Every release has to pass all of them before it goes to
+# security review.
+#
+# Each run keeps the zip as an artifact for 30 days: on the run's Summary page, under
+# Artifacts, firehouse-<version>-<commit>.zip downloads as the zip WordPress takes at
+# Plugins → Add New Plugin → Upload Plugin. Pushing a version tag (v0.3.0, which must
+# match the plugin's version) also makes a draft GitHub release with the zip attached;
+# nothing is published until a maintainer publishes the draft, after the release's
 # security review.
 
 on:
   push:
+    # Version tags make the draft release below. GitHub doesn't apply the path filter
+    # to a tag push.
+    branches:
+      - '**'
+    tags:
+      - 'v*'
     paths:
       - 'wp-content/**'
       # The site files the plugin's tests hold it to.
@@ -19,6 +33,9 @@ on:
       - 'composer.lock'
       - 'phpcs.xml.dist'
       - 'phpunit.xml.dist'
+      # What the zip is built from, besides the plugin.
+      - 'scripts/plugin-zip.mjs'
+      - 'LICENSE'
       - '.github/workflows/wordpress-plugin.yml'
   pull_request:
     paths:
@@ -33,6 +50,9 @@ on:
       - 'composer.lock'
       - 'phpcs.xml.dist'
       - 'phpunit.xml.dist'
+      # What the zip is built from, besides the plugin.
+      - 'scripts/plugin-zip.mjs'
+      - 'LICENSE'
       - '.github/workflows/wordpress-plugin.yml'
   workflow_dispatch:
 
@@ -77,17 +97,88 @@ jobs:
       - name: PHPUnit
         run: vendor/bin/phpunit
 
-  plugin-check:
+  package:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.zip.outputs.version }}
+      name: ${{ steps.zip.outputs.name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           persist-credentials: false
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # Built from the commit with git archive, then read back and checked: every plugin
+      # file but the tests, the LICENSE, nothing else. On a tag the script fails unless
+      # the tag is v and the plugin's version. The tag reaches the script through the
+      # environment, not the command line, so its text is never run as shell.
+      - name: Build the plugin zip
+        id: zip
+        env:
+          TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+        run: node scripts/plugin-zip.mjs ${TAG:+--tag "$TAG"}
+
+      # archive: false keeps the file as it is, so the download is the plugin zip
+      # itself, not a zip around it.
+      - name: Keep the zip
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ steps.zip.outputs.zip }}
+          archive: false
+          if-no-files-found: error
+          retention-days: 30
+
+  plugin-check:
+    needs: package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download the plugin zip
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ needs.package.outputs.name }}
+          path: zip
+
+      # Plugin Check reads the plugin as a site would install it: what the zip holds,
+      # in its firehouse/ folder, so the slug and text domain match.
+      - name: Unzip it
+        run: unzip -q "zip/${{ needs.package.outputs.name }}" -d build
+
       # Pinned to the commit behind v1.1.9 rather than the movable tag, as the action
       # pins its own dependencies: a third-party action runs with this job's token.
       - name: Plugin Check
         uses: WordPress/plugin-check-action@10857da14b6c2246d15402b3e69f777edcf8c12e # v1.1.9
         with:
-          build-dir: ./wp-content/plugins/firehouse
+          build-dir: ./build/firehouse
+
+  # Only on a version tag, and only once the tests, the lint and Plugin Check have
+  # passed: a draft release with the zip, which only the repository's maintainers see
+  # until one of them publishes it. This is the one job that may write to the
+  # repository, and it runs no code from it: no checkout, only the zip built above and
+  # GitHub's own CLI.
+  draft-release:
+    if: github.ref_type == 'tag'
+    needs: [lint-and-test, package, plugin-check]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download the plugin zip
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ needs.package.outputs.name }}
+          path: zip
+
+      - name: Draft the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ needs.package.outputs.version }}
+          ZIP: zip/${{ needs.package.outputs.name }}
+        run: |
+          gh release create "$TAG" "$ZIP" --draft --verify-tag             --title "The FireHouse $VERSION"             --notes "The FireHouse plugin $VERSION. Install it at Plugins → Add New Plugin → Upload Plugin. readme.txt's changelog lists what changed. Publish this draft only once the release has passed GSL's security review."

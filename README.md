@@ -28,6 +28,9 @@ npm run plugin:assets
 npm run plugin:blocks
                    # write the plugin's block manifest from its block.json files
                    # (plugin:blocks:check only compares)
+npm run plugin:zip # build release/firehouse-<version>-<commit>.zip, the file WordPress
+                   # installs, from the last commit, without the tests (CI builds it
+                   # on every change to the plugin; see "The plugin's zip" below)
 npm run reference  # capture the reference the plugin matches (reference/README.md)
 npm run plugin:compare
                    # compare each built page's main landmark with the reference's
@@ -1127,7 +1130,28 @@ composer test       # PHPUnit
 ```
 
 CI runs all three on every change to the plugin: PHPCS and PHPUnit on PHP 8.1, and
-Plugin Check in a throwaway WordPress (`.github/workflows/wordpress-plugin.yml`).
+Plugin Check in a throwaway WordPress (`.github/workflows/wordpress-plugin.yml`), on
+what the plugin's zip holds.
+
+### The plugin's zip
+
+`npm run plugin:zip` (`scripts/plugin-zip.mjs`) builds the zip WordPress installs at
+Plugins → Add New Plugin → Upload Plugin: `wp-content/plugins/firehouse` as of the last
+commit, in a `firehouse/` folder, with the repository's `LICENSE`, and without
+`tests/` and `shared/cases/`, which only the tests read. It reads the zip back and
+fails if a file is missing or extra, and if the plugin header, `VERSION` and
+readme.txt's stable tag name different versions.
+
+CI builds it on every change to the plugin and keeps it for 30 days: on the run's
+Summary page, under Artifacts, `firehouse-<version>-<commit>.zip` downloads as the
+zip itself. That zip hasn't been through GSL's security review; it's for a local or
+test site. For a release, set the version in the three places, merge, and push a tag
+named for it (`git tag v0.3.0 && git push origin v0.3.0`): CI checks the tag matches,
+runs the checks, and drafts a GitHub release with `firehouse-0.3.0.zip`. Publish the
+draft once the release has passed security review.
+
+`wordpress-org/` holds what a WordPress.org listing would need beyond the zip, and
+what submitting it waits on (`wordpress-org/README.md`). The plugin isn't submitted.
 
 It listens only on this computer and is never exposed beyond it, because Firehouse
 isn't hosted outside GSL, even for a demo.
