@@ -23,7 +23,7 @@ The model is sent the published projects, word for word, the four topic areas, a
 2. The model drafts in the background, which takes a few minutes. Reload the page to see when it's done. One model drafts at a time.
 3. Each model's latest draft is kept under its name, so you can have several draft and compare them. **Its whole reply** shows everything the model wrote, with the entries each need draws on. **The prompt it was given** shows the prompt it ran.
 4. Choose **Check** under the draft you want. Its JSON goes into the box at the bottom and is checked, as in step 4 below, and **Made with** starts with the model's name.
-5. Review it as in step 3, with the model's whole reply in place of NotebookLM's citations, then mark it reviewed as in step 5.
+5. Review it as in step 3, with the model's whole reply, which stays under the needs while you check and edit, in place of NotebookLM's citations. Then mark it reviewed as in step 5.
 
 ![The Analyze results section: a Model list with Llama 4 Scout (Meta) picked, the Analyze results button, and two kept drafts, each with its Check button](images/analyze-results.webp "Analyze results, on FireHouse → Synthesis.")
 

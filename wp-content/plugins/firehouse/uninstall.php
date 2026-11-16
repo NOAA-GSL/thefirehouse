@@ -41,7 +41,7 @@ delete_option( 'rewrite_rules' );
 
 // Analyze results' drafts, and a run waiting to start (Analysis::OPTION, ::EVENT).
 delete_option( 'firehouse_analysis' );
-wp_clear_scheduled_hook( 'firehouse_analyze' );
+wp_unschedule_hook( 'firehouse_analyze' );
 
 // Dry runs, synthesis checks, refused saves and notices are transients named for
 // their user. Kept in the

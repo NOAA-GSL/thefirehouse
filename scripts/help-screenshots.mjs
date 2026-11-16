@@ -14,6 +14,8 @@
  * version) are hidden, so nothing about the site beyond the FireHouse shows; only the
  * FireHouse menu's own screenshot shows the menu, cropped to the FireHouse part.
  * The project and topic shown are the first published project and the topic in TOPIC.
+ * Two need a site with a Workers AI key (needsKey): taking every screenshot skips them
+ * on a site without one, and naming them fails there.
  *
  * The images go into a public repository and the plugin's zip, so nothing that isn't
  * public goes into them: the Projects list is the Published view, which lists no
@@ -61,13 +63,13 @@ const SHOTS = {
   'project-screen': { project: true, element: '#wpbody-content', height: 1150 },
   'topic-fields': { topic: TOPIC, element: '#wpbody-content', height: 760 },
   'synthesis-screen': { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-synthesis', element: '#wpbody-content', height: 440 },
-  // Only on a site with a Workers AI key, and with drafts kept to show.
-  'analyze-results': { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-synthesis', element: '#firehouse-analyze', height: 700 },
+  // Only on a site with a Workers AI key (needsKey), and with drafts kept to show.
+  'analyze-results': { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-synthesis', element: '#firehouse-analyze', height: 700, needsKey: true },
   // The survey form's switch as a new site has it, whatever this copy's is.
   settings: { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-settings', element: '#wpbody-content', height: 900, untick: '#firehouse-surveyOpen' },
   'settings-questions': { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-settings', element: '#firehouse-questions', height: 560 },
   // Only on a site with a Workers AI key.
-  'settings-prompt': { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-settings', element: 'tr:has(#firehouse-synthesisPrompt)', height: 640 },
+  'settings-prompt': { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-settings', element: 'tr:has(#firehouse-synthesisPrompt)', height: 640, needsKey: true },
   import: { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-import', element: '#wpbody-content', height: 320 },
   'landing-hero-fields': { landing: true, block: 'firehouse/hero', height: 600 },
 };
@@ -122,7 +124,7 @@ async function webp(page, png) {
   return Buffer.from(data.slice(data.indexOf(',') + 1), 'base64');
 }
 
-async function shoot(page, name, shot) {
+async function shoot(page, name, shot, named) {
   let url = `${BASE}${shot.path ?? ''}`;
   if (shot.project) url = await firstRow(page, PUBLISHED);
   if (shot.topic) url = await topicUrl(page, shot.topic);
@@ -145,6 +147,12 @@ async function shoot(page, name, shot) {
     box = await block.boundingBox();
   } else {
     await page.waitForTimeout(300);
+    // A section only a site with a Workers AI key has is skipped when every screenshot
+    // is taken, and fails when it's asked for by name.
+    if (shot.needsKey && !named && !(await page.locator(shot.element).count())) {
+      console.log(`skipped ${name}: the site has no Workers AI key`);
+      return;
+    }
     box = await page.locator(shot.element).first().boundingBox();
   }
   if (!box) throw new Error(`${name}: nothing to crop to`);
@@ -181,7 +189,7 @@ async function main() {
     await context.addCookies(signedIn);
     const page = await context.newPage();
     for (const [name, shot] of Object.entries(SHOTS)) {
-      if (!wanted.length || wanted.includes(name)) await shoot(page, name, shot);
+      if (!wanted.length || wanted.includes(name)) await shoot(page, name, shot, wanted.includes(name));
     }
   } finally {
     await browser.close();

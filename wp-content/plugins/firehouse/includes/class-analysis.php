@@ -101,42 +101,19 @@ final class Analysis {
 	 * What's kept: the run going, if any, and each model's latest result. A run whose
 	 * event never fired, or whose request has gone past its time, is recorded as failed.
 	 *
-	 * @param bool $fresh Whether to read the database rather than this request's cache,
-	 *                    which holds what this request last wrote.
-	 * @return array{running: array{model: string, started: int, by: string, asked?: int}|null, results: array<string, array<string, mixed>>}
+	 * @return array{running: array{id: string, model: string, started: int, by: string, asked?: int}|null, results: array<string, array<string, mixed>>}
 	 */
-	public static function state( bool $fresh = false ): array {
-		if ( $fresh ) {
-			wp_cache_delete( self::OPTION, 'options' );
+	public static function state(): array {
+		$state = self::read();
+		if ( ! self::stale( $state['running'] ) ) {
+			return $state;
 		}
-		$stored  = get_option( self::OPTION, array() );
-		$stored  = is_array( $stored ) ? $stored : array();
-		$running = $stored['running'] ?? null;
-		$state   = array(
-			'running' => is_array( $running ) && Workers_Ai::offered( $running['model'] ?? null ) && is_int( $running['started'] ?? null ) ? $running : null,
-			'results' => array(),
-		);
-		foreach ( is_array( $stored['results'] ?? null ) ? $stored['results'] : array() as $model => $result ) {
-			if ( Workers_Ai::offered( $model ) && is_array( $result ) ) {
-				$state['results'][ $model ] = $result;
+		return self::change(
+			static function ( array $state ): array {
+				$state = self::without_stale( $state );
+				return array( $state, $state );
 			}
-		}
-		$running = $state['running'];
-		$asked   = is_int( $running['asked'] ?? null ) ? $running['asked'] : null;
-		if ( null !== $running && ( null === $asked ? $running['started'] < time() - self::WAITS : $asked < time() - Workers_Ai::TIMEOUT - self::MARGIN ) ) {
-			$state['results'][ $running['model'] ] = array(
-				'state'    => 'failed',
-				'started'  => $running['started'],
-				'finished' => time(),
-				'by'       => (string) ( $running['by'] ?? '' ),
-				'problem'  => null === $asked
-					? __( 'It never started: the site’s scheduled events (WP-Cron) may not be running. Tell an administrator.', 'firehouse' )
-					: __( 'It didn’t finish: the request may have been cut off. Try again; if it happens again, tell an administrator.', 'firehouse' ),
-			);
-			$state['running']                      = null;
-			update_option( self::OPTION, $state, false );
-		}
-		return $state;
+		);
 	}
 
 	/**
@@ -152,20 +129,36 @@ final class Analysis {
 		if ( ! Workers_Ai::offered( $model ) ) {
 			return __( 'Pick a model from the list.', 'firehouse' );
 		}
-		$state = self::state();
-		if ( null !== $state['running'] ) {
-			/* translators: %s: a model, as "Llama 4 Scout (Meta)". */
-			return sprintf( __( '%s is still drafting one. Wait for it to finish, then try again.', 'firehouse' ), Workers_Ai::label( $state['running']['model'] ) );
-		}
-		$state['running'] = array(
-			'model'   => $model,
-			'started' => time(),
-			'by'      => wp_get_current_user()->display_name,
+		$id   = wp_generate_password( 16, false );
+		$busy = self::change(
+			static function ( array $state ) use ( $model, $id ): array {
+				$state = self::without_stale( $state );
+				if ( null !== $state['running'] ) {
+					/* translators: %s: a model, as "Llama 4 Scout (Meta)". */
+					return array( $state, sprintf( __( '%s is still drafting one. Wait for it to finish, then try again.', 'firehouse' ), Workers_Ai::label( $state['running']['model'] ) ) );
+				}
+				$state['running'] = array(
+					'id'      => $id,
+					'model'   => $model,
+					'started' => time(),
+					'by'      => wp_get_current_user()->display_name,
+				);
+				return array( $state, null );
+			}
 		);
-		update_option( self::OPTION, $state, false );
-		if ( true !== wp_schedule_single_event( time(), self::EVENT ) ) {
-			$state['running'] = null;
-			update_option( self::OPTION, $state, false );
+		if ( null !== $busy ) {
+			return $busy;
+		}
+		// The event carries the run's ID, so it runs this run and no other.
+		if ( true !== wp_schedule_single_event( time(), self::EVENT, array( $id ) ) ) {
+			self::change(
+				static function ( array $state ) use ( $id ): array {
+					if ( ( $state['running']['id'] ?? null ) === $id ) {
+						$state['running'] = null;
+					}
+					return array( $state, null );
+				}
+			);
 			return __( 'The site couldn’t schedule the run. Try again; if it happens again, tell an administrator.', 'firehouse' );
 		}
 		// Now, rather than when someone next opens a page, unless the site runs its
@@ -179,19 +172,26 @@ final class Analysis {
 	/**
 	 * The scheduled event: asks the model, and keeps what it gives, or why it gave
 	 * nothing, as that model's latest.
+	 *
+	 * @param string $id The run's ID, which its event carries.
 	 */
-	public static function run(): void {
-		$state = self::state( true );
-		$run   = $state['running'];
-		if ( null === $run || ! empty( $run['asked'] ) ) {
+	public static function run( string $id = '' ): void {
+		// Claimed, with the time, before asking, so an event that fires twice asks once.
+		// PHP's time limit doesn't count the wait for the reply, which is nearly all of a
+		// run, on a Linux server.
+		$run = self::change(
+			static function ( array $state ) use ( $id ): array {
+				$run = $state['running'];
+				if ( null === $run || '' === $id || $id !== $run['id'] || ! empty( $run['asked'] ) ) {
+					return array( $state, null );
+				}
+				$state['running']['asked'] = time();
+				return array( $state, $run );
+			}
+		);
+		if ( ! is_array( $run ) ) {
 			return;
 		}
-		// Claimed, with the time, before asking, so an event that finds it claimed doesn't
-		// ask again; two at the very same moment could both ask, which WP-Cron's own lock
-		// makes rare. PHP's time limit doesn't count the wait for the reply, which is
-		// nearly all of a run, on a Linux server.
-		$state['running']['asked'] = time();
-		update_option( self::OPTION, $state, false );
 
 		list( $projects, $topics ) = Synthesis_Screen::published();
 		$parts                     = Notebook_Source::parts( $projects, $topics );
@@ -219,18 +219,115 @@ final class Analysis {
 		}
 		$result['finished'] = time();
 
-		// Read again from the database: another editor may have started a run since this
-		// one was taken to have failed, and only this run's own record changes. A newer
-		// draft from the same model is kept over this one.
-		$now = self::state( true );
-		if ( ( $now['running']['started'] ?? null ) === $run['started'] && ( $now['running']['model'] ?? null ) === $run['model'] ) {
-			$now['running'] = null;
+		// Only this run's own record changes: another editor may have started a run since
+		// this one was taken to have failed, and a newer draft from the same model is kept
+		// over this one.
+		self::change(
+			static function ( array $state ) use ( $run, $result ): array {
+				if ( ( $state['running']['id'] ?? null ) === $run['id'] ) {
+					$state['running'] = null;
+				}
+				$newer = $state['results'][ $run['model'] ]['started'] ?? null;
+				if ( ! is_int( $newer ) || $newer <= $run['started'] ) {
+					$state['results'][ $run['model'] ] = $result;
+				}
+				return array( $state, null );
+			}
+		);
+	}
+
+	/**
+	 * What's kept, as stored.
+	 *
+	 * @param bool $fresh Whether to read the database rather than this request's cache,
+	 *                    which holds what this request last wrote.
+	 * @return array{running: array{id: string, model: string, started: int, by: string, asked?: int}|null, results: array<string, array<string, mixed>>}
+	 */
+	private static function read( bool $fresh = false ): array {
+		if ( $fresh ) {
+			wp_cache_delete( self::OPTION, 'options' );
 		}
-		$newer = $now['results'][ $run['model'] ]['started'] ?? null;
-		if ( ! is_int( $newer ) || $newer <= $run['started'] ) {
-			$now['results'][ $run['model'] ] = $result;
+		$stored  = get_option( self::OPTION, array() );
+		$stored  = is_array( $stored ) ? $stored : array();
+		$running = $stored['running'] ?? null;
+		$state   = array(
+			'running' => is_array( $running ) && is_string( $running['id'] ?? null ) && Workers_Ai::offered( $running['model'] ?? null ) && is_int( $running['started'] ?? null ) ? $running : null,
+			'results' => array(),
+		);
+		foreach ( is_array( $stored['results'] ?? null ) ? $stored['results'] : array() as $model => $result ) {
+			if ( Workers_Ai::offered( $model ) && is_array( $result ) ) {
+				$state['results'][ $model ] = $result;
+			}
 		}
-		update_option( self::OPTION, $now, false );
+		return $state;
+	}
+
+	/**
+	 * Changes what's kept, one request at a time: under the database's named lock, so of
+	 * two requests at once, the second waits and sees what the first wrote. It reads the
+	 * database afresh, has $change change it, and saves what $change gives back if it
+	 * differs. MySQL and MariaDB have named locks; were the lock not to be had within
+	 * ten seconds, the change goes ahead without it, as it would have without the lock.
+	 *
+	 * @param callable $change Given the state as an array; gives back an array of the state to keep and what to return.
+	 * @return mixed What $change returns.
+	 */
+	private static function change( callable $change ): mixed {
+		global $wpdb;
+		$name = 'firehouse_analysis_' . $wpdb->prefix;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- A named lock, which no WordPress function takes.
+		$held = '1' === (string) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, %d)', $name, 10 ) );
+		try {
+			$state                   = self::read( true );
+			list( $after, $returns ) = $change( $state );
+			if ( $after !== $state ) {
+				update_option( self::OPTION, $after, false );
+			}
+			return $returns;
+		} finally {
+			if ( $held ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Releasing the lock taken above.
+				$wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $name ) );
+			}
+		}
+	}
+
+	/**
+	 * Whether a run has gone too long: its event never fired within half an hour, or its
+	 * request has gone past the time it gives up.
+	 *
+	 * @param array<string, mixed>|null $running The run.
+	 */
+	private static function stale( ?array $running ): bool {
+		if ( null === $running ) {
+			return false;
+		}
+		$asked = is_int( $running['asked'] ?? null ) ? $running['asked'] : null;
+		return null === $asked ? $running['started'] < time() - self::WAITS : $asked < time() - Workers_Ai::TIMEOUT - self::MARGIN;
+	}
+
+	/**
+	 * The state with a run that has gone too long recorded as its model's failed draft.
+	 *
+	 * @param array{running: array<string, mixed>|null, results: array<string, array<string, mixed>>} $state The state.
+	 * @return array{running: array<string, mixed>|null, results: array<string, array<string, mixed>>}
+	 */
+	private static function without_stale( array $state ): array {
+		$running = $state['running'];
+		if ( ! self::stale( $running ) ) {
+			return $state;
+		}
+		$state['results'][ $running['model'] ] = array(
+			'state'    => 'failed',
+			'started'  => $running['started'],
+			'finished' => time(),
+			'by'       => (string) ( $running['by'] ?? '' ),
+			'problem'  => ! isset( $running['asked'] )
+				? __( 'It never started: the site’s scheduled events (WP-Cron) may not be running. Tell an administrator.', 'firehouse' )
+				: __( 'It didn’t finish: the request may have been cut off. Try again; if it happens again, tell an administrator.', 'firehouse' ),
+		);
+		$state['running']                      = null;
+		return $state;
 	}
 
 	/**

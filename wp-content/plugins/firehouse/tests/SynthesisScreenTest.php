@@ -186,6 +186,42 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		Functions\when( 'wp_remote_retrieve_response_code' )->alias( static fn( array $response ): int => $response['response']['code'] );
 		Functions\when( 'wp_remote_retrieve_body' )->alias( static fn( array $response ): string => $response['body'] );
 		Functions\when( 'wp_cache_delete' )->justReturn( true );
+		// The database, for its named lock: always free here, and every query kept.
+		$GLOBALS['wpdb'] = new class() { // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- A test's stand-in for the database.
+			/**
+			 * The table prefix.
+			 *
+			 * @var string
+			 */
+			public string $prefix = 'wp_';
+
+			/**
+			 * Each query, as sent.
+			 *
+			 * @var list<string>
+			 */
+			public array $queries = array();
+
+			/**
+			 * A query with its values, quoted as wpdb::prepare() quotes them.
+			 *
+			 * @param string $query  The query.
+			 * @param mixed  ...$args Its values.
+			 */
+			public function prepare( string $query, mixed ...$args ): string {
+				return vsprintf( str_replace( '%s', "'%s'", $query ), $args );
+			}
+
+			/**
+			 * Runs a query: each lock is had.
+			 *
+			 * @param string $query The query.
+			 */
+			public function get_var( string $query ): string {
+				$this->queries[] = $query;
+				return '1';
+			}
+		};
 		// The redirect ends the request; the test catches it where exit would come.
 		Functions\when( 'wp_safe_redirect' )->alias(
 			static function ( string $url ): void {
@@ -200,6 +236,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 	 */
 	protected function tearDown(): void {
 		$_POST = array();
+		unset( $GLOBALS['wpdb'] );
 		( new \ReflectionProperty( Synthesis_Screen::class, 'state' ) )->setValue( null, null );
 		parent::tearDown();
 	}
@@ -670,6 +707,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		self::key();
 		$this->options[ Analysis::OPTION ] = array(
 			'running' => array(
+				'id'      => 'run-1',
 				'model'   => '@cf/google/gemma-4-26b-a4b-it',
 				'started' => time(),
 				'by'      => 'Pat Reviewer',
@@ -693,8 +731,8 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		self::key();
 		$scheduled = array();
 		Functions\when( 'wp_schedule_single_event' )->alias(
-			function ( int $time, string $hook ) use ( &$scheduled ): bool {
-				$scheduled[] = $hook;
+			function ( int $time, string $hook, array $args ) use ( &$scheduled ): bool {
+				$scheduled[] = array( $hook, $args );
 				return true;
 			}
 		);
@@ -711,7 +749,9 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		}
 		$this->assertSame( '@cf/openai/gpt-oss-120b', $this->options[ Analysis::OPTION ]['running']['model'] );
 		$this->assertSame( 'Pat Reviewer', $this->options[ Analysis::OPTION ]['running']['by'] );
-		$this->assertSame( array( Analysis::EVENT ), $scheduled );
+		$this->assertSame( array( array( Analysis::EVENT, array( 'TheToken000000000001' ) ) ), $scheduled, 'The event carries the run’s ID.' );
+		$this->assertSame( 'TheToken000000000001', $this->options[ Analysis::OPTION ]['running']['id'] );
+		$this->assertSame( array( 'SELECT GET_LOCK(\'firehouse_analysis_wp_\', 10)', 'SELECT RELEASE_LOCK(\'firehouse_analysis_wp_\')' ), array_slice( $GLOBALS['wpdb']->queries, 0, 2 ), 'Started under the lock.' );
 
 		self::send(
 			array(
@@ -753,6 +793,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		self::key();
 		$this->options[ Analysis::OPTION ] = array(
 			'running' => array(
+				'id'      => 'run-1',
 				'model'   => Workers_Ai::DEFAULT_MODEL,
 				'started' => time(),
 				'by'      => 'Pat Reviewer',
@@ -770,7 +811,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 			}
 		);
 
-		Analysis::run();
+		Analysis::run( 'run-1' );
 
 		$user = $sent['messages'][1]['content'];
 		$this->assertStringContainsString( '## Project 1: Smoke study', $user );
@@ -790,6 +831,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 	public function test_a_run_that_fails_says_why(): void {
 		$this->options[ Analysis::OPTION ] = array(
 			'running' => array(
+				'id'      => 'run-1',
 				'model'   => Workers_Ai::DEFAULT_MODEL,
 				'started' => time(),
 				'by'      => 'Pat Reviewer',
@@ -797,11 +839,14 @@ final class SynthesisScreenTest extends WordPressTestCase {
 			),
 			'results' => array(),
 		);
-		Analysis::run();
+		Analysis::run( 'run-1' );
 		$this->assertSame( array(), $this->options[ Analysis::OPTION ]['results'], 'Asked already.' );
 
 		unset( $this->options[ Analysis::OPTION ]['running']['asked'] );
-		Analysis::run();
+		Analysis::run( 'run-0' );
+		Analysis::run( '' );
+		$this->assertSame( array(), $this->options[ Analysis::OPTION ]['results'], 'Another run’s event, or one with no ID, runs nothing.' );
+		Analysis::run( 'run-1' );
 		$result = $this->options[ Analysis::OPTION ]['results'][ Workers_Ai::DEFAULT_MODEL ];
 		$this->assertSame( 'failed', $result['state'] );
 		$this->assertSame( 'The site has no Workers AI key.', $result['problem'] );
@@ -815,11 +860,13 @@ final class SynthesisScreenTest extends WordPressTestCase {
 	 */
 	public function test_a_late_run_leaves_newer_ones_alone(): void {
 		$older                             = array(
+			'id'      => 'run-1',
 			'model'   => Workers_Ai::DEFAULT_MODEL,
 			'started' => time() - 60,
 			'by'      => 'Pat Reviewer',
 		);
 		$newer                             = array(
+			'id'      => 'run-2',
 			'model'   => '@cf/google/gemma-4-26b-a4b-it',
 			'started' => time(),
 			'by'      => 'Sam Editor',
@@ -848,7 +895,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 			}
 		);
 
-		Analysis::run();
+		Analysis::run( 'run-1' );
 
 		$this->assertSame( 2, $reads, 'The database, before and after.' );
 		$this->assertSame( $newer, $this->options[ Analysis::OPTION ]['running'] );
@@ -858,7 +905,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 			'running' => $older,
 			'results' => array( Workers_Ai::DEFAULT_MODEL => array( 'started' => time() ) + self::draft() ),
 		);
-		Analysis::run();
+		Analysis::run( 'run-1' );
 		$this->assertSame( 'done', $this->options[ Analysis::OPTION ]['results'][ Workers_Ai::DEFAULT_MODEL ]['state'], 'The newer draft, kept.' );
 	}
 
@@ -870,6 +917,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		$this->meta[11]['fh_abstract']     = "Smoke.\u{E0041}\u{E0042}";
 		$this->options[ Analysis::OPTION ] = array(
 			'running' => array(
+				'id'      => 'run-1',
 				'model'   => Workers_Ai::DEFAULT_MODEL,
 				'started' => time(),
 				'by'      => 'Pat Reviewer',
@@ -878,7 +926,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		);
 		Functions\expect( 'wp_safe_remote_post' )->never();
 
-		Analysis::run();
+		Analysis::run( 'run-1' );
 
 		$this->assertSame( 'Project 1, “Smoke study”, holds a character that doesn’t show (U+E0041), which a model would read though no one sees it, so nothing was sent. Its text has to be corrected from the survey record first: tell the developer.', $this->options[ Analysis::OPTION ]['results'][ Workers_Ai::DEFAULT_MODEL ]['problem'] );
 	}
@@ -890,6 +938,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 	public function test_a_run_going_too_long_failed(): void {
 		$this->options[ Analysis::OPTION ] = array(
 			'running' => array(
+				'id'      => 'run-1',
 				'model'   => Workers_Ai::DEFAULT_MODEL,
 				'started' => time() - 1200,
 				'by'      => 'Pat Reviewer',
@@ -906,6 +955,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 
 		$this->options[ Analysis::OPTION ] = array(
 			'running' => array(
+				'id'      => 'run-1',
 				'model'   => Workers_Ai::DEFAULT_MODEL,
 				'started' => time() - 3600,
 				'by'      => 'Pat Reviewer',
@@ -920,13 +970,19 @@ final class SynthesisScreenTest extends WordPressTestCase {
 	}
 
 	/**
-	 * Checking a model's draft puts its JSON through the check and offers the model for
-	 * Made with, which a check after editing the JSON keeps.
+	 * Checking a model's draft puts its JSON through the check, offers the model for
+	 * Made with, and keeps the model's whole reply in view beside the needs; a check
+	 * after editing the JSON, or a Mark reviewed sent back to fix a field, keeps both.
 	 */
-	public function test_checking_a_draft_offers_its_model(): void {
+	public function test_checking_a_draft_keeps_its_model_and_reply(): void {
 		$this->options[ Analysis::OPTION ] = array(
 			'running' => null,
 			'results' => array( Workers_Ai::DEFAULT_MODEL => self::draft() ),
+		);
+		$fields                            = '<input type="hidden" name="firehouse_draft" value="@cf/meta/llama-4-scout-17b-16e-instruct" /><input type="hidden" name="firehouse_draft_started" value="1700000000" />';
+		$draft                             = array(
+			'firehouse_draft'         => Workers_Ai::DEFAULT_MODEL,
+			'firehouse_draft_started' => '1700000000',
 		);
 		self::send(
 			array(
@@ -938,7 +994,10 @@ final class SynthesisScreenTest extends WordPressTestCase {
 
 		$this->assertSame( 'Ready to mark reviewed: FireHouse synthesis', Synthesis_Screen::title( 'FireHouse synthesis' ) );
 		$this->assertStringContainsString( 'id="firehouse-model" name="firehouse_model" class="regular-text" value="Llama 4 Scout (Meta), on Cloudflare Workers AI"', $page );
-		$this->assertStringContainsString( '<input type="hidden" name="firehouse_made_with" value="Llama 4 Scout (Meta), on Cloudflare Workers AI" />', $page );
+		$this->assertSame( 2, substr_count( $page, $fields ), 'In the review form and the paste form.' );
+		$this->assertStringContainsString( '<h2>Llama 4 Scout (Meta)’s whole reply</h2>', $page );
+		$this->assertStringContainsString( 'readonly>Needs, cited.', $page );
+		$this->assertLessThan( strpos( $page, 'Mark it reviewed' ), strpos( $page, 'whole reply</h2>' ), 'Beside the needs, before the review.' );
 		$this->assertStringContainsString( 'Made with will start as “Llama 4 Scout (Meta), on Cloudflare Workers AI” when you mark it reviewed.', $page, 'Shown, not only carried.' );
 		$this->assertStringNotContainsString( 'This draft read', $page, 'It read as many projects as the site shows.' );
 
@@ -946,19 +1005,45 @@ final class SynthesisScreenTest extends WordPressTestCase {
 			array(
 				'firehouse_step'      => 'check',
 				'firehouse_synthesis' => self::synthesis( 'R_smoke' ),
-				'firehouse_made_with' => 'Llama 4 Scout (Meta), on Cloudflare Workers AI',
-			)
+			) + $draft
 		);
-		$this->assertStringContainsString( 'value="Llama 4 Scout (Meta), on Cloudflare Workers AI"', self::drawn() );
+		$page = self::drawn();
+		$this->assertStringContainsString( 'value="Llama 4 Scout (Meta), on Cloudflare Workers AI"', $page );
+		$this->assertStringContainsString( 'readonly>Needs, cited.', $page );
 
 		self::send(
 			array(
-				'firehouse_step'      => 'check',
-				'firehouse_synthesis' => self::synthesis( 'R_smoke' ),
-				'firehouse_made_with' => "Llama\u{202E}",
+				'firehouse_step'     => 'publish',
+				'firehouse_token'    => 'TheToken000000000001',
+				'firehouse_reviewer' => '',
+				'firehouse_model'    => 'Typed by hand',
+			) + $draft
+		);
+		$page = self::drawn();
+		$this->assertStringContainsString( 'value="Typed by hand"', $page, 'Made with stays as typed.' );
+		$this->assertStringContainsString( 'readonly>Needs, cited.', $page );
+
+		self::send(
+			array(
+				'firehouse_step'          => 'check',
+				'firehouse_synthesis'     => self::synthesis( 'R_smoke' ),
+				'firehouse_draft'         => Workers_Ai::DEFAULT_MODEL,
+				'firehouse_draft_started' => '1700000999',
 			)
 		);
-		$this->assertStringContainsString( 'value="NotebookLM"', self::drawn(), 'A name that wouldn’t show as typed isn’t offered.' );
+		$this->assertStringContainsString( '’s whole reply for this draft isn’t kept any more', self::drawn(), 'A newer draft replaced it.' );
+
+		self::send(
+			array(
+				'firehouse_step'          => 'check',
+				'firehouse_synthesis'     => self::synthesis( 'R_smoke' ),
+				'firehouse_draft'         => '@cf/qwen/qwq-32b',
+				'firehouse_draft_started' => '1700000000',
+			)
+		);
+		$page = self::drawn();
+		$this->assertStringContainsString( 'value="NotebookLM"', $page, 'Not a model the screen offers: a paste.' );
+		$this->assertStringNotContainsString( 'whole reply', $page );
 	}
 
 	/**

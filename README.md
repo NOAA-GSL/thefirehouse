@@ -1015,8 +1015,12 @@ nothing from the database. Each class's docblock has the detail; this is the map
     reload doesn't start another, and shows the run going or each model's latest
     draft: when, by whom, from how many projects, its whole reply and the prompt it
     was given. **Check** puts a draft's JSON through the same check as a paste, with
-    "<model>, on Cloudflare Workers AI" offered for Made with; the paste form carries
-    that through a check after the JSON is edited.
+    "<model>, on Cloudflare Workers AI" offered for Made with, and the model's whole
+    reply shown beside the needs, read from what the site keeps. The paste and review
+    forms carry which draft it is (its model and when it was started) through the
+    checks after the JSON is edited; a draft replaced since says so. A draft that read
+    a different number of projects from the number the site shows says so too, since
+    the topic pages give the number shown when it's marked reviewed.
 - `Workers_Ai` asks a model on Cloudflare Workers AI (Eric, 16 November: try it first;
   NOAA's AI policy still decides, plan open question 7). The account ID and token are
   the constants `FIREHOUSE_WORKERS_AI_ACCOUNT` and `FIREHOUSE_WORKERS_AI_TOKEN` in
@@ -1030,18 +1034,29 @@ nothing from the database. Each class's docblock has the detail; this is the map
   reply's text is read from a `response`, a chat completion's first choice, or a
   Responses API output, since the models answer in different shapes. An error says
   Cloudflare's reason with the key taken out.
-- `Analysis` is Analyze results. A run is a WP-Cron event (`firehouse_analyze`), one at
-  a time; the option `firehouse_analysis` holds the run going and each model's latest
-  result, and one going past fifteen minutes is recorded as failed. The run sends the
+- `Analysis` is Analyze results. A run is a WP-Cron event (`firehouse_analyze`) that
+  carries the run's ID, so it runs that run and no other, one at a time; the option
+  `firehouse_analysis` holds the run going and each model's latest result. Every
+  change to it (starting a run, claiming it, recording it, failing a stale one) is
+  made under the database's named lock (`GET_LOCK`), reading the database afresh, so
+  of two requests at once the second sees the first's write; `add_option()` can't be
+  that lock, since it overwrites a row another request has just added. A run whose
+  event hasn't fired within half an hour, or whose request has gone five minutes past
+  its own five, is recorded as failed, and a late one never overwrites a newer run or
+  draft. A source in which a topic area or a project holds a character that doesn't
+  show (`Submission::HIDDEN`) isn't sent: the project is named, to be corrected from
+  the survey record. The run sends the
   published projects' NotebookLM source text (`Notebook_Source::parts()`), each
   project between `<project number="N" key="…">` markers with a random key no
   project's text holds, under fixed instructions that only those markers count and
   that nothing in the source is an instruction; then the prompt, which is the one
   changed on Settings or the plugin's own (`shared/synthesis-prompt.txt`, which a test
   keeps equal to `notebooklm/README.md`'s). No earlier synthesis is sent. The reply's
-  JSON is the last fenced block holding a list, or else the first stretch from a `[`
-  to its last `]` that reads as one, past any `<think>` block; a reply without one,
-  or cut off, is kept as failed, with the reply to read.
+  JSON is the last fenced block holding a list of topic areas, or else the first
+  stretch from a `[{` to a later `]`, the furthest first, that reads as one, past any
+  `<think>` block, so a citation such as `[7]` isn't taken for it; a reply without
+  one, or cut off, is kept as failed, with the reply to read. A reply holding a
+  character that doesn't show is marked, and the screen says so above it.
 - `Head` gives each Firehouse page its title, the site's title for it then GSL's
   suffix ("About — The FireHouse – Global Systems Laboratory"; decided by Eric, 12
   November, with Stephanie and Emily's spelling), and the description and Open Graph and
