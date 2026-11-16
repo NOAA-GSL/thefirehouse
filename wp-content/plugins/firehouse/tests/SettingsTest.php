@@ -273,17 +273,17 @@ final class SettingsTest extends WordPressTestCase {
 		$html = self::questions();
 
 		$this->assertSame( count( Questions::all() ), substr_count( $html, '<th scope="row">' ) );
-		$this->assertStringContainsString( '<th scope="row">The project’s title</th><td><fieldset><legend class="screen-reader-text">The project’s title</legend>', $html );
-		$this->assertStringContainsString( '<p><label for="firehouse-questions-title-label">Question</label></p><p><textarea id="firehouse-questions-title-label" name="firehouse_settings[questions][title][label]" rows="2" class="large-text" required aria-describedby="firehouse-questions-title-label-own">Your &lt;b&gt;project&lt;/b&gt;’s title?</textarea></p>', $html );
+		$this->assertStringContainsString( '<th scope="row"><h3>The project’s title</h3></th><td><fieldset><legend class="screen-reader-text">The project’s title</legend>', $html );
+		$this->assertStringContainsString( '<p><label for="firehouse-questions-title-label">Question<span class="screen-reader-text"> (The project’s title)</span></label></p><p><textarea id="firehouse-questions-title-label" name="firehouse_settings[questions][title][label]" rows="2" class="large-text" required aria-describedby="firehouse-questions-title-label-own">Your &lt;b&gt;project&lt;/b&gt;’s title?</textarea></p>', $html );
 		$this->assertStringContainsString( '<p class="description" id="firehouse-questions-title-label-own">Changed. The plugin’s own wording: “What is the title of your project?”</p>', $html );
 		$this->assertStringContainsString( 'name="firehouse_settings[questions][title][help]" rows="3" class="large-text"></textarea>', $html, 'No help, unchanged: nothing describes it.' );
 		$this->assertStringContainsString( 'aria-describedby="firehouse-questions-email-help-privacy"></textarea>', $html, 'The help cleared to match the plugin, which has none.' );
-		$this->assertStringContainsString( '<p class="description" id="firehouse-questions-email-help-privacy">After the help, the form always says, and this screen can’t change: “Only the FireHouse team and the site’s administrators see it, to follow up with you. It never appears on the site.”</p>', $html );
+		$this->assertStringContainsString( '<p class="description" id="firehouse-questions-email-help-privacy">Under the help, the form always says, and this screen can’t change: “Only the FireHouse team and the site’s administrators see it, to follow up with you. It never appears on the site.”</p>', $html );
 		$this->assertStringNotContainsString( 'aria-invalid', $html );
 
 		Settings::sanitize( self::valid() + array( 'questions' => array( 'org' => array( 'label' => '' ) ) ) );
 		$html = self::questions();
-		$this->assertStringContainsString( '<tr class="form-invalid form-required"><th scope="row">Your agency or institution</th>', $html );
+		$this->assertStringContainsString( '<tr class="form-invalid form-required"><th scope="row"><h3>Your agency or institution</h3></th>', $html );
 		$this->assertStringContainsString( 'required aria-describedby="firehouse-questions-org-label-error" aria-invalid="true" autofocus>', $html );
 		$this->assertStringContainsString( '<p class="description" id="firehouse-questions-org-label-error"><strong>Error:</strong> Your agency or institution: the question can’t be empty.</p>', $html );
 	}

@@ -246,22 +246,20 @@ final class Questions {
 
 	/**
 	 * The questions as the form asks them: each one's wording and help as the settings
-	 * screen changed them (Settings::stored()), over the plugin's own; and after a
-	 * private answer's help, its privacy line, whatever the help says.
+	 * screen changed them (Settings::stored()), over the plugin's own. A private
+	 * answer's privacy line stays as it is, for the form to show after the help, whatever
+	 * the help says.
 	 *
 	 * @return array<string, array<string, mixed>>
 	 */
 	public static function worded(): array {
 		$questions = self::all();
 		$changed   = Settings::stored()['questions'];
-		foreach ( $questions as $name => $question ) {
+		foreach ( array_keys( $questions ) as $name ) {
 			foreach ( self::WORDING as $part ) {
 				if ( isset( $changed[ $name ][ $part ] ) ) {
 					$questions[ $name ][ $part ] = $changed[ $name ][ $part ];
 				}
-			}
-			if ( isset( $question['privacy'] ) ) {
-				$questions[ $name ]['help'] = trim( ( $questions[ $name ]['help'] ?? '' ) . ' ' . $question['privacy'] );
 			}
 		}
 		return $questions;

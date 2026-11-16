@@ -232,8 +232,12 @@ final class Settings {
 				static function (): void {
 					add_filter( 'admin_title', array( self::class, 'title' ) );
 					// WordPress's style for a field in error replaces the focus ring with the
-					// same red border every field in error has; this puts the ring back.
-					wp_add_inline_style( 'common', '.form-table tr.form-invalid.form-required input:focus,.form-table tr.form-invalid.form-required textarea:focus{box-shadow:0 0 0 2px var(--wp-admin-theme-color,#2271b1)}' );
+					// same red border every field in error has; this puts the ring back. Its
+					// red border leaves out textareas, so a survey question's box in error
+					// gets one here. A field a link in the summary goes to stops below the
+					// toolbar, with its label in view. A question's heading looks like the
+					// other rows' names.
+					wp_add_inline_style( 'common', '.form-table tr.form-invalid.form-required input:focus,.form-table tr.form-invalid.form-required textarea:focus{box-shadow:0 0 0 2px var(--wp-admin-theme-color,#2271b1)}.form-table tr.form-invalid textarea[aria-invalid=true]{border-color:#d63638}.form-table input,.form-table textarea{scroll-margin-top:6em}#firehouse-questions th h3{font-size:inherit;font-weight:inherit;line-height:inherit;margin:0}' );
 				}
 			);
 		}
@@ -366,8 +370,9 @@ final class Settings {
 		echo '<table class="form-table" role="presentation"><tbody>';
 		foreach ( Survey\Questions::all() as $name => $question ) {
 			$invalid = isset( $errors[ self::field_id( array( 'questions', $name, 'label' ) ) ] ) || isset( $errors[ self::field_id( array( 'questions', $name, 'help' ) ) ] );
+			// A heading each, so a screen reader's heading keys go question by question.
 			printf(
-				'<tr%1$s><th scope="row">%2$s</th><td><fieldset><legend class="screen-reader-text">%2$s</legend>',
+				'<tr%1$s><th scope="row"><h3>%2$s</h3></th><td><fieldset><legend class="screen-reader-text">%2$s</legend>',
 				$invalid ? ' class="form-invalid form-required"' : '',
 				esc_html( (string) $question['name'] )
 			);
@@ -405,10 +410,17 @@ final class Settings {
 		}
 		if ( 'help' === $part && isset( $question['privacy'] ) ) {
 			/* translators: %s: the fixed line saying who sees a private answer. */
-			$notes[ $id . '-privacy' ] = esc_html( sprintf( __( 'After the help, the form always says, and this screen can’t change: “%s”', 'firehouse' ), (string) $question['privacy'] ) );
+			$notes[ $id . '-privacy' ] = esc_html( sprintf( __( 'Under the help, the form always says, and this screen can’t change: “%s”', 'firehouse' ), (string) $question['privacy'] ) );
 		}
 
-		printf( '<p><label for="%1$s">%2$s</label></p>', esc_attr( $id ), esc_html( 'label' === $part ? __( 'Question', 'firehouse' ) : __( 'Help under it', 'firehouse' ) ) );
+		// Named for its question too, so a list of the screen's fields tells the thirty
+		// boxes apart; the visible words still start the name.
+		printf(
+			'<p><label for="%1$s">%2$s<span class="screen-reader-text"> (%3$s)</span></label></p>',
+			esc_attr( $id ),
+			esc_html( 'label' === $part ? __( 'Question', 'firehouse' ) : __( 'Help under it', 'firehouse' ) ),
+			esc_html( (string) $question['name'] )
+		);
 		printf(
 			'<p><textarea id="%1$s" name="%2$s" rows="%3$d" class="large-text"%4$s%5$s%6$s>%7$s</textarea></p>',
 			esc_attr( $id ),

@@ -18,7 +18,7 @@ Choose **Save Changes** to save. If a setting has a problem, such as an empty la
 
 ## Reword a survey question
 
-**Survey questions**, at the bottom of the screen, has a row for each question on the FireHouse survey form. Each row has two boxes:
+**Survey questions**, at the bottom of the screen, has a row for each question on the FireHouse survey form, named in bold. That name is what the form's error messages call the question ("Your name: this is required."), and it can't be changed, so keep your wording close to it. Each row has two boxes:
 
 - **Question:** the question as the form asks it. It can't be empty.
 - **Help under it:** the line under the question. Clear it to show none.
@@ -31,9 +31,9 @@ A box you've changed says so under it, and gives the plugin's own wording. To pu
 Some things here can't be changed:
 
 - **The choices and the order of the questions.** Changing those is a job for the developer.
-- **Who sees a private answer.** The help of the email, job title and sharing questions always ends with a line saying who sees the answer. Add to the help if you like; that line stays.
+- **Who sees a private answer.** Under the help of the email, job title and sharing questions, the form always has a line saying who sees the answer. Add help if you like; that line stays.
 - **Some characters.** A question or its help can't hold an email address or a character that doesn't show, such as a direction mark.
 
-![The Survey questions section, with a question's two boxes](images/settings-questions.webp "Survey questions, on FireHouse → Settings.")
+![The Survey questions section: rows for Your name and Your email, each with a Question box and a Help under it box, and under the email's help the fixed line saying who sees the answer](images/settings-questions.webp "Survey questions, on FireHouse → Settings.")
 
 Projects that came in before you reworded a question keep their answers, as the researcher gave them.
