@@ -171,8 +171,10 @@ require_once __DIR__ . '/includes/class-head.php';
  *
  * - Blocks::enqueue_editor loads assets/js/block-editor.js: it gives the Firehouse
  *   blocks their view there, the landing and About blocks' words as fields, and their
- *   save; while a required word is empty it holds the post's save, with a notice. It
- *   makes no requests and adds nothing to the inserter.
+ *   save; while a required word is empty it holds the post's save, with a notice. On a
+ *   FireHouse page's editor it's given the FireHouse portraits a team card can show
+ *   (Blocks::portraits()), and on any other, none. It makes no requests and adds
+ *   nothing to the inserter.
  * - Blocks::lock_layout (`block_editor_settings_all`) locks the layout of a page in
  *   the Firehouse tree made of nothing but FireHouse blocks, and leaves every other
  *   editor's settings as they are.

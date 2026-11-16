@@ -192,6 +192,9 @@ one is.
   member's words. A heading or button left empty is marked, and the editor holds the
   save until it's filled. The pages' layout is locked in the editor: their parts
   can't be added, moved or removed there.
+* The About page's team cards can be added, removed and reordered in the block editor,
+  each with a portrait chosen from the FireHouse portraits, and the mission's and each
+  biography's paragraphs added and removed.
 * The name the plugin prints is FireHouse: the plugin's name, the role, the admin
   menu, the block titles, and the pages' titles and words. A site that imported its
   content before keeps the old spelling in its settings and in the landing and About

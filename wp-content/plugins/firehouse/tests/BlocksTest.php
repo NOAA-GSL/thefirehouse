@@ -150,6 +150,8 @@ final class BlocksTest extends WordPressTestCase {
 				$translations[] = $args;
 			}
 		);
+		// Not editing a FireHouse page, so there are no portraits to offer.
+		Functions\when( 'get_post' )->justReturn( null );
 
 		Blocks::enqueue_editor();
 
@@ -160,7 +162,7 @@ final class BlocksTest extends WordPressTestCase {
 				array(
 					Blocks::EDITOR_SCRIPT,
 					'https://example.test/wp-content/plugins/firehouse/assets/js/block-editor.js',
-					array( 'wp-blocks', 'wp-block-editor', 'wp-components', 'wp-data', 'wp-element', 'wp-i18n' ),
+					array( 'wp-a11y', 'wp-blocks', 'wp-block-editor', 'wp-components', 'wp-data', 'wp-element', 'wp-i18n' ),
 					\Firehouse\VERSION . '-' . filemtime( $file ),
 					false,
 				),
@@ -174,8 +176,97 @@ final class BlocksTest extends WordPressTestCase {
 		}
 		$this->assertSame( array( 'eyebrow', 'heading', 'body', 'primaryCta', 'secondaryCta' ), $blocks['firehouse/hero'] );
 		$this->assertSame( array(), $blocks['firehouse/subnav'] );
-		$this->assertSame( array( array( Blocks::EDITOR_SCRIPT, 'window.firehouseBlocks = ' . json_encode( $blocks ) . ';', 'before' ) ), $inline );
+		$this->assertSame( array( array( Blocks::EDITOR_SCRIPT, 'window.firehouseBlocks = ' . json_encode( $blocks ) . '; window.firehousePortraits = [];', 'before' ) ), $inline );
 		$this->assertSame( array( array( Blocks::EDITOR_SCRIPT, 'firehouse' ) ), $translations );
+	}
+
+	/**
+	 * A FireHouse page's editor is offered the portraits attached to the FireHouse pages
+	 * and those its team cards use, each only if the About page would show it; any other
+	 * post's editor, none.
+	 */
+	public function test_the_portraits_a_team_card_can_show(): void {
+		Functions\when( 'get_post_ancestors' )->alias( static fn( \WP_Post $post ): array => 0 === $post->post_parent ? array() : array( $post->post_parent ) );
+		Functions\when( 'get_pages' )->justReturn( array( new \WP_Post( array( 'ID' => 11 ) ) ) );
+		$asked = array();
+		Functions\when( 'get_posts' )->alias(
+			static function ( array $args ) use ( &$asked ): array {
+				if ( 'attachment' === ( $args['post_type'] ?? null ) ) {
+					$asked = $args;
+					return array( 50, 51 );
+				}
+				return array( 10 );
+			}
+		);
+		$team = array(
+			'blockName'    => 'firehouse/about-team',
+			'attrs'        => array(
+				'members' => array(
+					array( 'photoId' => 52 ),
+					array( 'photoId' => 50 ),
+					array( 'photoId' => '53' ),
+					'not a member',
+				),
+			),
+			'innerBlocks'  => array(),
+			'innerHTML'    => '',
+			'innerContent' => array(),
+		);
+		Functions\when( 'parse_blocks' )->justReturn(
+			array(
+				array(
+					'blockName'    => 'firehouse/about-sections',
+					'attrs'        => array(),
+					'innerBlocks'  => array( $team ),
+					'innerHTML'    => '',
+					'innerContent' => array( null ),
+				),
+			)
+		);
+		// The About page would show 50 and 52, not 51.
+		Functions\when( 'get_post' )->alias(
+			static fn( mixed $id ): ?\WP_Post => in_array( (int) $id, array( 50, 51, 52 ), true ) ? new \WP_Post(
+				array(
+					'ID'          => (int) $id,
+					'post_type'   => 'attachment',
+					'post_status' => 'inherit',
+					'post_parent' => 51 === (int) $id ? 99 : 0,
+				)
+			) : null
+		);
+		Functions\when( 'wp_attachment_is_image' )->justReturn( true );
+		Functions\when( 'get_post_status' )->justReturn( 'draft' );
+		Functions\when( 'is_post_publicly_viewable' )->justReturn( false );
+		Functions\when( 'get_the_title' )->alias( static fn( int $id ): string => 'Portrait ' . $id . ' &amp; more' );
+		Functions\when( 'wp_specialchars_decode' )->alias( static fn( string $text ): string => htmlspecialchars_decode( $text, ENT_QUOTES ) );
+		Functions\when( 'wp_get_attachment_image_url' )->alias( static fn( int $id ): string => 'https://example.test/' . $id . '-150x150.webp' );
+		$about = new \WP_Post(
+			array(
+				'ID'          => 11,
+				'post_type'   => 'page',
+				'post_parent' => 10,
+			)
+		);
+
+		$this->assertSame(
+			array(
+				array(
+					'id'    => 50,
+					'title' => 'Portrait 50 & more',
+					'url'   => 'https://example.test/50-150x150.webp',
+				),
+				array(
+					'id'    => 52,
+					'title' => 'Portrait 52 & more',
+					'url'   => 'https://example.test/52-150x150.webp',
+				),
+			),
+			Blocks::portraits( $about )
+		);
+		$this->assertSame( array( 10, 11 ), $asked['post_parent__in'], 'Attached to the FireHouse pages.' );
+		$this->assertSame( 'image', $asked['post_mime_type'] );
+		$this->assertSame( array(), Blocks::portraits( new \WP_Post( array( 'post_type' => 'post' ) ) ), 'Not a page.' );
+		$this->assertSame( array(), Blocks::portraits( null ), 'No post.' );
 	}
 
 	/**

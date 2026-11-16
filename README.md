@@ -470,9 +470,16 @@ nothing from the database. Each class's docblock has the detail; this is the map
     words as text fields in place (`assets/js/block-editor.js`, also plain
     JavaScript): headings, text, button and link text, each count's label and caption,
     each audience card's, step's and team member's words, a paragraph at a time. The
-    layout, links, icons, counts and portraits stay as they are, shown beside the
-    fields, a list keeps the entries it has, and a button the page doesn't have stays
-    out. A field that can't be empty (a heading, a button's or link's text, a count's
+    layout, links, icons and counts stay as they are, shown beside the fields, and a
+    button the page doesn't have stays out. The audience cards and the steps keep the
+    entries they have; the team's cards can be added, removed and moved, and the
+    mission's and each biography's paragraphs added and removed, the focus following
+    each change and screen readers told. Each card's portrait is chosen from the
+    FireHouse portraits (`Blocks::portraits()`): the images attached to a FireHouse page
+    and those the page's cards already use, each one the About page would show. The
+    FireHouse Editor role has no Media Library; an administrator adds a portrait by
+    uploading it and attaching it to the About page (Media → Library, list view,
+    Attach). A field that can't be empty (a heading, a button's or link's text, a count's
     label or words, an entry's title, a member's name) says so; while one is, it's
     marked, the editor says which in a notice that goes to it, and holds the save. The
     hold is a guide, not a control: the Code editor and an autosave don't keep it. The

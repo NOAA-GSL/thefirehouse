@@ -89,12 +89,82 @@ final class Blocks {
 		wp_enqueue_script(
 			self::EDITOR_SCRIPT,
 			plugins_url( 'assets/js/block-editor.js', $root . '/firehouse.php' ),
-			array( 'wp-blocks', 'wp-block-editor', 'wp-components', 'wp-data', 'wp-element', 'wp-i18n' ),
+			array( 'wp-a11y', 'wp-blocks', 'wp-block-editor', 'wp-components', 'wp-data', 'wp-element', 'wp-i18n' ),
 			VERSION . '-' . (int) filemtime( $root . '/assets/js/block-editor.js' ),
 			false
 		);
-		wp_add_inline_script( self::EDITOR_SCRIPT, 'window.firehouseBlocks = ' . wp_json_encode( self::attributes() ) . ';', 'before' );
+		wp_add_inline_script( self::EDITOR_SCRIPT, 'window.firehouseBlocks = ' . wp_json_encode( self::attributes() ) . '; window.firehousePortraits = ' . wp_json_encode( self::portraits( get_post() ) ) . ';', 'before' );
 		wp_set_script_translations( self::EDITOR_SCRIPT, 'firehouse' );
+	}
+
+	/**
+	 * The portraits a team card on a FireHouse page can show, for its picker in the
+	 * block editor: the images attached to a page in the FireHouse tree, where an
+	 * administrator puts a new one, and those the page's cards already use, as the
+	 * import binds them. Only an image the About page would show (About_Page::shows()).
+	 * The FireHouse Editor role has no Media Library (decided 15 November), so this is
+	 * the whole choice. None for any other post.
+	 *
+	 * @param mixed $post The post the editor edits.
+	 * @return list<array{id: int, title: string, url: string}>
+	 */
+	public static function portraits( mixed $post ): array {
+		if ( ! $post instanceof \WP_Post || 'page' !== $post->post_type || ! Capabilities::in_tree( $post ) ) {
+			return array();
+		}
+		$attached = get_posts(
+			array(
+				'post_type'       => 'attachment',
+				'post_mime_type'  => 'image',
+				'post_status'     => 'inherit',
+				'post_parent__in' => Capabilities::tree_ids(),
+				'numberposts'     => 100,
+				'orderby'         => 'title',
+				'order'           => 'ASC',
+				'fields'          => 'ids',
+			)
+		);
+		$ids      = array_merge( array_map( 'intval', is_array( $attached ) ? $attached : array() ), self::used_portraits( parse_blocks( $post->post_content ) ) );
+
+		$portraits = array();
+		foreach ( array_unique( $ids ) as $id ) {
+			if ( ! About_Page::shows( $id ) ) {
+				continue;
+			}
+			$url         = wp_get_attachment_image_url( $id, 'thumbnail' );
+			$portraits[] = array(
+				'id'    => $id,
+				'title' => wp_specialchars_decode( get_the_title( $id ), ENT_QUOTES ),
+				'url'   => is_string( $url ) ? $url : '',
+			);
+		}
+		return $portraits;
+	}
+
+	/**
+	 * The portraits the team cards in parsed content use, by ID.
+	 *
+	 * @param array<int, mixed> $blocks The blocks, as parse_blocks() gives them.
+	 * @return list<int>
+	 */
+	private static function used_portraits( array $blocks ): array {
+		$ids = array();
+		foreach ( $blocks as $block ) {
+			if ( ! is_array( $block ) ) {
+				continue;
+			}
+			if ( 'firehouse/about-team' === ( $block['blockName'] ?? null ) && is_array( $block['attrs']['members'] ?? null ) ) {
+				foreach ( $block['attrs']['members'] as $member ) {
+					if ( is_array( $member ) && is_int( $member['photoId'] ?? null ) && $member['photoId'] > 0 ) {
+						$ids[] = $member['photoId'];
+					}
+				}
+			}
+			if ( is_array( $block['innerBlocks'] ?? null ) ) {
+				$ids = array_merge( $ids, self::used_portraits( $block['innerBlocks'] ) );
+			}
+		}
+		return $ids;
 	}
 
 	/**

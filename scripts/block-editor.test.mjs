@@ -33,6 +33,8 @@ const InnerBlocks = Object.assign(() => null, { Content: () => null });
 const Placeholder = () => null;
 const TextControl = () => null;
 const TextareaControl = () => null;
+const SelectControl = () => null;
+const Button = () => null;
 
 /** WordPress's sprintf, for %s, %d and numbered %1$s. */
 function sprintf(format, ...args) {
@@ -41,13 +43,16 @@ function sprintf(format, ...args) {
 }
 
 /**
- * Runs the script, with stores that record what's asked of them and a small stand-in for
- * React's effects: each mounted block keeps its effect's dependencies and clean-up, runs
- * the clean-up and the effect again when they change, and the clean-up when unmounted.
+ * Runs the script, with stores that record what's asked of them, what's spoken to screen
+ * readers, and a small stand-in for React's effects: each mounted block keeps each of its
+ * effects' dependencies and clean-up, by the order it calls them, runs the clean-up and
+ * the effect again when they change (or every draw, for one with none), and the
+ * clean-ups when unmounted.
  */
-function load(declared = DECLARED, { stores = true, focused = [], frame = null } = {}) {
+function load(declared = DECLARED, { stores = true, focused = [], frame = null, portraits = [] } = {}) {
   const registered = new Map();
   const calls = [];
+  const spoken = [];
   let current = null;
   const record = (store) => new Proxy({}, { get: (target, action) => (...args) => calls.push([store, action, ...args]) });
   const wp = {
@@ -58,22 +63,25 @@ function load(declared = DECLARED, { stores = true, focused = [], frame = null }
     element: {
       createElement: (type, props, ...children) => ({ type, props: props ?? {}, children: children.flat() }),
       useEffect: (effect, deps) => {
-        const slot = current;
-        if (slot.deps && deps.length === slot.deps.length && deps.every((dep, index) => dep === slot.deps[index])) return;
+        const slots = current.slots;
+        const slot = (slots[current.index++] ??= { deps: null, cleanup: null });
+        if (deps && slot.deps && deps.length === slot.deps.length && deps.every((dep, index) => dep === slot.deps[index])) return;
         if (slot.cleanup) slot.cleanup();
-        slot.deps = deps;
+        slot.deps = deps ?? null;
         const cleanup = effect();
         slot.cleanup = typeof cleanup === 'function' ? cleanup : null;
       },
     },
     blockEditor: { useBlockProps: () => ({ className: 'wp-block' }), InnerBlocks },
-    components: { Placeholder, TextControl, TextareaControl },
+    components: { Placeholder, TextControl, TextareaControl, SelectControl, Button },
     data: stores ? { dispatch: (store) => record(store), select: () => null } : undefined,
     i18n: { __: (text) => text, _x: (text) => text, _n: (one, many, count) => (count === 1 ? one : many), sprintf },
+    a11y: { speak: (message) => spoken.push(message) },
   };
   const window = {
     wp,
     firehouseBlocks: declared,
+    firehousePortraits: portraits,
     setTimeout: (fn) => fn(),
     // The field "Go to" focuses, found by its data attribute, in the editor's frame if
     // there's one, else in the page.
@@ -83,22 +91,27 @@ function load(declared = DECLARED, { stores = true, focused = [], frame = null }
 
   /** Mounts a block: its tree, its attribute changes, and how to render it again or remove it. */
   function mount(name, attributes, clientId = 'abc') {
-    const slot = { deps: null, cleanup: null };
+    const slots = [];
     const changes = [];
     const render = (next) => {
-      current = slot;
+      current = { slots, index: 0 };
       return registered.get(name).edit({ attributes: next, setAttributes: (change) => changes.push(change), clientId });
     };
-    return { tree: render(attributes), changes, rerender: render, unmount: () => slot.cleanup && slot.cleanup() };
+    return { tree: render(attributes), changes, rerender: render, unmount: () => slots.forEach((slot) => slot.cleanup && slot.cleanup()) };
   }
-  return { registered, calls, mount };
+  return { registered, calls, spoken, mount };
 }
 
-/** Renders a block's edit with its attributes; returns the tree, the changes and the stores' calls. */
+/** Renders a block's edit with its attributes; returns the tree, the changes, the stores' calls and what's spoken. */
 function edit(name, attributes, options) {
   const loaded = load(DECLARED, options);
   const mounted = loaded.mount(name, attributes);
-  return { ...mounted, calls: loaded.calls };
+  return { ...mounted, calls: loaded.calls, spoken: loaded.spoken };
+}
+
+/** Every one of the cards' buttons in a rendered tree, by its words. */
+function buttons(tree) {
+  return Object.fromEntries(find(tree, Button).map((node) => [text(node).join(''), node]));
 }
 
 /** Every string in a rendered tree, in order, the placeholder's label included. */
@@ -221,10 +234,101 @@ describe('the block editor script', () => {
     const fields = controls(team.tree);
     expect(Object.keys(fields)).toEqual(expect.arrayContaining(['Name', 'Biography, paragraph 1', 'Biography, paragraph 2', 'Portrait description', 'Email address']));
     expect(help(fields['Email address'])).toMatch(/@noaa\.gov/);
-    expect(text(team.tree)).toEqual(expect.arrayContaining(['Portrait (Media Library ID): ', '7']));
     fields['Biography, paragraph 2'].props.onChange('Later.');
     expect(team.changes).toEqual([{ members: [{ ...members[0], bio: ['First.', 'Later.'] }] }]);
-    expect(SOURCE).not.toMatch(/\.push\(|splice\(|concat\(/);
+    // The stored list isn't changed in place: the change is a new one.
+    expect(members[0].bio).toEqual(['First.', 'Second.']);
+  });
+
+  it('adds and removes a paragraph, putting the focus on it or the next, and says so', () => {
+    const focused = [];
+    const mission = edit('firehouse/about-mission', { heading: 'Mission', paragraphs: ['One.', 'Two.'] }, { focused });
+    const actions = buttons(mission.tree);
+    expect(Object.keys(actions)).toEqual(['Remove Paragraph 1', 'Remove Paragraph 2', 'Add a paragraph']);
+    actions['Add a paragraph'].props.onClick();
+    expect(mission.changes.at(-1)).toEqual({ paragraphs: ['One.', 'Two.', ''] });
+    mission.rerender({ heading: 'Mission', paragraphs: ['One.', 'Two.', ''] });
+    expect(focused.at(-1)).toBe('[data-firehouse-field="fh-abc-paragraphs-2"]');
+    expect(mission.spoken).toEqual(['Paragraph added.']);
+
+    actions['Remove Paragraph 1'].props.onClick();
+    expect(mission.changes.at(-1)).toEqual({ paragraphs: ['Two.'] });
+    mission.rerender({ heading: 'Mission', paragraphs: ['Two.'] });
+    expect(focused.at(-1)).toBe('[data-firehouse-field="fh-abc-paragraphs-0"]');
+    expect(mission.spoken.at(-1)).toBe('Paragraph 1 removed.');
+
+    // With none, there's still the button to add one.
+    expect(Object.keys(buttons(edit('firehouse/about-mission', { heading: 'Mission', paragraphs: [] }).tree))).toEqual(['Add a paragraph']);
+  });
+
+  it('adds, moves and removes a team member, the focus following, and leaves fixed lists fixed', () => {
+    const focused = [];
+    const members = [
+      { name: 'Ana', photoId: 7, bio: ['A.'] },
+      { name: 'Ben', bio: ['B.'] },
+    ];
+    const team = edit('firehouse/about-team', { heading: 'Team', members }, { focused });
+    const actions = buttons(team.tree);
+    // In each card, inside its group: its biography's, then its own; then one to add.
+    expect(find(team.tree, Button).map((node) => text(node).join(''))).toEqual([
+      'Remove Biography, paragraph 1',
+      'Add a paragraph to the biography',
+      'Move Team member 1 down',
+      'Remove Team member 1',
+      'Remove Biography, paragraph 1',
+      'Add a paragraph to the biography',
+      'Move Team member 2 up',
+      'Remove Team member 2',
+      'Add a team member',
+    ]);
+
+    actions['Move Team member 2 up'].props.onClick();
+    expect(team.changes.at(-1)).toEqual({ members: [members[1], members[0]] });
+    team.rerender({ heading: 'Team', members: [members[1], members[0]] });
+    expect(focused.at(-1)).toBe('[data-firehouse-action="fh-abc-members-0-up"]');
+    expect(team.spoken.at(-1)).toBe('Team member 2 moved: it’s now Team member 1.');
+
+    actions['Add a team member'].props.onClick();
+    expect(team.changes.at(-1)).toEqual({ members: [...members, { name: '', bio: [''] }] });
+    team.rerender({ heading: 'Team', members: [...members, { name: '', bio: [''] }] });
+    expect(focused.at(-1)).toBe('[data-firehouse-field="fh-abc-members-2-name"]');
+    // A new member has no name yet, so the save is held until they're named.
+    expect(team.calls.filter((call) => call[1] === 'lockPostSaving')).toHaveLength(1);
+
+    actions['Remove Team member 1'].props.onClick();
+    expect(team.changes.at(-1)).toEqual({ members: [members[1]] });
+    expect(team.spoken.at(-1)).toBe('Team member 1 removed.');
+
+    // The audiences and the steps stay as many as they are.
+    const audiences = edit('firehouse/about-audiences', { heading: 'Who', items: [{ title: 'One' }, { title: 'Two' }] });
+    expect(find(audiences.tree, Button)).toEqual([]);
+  });
+
+  it('chooses a team member’s portrait from the FireHouse portraits, or none', () => {
+    const portraits = [
+      { id: 7, title: 'ana', url: 'https://example.org/ana-150x150.webp' },
+      { id: 9, title: 'ben', url: '' },
+    ];
+    const members = [{ name: 'Ana', photo: 'ana', photoId: 7, photoAlt: '', bio: [] }];
+    const team = edit('firehouse/about-team', { heading: 'Team', members }, { portraits });
+    const picker = find(team.tree, SelectControl)[0];
+    expect(picker.props.label).toBe('Portrait');
+    expect(picker.props.value).toBe('7');
+    expect(picker.props.options).toEqual([
+      { label: 'None: the card shows initials', value: '' },
+      { label: 'ana', value: '7' },
+      { label: 'ben', value: '9' },
+    ]);
+    expect(find(team.tree, 'img')[0].props).toMatchObject({ src: 'https://example.org/ana-150x150.webp', alt: '' });
+    picker.props.onChange('9');
+    expect(team.changes.at(-1)).toEqual({ members: [{ ...members[0], photoId: 9 }] });
+    picker.props.onChange('');
+    expect(team.changes.at(-1).members[0]).not.toHaveProperty('photoId');
+    expect(team.changes.at(-1).members[0].photo).toBe('ana');
+
+    // A portrait set some other way is still named, so choosing again doesn't lose it.
+    const other = edit('firehouse/about-team', { heading: 'Team', members: [{ name: 'Ana', photoId: 42 }] }, { portraits });
+    expect(find(other.tree, SelectControl)[0].props.options.at(-1)).toEqual({ label: 'Image 42, not among the FireHouse portraits', value: '42' });
   });
 
   it('shows where a link goes, a page or an address, and one that goes nowhere as left out', () => {

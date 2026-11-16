@@ -1856,7 +1856,33 @@ behaves the same, and the accessibility snapshots match.
 ### Phase 6 — Editing screens (2–2.5 weeks)
 
 Eric decided this phase's open questions on 14 November, asked one by one; each is
-marked below.
+marked below. He answered the questions that came up while building it on 15
+November, again one by one, choosing each time the option recommended:
+
+- **Email addresses in staff-typed words.** In the landing and About text fields, a
+  word shaped like an email address holds the save, as an empty required word does,
+  except in the team's mailbox field (rule 2's spirit; a guide, not a control).
+- **Private.** A project without IRB approval still can't be made private (#51).
+- **Paragraphs.** Editors can add and remove paragraphs in the About mission and in
+  each team member's biography.
+- **Preview.** A draft project's Publish box says Preview shows what's saved, since
+  no editor is its author (#52).
+- **The trash.** Another project may take a trashed project's address; a restored one
+  gets the next free address and its editor is told.
+- **Revisions.** The revisions comparison shows the team's fields as well as the
+  title, and the survey's labelled as not restored.
+- **Lengths.** No length limits on the team's fields.
+- **Quick Edit** is removed for topics.
+- **Notes.** `Page_Words` accepts `metadata` holding only a note's ID, so a note on a
+  block doesn't send the page's words back through kses.
+- **The synthesis.** The Research Synthesist checks every topic area's need counts
+  against the projects each names, and Stephanie and Emily decide on its list.
+- **Portraits.** The team card's portrait picker lists the FireHouse portraits, the
+  images attached to a FireHouse page and those a card already uses, not the
+  Media Library: the FireHouse Editor role stays without `upload_files`. An
+  administrator uploads a new portrait and attaches it to the About page.
+- **Order.** The team cards, then the allowed blocks and the landing page's trash
+  rule; then each of the above its own change; then the synthesis screen.
 
 - Project and topic edit screens: survey fields read-only, editorial fields editable,
   publishing through WordPress's Publish button. *A project's slug is editable while
@@ -1962,7 +1988,12 @@ marked below.
     publish (the security re-check). So a draft's Preview is an autosave, which
     WordPress saves into the draft only for its author, and shows the fields as last
     saved.*
-  - *Next: the landing and About pages' words.*
+  - *The landing and About pages' words: `Page_Words` (#53), the text fields (#54),
+    then the team cards (15 November): a team card can be added, removed and moved,
+    the focus following and screen readers told, with its portrait chosen from the
+    FireHouse portraits (`Blocks::portraits()`), and the mission's and each biography's
+    paragraphs added and removed. The audience cards and the steps keep the entries
+    they have.*
 - Landing and About layouts locked to text-only edits. Their sections are custom
   blocks whose words are attributes, which `contentOnly` locking doesn't show to
   editors. *Decided: they keep their blocks and markup, and in the block editor each

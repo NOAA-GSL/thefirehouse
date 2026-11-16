@@ -1,8 +1,11 @@
 /**
  * The FireHouse blocks in the block editor. The landing and About pages' blocks show
- * their words as text fields in place, which an editor changes; the layout, links,
- * counts and portraits stay as they are (WORDPRESS-PLAN.md, Phase 6), and the page's
- * parts can't be added, moved or removed there (Blocks::lock_layout()). Each block's
+ * their words as text fields in place, which an editor changes; the layout, links and
+ * counts stay as they are (WORDPRESS-PLAN.md, Phase 6), and the page's parts can't be
+ * added, moved or removed there (Blocks::lock_layout()). Inside them, the team's cards
+ * can be added, removed and moved, each with a portrait chosen from the FireHouse
+ * portraits, and the mission's and each biography's paragraphs added and removed; the
+ * focus follows each change, and screen readers hear it. Each block's
  * fields are in FIELDS below. A block not there lists what the page stores in it,
  * read-only. A block that stores nothing and holds no others says FireHouse adds it. A
  * block that holds others (the hero holds the live counts; the About sections block
@@ -31,8 +34,15 @@
 	const { registerBlockType, getBlockType } = wp.blocks;
 	const { createElement: el, useEffect } = wp.element;
 	const { useBlockProps, InnerBlocks } = wp.blockEditor;
-	const { Placeholder, TextControl, TextareaControl } = wp.components;
+	const { Placeholder, TextControl, TextareaControl, SelectControl, Button } = wp.components;
 	const { __, _n, _x, sprintf } = wp.i18n;
+	const speak = wp.a11y && wp.a11y.speak ? wp.a11y.speak : () => {};
+
+	/**
+	 * The portraits a team card can show, from includes/class-blocks.php: each one's ID,
+	 * title and small image's address. The FireHouse Editor role has no Media Library.
+	 */
+	const PORTRAITS = Array.isArray( window.firehousePortraits ) ? window.firehousePortraits : [];
 
 	/** A one-line field; `required` ones can't be left empty; `when` limits it to some entries. */
 	const text = ( key, label, options ) => ( { kind: 'text', key, label, ...( options || {} ) } );
@@ -40,12 +50,17 @@
 	const area = ( key, label, options ) => ( { kind: 'area', key, label, ...( options || {} ) } );
 	/** A button or link: its text, which can't be empty, and where it goes, shown. */
 	const button = ( key, label ) => ( { kind: 'button', key, label } );
-	/** Paragraphs, each a field, as many as stored. */
-	const paragraphs = ( key, label ) => ( { kind: 'paragraphs', key, label } );
-	/** Entries, as many as stored, each with its fields; `item` names one, with its number. */
-	const list = ( key, label, item, fields ) => ( { kind: 'list', key, label, item, fields } );
+	/** Paragraphs, each a field, as many as stored, or added and removed with `edit`'s words. */
+	const paragraphs = ( key, label, edit ) => ( { kind: 'paragraphs', key, label, edit } );
+	/**
+	 * Entries, as many as stored, each with its fields; `item` names one, with its number.
+	 * With `edit`, entries can be added, removed and moved, `edit.empty()` a new one.
+	 */
+	const list = ( key, label, item, fields, edit ) => ( { kind: 'list', key, label, item, fields, edit } );
 	/** Something stored that isn't words, shown as it is, or as `shown( value, entry )` words it. */
 	const fixed = ( key, label, shown ) => ( { kind: 'fixed', key, label, shown } );
+	/** A team member's portrait, chosen from PORTRAITS, or none. */
+	const portrait = ( key, label ) => ( { kind: 'portrait', key, label } );
 
 	const EYEBROW = text( 'eyebrow', __( 'Line above the heading', 'firehouse' ) );
 	const HEADING = text( 'heading', __( 'Heading', 'firehouse' ), { required: true } );
@@ -88,7 +103,7 @@
 		'firehouse/top-needs': [ EYEBROW, HEADING, BODY, fixed( 'needsPerCard', __( 'Needs shown per topic area', 'firehouse' ) ) ],
 		'firehouse/submit-band': [ HEADING, BODY, button( 'cta', __( 'Button', 'firehouse' ) ) ],
 		'firehouse/about-intro': [ EYEBROW, HEADING, BODY ],
-		'firehouse/about-mission': [ HEADING, paragraphs( 'paragraphs', PARAGRAPH ) ],
+		'firehouse/about-mission': [ HEADING, paragraphs( 'paragraphs', PARAGRAPH, { add: __( 'Add a paragraph', 'firehouse' ) } ) ],
 		'firehouse/about-audiences': [
 			EYEBROW,
 			HEADING,
@@ -117,14 +132,20 @@
 			BODY,
 			text( 'emailLead', __( 'Words before the email address', 'firehouse' ) ),
 			text( 'email', __( 'Email address', 'firehouse' ), { help: __( 'The team’s mailbox. The page shows it only if it’s an @noaa.gov address.', 'firehouse' ) } ),
-			list( 'members', __( 'Team members', 'firehouse' ), MEMBER, [
-				text( 'name', __( 'Name', 'firehouse' ), { required: true } ),
-				paragraphs( 'bio', BIO ),
-				text( 'photoAlt', __( 'Portrait description', 'firehouse' ), {
-					help: __( 'Usually empty: the name follows the portrait, so describing the person would say who they are twice. Describe only what else it shows.', 'firehouse' ),
-				} ),
-				fixed( 'photoId', __( 'Portrait (Media Library ID)', 'firehouse' ) ),
-			] ),
+			list(
+				'members',
+				__( 'Team members', 'firehouse' ),
+				MEMBER,
+				[
+					text( 'name', __( 'Name', 'firehouse' ), { required: true } ),
+					paragraphs( 'bio', BIO, { add: __( 'Add a paragraph to the biography', 'firehouse' ) } ),
+					portrait( 'photoId', __( 'Portrait', 'firehouse' ) ),
+					text( 'photoAlt', __( 'Portrait description', 'firehouse' ), {
+						help: __( 'Usually empty: the name follows the portrait, so describing the person would say who they are twice. Describe only what else it shows.', 'firehouse' ),
+					} ),
+				],
+				{ add: __( 'Add a team member', 'firehouse' ), empty: () => ( { name: '', bio: [ '' ] } ) }
+			),
 		],
 		'firehouse/about-cta': [ HEADING, BODY, button( 'cta', __( 'Button', 'firehouse' ) ) ],
 	};
@@ -334,13 +355,73 @@
 		return el( 'p', { key, style: { margin: '0 0 1em' } }, el( 'strong', null, name + ': ' ), 'string' === typeof stored ? stored || NOTHING : value( stored ) );
 	}
 
+	/** The selector of a field, by the ID its data attribute holds. */
+	function fieldAt( id ) {
+		return '[data-firehouse-field="' + escaped( id ) + '"]';
+	}
+
+	/** The selector of one of the cards' buttons, by the ID its data attribute holds. */
+	function buttonAt( id ) {
+		return '[data-firehouse-action="' + escaped( id ) + '"]';
+	}
+
+	/** An ID for a selector: made of a client ID and attributes' names, escaped anyway. */
+	function escaped( id ) {
+		return window.CSS && window.CSS.escape ? window.CSS.escape( id ) : id;
+	}
+
+	/** An entry with a key set to a value, or without it when the value is undefined. */
+	function withKey( entry, key, next ) {
+		const copy = { ...entry };
+		if ( undefined === next ) {
+			delete copy[ key ];
+		} else {
+			copy[ key ] = next;
+		}
+		return copy;
+	}
+
+	/** One of the cards' buttons: add, move, remove. */
+	function action( clientId, id, label, onClick ) {
+		return el( Button, { key: id, variant: 'secondary', 'data-firehouse-action': id, onClick, __next40pxDefaultSize: true }, label );
+	}
+
+	/** The button that adds an entry or a paragraph, set apart from the last one. */
+	function adding( button ) {
+		return el( 'div', { key: 'add', style: { marginTop: '0.5em' } }, button );
+	}
+
+	// Where the focus goes once a block has drawn the change a button made: the first of
+	// the selectors that finds something, in that block's next draw.
+	let pending = null;
+
+	/** Puts the focus on the first of these once the block next draws. */
+	function later( clientId, selectors ) {
+		pending = { clientId, selectors };
+	}
+
+	/** Focuses the first element one of these selectors finds, in the editor's frame or the page. */
+	function focusFirst( selectors ) {
+		const frame = window.document.querySelector( 'iframe[name="editor-canvas"]' );
+		const where = [ frame && frame.contentDocument ? frame.contentDocument : null, window.document ].filter( Boolean );
+		for ( const selector of selectors ) {
+			for ( const doc of where ) {
+				const found = doc.querySelector( selector );
+				if ( found && found.focus ) {
+					found.focus();
+					return;
+				}
+			}
+		}
+	}
+
 	/**
-	 * A field's controls, given what's stored, how to store a change, and the ID its
-	 * control takes. A list or paragraphs shows one group or field per entry stored,
-	 * never adding or removing any, and a button that doesn't exist says so: the page's
-	 * layout is fixed.
+	 * A field's controls, given what's stored, how to store a change, the ID its control
+	 * takes, the entry it's in, and its block. A list or paragraphs shows one group or
+	 * field per entry stored, and only those given `edit` words can add, remove or move
+	 * one; a button that doesn't exist says so. The page's layout is fixed otherwise.
 	 */
-	function render( field, stored, change, prefix, id, entry ) {
+	function render( field, stored, change, prefix, id, entry, clientId ) {
 		switch ( field.kind ) {
 			case 'text':
 			case 'area':
@@ -360,28 +441,77 @@
 			}
 			case 'paragraphs': {
 				const items = Array.isArray( stored ) ? stored : [];
+				const add = field.edit
+					? adding(
+							action( clientId, id + '-add', field.edit.add, () => {
+								change( [ ...items, '' ] );
+								later( clientId, [ fieldAt( id + '-' + items.length ) ] );
+								speak( __( 'Paragraph added.', 'firehouse' ) );
+							} )
+					  )
+					: null;
 				if ( ! items.length ) {
-					return shown( sprintf( field.label, 1 ), NOTHING, field.key );
+					return el( 'div', { key: field.key }, shown( sprintf( field.label, 1 ), NOTHING, field.key + '-none' ), add );
 				}
 				return el(
 					'div',
 					{ key: field.key },
-					items.map( ( paragraph, index ) =>
-						control(
-							{ kind: 'area', key: field.key + '-' + index, label: sprintf( field.label, index + 1 ) },
+					items.map( ( paragraph, index ) => {
+						const name = sprintf( field.label, index + 1 );
+						const one = control(
+							{ kind: 'area', key: field.key + '-' + index, label: name },
 							paragraph,
 							( next ) => change( items.map( ( item, at ) => ( at === index ? next : item ) ) ),
 							prefix,
 							id + '-' + index
-						)
-					)
+						);
+						if ( ! field.edit ) {
+							return one;
+						}
+						return el(
+							'div',
+							{ key: field.key + '-' + index, style: { marginBottom: '1.5em' } },
+							one,
+							/* translators: %s: a paragraph, such as "Paragraph 2". */
+							action( clientId, id + '-' + index + '-remove', sprintf( __( 'Remove %s', 'firehouse' ), name ), () => {
+								change( items.filter( ( item, at ) => at !== index ) );
+								// The paragraph after it, which takes its place, or the button to add one.
+								later( clientId, [ fieldAt( id + '-' + ( index < items.length - 1 ? index : index - 1 ) ), buttonAt( id + '-add' ) ] );
+								/* translators: %s: a paragraph, such as "Paragraph 2". */
+								speak( sprintf( __( '%s removed.', 'firehouse' ), name ) );
+							} )
+						);
+					} ),
+					add
 				);
 			}
 			case 'list': {
 				const items = entries( stored );
+				const edit = field.edit;
+				const add = edit
+					? adding(
+							action( clientId, id + '-add', edit.add, () => {
+								change( [ ...items, edit.empty() ] );
+								later( clientId, [ fieldAt( id + '-' + items.length + '-' + field.fields[ 0 ].key ) ] );
+								/* translators: %s: a new entry, such as "Team member 3". */
+								speak( sprintf( __( '%s added.', 'firehouse' ), sprintf( field.item, items.length + 1 ) ) );
+							} )
+					  )
+					: null;
 				if ( ! items.length ) {
-					return shown( field.label, NOTHING, field.key );
+					return el( 'div', { key: field.key }, shown( field.label, NOTHING, field.key + '-none' ), add );
 				}
+				// Moves an entry, then puts the focus back on the button that moved it, in its
+				// new place, or its other one there if that end has none.
+				const move = ( index, by, name ) => {
+					const to = index + by;
+					const moved = items.slice();
+					moved.splice( to, 0, moved.splice( index, 1 )[ 0 ] );
+					change( moved );
+					later( clientId, [ buttonAt( id + '-' + to + ( by < 0 ? '-up' : '-down' ) ), buttonAt( id + '-' + to + ( by < 0 ? '-down' : '-up' ) ) ] );
+					/* translators: 1: an entry as it was, such as "Team member 2", 2: where it is now, such as "Team member 1". */
+					speak( sprintf( __( '%1$s moved: it’s now %2$s.', 'firehouse' ), name, sprintf( field.item, to + 1 ) ) );
+				};
 				return el(
 					'div',
 					{ key: field.key },
@@ -390,14 +520,65 @@
 						if ( ! isEntry( item ) ) {
 							return shown( name, item, field.key + '-' + index );
 						}
-						const set = ( key, next ) => change( items.map( ( one, at ) => ( at === index ? { ...one, [ key ]: next } : one ) ) );
+						const set = ( key, next ) => change( items.map( ( one, at ) => ( at === index ? withKey( one, key, next ) : one ) ) );
+						const actions = edit
+							? el(
+									'div',
+									{ style: { display: 'flex', flexWrap: 'wrap', gap: '0.5em' } },
+									/* translators: %s: an entry, such as "Team member 2". */
+									index > 0 ? action( clientId, id + '-' + index + '-up', sprintf( __( 'Move %s up', 'firehouse' ), name ), () => move( index, -1, name ) ) : null,
+									/* translators: %s: an entry, such as "Team member 2". */
+									index < items.length - 1 ? action( clientId, id + '-' + index + '-down', sprintf( __( 'Move %s down', 'firehouse' ), name ), () => move( index, 1, name ) ) : null,
+									/* translators: %s: an entry, such as "Team member 2". */
+									action( clientId, id + '-' + index + '-remove', sprintf( __( 'Remove %s', 'firehouse' ), name ), () => {
+										change( items.filter( ( one, at ) => at !== index ) );
+										const next = index < items.length - 1 ? index : index - 1;
+										later( clientId, [ fieldAt( id + '-' + next + '-' + field.fields[ 0 ].key ), buttonAt( id + '-add' ) ] );
+										/* translators: %s: an entry, such as "Team member 2". */
+										speak( sprintf( __( '%s removed.', 'firehouse' ), name ) );
+									} )
+							  )
+							: null;
 						return el(
 							'fieldset',
 							{ key: field.key + '-' + index, style: GROUP },
 							el( 'legend', { style: { fontWeight: 600, padding: '0 0.25em' } }, name ),
-							shownFor( field.fields, item ).map( ( inner ) => render( inner, item[ inner.key ], ( next ) => set( inner.key, next ), '', id + '-' + index + '-' + inner.key, item ) )
+							shownFor( field.fields, item ).map( ( inner ) => render( inner, item[ inner.key ], ( next ) => set( inner.key, next ), '', id + '-' + index + '-' + inner.key, item, clientId ) ),
+							actions
 						);
-					} )
+					} ),
+					add
+				);
+			}
+			case 'portrait': {
+				const chosen = Number.isInteger( stored ) && stored > 0 ? stored : 0;
+				const known = PORTRAITS.find( ( one ) => one && one.id === chosen );
+				const options = [ { label: __( 'None: the card shows initials', 'firehouse' ), value: '' } ].concat(
+					PORTRAITS.filter( ( one ) => one && Number.isInteger( one.id ) ).map( ( one ) => ( { label: String( one.title || one.id ), value: String( one.id ) } ) )
+				);
+				if ( chosen && ! known ) {
+					/* translators: %d: an image's ID. */
+					options.push( { label: sprintf( __( 'Image %d, not among the FireHouse portraits', 'firehouse' ), chosen ), value: String( chosen ) } );
+				}
+				return el(
+					'div',
+					{ key: field.key, style: { marginBottom: '1em', display: 'flex', gap: '1em', alignItems: 'flex-end', flexWrap: 'wrap' } },
+					el(
+						'div',
+						{ style: { flex: '1 1 12em' } },
+						el( SelectControl, {
+							'data-firehouse-field': id,
+							label: field.label,
+							value: chosen ? String( chosen ) : '',
+							options,
+							help: __( 'One of the FireHouse portraits. An administrator adds one by attaching it to the About page in the Media Library.', 'firehouse' ),
+							onChange: ( next ) => change( '' === next ? undefined : Number( next ) ),
+							__nextHasNoMarginBottom: true,
+							__next40pxDefaultSize: true,
+						} )
+					),
+					// The chosen portrait, small; the field names it, so the picture is decorative here.
+					known && known.url ? el( 'img', { src: known.url, alt: '', width: 64, height: 80, style: { objectFit: 'cover', borderRadius: '4px' } } ) : null
 				);
 			}
 			default:
@@ -425,15 +606,7 @@
 		if ( editor && editor.selectBlock ) {
 			editor.selectBlock( clientId );
 		}
-		window.setTimeout( () => {
-			const selector = '[data-firehouse-field="' + ( window.CSS && window.CSS.escape ? window.CSS.escape( id ) : id ) + '"]';
-			const frame = window.document.querySelector( 'iframe[name="editor-canvas"]' );
-			const inFrame = frame && frame.contentDocument ? frame.contentDocument.querySelector( selector ) : null;
-			const field = inFrame || window.document.querySelector( selector );
-			if ( field && field.focus ) {
-				field.focus();
-			}
-		}, 0 );
+		window.setTimeout( () => focusFirst( [ fieldAt( id ) ] ), 0 );
 	}
 
 	/**
@@ -523,6 +696,14 @@
 			const path = 'fh-' + clientId + '-';
 			const gaps = spec ? missing( spec, attributes, '', path ) : [];
 			useRequired( clientId, title, gaps );
+			// After a card's button changed the block, the focus goes where it said.
+			useEffect( () => {
+				if ( pending && pending.clientId === clientId ) {
+					const { selectors } = pending;
+					pending = null;
+					focusFirst( selectors );
+				}
+			} );
 			let body = null;
 			if ( spec ) {
 				// A group named for its part, so each "Heading" among the page's fields says
@@ -530,7 +711,7 @@
 				body = el(
 					'div',
 					{ role: 'group', 'aria-label': title, style: { width: '100%' } },
-					spec.map( ( field ) => render( field, attributes[ field.key ], ( next ) => setAttributes( { [ field.key ]: next } ), '', path + field.key ) )
+					spec.map( ( field ) => render( field, attributes[ field.key ], ( next ) => setAttributes( { [ field.key ]: next } ), '', path + field.key, undefined, clientId ) )
 				);
 			} else if ( keys.length ) {
 				const stored = {};
