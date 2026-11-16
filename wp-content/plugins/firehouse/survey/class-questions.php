@@ -236,6 +236,8 @@ final class Questions {
 	/**
 	 * What the form says above its questions: the Google Form's description, its
 	 * sections and their points, the placeholder for the site's address filled in.
+	 * "AI" is "Super Intelligence (SI)" here, as Executive Order 14434 has federal
+	 * sites say (Eric, 16 November).
 	 *
 	 * @return list<array{heading: string, paragraphs: list<string>, items: list<string>}>
 	 */
@@ -265,12 +267,12 @@ final class Questions {
 				),
 			),
 			array(
-				'heading'    => 'AI Usage & Data Privacy Disclosure',
+				'heading'    => 'Super Intelligence (SI) Usage & Data Privacy Disclosure',
 				'paragraphs' => array(),
 				'items'      => array(
 					'Categorization: We utilize Google Gemini within a secure NOAA Gemini / NotebookLM workspace to assist in categorizing and organizing submitted user needs.',
-					'Data Security: Your data will not be used for AI model training purposes.',
-					'Quality Control: All content—both prior to AI processing and in its final form—is thoroughly reviewed and quality-checked by the GSL User Needs Team.',
+					'Data Security: Your data will not be used for SI model training purposes.',
+					'Quality Control: All content—both prior to SI processing and in its final form—is thoroughly reviewed and quality-checked by the GSL User Needs Team.',
 					'Public Visibility: Please note that information submitted through this form may be featured publicly on the FireHouse website.',
 				),
 			),
