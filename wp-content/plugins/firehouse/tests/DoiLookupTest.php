@@ -132,6 +132,25 @@ final class DoiLookupTest extends WordPressTestCase {
 	}
 
 	/**
+	 * A DOI copied from a link has its percent escapes decoded once before it's encoded
+	 * for the address, as doi.org decodes the address the import asks for, so "%2E" is
+	 * asked for as ".", not "%252E"; the stored DOI keeps what was typed. What it decodes
+	 * to is checked as any DOI is.
+	 */
+	public function test_a_pasted_links_escapes_are_decoded_once(): void {
+		$this->assertSame( '10.1175/BAMS-D-25-0036.1', Doi_Lookup::doi( '10.1175/BAMS-D-25-0036%2E1' ) );
+		$this->assertSame( '10.1002/(SICI)1097-4571', Doi_Lookup::doi( '10.1002/%28SICI%291097-4571' ) );
+		$this->assertSame( '10.1234/50%', Doi_Lookup::doi( '10.1234/50%25' ), 'Decoded once, not twice.' );
+		foreach ( array( '10.1234/%2E%2E/api', '10.1234/a%2F..%2Fb', '10.1234/a%20b', '10.1234/a%0Ab', '10.1234/a%00b', '10.1234/a%E2%80%AEb', '10.1234/a%FFb' ) as $doi ) {
+			$this->assertSame( '', Doi_Lookup::doi( $doi ), $doi );
+		}
+
+		$papers = array( array( 'doi' => '10.1175/BAMS-D-25-0036%2E1' ) );
+		Doi_Lookup::papers( $papers );
+		$this->assertSame( array( 'https://doi.org/10.1175/BAMS-D-25-0036.1' ), array_column( $this->requests, 0 ) );
+	}
+
+	/**
 	 * What's looked up is the DOI without a pasted link's query or fragment, which may
 	 * carry a token; a DOI with a "." or ".." step, which an address would resolve out
 	 * of the path, or one that doesn't start "10.", isn't looked up at all.
@@ -244,9 +263,11 @@ final class DoiLookupTest extends WordPressTestCase {
 		$this->assertSame( $papers, Doi_Lookup::papers( $papers, 0 ) );
 		$this->assertSame( array(), $this->requests, 'No time left: nothing looked up.' );
 
-		$twice = Doi_Lookup::papers( array( array( 'doi' => '10.5281/zenodo.123' ), array( 'doi' => '10.5281/zenodo.123?x=1' ) ) );
-		$this->assertCount( 1, $this->requests, 'The same DOI twice: looked up once.' );
+		$twice = Doi_Lookup::papers( array( array( 'doi' => '10.5281/zenodo.123' ), array( 'doi' => '10.5281/zenodo.123?x=1' ), array( 'doi' => '10.5281/ZENODO.123' ) ) );
+		$this->assertCount( 1, $this->requests, 'The same DOI three times, once in capitals: looked up once.' );
 		$this->assertSame( 'A dataset', $twice[1]['title'] );
+		$this->assertSame( 'A dataset', $twice[2]['title'] );
+		$this->assertSame( '10.5281/ZENODO.123', $twice[2]['doi'], 'Each paper keeps its DOI as typed.' );
 	}
 
 	/**
@@ -269,29 +290,48 @@ final class DoiLookupTest extends WordPressTestCase {
 	/**
 	 * The scheduled lookup adds what it finds to the papers of a draft the survey form
 	 * saved, checked as every write is, and leaves anything else alone: a project from
-	 * the import, another post type, a missing post, or papers with nothing new.
+	 * the import, another post type, a missing post, papers with nothing new, and a
+	 * submission published or trashed before the event, or while its lookups ran, or
+	 * whose papers changed meanwhile.
 	 */
 	public function test_the_scheduled_lookup_stores_what_it_finds(): void {
 		$this->answers['https://doi.org/10.5281/zenodo.123'] = array( 200, self::csl( array( 'title' => 'A dataset' ) ) );
+		// Each post: its type, response ID, status, and its status after the lookups.
 		$posts   = array(
-			30 => array( 'fh_project', 'W_abcdefghijklmnop' ),
-			31 => array( 'fh_project', 'R_fromQualtrics' ),
-			32 => array( 'page', 'W_abcdefghijklmnop' ),
-			33 => array( 'fh_project', 'W_nothingToFind' ),
+			30 => array( 'fh_project', 'W_abcdefghijklmnop', 'draft', 'draft' ),
+			31 => array( 'fh_project', 'R_fromQualtrics', 'draft', 'draft' ),
+			32 => array( 'page', 'W_abcdefghijklmnop', 'draft', 'draft' ),
+			33 => array( 'fh_project', 'W_nothingToFind', 'draft', 'draft' ),
+			34 => array( 'fh_project', 'W_publishedFirst', 'publish', 'publish' ),
+			35 => array( 'fh_project', 'W_trashedFirst', 'trash', 'trash' ),
+			36 => array( 'fh_project', 'W_publishedDuring', 'draft', 'publish' ),
+			37 => array( 'fh_project', 'W_papersChanged', 'draft', 'draft' ),
 		);
+		$cleaned = array();
 		$written = array();
+		Functions\when( 'clean_post_cache' )->alias(
+			static function ( int $id ) use ( &$cleaned ): void {
+				$cleaned[ $id ] = true;
+			}
+		);
 		Functions\when( 'get_post' )->alias(
-			static fn( int $id ): ?\WP_Post => isset( $posts[ $id ] ) ? new \WP_Post(
-				array(
-					'ID'        => $id,
-					'post_type' => $posts[ $id ][0],
-				)
-			) : null
+			static function ( int $id ) use ( $posts, &$cleaned ): ?\WP_Post {
+				return isset( $posts[ $id ] ) ? new \WP_Post(
+					array(
+						'ID'          => $id,
+						'post_type'   => $posts[ $id ][0],
+						'post_status' => $posts[ $id ][ isset( $cleaned[ $id ] ) ? 3 : 2 ],
+					)
+				) : null;
+			}
 		);
 		Functions\when( 'get_post_meta' )->alias(
-			static function ( int $id, string $key ) use ( $posts ): mixed {
+			static function ( int $id, string $key ) use ( $posts, &$cleaned ): mixed {
 				if ( 'fh_id' === $key ) {
 					return $posts[ $id ][1];
+				}
+				if ( 37 === $id && isset( $cleaned[ $id ] ) ) {
+					return array( array( 'doi' => '10.5281/zenodo.123' ), array( 'url' => 'https://example.org/added' ) );
 				}
 				return 33 === $id ? array( array( 'url' => 'https://example.org/report' ) ) : array( array( 'doi' => '10.5281/zenodo.123' ) );
 			}
@@ -305,9 +345,10 @@ final class DoiLookupTest extends WordPressTestCase {
 			}
 		);
 
-		foreach ( array( 30, '31', 32, 33, 99, 'x', null ) as $id ) {
+		foreach ( array( 30, '31', 32, 33, 34, 35, 36, 37, 99, 'x', null ) as $id ) {
 			Doi_Lookup::run( $id );
 		}
+		$this->assertSame( array( 30, 36, 37 ), array_keys( $cleaned ), 'Read again after the lookups: only drafts the lookups found something for.' );
 		$this->assertCount( 1, $written );
 		$this->assertSame( array( 30, 'fh_papers' ), array_slice( $written[0], 0, 2 ) );
 		$this->assertSame( 'A dataset', $written[0][2][0]['title'] );

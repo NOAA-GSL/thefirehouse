@@ -246,8 +246,9 @@ name as its user agent. It comes from the site's server, so these services see t
 server's address, never the submitter's or a visitor's, and nothing else the
 submitter typed. A redirect to any other host is refused, and a link without a DOI is
 never fetched. The lookups run just after the submission is saved, in WordPress's
-scheduled events, and have ten seconds for a submission. One that fails leaves the
-paper without a title. A submission without IRB approval, which is never published,
+scheduled events, and have ten seconds for a submission. What they find is stored
+only while the submission is still a draft. One that fails leaves the paper without
+a title. A submission without IRB approval, which is never published,
 isn't looked up. There is no setting to turn the lookups off.
 
 doi.org: the DOI Foundation publishes no terms of use for looking up a DOI. Its

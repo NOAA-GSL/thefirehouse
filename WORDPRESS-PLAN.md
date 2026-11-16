@@ -2199,12 +2199,15 @@ review says when to delete them (open question 14).*
   (`Doi_Lookup`), just after the draft is saved, in a WP-Cron event, so a burst of
   submissions queues its lookups rather than holding a PHP worker each (the AppSec
   review on #67): 5 seconds a request and 10 for all of a draft's, each DOI once,
-  without a pasted link's query or fragment, redirects followed by the plugin only to
+  whatever its case, without a pasted link's query or fragment, with a link's percent
+  escapes decoded once as doi.org decodes them, redirects followed by the plugin only to
   api.crossref.org and data.crosscite.org, over https, through
   `wp_safe_remote_get()`. A lookup that fails keeps no title, and a title or journal
   with an email address, a character that doesn't show or more than 1,000 characters
   is left out. A link without a DOI is never fetched, and a submission without IRB
-  approval isn't looked up. The stored DOI keeps what was typed (rule 1). The
+  approval isn't looked up. What's found is stored only if the post is still the same
+  draft with the same papers after the lookups, not once an editor has published or
+  trashed it (Copilot on #67). The stored DOI keeps what was typed (rule 1). The
   email, job title and Q10 answer are one protected post meta field, in no schema, so
   in no revision or REST response, left out of WordPress's export by a
   `wxr_export_skip_postmeta` filter, and shown to editors in a Private answers box.

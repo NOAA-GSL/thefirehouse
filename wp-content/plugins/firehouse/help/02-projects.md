@@ -10,7 +10,7 @@ Each project is one researcher's answers to the survey. An administrator brings 
 
 If an administrator has turned on the FireHouse survey form (FireHouse → Settings), each submission also arrives as a draft, and the team mailbox gets an email with a link to it. The email holds nothing the researcher wrote: open the draft to read it.
 
-Soon after a submission arrives, each publication the researcher gave by DOI gets its title, journal and year under **Publications**, looked up as the import looks them up. One that couldn't be looked up shows only its DOI or address.
+Soon after a submission arrives, while it's still a draft, each publication the researcher gave by DOI gets its title, journal and year under **Publications**, looked up as the import looks them up. One that couldn't be looked up shows only its DOI or address.
 
 ## Open a project
 

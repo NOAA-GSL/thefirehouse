@@ -32,7 +32,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * It runs after the submission is saved, in WordPress's scheduled events (WP-Cron),
  * not while the researcher waits: WordPress runs those one at a time, so a burst of
  * submissions queues its lookups rather than holding a server process each. A
- * submission without IRB approval, which is never published, isn't looked up.
+ * submission without IRB approval, which is never published, isn't looked up, and
+ * what's found is stored only while the submission is still a draft.
  *
  * All of a submission's lookups have ten seconds, each request five, and a DOI given
  * twice is looked up once; a DOI it can't look up in time, or at all, keeps no title,
@@ -109,30 +110,58 @@ final class Doi_Lookup {
 	/**
 	 * The scheduled event: looks up the DOIs of a draft the survey form saved, and
 	 * stores what's found with its papers. Anything else, a project imported from the
-	 * survey's download included, is left alone.
+	 * survey's download included, is left alone, and so is a submission an editor has
+	 * published or trashed before the event runs, or while it runs: what's looked up
+	 * comes from outside, and goes onto a project only while it's a draft under review.
 	 *
 	 * @param mixed $post_id The draft, as the event was given it.
 	 */
 	public static function run( mixed $post_id ): void {
 		$post = is_int( $post_id ) || ( is_string( $post_id ) && ctype_digit( $post_id ) ) ? get_post( (int) $post_id ) : null;
-		if ( ! $post instanceof \WP_Post || Post_Types::PROJECT !== $post->post_type ) {
+		if ( ! $post instanceof \WP_Post ) {
 			return;
 		}
-		$id     = get_post_meta( $post->ID, Meta::key( 'id' ), true );
-		$papers = get_post_meta( $post->ID, Meta::key( 'papers' ), true );
-		if ( ! is_string( $id ) || ! str_starts_with( $id, Survey::RESPONSE_PREFIX ) || ! is_array( $papers ) || ! array_is_list( $papers ) ) {
+		$papers = self::draft_papers( $post->ID );
+		if ( null === $papers ) {
 			return;
 		}
 		$found = self::papers( $papers );
-		if ( $found !== $papers && true === Meta::validate( Post_Types::PROJECT, 'papers', $found ) ) {
+		if ( $found === $papers || true !== Meta::validate( Post_Types::PROJECT, 'papers', $found ) ) {
+			return;
+		}
+		// The lookups take seconds: read the post again, and store only if it's still the
+		// same draft with the same papers.
+		clean_post_cache( $post->ID );
+		if ( self::draft_papers( $post->ID ) === $papers ) {
 			Store::update_fields( $post->ID, array( 'papers' => $found ), array() );
 		}
 	}
 
 	/**
+	 * A draft's papers, if it's a project the survey form saved and still a draft;
+	 * otherwise null.
+	 *
+	 * @param int $post_id The post.
+	 * @return list<mixed>|null
+	 */
+	private static function draft_papers( int $post_id ): ?array {
+		$post = get_post( $post_id );
+		if ( ! $post instanceof \WP_Post || Post_Types::PROJECT !== $post->post_type || 'draft' !== $post->post_status ) {
+			return null;
+		}
+		$id     = get_post_meta( $post_id, Meta::key( 'id' ), true );
+		$papers = get_post_meta( $post_id, Meta::key( 'papers' ), true );
+		if ( ! is_string( $id ) || ! str_starts_with( $id, Survey::RESPONSE_PREFIX ) || ! is_array( $papers ) || ! array_is_list( $papers ) ) {
+			return null;
+		}
+		return $papers;
+	}
+
+	/**
 	 * The papers, each with a DOI given its title, journal and year as far as they can
-	 * be looked up within the budget, each DOI once. A paper keeps its own DOI and link,
-	 * and anything it already has; what's looked up only adds to them.
+	 * be looked up within the budget, each DOI once, whatever its letters' case (DOIs
+	 * ignore it). A paper keeps its own DOI and link, and anything it already has;
+	 * what's looked up only adds to them.
 	 *
 	 * @param list<array<string, mixed>> $papers The papers.
 	 * @param int                        $budget The seconds all the lookups may take.
@@ -149,28 +178,36 @@ final class Doi_Lookup {
 			if ( '' === $doi ) {
 				continue;
 			}
-			if ( ! isset( $found[ $doi ] ) ) {
+			$key = strtolower( $doi );
+			if ( ! isset( $found[ $key ] ) ) {
 				if ( $deadline - microtime( true ) < 1 ) {
 					break;
 				}
-				$found[ $doi ] = self::lookup( $doi, $deadline );
+				$found[ $key ] = self::lookup( $doi, $deadline );
 			}
-			$papers[ $index ] = $paper + $found[ $doi ];
+			$papers[ $index ] = $paper + $found[ $key ];
 		}
 		return $papers;
 	}
 
 	/**
 	 * The DOI to look up: the stored one without a pasted link's query or fragment,
-	 * which doi.org ignores and which may carry a token; "" for one that doesn't start
-	 * "10.", or has a "." or ".." step in its path, which an address would resolve out
-	 * of it.
+	 * which doi.org ignores and which may carry a token, and with its percent escapes
+	 * decoded once, as doi.org decodes the address the import asks it for (a DOI copied
+	 * from a link may have "%28" for "(", say); lookup() encodes it again. "" for one
+	 * that doesn't start "10.", has a "." or ".." step in its path, which an address
+	 * would resolve out of it, or decodes to a space, a character that doesn't show, or
+	 * bytes that aren't text.
 	 *
 	 * @param string $doi The DOI as stored.
 	 */
 	public static function doi( string $doi ): string {
-		$doi = (string) preg_replace( '/[?#].*/s', '', $doi );
-		return 1 === preg_match( '#^10\.\d{4,9}/#', $doi ) && 1 !== preg_match( '#(^|/)\.\.?(/|$)#', $doi ) ? $doi : '';
+		$doi = rawurldecode( (string) preg_replace( '/[?#].*/s', '', $doi ) );
+		return 1 === preg_match( '#^10\.\d{4,9}/\S+$#uD', $doi )
+			&& 1 !== preg_match( '#(^|/)\.\.?(/|$)#', $doi )
+			&& 1 !== preg_match( Submission::HIDDEN, $doi )
+			? $doi
+			: '';
 	}
 
 	/**
