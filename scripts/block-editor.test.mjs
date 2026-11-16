@@ -40,11 +40,15 @@ function sprintf(format, ...args) {
   return format.replace(/%(?:(\d+)\$)?[sd]/g, (match, position) => String(args[position ? Number(position) - 1 : next++]));
 }
 
-/** Runs the script; returns what it registered, and what it asked of the editor's stores. */
-function load(declared = DECLARED, { stores = true } = {}) {
+/**
+ * Runs the script, with stores that record what's asked of them and a small stand-in for
+ * React's effects: each mounted block keeps its effect's dependencies and clean-up, runs
+ * the clean-up and the effect again when they change, and the clean-up when unmounted.
+ */
+function load(declared = DECLARED, { stores = true, focused = [] } = {}) {
   const registered = new Map();
   const calls = [];
-  const cleanups = [];
+  let current = null;
   const record = (store) => new Proxy({}, { get: (target, action) => (...args) => calls.push([store, action, ...args]) });
   const wp = {
     blocks: {
@@ -53,27 +57,46 @@ function load(declared = DECLARED, { stores = true } = {}) {
     },
     element: {
       createElement: (type, props, ...children) => ({ type, props: props ?? {}, children: children.flat() }),
-      // Effects run as the block renders; their clean-ups wait for cleanup().
-      useEffect: (effect) => {
+      useEffect: (effect, deps) => {
+        const slot = current;
+        if (slot.deps && deps.length === slot.deps.length && deps.every((dep, index) => dep === slot.deps[index])) return;
+        if (slot.cleanup) slot.cleanup();
+        slot.deps = deps;
         const cleanup = effect();
-        if (typeof cleanup === 'function') cleanups.push(cleanup);
+        slot.cleanup = typeof cleanup === 'function' ? cleanup : null;
       },
     },
     blockEditor: { useBlockProps: () => ({ className: 'wp-block' }), InnerBlocks },
     components: { Placeholder, TextControl, TextareaControl },
-    data: stores ? { dispatch: (store) => record(store) } : undefined,
-    i18n: { __: (text) => text, sprintf },
+    data: stores ? { dispatch: (store) => record(store), select: () => null } : undefined,
+    i18n: { __: (text) => text, _x: (text) => text, _n: (one, many, count) => (count === 1 ? one : many), sprintf },
   };
-  new Function('window', SOURCE)({ wp, firehouseBlocks: declared });
-  return { registered, calls, cleanup: () => cleanups.splice(0).forEach((fn) => fn()) };
+  const window = {
+    wp,
+    firehouseBlocks: declared,
+    setTimeout: (fn) => fn(),
+    document: { querySelector: () => null, getElementById: (id) => ({ focus: () => focused.push(id) }) },
+  };
+  new Function('window', SOURCE)(window);
+
+  /** Mounts a block: its tree, its attribute changes, and how to render it again or remove it. */
+  function mount(name, attributes, clientId = 'abc') {
+    const slot = { deps: null, cleanup: null };
+    const changes = [];
+    const render = (next) => {
+      current = slot;
+      return registered.get(name).edit({ attributes: next, setAttributes: (change) => changes.push(change), clientId });
+    };
+    return { tree: render(attributes), changes, rerender: render, unmount: () => slot.cleanup && slot.cleanup() };
+  }
+  return { registered, calls, mount };
 }
 
-/** Renders a block's edit with its attributes; returns the tree and the attribute changes. */
+/** Renders a block's edit with its attributes; returns the tree, the changes and the stores' calls. */
 function edit(name, attributes, options) {
   const loaded = load(DECLARED, options);
-  const changes = [];
-  const tree = loaded.registered.get(name).edit({ attributes, setAttributes: (change) => changes.push(change), clientId: 'abc' });
-  return { tree, changes, calls: loaded.calls, cleanup: loaded.cleanup };
+  const mounted = loaded.mount(name, attributes);
+  return { ...mounted, calls: loaded.calls };
 }
 
 /** Every string in a rendered tree, in order, the placeholder's label included. */
@@ -95,6 +118,11 @@ function find(node, type) {
 /** Every field in a rendered tree, one line or a few, by its label. */
 function controls(tree) {
   return Object.fromEntries([...find(tree, TextControl), ...find(tree, TextareaControl)].map((node) => [node.props.label, node]));
+}
+
+/** A field's help, as its words. */
+function help(field) {
+  return text(field.props.help).join('');
 }
 
 const HERO = {
@@ -125,21 +153,24 @@ describe('the block editor script', () => {
     expect(BLOCKS.filter((block) => block.allowedBlocks?.length).map((block) => block.name).sort()).toEqual(['firehouse/about-sections', 'firehouse/hero']);
   });
 
-  it('shows the words as fields, each with its value as stored, and where buttons go', () => {
+  it('shows the words as fields in a group named for the block, each with its value as stored, and where buttons go', () => {
     const { tree } = edit('firehouse/hero', HERO);
     const fields = controls(tree);
     expect(Object.keys(fields)).toEqual(['Line above the heading', 'Heading', 'First button text', 'Second button text', 'Text']);
     expect(fields.Heading.props.value).toBe('<b>Fire</b> & weather');
+    expect(fields.Heading.props.id).toBe('fh-abc-heading');
     expect(fields.Heading.type).toBe(TextControl);
     expect(fields.Text.type).toBe(TextareaControl);
     expect(fields['First button text'].props.value).toBe('Submit a Finding');
     expect(text(tree)).toEqual(expect.arrayContaining(['FireHouse hero', 'The Submit a Finding address in FireHouse → Settings', '/projects']));
     expect(text(tree).join(' ')).not.toMatch(/Lock|Class name|Metadata/);
     expect(SOURCE).not.toMatch(/dangerouslySetInnerHTML|RawHTML|innerHTML/);
-    // The explanation is a paragraph inside the box, not the Placeholder's instructions.
+    expect(find(tree, 'div').find((node) => node.props.role === 'group').props['aria-label']).toBe('FireHouse hero');
+    // The explanation is a paragraph inside the box, not the Placeholder's instructions,
+    // and says how to move between the page's parts by keyboard.
     const placeholder = find(tree, Placeholder)[0];
     expect(placeholder.props.instructions).toBeUndefined();
-    expect(text(find(placeholder, 'p')[0])[0]).toMatch(/^The words on this part of the page\. FireHouse adds the rest/);
+    expect(text(find(placeholder, 'p')[0])[0]).toMatch(/^The words on this part of the page\. FireHouse adds everything else.*the Down arrow at the end of a field moves on to the next part’s\. The parts below have their own\.$/);
     // The counts it holds follow it, locked.
     expect(find(tree, InnerBlocks)[0].props).toMatchObject({ templateLock: 'all', renderAppender: false });
   });
@@ -152,16 +183,25 @@ describe('the block editor script', () => {
     expect(changes).toEqual([{ heading: 'R&D <5 km>' }, { primaryCta: { label: 'Share a finding', href: '' } }]);
   });
 
+  it('shows a button the page doesn’t have as none, with no field and no hold', () => {
+    const { tree, calls } = edit('firehouse/hero', { ...HERO, secondaryCta: {} });
+    expect(Object.keys(controls(tree))).not.toContain('Second button text');
+    expect(text(tree)).toEqual(expect.arrayContaining(['Second button: ', 'None on this part of the page']));
+    expect(calls.map((call) => call[1])).toEqual(['unlockPostSaving', 'removeNotice']);
+  });
+
   it('changes one entry of a list, keeping the others and what each stores beside its words', () => {
     const items = [
-      { id: 'projects', source: 'publishedProjects', label: 'Projects', caption: '', accent: true },
-      { id: 'topics', source: 'topicAreas', label: 'Topic areas', caption: 'Across the hub' },
+      { id: 'projects', source: 'publishedProjectCount', label: 'Projects', caption: '', accent: true },
+      { id: 'submissions', source: 'static', value: 'Open', label: 'For submissions', caption: 'Any time' },
     ];
     const { tree, changes } = edit('firehouse/stats', { items });
     expect(find(tree, 'legend').map((node) => text(node)[0])).toEqual(['Count 1', 'Count 2']);
-    expect(text(tree)).toEqual(expect.arrayContaining(['publishedProjects', 'topicAreas']));
-    const labels = [...find(tree, TextControl)].filter((node) => node.props.label === 'Label');
-    labels[1].props.onChange('Topics');
+    expect(text(tree)).toEqual(expect.arrayContaining(['The projects visitors can see', 'Nothing: it shows the words below as written']));
+    // A count that shows words, not a number, has them as a field.
+    const fields = [...find(tree, TextControl)];
+    expect(fields.filter((node) => node.props.label === 'Shown as').map((node) => node.props.value)).toEqual(['Open']);
+    fields.filter((node) => node.props.label === 'Label')[1].props.onChange('Topics');
     expect(changes).toEqual([{ items: [items[0], { ...items[1], label: 'Topics' }] }]);
     expect(changes[0].items[0]).toBe(items[0]);
   });
@@ -175,37 +215,76 @@ describe('the block editor script', () => {
     const team = edit('firehouse/about-team', { heading: 'Team', email: 'team@noaa.gov', members });
     const fields = controls(team.tree);
     expect(Object.keys(fields)).toEqual(expect.arrayContaining(['Name', 'Biography, paragraph 1', 'Biography, paragraph 2', 'Portrait description', 'Email address']));
-    expect(fields['Email address'].props.help).toMatch(/@noaa\.gov/);
+    expect(help(fields['Email address'])).toMatch(/@noaa\.gov/);
     expect(text(team.tree)).toEqual(expect.arrayContaining(['Portrait (Media Library ID): ', '7']));
     fields['Biography, paragraph 2'].props.onChange('Later.');
     expect(team.changes).toEqual([{ members: [{ ...members[0], bio: ['First.', 'Later.'] }] }]);
     expect(SOURCE).not.toMatch(/\.push\(|splice\(|concat\(/);
   });
 
-  it('holds the save while a required word is empty, says which, and lets go once it’s filled', () => {
-    const empty = edit('firehouse/hero', { ...HERO, heading: '  ', primaryCta: { label: '', href: '' } });
+  it('shows where a link goes, a page or an address', () => {
+    const { tree } = edit('firehouse/about-process', { heading: 'How', steps: [], links: [{ label: 'Needs', to: '/#needs-source' }, { label: 'Survey', href: '' }] });
+    expect(text(tree)).toEqual(expect.arrayContaining(['/#needs-source', 'The Submit a Finding address in FireHouse → Settings']));
+  });
+
+  it('shows an entry that isn’t one as it is, never as fields, and keeps it when another changes', () => {
+    const steps = [[], 'odd', { title: 'Two' }];
+    const { tree, changes, calls } = edit('firehouse/about-process', { heading: 'How', steps, links: [] });
+    expect(controls(tree)['Title']).toBeDefined();
+    expect(find(tree, 'fieldset')).toHaveLength(1);
+    expect(calls.map((call) => call[1])).toEqual(['unlockPostSaving', 'removeNotice']);
+    controls(tree)['Title'].props.onChange('2');
+    expect(changes).toEqual([{ steps: [steps[0], 'odd', { title: '2' }] }]);
+  });
+
+  it('marks an empty required word, holds the save, says which, goes to it, and lets go once it’s filled', () => {
+    const focused = [];
+    const empty = edit('firehouse/hero', { ...HERO, heading: '  ', primaryCta: { label: '', href: '' } }, { focused });
     const fields = controls(empty.tree);
     expect(fields.Heading.props['aria-invalid']).toBe(true);
     expect(fields.Heading.props['aria-required']).toBe(true);
-    expect(fields.Heading.props.help).toMatch(/^Required\. It’s empty, so the page can’t be saved\./);
+    expect(fields.Heading.props.style).toEqual({ borderColor: '#cc1818', boxShadow: '0 0 0 1px #cc1818' });
+    expect(help(fields.Heading)).toBe('Required. Error: it’s empty, so the page can’t be saved.');
     expect(fields['Line above the heading'].props['aria-required']).toBeUndefined();
-    expect(empty.calls).toEqual([
-      ['core/editor', 'lockPostSaving', 'firehouse-required-abc'],
-      ['core/notices', 'createNotice', 'error', 'FireHouse hero: fill in Heading, First button text. The page can’t be saved while they’re empty.', { id: 'firehouse-required-abc', isDismissible: false }],
-    ]);
-    // Removed from the page, the block lets go of its hold.
-    empty.cleanup();
-    expect(empty.calls.slice(2)).toEqual([
-      ['core/editor', 'unlockPostSaving', 'firehouse-required-abc'],
-      ['core/notices', 'removeNotice', 'firehouse-required-abc'],
-    ]);
+    expect(fields['Line above the heading'].props.style).toBeUndefined();
+    expect(empty.calls.slice(0, 1)).toEqual([['core/editor', 'lockPostSaving', 'firehouse-required-abc']]);
+    const [, , status, message, options] = empty.calls[1];
+    expect([status, message]).toEqual(['error', 'FireHouse hero: fill in Heading, First button text. The page can’t be saved while they’re empty.']);
+    expect(options).toMatchObject({ id: 'firehouse-required-abc', isDismissible: false });
+    expect(options.actions.map((action) => action.label)).toEqual(['Go to Heading']);
+    options.actions[0].onClick();
+    expect(empty.calls[2]).toEqual(['core/block-editor', 'selectBlock', 'abc']);
+    expect(focused).toEqual(['fh-abc-heading']);
 
-    const filled = edit('firehouse/hero', HERO);
-    expect(controls(filled.tree).Heading.props['aria-invalid']).toBeUndefined();
-    expect(filled.calls).toEqual([
+    // Filled in, the hold and the notice go; one gap left reads in the singular.
+    empty.rerender({ ...HERO, primaryCta: { label: '', href: '' } });
+    expect(empty.calls.slice(3)).toEqual([
+      ['core/editor', 'unlockPostSaving', 'firehouse-required-abc'],
+      ['core/notices', 'removeNotice', 'firehouse-required-abc'],
+      ['core/editor', 'lockPostSaving', 'firehouse-required-abc'],
+      ['core/notices', 'createNotice', 'error', 'FireHouse hero: fill in First button text. The page can’t be saved while it’s empty.', expect.objectContaining({ id: 'firehouse-required-abc' })],
+    ]);
+    const before = empty.calls.length;
+    empty.rerender({ ...HERO, primaryCta: { label: '', href: '' }, body: 'Changed' });
+    expect(empty.calls).toHaveLength(before);
+    empty.rerender(HERO);
+    expect(empty.calls.slice(before)).toEqual([
+      ['core/editor', 'unlockPostSaving', 'firehouse-required-abc'],
+      ['core/notices', 'removeNotice', 'firehouse-required-abc'],
       ['core/editor', 'unlockPostSaving', 'firehouse-required-abc'],
       ['core/notices', 'removeNotice', 'firehouse-required-abc'],
     ]);
+  });
+
+  it('lets each block hold and let go of its own hold', () => {
+    const { calls, mount } = load();
+    const hero = mount('firehouse/hero', { ...HERO, heading: '' }, 'one');
+    mount('firehouse/about-intro', { heading: '' }, 'two');
+    expect(calls.filter((call) => call[1] === 'lockPostSaving').map((call) => call[2])).toEqual(['firehouse-required-one', 'firehouse-required-two']);
+    const before = calls.length;
+    hero.rerender(HERO);
+    expect(calls.slice(before).map((call) => call[2])).toEqual(['firehouse-required-one', 'firehouse-required-one', 'firehouse-required-one', 'firehouse-required-one']);
+    hero.unmount();
   });
 
   it('names a list entry’s empty required word with its entry', () => {
@@ -215,6 +294,7 @@ describe('the block editor script', () => {
       links: [{ label: '', to: '/about' }],
     });
     expect(calls[1][3]).toBe('FireHouse About process: fill in Step 2: Title, Link 1: Link text. The page can’t be saved while they’re empty.');
+    expect(calls[1][4].actions[0].label).toBe('Go to Step 2: Title');
   });
 
   it('works where the editor has no stores to hold a save, as in the widgets editor', () => {
@@ -223,8 +303,8 @@ describe('the block editor script', () => {
 
   it('gives every block that stores something fields, which change only what it declares', () => {
     for (const name of EDITABLE) {
-      // One of everything: a word, an entry in each list, an empty object.
-      const one = { string: 'x', array: [{}], object: {} };
+      // One of everything: a word, an entry in each list, an object with somewhere to go.
+      const one = { string: 'x', array: [{}], object: { href: '' } };
       const attributes = Object.fromEntries(DECLARED[name].map((key) => [key, one[TYPES[name].attributes[key].type] ?? TYPES[name].attributes[key].default]));
       const { tree, changes } = edit(name, attributes);
       const fields = [...find(tree, TextControl), ...find(tree, TextareaControl)];
@@ -237,8 +317,8 @@ describe('the block editor script', () => {
   });
 
   it('lists what a block without fields stores, read-only, as text', () => {
-    const { registered } = load({ ...DECLARED, 'firehouse/subnav': ['note'] });
-    const tree = registered.get('firehouse/subnav').edit({ attributes: { note: JSON.parse('{"label":"Explore","__proto__":"x","constructor":"y"}') }, setAttributes: () => {}, clientId: 'x' });
+    const { mount } = load({ ...DECLARED, 'firehouse/subnav': ['note'] });
+    const { tree } = mount('firehouse/subnav', { note: JSON.parse('{"label":"Explore","__proto__":"x","constructor":"y"}') });
     const words = text(tree);
     expect(words).toEqual(expect.arrayContaining(['Note', 'Label', 'Explore', '__proto__', 'x', 'Constructor', 'y']));
     expect(words.every((word) => typeof word === 'string')).toBe(true);
@@ -246,9 +326,8 @@ describe('the block editor script', () => {
   });
 
   it('says when FireHouse adds a block, and when a block only holds others', () => {
-    const { registered } = load();
-    const render = (name) => registered.get(name).edit({ attributes: {}, setAttributes: () => {}, clientId: 'x' });
-    expect(text(render('firehouse/subnav'))).toContain('FireHouse adds this part of the page. Nothing in it is stored in this page.');
-    expect(text(render('firehouse/about-sections'))).toContain('Holds the parts below, which store their own. Nothing else in it is stored in this page.');
+    const { mount } = load();
+    expect(text(mount('firehouse/subnav', {}).tree)).toContain('FireHouse adds this part of the page. Nothing in it is stored in this page.');
+    expect(text(mount('firehouse/about-sections', {}).tree)).toContain('Holds the parts below, which store their own. Nothing else in it is stored in this page.');
   });
 });

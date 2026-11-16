@@ -173,6 +173,8 @@ require_once __DIR__ . '/includes/class-head.php';
  *   blocks their view there, the landing and About blocks' words as fields, and their
  *   save; while a required word is empty it holds the post's save, with a notice. It
  *   makes no requests and adds nothing to the inserter.
+ * - Blocks::lock_layout (`block_editor_settings_all`) locks the layout of a page in
+ *   the Firehouse tree, and leaves every other editor's settings as they are.
  *
  * From the permission and field filters (Capabilities, Meta), which run on every
  * capability check, save, sign-in and query:

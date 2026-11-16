@@ -169,11 +169,13 @@ final class HooksTest extends WordPressTestCase {
 	}
 
 	/**
-	 * The blocks register on init, and their editor script loads with the block editor.
+	 * The blocks register on init, their editor script loads with the block editor, and
+	 * a FireHouse page's layout is locked there.
 	 */
 	public function test_blocks_register_on_init(): void {
 		Actions\expectAdded( 'init' )->once()->with( array( Blocks::class, 'register' ), 10, 1 );
 		Actions\expectAdded( 'enqueue_block_editor_assets' )->once()->with( array( Blocks::class, 'enqueue_editor' ), 10, 1 );
+		Filters\expectAdded( 'block_editor_settings_all' )->once()->with( array( Blocks::class, 'lock_layout' ), 10, 2 );
 
 		Blocks::hook();
 	}

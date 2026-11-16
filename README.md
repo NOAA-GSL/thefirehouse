@@ -471,12 +471,17 @@ nothing from the database. Each class's docblock has the detail; this is the map
     JavaScript): headings, text, button and link text, each count's label and caption,
     each audience card's, step's and team member's words, a paragraph at a time. The
     layout, links, icons, counts and portraits stay as they are, shown beside the
-    fields, and a list keeps the entries it has. A field that can't be empty (a
-    heading, a button's or link's text, an entry's title, a member's name) says so;
-    while one is, the editor says which, as a notice, and the page can't be saved. The
+    fields, a list keeps the entries it has, and a button the page doesn't have stays
+    out. A field that can't be empty (a heading, a button's or link's text, a count's
+    label or words, an entry's title, a member's name) says so; while one is, it's
+    marked, the editor says which in a notice that goes to it, and holds the save. The
+    hold is a guide, not a control: the Code editor and an autosave don't keep it. The
     box tells the page's own words from what FireHouse adds from its settings,
-    projects and topic areas. A block that stores nothing and holds no others says
-    FireHouse adds it.
+    projects and topic areas, and says how to move between the page's parts by
+    keyboard. A block that stores nothing and holds no others says FireHouse adds it.
+    On a FireHouse page the editor locks the layout (`Blocks::lock_layout()`): no part
+    can be added, moved or removed there, so Backspace or Enter on a part's outline
+    changes nothing.
   - Every block saves its inner blocks and nothing else, so saving from the editor
     keeps the page's blocks: the hero keeps the live counts it holds, and the About
     sections block the four sections it holds. `scripts/block-editor.test.mjs` holds

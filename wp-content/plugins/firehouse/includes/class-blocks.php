@@ -45,6 +45,27 @@ final class Blocks {
 	public static function hook(): void {
 		add_action( 'init', array( self::class, 'register' ) );
 		add_action( 'enqueue_block_editor_assets', array( self::class, 'enqueue_editor' ) );
+		add_filter( 'block_editor_settings_all', array( self::class, 'lock_layout' ), 10, 2 );
+	}
+
+	/**
+	 * Locks a FireHouse page's layout in the block editor: its parts can't be added,
+	 * moved or removed there, only their words changed (Phase 6's decision). Without it,
+	 * Backspace on a part's outline, where the Down arrow takes an editor between parts,
+	 * removed the part, and Enter added a paragraph. The lock is the editor's setting
+	 * for the page, not a `lock` attribute on each block, which the blocks don't declare
+	 * (Page_Words). Other posts are left as they are.
+	 *
+	 * @param array<string, mixed> $settings The block editor's settings.
+	 * @param mixed                $context  What the editor edits: WP_Block_Editor_Context, its `post` the post.
+	 * @return array<string, mixed>
+	 */
+	public static function lock_layout( array $settings, mixed $context ): array {
+		$post = is_object( $context ) && isset( $context->post ) ? $context->post : null;
+		if ( $post instanceof \WP_Post && 'page' === $post->post_type && Capabilities::in_tree( $post ) ) {
+			$settings['templateLock'] = 'all';
+		}
+		return $settings;
 	}
 
 	/**

@@ -189,7 +189,9 @@ one is.
   "R&amp;D" when a FireHouse Editor saves the page.
 * The landing and About pages' words are text fields in the block editor: headings,
   text, button and link text, the counts' labels, and each card's, step's and team
-  member's words. A heading or button left empty holds the save until it's filled.
+  member's words. A heading or button left empty is marked, and the editor holds the
+  save until it's filled. The pages' layout is locked in the editor: their parts
+  can't be added, moved or removed there.
 * The name the plugin prints is FireHouse: the plugin's name, the role, the admin
   menu, the block titles, and the pages' titles and words. A site that imported its
   content before keeps the old spelling in its settings and in the landing and About

@@ -1,7 +1,8 @@
 /**
  * The FireHouse blocks in the block editor. The landing and About pages' blocks show
  * their words as text fields in place, which an editor changes; the layout, links,
- * counts and portraits stay as they are (WORDPRESS-PLAN.md, Phase 6). Each block's
+ * counts and portraits stay as they are (WORDPRESS-PLAN.md, Phase 6), and the page's
+ * parts can't be added, moved or removed there (Blocks::lock_layout()). Each block's
  * fields are in FIELDS below. A block not there lists what the page stores in it,
  * read-only. A block that stores nothing and holds no others says FireHouse adds it. A
  * block that holds others (the hero holds the live counts; the About sections block
@@ -10,8 +11,9 @@
  *
  * Words are kept as typed: plain text, which the pages print escaped
  * (includes/class-page-words.php keeps them past WordPress's filters). A heading, a
- * button's text and the like can't be left empty: while one is, the block says which,
- * the editor says so, and the page can't be saved.
+ * button's text and the like can't be left empty: while one is, the field is marked,
+ * the editor says which in a notice that goes to it, and holds the save. The hold is a
+ * guide, not a control: the Code editor and an autosave don't keep it.
  *
  * Plain JavaScript with no build step, like the blocks' view scripts: WordPress's own
  * packages come from the `wp` global the editor loads. `window.firehouseBlocks` maps
@@ -30,9 +32,9 @@
 	const { createElement: el, useEffect } = wp.element;
 	const { useBlockProps, InnerBlocks } = wp.blockEditor;
 	const { Placeholder, TextControl, TextareaControl } = wp.components;
-	const { __, sprintf } = wp.i18n;
+	const { __, _n, _x, sprintf } = wp.i18n;
 
-	/** A one-line field; `required` ones can't be left empty. */
+	/** A one-line field; `required` ones can't be left empty; `when` limits it to some entries. */
 	const text = ( key, label, options ) => ( { kind: 'text', key, label, ...( options || {} ) } );
 	/** A field of a few lines. */
 	const area = ( key, label, options ) => ( { kind: 'area', key, label, ...( options || {} ) } );
@@ -42,8 +44,8 @@
 	const paragraphs = ( key, label ) => ( { kind: 'paragraphs', key, label } );
 	/** Entries, as many as stored, each with its fields; `item` names one, with its number. */
 	const list = ( key, label, item, fields ) => ( { kind: 'list', key, label, item, fields } );
-	/** Something stored that isn't words, shown as it is. */
-	const fixed = ( key, label ) => ( { kind: 'fixed', key, label } );
+	/** Something stored that isn't words, shown as it is, or as `shown( value, entry )` words it. */
+	const fixed = ( key, label, shown ) => ( { kind: 'fixed', key, label, shown } );
 
 	const EYEBROW = text( 'eyebrow', __( 'Line above the heading', 'firehouse' ) );
 	const HEADING = text( 'heading', __( 'Heading', 'firehouse' ), { required: true } );
@@ -64,14 +66,23 @@
 	/* translators: %d: the number of a paragraph of a biography. */
 	const BIO = __( 'Biography, paragraph %d', 'firehouse' );
 
+	/** What a count counts, in words (Derive::stat_value()). */
+	const SOURCES = {
+		publishedProjectCount: __( 'The projects visitors can see', 'firehouse' ),
+		topicCount: __( 'The topic areas', 'firehouse' ),
+		needCount: __( 'The end-user needs in those projects', 'firehouse' ),
+		static: __( 'Nothing: it shows the words below as written', 'firehouse' ),
+	};
+
 	/** Each editable block's fields, in the order the page shows them. */
 	const FIELDS = {
 		'firehouse/hero': [ EYEBROW, HEADING, BODY, button( 'primaryCta', __( 'First button', 'firehouse' ) ), button( 'secondaryCta', __( 'Second button', 'firehouse' ) ) ],
 		'firehouse/stats': [
 			list( 'items', __( 'Counts', 'firehouse' ), COUNT, [
+				fixed( 'source', __( 'What it counts', 'firehouse' ), ( source ) => ( Object.prototype.hasOwnProperty.call( SOURCES, source ) ? SOURCES[ source ] : source ) ),
+				text( 'value', __( 'Shown as', 'firehouse' ), { required: true, when: ( entry ) => 'static' === entry.source } ),
 				text( 'label', __( 'Label', 'firehouse' ), { required: true } ),
 				text( 'caption', __( 'Caption', 'firehouse' ) ),
-				fixed( 'source', __( 'Counted from', 'firehouse' ) ),
 			] ),
 		],
 		'firehouse/top-needs': [ EYEBROW, HEADING, BODY, fixed( 'needsPerCard', __( 'Needs shown per topic area', 'firehouse' ) ) ],
@@ -93,7 +104,7 @@
 			HEADING,
 			BODY,
 			list( 'steps', __( 'Steps', 'firehouse' ), STEP, [ text( 'title', __( 'Title', 'firehouse' ), { required: true } ), area( 'body', __( 'Text', 'firehouse' ) ) ] ),
-			list( 'links', __( 'Links', 'firehouse' ), LINK, [ text( 'label', __( 'Link text', 'firehouse' ), { required: true } ), fixed( 'to', __( 'FireHouse page', 'firehouse' ) ) ] ),
+			list( 'links', __( 'Links', 'firehouse' ), LINK, [ text( 'label', __( 'Link text', 'firehouse' ), { required: true } ), fixed( 'to', __( 'Goes to', 'firehouse' ), ( to, entry ) => destination( entry ) ) ] ),
 		],
 		'firehouse/about-team': [
 			EYEBROW,
@@ -133,6 +144,8 @@
 	const NOTHING = __( '(nothing stored)', 'firehouse' );
 	const BORDER = '2px solid #949494';
 	const GROUP = { margin: '0 0 1em', padding: '0.75em', border: '1px solid #949494', minWidth: 0 };
+	// The block editor's own colour for an error, 5.6:1 on white.
+	const ERROR = '#cc1818';
 
 	/** A stored field's name for people: its label, or its key as words. */
 	function label( key ) {
@@ -141,6 +154,11 @@
 		}
 		const words = String( key ).replace( /([a-z0-9])([A-Z])/g, '$1 $2' ).toLowerCase();
 		return words.charAt( 0 ).toUpperCase() + words.slice( 1 );
+	}
+
+	/** Whether a stored entry is an object of fields: not an array, not a word. */
+	function isEntry( stored ) {
+		return !! stored && 'object' === typeof stored && ! Array.isArray( stored );
 	}
 
 	/** A stored value as text: paragraphs for a list of words, a numbered list of others. */
@@ -166,12 +184,17 @@
 		return String( stored );
 	}
 
-	/** Where a stored link goes, in words. */
+	/** Whether a stored button or link exists: it has somewhere to go, a page or an address. */
+	function exists( link ) {
+		return isEntry( link ) && ( 'string' === typeof link.to || 'string' === typeof link.href );
+	}
+
+	/** Where a stored link goes, in words: a FireHouse page, an address, or the survey's. */
 	function destination( link ) {
-		if ( link && 'string' === typeof link.to && '' !== link.to ) {
+		if ( isEntry( link ) && 'string' === typeof link.to && '' !== link.to ) {
 			return link.to;
 		}
-		if ( link && 'string' === typeof link.href && '' !== link.href ) {
+		if ( isEntry( link ) && 'string' === typeof link.href && '' !== link.href ) {
 			return link.href;
 		}
 		return __( 'The Submit a Finding address in FireHouse → Settings', 'firehouse' );
@@ -210,44 +233,73 @@
 		return '' === words( stored ).trim();
 	}
 
-	/** The stored entries of a list, each an object, or none. */
+	/** The stored entries of a list, or none. */
 	function entries( stored ) {
 		return Array.isArray( stored ) ? stored : [];
 	}
 
+	/** An entry's field's name: its entry, then itself. */
+	function within( entry, name ) {
+		/* translators: 1: an entry, such as "Step 2", 2: one of its fields, such as "Title". */
+		return sprintf( _x( '%1$s: %2$s', 'a field of a list entry', 'firehouse' ), entry, name );
+	}
+
+	/** A button's text field's name. */
+	function buttonText( name ) {
+		/* translators: %s: a button, such as "First button". */
+		return sprintf( __( '%s text', 'firehouse' ), name );
+	}
+
+	/** The fields a field shows for an entry: those whose `when` the entry meets. */
+	function shownFor( list_, entry ) {
+		return list_.filter( ( field ) => ! field.when || field.when( entry ) );
+	}
+
 	/**
-	 * The fields that can't be empty and are, by name, in the order the block shows
-	 * them: a heading, a button's text, an entry's title (named with its entry).
+	 * The fields that can't be empty and are, in the order the block shows them, each
+	 * with its name and the ID of its control: a heading, a button's text, an entry's
+	 * title (named with its entry).
 	 */
-	function missing( spec, attributes, prefix ) {
+	function missing( spec, attributes, prefix, path ) {
 		return spec.flatMap( ( field ) => {
 			const stored = attributes ? attributes[ field.key ] : undefined;
-			const name = prefix ? sprintf( /* translators: 1: an entry, such as "Step 2", 2: one of its fields. */ __( '%1$s: %2$s', 'firehouse' ), prefix, field.label ) : field.label;
+			const name = prefix ? within( prefix, field.label ) : field.label;
+			const id = path + field.key;
 			if ( 'text' === field.kind || 'area' === field.kind ) {
-				return field.required && blank( stored ) ? [ name ] : [];
+				return field.required && blank( stored ) ? [ { name, id } ] : [];
 			}
 			if ( 'button' === field.kind ) {
-				return stored && 'object' === typeof stored && blank( stored.label ) ? [ sprintf( /* translators: %s: a button, such as "First button". */ __( '%s text', 'firehouse' ), name ) ] : [];
+				return exists( stored ) && blank( stored.label ) ? [ { name: buttonText( name ), id: id + '-label' } ] : [];
 			}
 			if ( 'list' === field.kind ) {
-				return entries( stored ).flatMap( ( entry, index ) => ( entry && 'object' === typeof entry ? missing( field.fields, entry, sprintf( field.item, index + 1 ) ) : [] ) );
+				return entries( stored ).flatMap( ( entry, index ) => ( isEntry( entry ) ? missing( shownFor( field.fields, entry ), entry, sprintf( field.item, index + 1 ), id + '-' + index + '-' ) : [] ) );
 			}
 			return [];
 		} );
 	}
 
 	/** A text field, or a field of a few lines, bound to a stored word. */
-	function control( field, stored, change, prefix ) {
+	function control( field, stored, change, prefix, id ) {
 		const empty = field.required && blank( stored );
-		const help = [ field.required ? __( 'Required.', 'firehouse' ) : '', empty ? __( 'It’s empty, so the page can’t be saved.', 'firehouse' ) : '', field.help || '' ].filter( Boolean ).join( ' ' );
+		const notes = [ field.required ? __( 'Required.', 'firehouse' ) : '', field.help || '' ].filter( Boolean ).join( ' ' );
+		const help = empty
+			? el(
+					'span',
+					null,
+					notes + ' ',
+					el( 'span', { style: { color: ERROR, fontWeight: 600 } }, __( 'Error: it’s empty, so the page can’t be saved.', 'firehouse' ) )
+			  )
+			: notes || undefined;
 		const props = {
-			label: prefix ? sprintf( /* translators: 1: an entry, such as "Step 2", 2: one of its fields. */ __( '%1$s: %2$s', 'firehouse' ), prefix, field.label ) : field.label,
+			id,
+			label: prefix ? within( prefix, field.label ) : field.label,
 			value: words( stored ),
 			onChange: change,
-			help: help || undefined,
+			help,
 			__nextHasNoMarginBottom: true,
 			'aria-invalid': empty ? true : undefined,
 			'aria-required': field.required ? true : undefined,
+			style: empty ? { borderColor: ERROR, boxShadow: '0 0 0 1px ' + ERROR } : undefined,
 		};
 		// Each field with room under it, which WordPress's own spacing for these is going away.
 		return el(
@@ -257,45 +309,50 @@
 		);
 	}
 
-	/** Something stored that isn't words, shown as it is with its name. */
+	/** Something stored that isn't words, shown with its name. */
 	function shown( name, stored, key ) {
-		return el( 'p', { key, style: { margin: '0 0 1em' } }, el( 'strong', null, name + ': ' ), value( stored ) );
+		return el( 'p', { key, style: { margin: '0 0 1em' } }, el( 'strong', null, name + ': ' ), 'string' === typeof stored ? stored || NOTHING : value( stored ) );
 	}
 
 	/**
-	 * A field's controls, given what's stored and how to store a change. A list or
-	 * paragraphs shows one group or field per entry stored, never adding or removing
-	 * any: the page's layout is fixed.
+	 * A field's controls, given what's stored, how to store a change, and the ID its
+	 * control takes. A list or paragraphs shows one group or field per entry stored,
+	 * never adding or removing any, and a button that doesn't exist says so: the page's
+	 * layout is fixed.
 	 */
-	function render( field, stored, change, prefix ) {
+	function render( field, stored, change, prefix, id, entry ) {
 		switch ( field.kind ) {
 			case 'text':
 			case 'area':
-				return control( field, stored, change, prefix );
+				return control( field, stored, change, prefix, id );
 			case 'button': {
-				const link = stored && 'object' === typeof stored ? stored : {};
-				const textField = { kind: 'text', key: field.key + '-label', label: sprintf( /* translators: %s: a button, such as "First button". */ __( '%s text', 'firehouse' ), field.label ), required: true };
+				if ( ! exists( stored ) ) {
+					return shown( field.label, __( 'None on this part of the page', 'firehouse' ), field.key );
+				}
+				const textField = { kind: 'text', key: field.key + '-label', label: buttonText( field.label ), required: true };
 				return el(
 					'div',
 					{ key: field.key },
-					control( textField, link.label, ( next ) => change( { ...link, label: next } ), prefix ),
-					shown( sprintf( /* translators: %s: a button, such as "First button". */ __( '%s goes to', 'firehouse' ), field.label ), destination( link ), field.key + '-to' )
+					control( textField, stored.label, ( next ) => change( { ...stored, label: next } ), prefix, id + '-label' ),
+					/* translators: %s: a button, such as "First button". */
+					shown( sprintf( __( '%s goes to', 'firehouse' ), field.label ), destination( stored ), field.key + '-to' )
 				);
 			}
 			case 'paragraphs': {
-				const stored_ = Array.isArray( stored ) ? stored : [];
-				if ( ! stored_.length ) {
+				const items = Array.isArray( stored ) ? stored : [];
+				if ( ! items.length ) {
 					return shown( sprintf( field.label, 1 ), NOTHING, field.key );
 				}
 				return el(
 					'div',
 					{ key: field.key },
-					stored_.map( ( paragraph, index ) =>
+					items.map( ( paragraph, index ) =>
 						control(
 							{ kind: 'area', key: field.key + '-' + index, label: sprintf( field.label, index + 1 ) },
 							paragraph,
-							( next ) => change( stored_.map( ( item, at ) => ( at === index ? next : item ) ) ),
-							prefix
+							( next ) => change( items.map( ( item, at ) => ( at === index ? next : item ) ) ),
+							prefix,
+							id + '-' + index
 						)
 					)
 				);
@@ -308,45 +365,63 @@
 				return el(
 					'div',
 					{ key: field.key },
-					items.map( ( entry, index ) => {
+					items.map( ( item, index ) => {
 						const name = sprintf( field.item, index + 1 );
-						if ( ! entry || 'object' !== typeof entry ) {
-							return shown( name, entry, field.key + '-' + index );
+						if ( ! isEntry( item ) ) {
+							return shown( name, item, field.key + '-' + index );
 						}
-						const set = ( key, next ) => change( items.map( ( item, at ) => ( at === index ? { ...item, [ key ]: next } : item ) ) );
+						const set = ( key, next ) => change( items.map( ( one, at ) => ( at === index ? { ...one, [ key ]: next } : one ) ) );
 						return el(
 							'fieldset',
 							{ key: field.key + '-' + index, style: GROUP },
 							el( 'legend', { style: { fontWeight: 600, padding: '0 0.25em' } }, name ),
-							field.fields.map( ( inner ) => render( inner, entry[ inner.key ], ( next ) => set( inner.key, next ), '' ) )
+							shownFor( field.fields, item ).map( ( inner ) => render( inner, item[ inner.key ], ( next ) => set( inner.key, next ), '', id + '-' + index + '-' + inner.key, item ) )
 						);
 					} )
 				);
 			}
 			default:
-				return shown( field.label, stored, field.key );
+				return shown( field.label, field.shown ? field.shown( stored, entry || {} ) : stored, field.key );
 		}
 	}
 
-	/** A data store's actions, when the editor has it; the widgets editor may not. */
-	function actions( name ) {
+	/** A data store's actions or reader, when the editor has it; the widgets editor may not. */
+	function store( name, read ) {
 		try {
-			return wp.data && wp.data.dispatch ? wp.data.dispatch( name ) || null : null;
+			const data = wp.data && ( read ? wp.data.select : wp.data.dispatch );
+			return data ? data( name ) || null : null;
 		} catch ( error ) {
 			return null;
 		}
 	}
 
+	/** Takes the editor to a block and one of its fields, which may sit in the editor's frame. */
+	function goTo( clientId, id ) {
+		const editor = store( 'core/block-editor' );
+		if ( editor && editor.selectBlock ) {
+			editor.selectBlock( clientId );
+		}
+		window.setTimeout( () => {
+			const frame = window.document.querySelector( 'iframe[name="editor-canvas"]' );
+			const inFrame = frame && frame.contentDocument ? frame.contentDocument.getElementById( id ) : null;
+			const field = inFrame || window.document.getElementById( id );
+			if ( field && field.focus ) {
+				field.focus();
+			}
+		}, 0 );
+	}
+
 	/**
-	 * While a field that can't be empty is, the page can't be saved, and the editor says
-	 * which block and fields, as a notice screen readers hear; once each is filled in,
-	 * both go. Each block holds its own lock, by its client ID.
+	 * While a field that can't be empty is, the page's save is held, and the editor says
+	 * which block and fields, in a notice screen readers hear, with a button that goes to
+	 * the first; once each is filled in, both go. Each block holds its own hold, by its
+	 * client ID.
 	 */
 	function useRequired( clientId, title, gaps ) {
-		const key = gaps.join( '\n' );
+		const key = gaps.map( ( gap ) => gap.id ).join( '\n' );
 		useEffect( () => {
-			const editor = actions( 'core/editor' );
-			const notices = actions( 'core/notices' );
+			const editor = store( 'core/editor' );
+			const notices = store( 'core/notices' );
 			const lock = 'firehouse-required-' + clientId;
 			const release = () => {
 				if ( editor && editor.unlockPostSaving ) {
@@ -364,15 +439,26 @@
 				editor.lockPostSaving( lock );
 			}
 			if ( notices && notices.createNotice ) {
+				const names = gaps.map( ( gap ) => gap.name ).join( _x( ', ', 'between the names of fields in a list', 'firehouse' ) );
 				notices.createNotice(
 					'error',
 					sprintf(
 						/* translators: 1: a part of the page, such as "FireHouse hero", 2: the fields that are empty. */
-						__( '%1$s: fill in %2$s. The page can’t be saved while they’re empty.', 'firehouse' ),
+						_n( '%1$s: fill in %2$s. The page can’t be saved while it’s empty.', '%1$s: fill in %2$s. The page can’t be saved while they’re empty.', gaps.length, 'firehouse' ),
 						title,
-						gaps.join( ', ' )
+						names
 					),
-					{ id: lock, isDismissible: false }
+					{
+						id: lock,
+						isDismissible: false,
+						actions: [
+							{
+								/* translators: %s: a field, such as "Heading". */
+								label: sprintf( __( 'Go to %s', 'firehouse' ), gaps[ 0 ].name ),
+								onClick: () => goTo( clientId, gaps[ 0 ].id ),
+							},
+						],
+					}
 				);
 			}
 			return release;
@@ -388,9 +474,8 @@
 	/** What the box says about the block: what it stores, what it holds, what FireHouse adds. */
 	function explanation( stores, holds, editable ) {
 		if ( editable ) {
-			return holds
-				? __( 'The words on this part of the page. FireHouse adds the rest: its layout, links and counts stay as they are. The parts below have their own.', 'firehouse' )
-				: __( 'The words on this part of the page. FireHouse adds the rest: its layout, links and counts stay as they are.', 'firehouse' );
+			const own = __( 'The words on this part of the page. FireHouse adds everything else, and the layout stays as it is. Tab moves through these fields; the Down arrow at the end of a field moves on to the next part’s.', 'firehouse' );
+			return holds ? own + ' ' + __( 'The parts below have their own.', 'firehouse' ) : own;
 		}
 		if ( stores && holds ) {
 			return __( 'This page stores what’s listed here, and the parts below store their own. FireHouse adds the rest of this part of the page.', 'firehouse' );
@@ -410,14 +495,17 @@
 			const blockProps = useBlockProps();
 			const holds = holdsOthers( name );
 			const title = getBlockType( name ).title;
-			const gaps = spec ? missing( spec, attributes, '' ) : [];
+			const path = 'fh-' + clientId + '-';
+			const gaps = spec ? missing( spec, attributes, '', path ) : [];
 			useRequired( clientId, title, gaps );
 			let body = null;
 			if ( spec ) {
+				// A group named for its part, so each "Heading" among the page's fields says
+				// whose it is.
 				body = el(
 					'div',
-					{ style: { width: '100%' } },
-					spec.map( ( field ) => render( field, attributes[ field.key ], ( next ) => setAttributes( { [ field.key ]: next } ), '' ) )
+					{ role: 'group', 'aria-label': title, style: { width: '100%' } },
+					spec.map( ( field ) => render( field, attributes[ field.key ], ( next ) => setAttributes( { [ field.key ]: next } ), '', path + field.key ) )
 				);
 			} else if ( keys.length ) {
 				const stored = {};

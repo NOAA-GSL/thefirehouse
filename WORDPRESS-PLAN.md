@@ -1975,9 +1975,14 @@ marked below.
   *The text fields done 15 November (`assets/js/block-editor.js`): each landing and
   About block's words are fields in its box, a paragraph at a time; its layout,
   links, icons, counts and portraits are shown beside them, and a list keeps the
-  entries it has. A required word (a heading, a button's or link's text, an entry's
-  title, a member's name) left empty holds the save, with a notice naming it. The
-  team's cards and portraits come next. Before that (13 November, at Eric's request,
+  entries it has. A required word (a heading, a button's or link's text, a count's
+  label or words, an entry's title, a member's name) left empty is marked and holds
+  the save, with a notice naming it that goes to it; the hold is a guide, not a
+  control. The editor locks a FireHouse page's layout (`Blocks::lock_layout()`, the
+  editor's `templateLock` for the page, since a `lock` attribute on each block would
+  send the words back through kses): the Section 508 review found that Backspace on a
+  part's outline, where the Down arrow takes an editor between parts, removed the
+  part. The team's cards and portraits come next. Before that (13 November, at Eric's request,
   to tell the page's words from what FireHouse adds), each block was a read-only box
   of what the page stores in it. Every block saves its inner blocks, so a save keeps
   the page's blocks; a save that rebuilds the page leaves out values equal to a
