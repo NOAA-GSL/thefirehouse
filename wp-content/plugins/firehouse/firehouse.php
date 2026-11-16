@@ -13,8 +13,8 @@
  * Text Domain:       firehouse
  *
  * Registers the project and topic post types and their fields at the Firehouse
- * addresses, the FireHouse Editor role, and the Firehouse settings and Import
- * screens; keeps WordPress's `year` query variable off Firehouse pages, and keeps
+ * addresses, the FireHouse Editor role, and the Firehouse settings, Import, project and
+ * topic edit, and Synthesis screens; keeps WordPress's `year` query variable off Firehouse pages, and keeps
  * projects a visitor may not see off the public site (Visibility); and puts every
  * Firehouse page (the landing, About, project, topic and not-found pages, and the
  * project explorer) in the theme's header and footer, with its own stylesheets, the
@@ -263,8 +263,12 @@ require_once __DIR__ . '/includes/class-head.php';
  * Settings, Import_Screen, Synthesis_Screen, Project_Screen, Topic_Screen and
  * Project_Rules's screens hook only the admin: Project_Rules's admin notices run on
  * every admin screen and print only on the projects list, and its Quick Edit check
- * runs on every Quick Edit and acts only on a project. Project_Screen and Topic_Screen save a project's or a
- * topic's fields only from their own form, on its edit screen.
+ * runs on every Quick Edit and acts only on a project. Their Publish box notes, list
+ * states, bulk messages, and the topics list's row and bulk actions and columns run on
+ * every such screen and act only on a project or topic. Topic_Screen's title box
+ * filter (`title_edit_pre`) runs wherever a title is edited and acts only on a topic.
+ * Project_Screen and Topic_Screen save a project's or a topic's fields only from their
+ * own form, on its edit screen.
  */
 Post_Types::hook();
 Meta::hook();

@@ -127,7 +127,8 @@ describe('what fetch-fonts.mjs asks for', () => {
  * italic (fetch-fonts.mjs, WANTED). Text that is would be the upright face, slanted by
  * the browser, so this holds the two together: CSS that asks for italic or oblique,
  * and the elements a browser sets in italic by default, fail it while the faces are
- * missing. Text an editor sets in italic is out of its reach (Phase 6).
+ * missing. Editors can't set italic in the Firehouse pages, which hold only
+ * FireHouse blocks of plain text.
  */
 describe.skipIf(/^  font-style: italic;$/m.test(css))('without italic faces', () => {
   const REPO = fileURLToPath(new URL('../', import.meta.url));

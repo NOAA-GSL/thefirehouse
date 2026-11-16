@@ -35,6 +35,24 @@ final class Topic_Page {
 	public const NEEDS = 5;
 
 	/**
+	 * The topic a topic's page shows: the post in the loop, on that topic's own FireHouse
+	 * address, or null anywhere else. On a preview of Preview Changes the post in the
+	 * loop holds the label as typed, from the autosave (WordPress's _set_preview()),
+	 * where get_queried_object() would be the topic as saved, so the label shows as
+	 * the topic screen's note says (Topic_Screen::preview_note()).
+	 */
+	public static function current(): ?\WP_Post {
+		if ( ! is_singular( Post_Types::TOPIC ) || ! Frame::is_firehouse_request() ) {
+			return null;
+		}
+		$post = get_post();
+		if ( ! $post instanceof \WP_Post || Post_Types::TOPIC !== $post->post_type || get_queried_object_id() !== $post->ID ) {
+			return null;
+		}
+		return $post;
+	}
+
+	/**
 	 * The page for a topic post, from what WordPress stores.
 	 *
 	 * @param \WP_Post $post The topic post.

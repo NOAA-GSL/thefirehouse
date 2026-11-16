@@ -5,9 +5,10 @@
  * Removes the Firehouse Editor role, so users who had it are left with no role on the
  * site; every Firehouse capability administrators hold; the record of the installed
  * revision; the stored rewrite rules, so WordPress rebuilds them without the Firehouse
- * addresses; and any dry run or refused settings save still waiting. The content
- * stays: the projects, topics and settings belong to the site, and reinstalling the
- * plugin shows them again. Deleting them is a decision for the site's administrators,
+ * addresses; and anything still waiting in a transient (a dry run, a synthesis check,
+ * a refused save, a publishing rule's notice). The content stays: the projects,
+ * topics and settings belong to the site, and reinstalling the plugin shows them
+ * again. Deleting them is a decision for the site's administrators,
  * not this file.
  *
  * @package Firehouse
@@ -36,7 +37,8 @@ if ( $firehouse_administrator ) {
 delete_option( 'firehouse_installed_revision' );
 delete_option( 'rewrite_rules' );
 
-// Dry runs and refused saves are transients named for their user. Kept in the
+// Dry runs, synthesis checks, refused saves and notices are transients named for
+// their user. Kept in the
 // database, they are found by name; kept in an object cache, they expire on their own.
 global $wpdb;
 $wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Removing the plugin's own transients by name, once.

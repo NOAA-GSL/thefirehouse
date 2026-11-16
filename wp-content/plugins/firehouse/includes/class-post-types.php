@@ -64,7 +64,7 @@ final class Post_Types {
 	 * A draft is an unpublished project, and the slug is the project's address. Every
 	 * field is post meta, the researcher's title included (rule 1); the post's own
 	 * title is a label for WordPress's lists, which Store keeps in step. So there is no
-	 * title box or block editor: a project's fields get their own screen in Phase 6.
+	 * title box or block editor: a project's fields have their own screen (Project_Screen).
 	 * Projects arrive through the Import screen, and later the survey form, so no one
 	 * adds one here. The archive shows every project at once, so it has no pages, and
 	 * no feed is asked for.

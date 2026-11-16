@@ -2,15 +2,51 @@
 
 The four topic-area "top needs" on the landing page and topic pages are synthesized
 across **all** published projects in Google NotebookLM, reviewed by the team, and
-then written into `src/content/data/topicSummaries.json`. No project is assigned to
-a topic area. This folder holds what the notebook reads.
+then written into `src/content/data/topicSummaries.json` for this site, or, under the
+WordPress plugin, published from FireHouse → Synthesis (below). No project is
+assigned to a topic area. This folder holds what the notebook reads.
 
 | File | What it is |
 | --- | --- |
 | `firehouse-findings.md` | **Generated — do not hand-edit.** Every published project's abstract, takeaways, needs and recommendations, word for word, plus the four topic-area definitions. |
 | `draft-synthesis-2026-09-17.md` | The current, **unreviewed** draft behind `topicSummaries.json`, with every need traced to the survey entries it counts. Replace or confirm it with a NotebookLM pass. |
+| `reviewed-synthesis-2026-10-27.json` | The team's reviewed table of 27 October, from Stephanie's email of 3 November, transcribed word for word to the prompt's JSON (16 November). It passes the synthesis screen's checks, which look at its shape, counts and order, not at whether each project supports the need: that is the Research Synthesist's check, which goes to Stephanie and Emily, who decide on it and mark it reviewed. Not yet on the site. |
 
-## After each survey batch
+## Under the WordPress plugin
+
+Everything happens on **FireHouse → Synthesis**. FireHouse Editors and administrators
+can use it.
+
+1. **Press Download NotebookLM source.** In the notebook, delete the old
+   `firehouse-findings.md` source and upload the one you downloaded. Keep it the only
+   source. It holds the projects the site shows, word for word.
+2. **Run the prompt below** in the notebook chat.
+3. **Review** each need against the projects it came from, with NotebookLM's
+   citations, and edit the JSON: the published wording is the team's, not the
+   model's.
+   - Order each area's needs by project count, highest first: the screen refuses any
+     other order. For a tie, put first the need with broader interagency or
+     multi-regional applicability, as the About page says; the screen leaves ties to
+     you. The prompt below asks for the most important need first, so reorder its
+     needs before you check them.
+   - Each need's count must equal the number of projects it lists. If you take a
+     project out of a need, lower its count to match.
+   - A project can be named by its page slug or by the source's "Project ID".
+4. **Copy only the JSON,** from its first `[` to its last `]`, and keep a copy of your
+   edited version until it's published. Paste it into "The JSON the prompt gave" and
+   press **Check the synthesis**. Fix whatever it lists, in the box, and check again.
+   Nothing is written until it finds nothing wrong.
+5. **Mark it reviewed.** "Reviewed by" starts with your name and "Made with" with
+   NotebookLM; change either if it isn't right. Then press **Mark reviewed and
+   publish**, within thirty minutes of the check and without opening FireHouse →
+   Synthesis again, which drops the check. The screen records today's date and how
+   many projects the site shows, and the topic pages and the landing page show the
+   synthesis at once.
+6. **To undo it,** open each topic under FireHouse → Topics, go to its Revisions, and
+   restore the one before. Do this for all four topics. A restore also puts back the
+   topic's label, description and what it covers as they were then.
+
+## After each survey batch (this site)
 
 1. **Import the export.** This also regenerates `firehouse-findings.md`:
 

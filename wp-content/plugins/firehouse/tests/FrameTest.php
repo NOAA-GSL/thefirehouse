@@ -625,6 +625,37 @@ final class FrameTest extends WordPressTestCase {
 	}
 
 	/**
+	 * A topic's page shows the post in the loop, which a preview of Preview Changes holds
+	 * with the label as typed, not the topic as saved; another post in the loop is no
+	 * topic's page.
+	 */
+	public function test_a_topics_page_shows_the_post_in_the_loop(): void {
+		self::resolve( self::firehouse_requests()['a topic'][0] );
+		Functions\when( 'get_queried_object_id' )->justReturn( 40 );
+		$typed = new \WP_Post(
+			array(
+				'ID'         => 40,
+				'post_type'  => 'fh_topic',
+				'post_title' => 'The label as typed',
+			)
+		);
+		Functions\when( 'get_post' )->justReturn( $typed );
+		$this->assertSame( $typed, \Firehouse\Topic_Page::current() );
+
+		Functions\when( 'get_post' )->justReturn(
+			new \WP_Post(
+				array(
+					'ID'        => 41,
+					'post_type' => 'fh_topic',
+				)
+			)
+		);
+		$this->assertNull( \Firehouse\Topic_Page::current(), 'Another topic in the loop.' );
+		Functions\when( 'get_post' )->justReturn( null );
+		$this->assertNull( \Firehouse\Topic_Page::current(), 'No post.' );
+	}
+
+	/**
 	 * The project block, typed into a post anywhere else, renders nothing, nor on a
 	 * Firehouse page that isn't a project's.
 	 *

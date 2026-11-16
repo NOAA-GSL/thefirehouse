@@ -351,8 +351,8 @@ final class Frame {
 	 * project pages, and asked for it, quietly, at the end of every page; NOAA's
 	 * clearance of it is still open (README, Before this goes public). The plugin keeps
 	 * it here, not as a setting, and tests/FrameTest.php holds it to `disclaimer` in the
-	 * site's settings.json. Whether an editor may reword it is decided with the editing
-	 * screens in Phase 6.
+	 * site's settings.json. No one rewords it from WordPress: a cleared change comes as a
+	 * pull request (decided by Eric, 14 November).
 	 */
 	public static function disclaimer(): void {
 		printf(

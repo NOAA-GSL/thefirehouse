@@ -711,7 +711,7 @@ final class TopicScreenTest extends WordPressTestCase {
 
 		$this->assertStringContainsString( '<dt>Reviewed by</dt><dd><span class="fh-edit-note">No one yet. The topic page marks the needs “Draft, pending team review”.</span></dd>', $html );
 		$this->assertStringContainsString( '<dt>Last updated</dt><dd><span class="fh-edit-note">(Not recorded)</span></dd>', $html );
-		$this->assertStringContainsString( '<dt>Projects it read</dt><dd>8</dd>', $html );
+		$this->assertStringContainsString( '<dt>Projects on the site when reviewed</dt><dd>8</dd>', $html );
 		$this->assertStringContainsString( '<dt>Made with</dt><dd>NotebookLM</dd>', $html );
 		$this->assertStringContainsString( '<ol><li><div>Longer-lead &lt;outlooks&gt;</div><div>Project count: 3</div><ul>', $html );
 		$this->assertStringContainsString( '<li><a href="https://example.org/wp-admin/post.php?post=11&action=edit">Smoke &amp; &lt;b&gt;fire&lt;/b&gt; study</a></li>', $html );
@@ -804,6 +804,7 @@ final class TopicScreenTest extends WordPressTestCase {
 		$this->assertNotFalse( has_filter( 'post_row_actions', array( Topic_Screen::class, 'row_actions' ) ) );
 		$this->assertNotFalse( has_filter( 'bulk_actions-edit-fh_topic', array( Topic_Screen::class, 'bulk_actions' ) ) );
 		$this->assertNotFalse( has_filter( 'manage_fh_topic_posts_columns', array( Topic_Screen::class, 'columns' ) ) );
+		$this->assertNotFalse( has_action( 'post_submitbox_minor_actions', array( Topic_Screen::class, 'preview_note' ) ) );
 		$this->assertFalse( has_action( 'save_post_fh_project', array( Topic_Screen::class, 'save' ) ) );
 	}
 
@@ -839,6 +840,20 @@ final class TopicScreenTest extends WordPressTestCase {
 				)
 			)
 		);
+	}
+
+	/**
+	 * Under a topic's Preview Changes, a note says what it shows: the label as typed,
+	 * the other words as last updated. A project's screen has its own note.
+	 */
+	public function test_the_preview_note_says_what_preview_changes_shows(): void {
+		ob_start();
+		Topic_Screen::preview_note( $this->posts[40] );
+		$this->assertSame( '<p class="fh-publish-preview">Preview Changes shows the label as typed, but the topic’s other words as last updated, not as typed on this screen: they show once you update it.</p>', ob_get_clean() );
+
+		ob_start();
+		Topic_Screen::preview_note( $this->posts[11] );
+		$this->assertSame( '', ob_get_clean(), 'A project.' );
 	}
 
 	/**

@@ -1,0 +1,122 @@
+[
+  {
+    "topic": "observe",
+    "topNeeds": [
+      {
+        "text": "Automate satellite hotspot detection (e.g., NGFS) and embed AI safety nets into AWIPS to prevent missed ignitions and reduce forecaster cognitive overload.",
+        "mentions": 2,
+        "projects": ["fire-weather-testbed-evaluations-002-fire-detection", "an-evaluation-of-the-next-generation-fire-system-ngfs"]
+      },
+      {
+        "text": "Deliver automated push alerts and user-defined geographic watchboxes to dispatchers and analysts, replacing continuous manual dashboard monitoring.",
+        "mentions": 2,
+        "projects": ["fire-weather-testbed-evaluations-002-fire-detection", "an-evaluation-of-the-next-generation-fire-system-ngfs"]
+      },
+      {
+        "text": "Expose robust APIs to stream satellite thermal detections and smoke model guidance directly into common operating platforms like AWIPS and DESI.",
+        "mentions": 2,
+        "projects": ["fwt-evaluation-001-wofs-smoke", "an-evaluation-of-the-next-generation-fire-system-ngfs"]
+      },
+      {
+        "text": "Overlay satellite detections with base weather, fuel moisture, and topographic layers to validate thermal anomalies and eliminate false positives.",
+        "mentions": 2,
+        "projects": ["fire-weather-testbed-evaluations-002-fire-detection", "california-tribal-advisors-share-contemporary-environmental"]
+      },
+      {
+        "text": "Provide high-resolution geolocation and rapid 5-minute data cadences to verify initial wildfire activity across jurisdictional and tribal borders.",
+        "mentions": 2,
+        "projects": ["an-evaluation-of-the-next-generation-fire-system-ngfs", "fire-weather-testbed-evaluation-004-national-weather-service"]
+      }
+    ]
+  },
+  {
+    "topic": "forecast",
+    "topNeeds": [
+      {
+        "text": "Systematically incorporate partner-provided ground-truth fuel moisture data into warning workflows prior to Red Flag Warning issuance.",
+        "mentions": 2,
+        "projects": ["igniting-insight-evaluating-nws-fire-weather-products", "igniting-impact-advancing-fire-weather-decision-support"]
+      },
+      {
+        "text": "Issue 48-hour early planning signals and explicit multi-day duration details in Red Flag Warnings to support proactive resource scaling.",
+        "mentions": 2,
+        "projects": ["igniting-insight-evaluating-nws-fire-weather-products", "igniting-impact-advancing-fire-weather-decision-support"]
+      },
+      {
+        "text": "Integrate combined text-and-graphic probabilistic visual summaries into core warning products to replace static binary forecasts.",
+        "mentions": 2,
+        "projects": ["fwt-evaluation-001-wofs-smoke", "igniting-impact-advancing-fire-weather-decision-support"]
+      },
+      {
+        "text": "Prioritize forecast stability for core wind and relative humidity variables while generating rapidly-refreshing ensemble smoke guidance in AQI units.",
+        "mentions": 2,
+        "projects": ["fwt-evaluation-001-wofs-smoke", "igniting-impact-advancing-fire-weather-decision-support"]
+      },
+      {
+        "text": "Expand deliberate use of Forecast Discussions during critical periods to explicitly detail forecaster confidence, rationale, and upcoming risk trends.",
+        "mentions": 1,
+        "projects": ["igniting-insight-evaluating-nws-fire-weather-products"]
+      }
+    ]
+  },
+  {
+    "topic": "warning",
+    "topNeeds": [
+      {
+        "text": "Establish direct interactive digital chat and SMS notification loops between forecasters and field crews for real-time situational awareness.",
+        "mentions": 2,
+        "projects": ["fire-weather-testbed-evaluations-002-fire-detection", "igniting-impact-advancing-fire-weather-decision-support"]
+      },
+      {
+        "text": "Transition tactical Fire Warnings to Wireless Emergency Alerts (WEA) to deliver geofenced mobile alerts during life-threatening, rapid-onset incidents.",
+        "mentions": 2,
+        "projects": ["igniting-insight-evaluating-nws-fire-weather-products", "fire-weather-testbed-evaluation-004-national-weather-service"]
+      },
+      {
+        "text": "Implement direct notification pathways with confirmation loops so forecasters know land managers received time-sensitive hotspot alerts.",
+        "mentions": 2,
+        "projects": ["fire-weather-testbed-evaluations-002-fire-detection", "california-tribal-advisors-share-contemporary-environmental"]
+      },
+      {
+        "text": "Implement 'Particularly Dangerous Situation' (PDS) headers during extreme Red Flag Warning events to distinguish catastrophic risk from routine alerts.",
+        "mentions": 1,
+        "projects": ["igniting-impact-advancing-fire-weather-decision-support"]
+      },
+      {
+        "text": "Deploy graphical warning software (e.g., Hazard Services) to draw threat polygons with buffer zones instead of broad county-wide warnings.",
+        "mentions": 1,
+        "projects": ["fire-weather-testbed-evaluation-004-national-weather-service"]
+      }
+    ]
+  },
+  {
+    "topic": "governance",
+    "topNeeds": [
+      {
+        "text": "Institutionalize Tactical IWT frameworks, clarify multi-agency decision authority lines, align with ICS, and embed procedures into state Annual Operating Plans (AOPs).",
+        "mentions": 3,
+        "projects": ["igniting-insight-evaluating-nws-fire-weather-products", "fire-weather-testbed-evaluations-003-interagency", "fire-weather-testbed-evaluation-004-national-weather-service"]
+      },
+      {
+        "text": "Conduct joint pre-season interagency training and operational simulations to establish trusted relationships and procedures before active incidents occur.",
+        "mentions": 3,
+        "projects": ["fwt-evaluation-001-wofs-smoke", "fire-weather-testbed-evaluations-003-interagency", "fire-weather-testbed-evaluation-004-national-weather-service"]
+      },
+      {
+        "text": "Dedicate forecaster staffing hours for routine, pre-season partner consultations to align weather products with end-user operational workflows.",
+        "mentions": 2,
+        "projects": ["igniting-insight-evaluating-nws-fire-weather-products", "igniting-impact-advancing-fire-weather-decision-support"]
+      },
+      {
+        "text": "Establish adaptable implementation guidelines that allow local NWS offices and public safety agencies to customize warning workflows based on regional risk.",
+        "mentions": 2,
+        "projects": ["igniting-insight-evaluating-nws-fire-weather-products", "fire-weather-testbed-evaluations-003-interagency"]
+      },
+      {
+        "text": "Formalize government-to-government data-sharing agreements, honor Traditional Ecological Knowledge (TEK), and co-produce risk outreach materials.",
+        "mentions": 1,
+        "projects": ["california-tribal-advisors-share-contemporary-environmental"]
+      }
+    ]
+  }
+]

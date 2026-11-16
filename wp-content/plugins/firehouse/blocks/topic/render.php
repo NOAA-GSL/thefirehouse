@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$firehouse_topic = get_queried_object();
-if ( is_singular( Post_Types::TOPIC ) && $firehouse_topic instanceof \WP_Post && Frame::is_firehouse_request() ) {
+$firehouse_topic = Topic_Page::current();
+if ( null !== $firehouse_topic ) {
 	echo Topic_Page::for_post( $firehouse_topic ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Topic_Page escapes everything it prints.
 }
