@@ -149,9 +149,30 @@ final class SettingsTest extends WordPressTestCase {
 	 * A valid submission is saved as given, with no errors.
 	 */
 	public function test_a_valid_submission_is_saved(): void {
-		$this->assertSame( self::valid(), Settings::sanitize( self::valid() ) );
+		$this->assertSame( array_slice( self::valid(), 0, 3, true ) + array( 'surveyOpen' => false ) + array_slice( self::valid(), 3, null, true ), Settings::sanitize( self::valid() ) );
 		$this->assertSame( array(), $this->errors );
 		$this->assertSame( array(), $this->transients );
+	}
+
+	/**
+	 * The survey form's switch changes only when the settings screen sends it, with its
+	 * mark: an unticked box sends nothing, and the Import screen's settings have no switch.
+	 */
+	public function test_the_survey_switch_changes_only_from_the_screen(): void {
+		$this->assertTrue(
+			Settings::validate(
+				self::valid() + array(
+					'surveyOpenShown' => '1',
+					'surveyOpen'      => '1',
+				)
+			)[0]['surveyOpen']
+		);
+		Functions\when( 'get_option' )->justReturn( array( 'surveyOpen' => true ) );
+		$this->assertFalse( Settings::validate( self::valid() + array( 'surveyOpenShown' => '1' ) )[0]['surveyOpen'], 'Unticked.' );
+		$this->assertTrue( Settings::validate( self::valid() )[0]['surveyOpen'], 'Not from the screen: kept.' );
+		$this->assertTrue( Settings::stored()['surveyOpen'] );
+		Functions\when( 'get_option' )->justReturn( array( 'surveyOpen' => '1' ) );
+		$this->assertFalse( Settings::stored()['surveyOpen'], 'Only true opens it.' );
 	}
 
 	/**

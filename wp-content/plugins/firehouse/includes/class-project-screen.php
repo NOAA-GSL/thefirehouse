@@ -177,6 +177,27 @@ final class Project_Screen extends Edit_Screen {
 	public static function boxes(): void {
 		add_meta_box( self::BOX, __( 'Editorial fields', 'firehouse' ), array( self::class, 'editorial_box' ), Post_Types::PROJECT, 'normal', 'high' );
 		add_meta_box( 'firehouse-survey', __( 'From the survey', 'firehouse' ), array( self::class, 'survey_box' ), Post_Types::PROJECT, 'normal', 'high' );
+		$post = get_post();
+		if ( $post instanceof \WP_Post && array() !== Survey\Survey::private_answers( $post->ID ) ) {
+			add_meta_box( 'firehouse-private', __( 'Private answers', 'firehouse' ), array( self::class, 'private_box' ), Post_Types::PROJECT, 'side', 'default' );
+		}
+	}
+
+	/**
+	 * A survey form submission's private answers (rule 2), read-only, for those who may
+	 * edit the project: the email, the job title and how the results were shared. They
+	 * never reach a page, the REST API or a revision (Survey\Survey).
+	 *
+	 * @param \WP_Post $post The post being edited.
+	 */
+	public static function private_box( \WP_Post $post ): void {
+		$answers = Survey\Survey::private_answers( $post->ID );
+		echo '<p>' . esc_html__( 'From the survey form, for the FireHouse team only. They never appear on the site.', 'firehouse' ) . '</p>';
+		echo '<dl class="fh-edit-readonly">';
+		self::row( __( 'Email', 'firehouse' ), Markup::text( is_string( $answers['email'] ?? null ) ? $answers['email'] : '' ) );
+		self::row( __( 'Job title', 'firehouse' ), Markup::text( is_string( $answers['jobTitle'] ?? null ) ? $answers['jobTitle'] : '' ) );
+		self::row( __( 'Shared results', 'firehouse' ), self::items( array_map( array( self::class, 'plain' ), array_values( array_filter( is_array( $answers['shared'] ?? null ) ? $answers['shared'] : array(), 'is_string' ) ) ) ) );
+		echo '</dl>';
 	}
 
 	/**

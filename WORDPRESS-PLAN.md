@@ -682,7 +682,9 @@ other GSL projects want a survey (see [Later phases](#later-phases)).
 - **Email,** through GSL's own mail setup. The Firehouse editors are told of each new
   submission with a link to its draft; the message carries no private answers. The
   submitter gets a confirmation in fixed text, with nothing they typed in it, so the
-  form can't be used to send spam to someone else's address.
+  form can't be used to send spam to someone else's address. *Decided by Eric, 16
+  November: the editors' email goes to the team mailbox (gsl.firehouse@noaa.gov), and
+  the first release sends the submitter nothing: the page after sending thanks them.*
 - **One box per entry.** The Google Form asks for takeaways, needs and links as
   numbered or comma-separated lists in one box each. The plugin's form gives every
   entry its own box: two to four takeaways, up to eight needs (each "Need for…" ending
@@ -2161,17 +2163,39 @@ November; see Where each phase is reviewed).
 
 ### Phase 7a — The survey form (2–3 weeks)
 
+*Decided by Eric, 16 November, asked one by one: three changes, (1) the form and its
+submission handler, (2) DOI lookups and the editors' email, (3) the question wording on
+the settings screen, which is editable from the start. Spam is kept out by a field
+people don't see and a minimum time to fill the form in, and repeat submissions by a
+Cloudflare rate-limit rule on POSTs to /firehouse/submit/, which GSL's web team sets:
+the plugin keeps nothing about visitors. Private answers are kept until the privacy
+review says when to delete them (open question 14).*
+
 - The Submit page and the `firehouse/survey-form` block, in the `survey/` folder (see
-  [The survey form](#the-survey-form)).
+  [The survey form](#the-survey-form)). *Built 16 November (`survey/`): the Google
+  Form's questions and notices in its wording, each entry in a box of its own, added
+  and removed without JavaScript; a summary of what's wrong that takes the focus and
+  links to each field. The page is made when an administrator ticks "Accept
+  submissions" under FireHouse → Settings, which stays off until the privacy review
+  and the PRA answer are in; while it's on, every Submit a Finding button leads to the
+  page (`Settings::get()`).*
 - Drafts from submissions, private answers stored apart (rule 2), the import script's
-  checks on submit, and DOI title lookups.
+  checks on submit, and DOI title lookups. *Built 16 November, but for the DOI
+  lookups, which come next: a submission becomes a draft with the fields an import of
+  the same answers writes (`Submission`), a response ID of its own and no author. The
+  email, job title and Q10 answer are one protected post meta field, in no schema, so
+  in no revision, REST response or export, shown to editors in a Private answers box.
+  A submission without IRB approval is kept as a draft, which the publishing rules
+  won't publish.*
 - The submission handler's protections: nonce, server-side validation, length caps,
   repeat-submission limits and spam protection, with the Submit page never cached.
+  *Built 16 November, the repeat limits being Cloudflare's (above).*
 - Editable question wording on the settings screen.
-- Emails to the editors and the submitter.
+- Emails to the editors and the submitter. *To the team mailbox only (above).*
 - If the form uses the design system's `TextField` or `TextArea`, take `Field.css` off
   `UNUSED` in `scripts/plugin-css-sources.mjs`, which leaves it out of the plugin's
-  stylesheet; a test fails until then if the form's markup uses its classes.
+  stylesheet; a test fails until then if the form's markup uses its classes. *Done:
+  the form uses its classes.*
 
 **Done when:** a test submission on the test site arrives as a draft that matches the
 import script's record of the same answers, its private answers are readable only by

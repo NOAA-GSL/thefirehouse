@@ -13,8 +13,8 @@ export const LEFT_OUT = [
   'wp-content/plugins/firehouse/assets/css/fonts.css',
 ];
 
-/** TextField, TextArea and TopicTagRow, which the design system exports and no page renders. */
-export const UNUSED = ['src/design-system/Field.css', 'src/design-system/TopicTagRow.css'];
+/** TopicTagRow, which the design system exports and no page renders. Field.css styles the survey form's fields. */
+export const UNUSED = ['src/design-system/TopicTagRow.css'];
 
 /** Left out, but allowed to stop being imported: the fonts, when the site stops loading them. */
 export const MAY_GO = ['wp-content/plugins/firehouse/assets/css/fonts.css'];

@@ -1,0 +1,135 @@
+<?php
+/**
+ * Tests for the survey form's markup.
+ *
+ * @package Firehouse
+ */
+
+declare( strict_types = 1 );
+
+namespace Firehouse\Tests;
+
+use Brain\Monkey\Functions;
+use Firehouse\Survey\Form;
+use Firehouse\Survey\Questions;
+use Firehouse\Survey\Submission;
+use Firehouse\Survey\Survey;
+
+/**
+ * The form is drawn accessibly: a label for every field, each group a fieldset with
+ * its legend, help and problems tied to their fields, and a summary of what's wrong
+ * that links to each; what a researcher typed is printed escaped, as typed.
+ */
+final class SurveyFormTest extends WordPressTestCase {
+
+	/**
+	 * Stubs what the markup reads.
+	 */
+	protected function setUp(): void {
+		parent::setUp();
+		Functions\stubEscapeFunctions();
+		Functions\when( 'get_option' )->justReturn( array( 'submitFormUrl' => 'https://forms.example.org/firehouse' ) );
+		Functions\when( 'home_url' )->alias( static fn( string $path = '' ): string => 'https://example.test' . $path );
+		Functions\when( 'esc_url_raw' )->returnArg();
+		Functions\when( 'wp_parse_url' )->alias( static fn( string $url, int $part = -1 ): mixed => parse_url( $url, $part ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url -- Standing in for wp_parse_url().
+		Functions\when( 'checked' )->alias( static fn( mixed $a, mixed $b ): string => $a === $b ? ' checked=\'checked\'' : '' );
+	}
+
+	/**
+	 * The form as drawn for these answers and problems.
+	 *
+	 * @param array<string, string|list<string>> $values   The answers.
+	 * @param array<string, string>              $problems What's wrong.
+	 * @param string                             $focus    The field with the focus.
+	 */
+	private static function drawn( array $values, array $problems = array(), string $focus = '' ): string {
+		return Form::render(
+			array(
+				'step'     => 'form',
+				'values'   => $values + Submission::read( array() ),
+				'problems' => $problems,
+				'focus'    => $focus,
+				'nonce'    => 'a-nonce',
+				'started'  => '123.abc',
+			)
+		);
+	}
+
+	/**
+	 * Every question has a label tied to its field, every group a fieldset and legend,
+	 * the required ones marked, and the form carries its nonce, start time and the
+	 * field people don't see, out of the accessibility tree.
+	 */
+	public function test_every_field_is_labelled(): void {
+		$html = self::drawn( array( 'takeaways' => array( '', '' ) ) );
+
+		$this->assertStringContainsString( '<label class="fh-field__label" for="fh-survey-submitter">Submitter name (First Last). You must be a co-author on the project.<span class="fh-field__required" aria-hidden="true"> *</span></label><input id="fh-survey-submitter" name="firehouse_survey[submitter]" type="text" value="" class="fh-field__control" autocomplete="name" aria-required="true" />', $html );
+		$this->assertStringContainsString( '<fieldset class="fh-survey__group fh-survey__question" id="fh-survey-irb" tabindex="-1"><legend class="fh-field__label">Did this project receive IRB approval or exemption?', $html );
+		$this->assertStringContainsString( '<input type="checkbox" id="fh-survey-regions-NWCC" name="firehouse_survey[regions][]" value="NWCC" /><label for="fh-survey-regions-NWCC">Northwest — OR, WA (NWCC)</label>', $html );
+		$this->assertStringContainsString( '<label class="fh-field__label" for="fh-survey-takeaways-2">Takeaway 2</label>', $html );
+		$this->assertStringNotContainsString( 'Remove Takeaway', $html, 'No fewer than 2.' );
+		$this->assertStringContainsString( 'value="add:takeaways"', $html );
+		$this->assertStringContainsString( 'name="_wpnonce" value="a-nonce"', $html );
+		$this->assertStringContainsString( 'name="' . Survey::STARTED . '" value="123.abc"', $html );
+		$this->assertStringContainsString( '<div class="fh-survey__trap" aria-hidden="true">', $html );
+		$this->assertStringContainsString( 'aria-describedby="fh-survey-email-help"', $html, 'A private field says so.' );
+		$this->assertSame( count( Questions::all() ), substr_count( $html, 'fh-survey__question' ) );
+	}
+
+	/**
+	 * What's wrong is summed up at the top, which takes the focus, a link to each
+	 * field, and said under each field, tied to it.
+	 */
+	public function test_problems_are_summed_up_and_tied_to_their_fields(): void {
+		$html = self::drawn(
+			array( 'takeaways' => array( '', '' ) ),
+			array(
+				'title'       => 'The project’s title: this is required.',
+				'takeaways-1' => 'The takeaways: give at least 2.',
+				'form'        => 'The form had been open for too long to send.',
+			)
+		);
+
+		$this->assertStringContainsString( '<div class="fh-survey__problems" role="alert" tabindex="-1" autofocus aria-labelledby="fh-survey-problems-heading"><h2 id="fh-survey-problems-heading">There are 3 problems to fix before sending</h2>', $html );
+		$this->assertStringContainsString( '<li><a href="#fh-survey-title">The project’s title: this is required.</a></li>', $html );
+		$this->assertStringContainsString( '<li><a href="#fh-survey-takeaways-1">The takeaways: give at least 2.</a></li>', $html );
+		$this->assertStringContainsString( '<li>The form had been open for too long to send.</li>', $html );
+		$this->assertStringContainsString( 'id="fh-survey-title" name="firehouse_survey[title]" type="text" value="" class="fh-field__control fh-field__control--error" aria-describedby="fh-survey-title-problem" aria-invalid="true" aria-required="true"', $html );
+		$this->assertStringContainsString( '<span id="fh-survey-title-problem" class="fh-field__help fh-field__help--error">The project’s title: this is required.</span>', $html );
+	}
+
+	/**
+	 * What a researcher typed comes back escaped, as typed: "R&amp;D" stays itself.
+	 */
+	public function test_typed_answers_come_back_as_typed(): void {
+		$html = self::drawn(
+			array(
+				'title'     => 'R&amp;D <b>"quoted"</b>',
+				'abstract'  => 'A <script>',
+				'takeaways' => array( 'One & two', '' ),
+			),
+			array(),
+			'takeaways-2'
+		);
+
+		$this->assertStringContainsString( 'value="R&amp;amp;D &lt;b&gt;&quot;quoted&quot;&lt;/b&gt;"', $html );
+		$this->assertStringContainsString( '>A &lt;script&gt;</textarea>', $html );
+		$this->assertStringContainsString( 'One &amp; two</textarea>', $html );
+		$this->assertStringContainsString( 'id="fh-survey-takeaways-2" name="firehouse_survey[takeaways][]" rows="3" class="fh-field__control fh-field__control--area" autofocus>', $html, 'The box just added takes the focus.' );
+	}
+
+	/**
+	 * Closed, the page says so and points at the survey address; after a submission, the
+	 * thanks takes the focus.
+	 */
+	public function test_closed_and_thanks(): void {
+		$closed = Form::render( array( 'step' => 'closed' ) );
+		$this->assertStringContainsString( 'The FireHouse form isn’t taking submissions here yet.', $closed );
+		$this->assertStringContainsString( 'href="https://forms.example.org/firehouse"', $closed );
+		$this->assertStringNotContainsString( '<form', $closed );
+
+		$thanks = Form::render( array( 'step' => 'yes' ) );
+		$this->assertStringContainsString( '<div class="fh-survey__done" role="status" tabindex="-1" autofocus><p>' . Questions::thanks() . '</p></div>', $thanks );
+		$this->assertStringContainsString( 'we only accept research studies that have been reviewed and approved', Form::render( array( 'step' => 'no-irb' ) ) );
+	}
+}

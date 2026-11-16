@@ -229,6 +229,10 @@ one is.
   NotebookLM source, paste the JSON NotebookLM gives, check it, and mark it reviewed
   to publish it to the topic pages and the landing page. Each topic keeps a revision
   of the synthesis before; restoring it is the undo.
+* The FireHouse survey form at /firehouse/submit/, off until an administrator ticks
+  Accept submissions under FireHouse → Settings: each submission becomes a draft
+  project, with the submitter's email, job title and how they shared their results kept
+  apart, for the FireHouse team only.
 
 = 0.2.0 =
 * Project and topic post types at the Firehouse addresses, with their fields as post
