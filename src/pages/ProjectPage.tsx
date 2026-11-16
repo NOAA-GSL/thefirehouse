@@ -435,9 +435,9 @@ export function ProjectPage() {
             <Icon name="quote" size={14} />
             <span>
               Takeaways, needs and recommendations on this page are reproduced as the
-              researcher submitted them. The <Link to="/#top-needs">topic areas</Link>{' '}
-              are drafted across all projects with Super Intelligence (SI), so no single
-              project is filed under one.
+              researcher submitted them. The needs in the{' '}
+              <Link to="/#top-needs">topic areas</Link> are drafted with Super Intelligence
+              (SI) from all projects together, so no project is filed under a single area.
             </span>
           </p>
         </aside>

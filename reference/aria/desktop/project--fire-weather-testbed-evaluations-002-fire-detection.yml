@@ -101,10 +101,10 @@
       - term: Organization
       - definition: Cooperative Institute for Research in the Atmosphere
       - paragraph:
-        - text: Takeaways, needs and recommendations on this page are reproduced as the researcher submitted them. The
+        - text: Takeaways, needs and recommendations on this page are reproduced as the researcher submitted them. The needs in the
         - link "topic areas":
           - /url: /#top-needs
-        - text: are drafted across all projects with Super Intelligence (SI), so no single project is filed under one.
+        - text: are drafted with Super Intelligence (SI) from all projects together, so no project is filed under a single area.
     - navigation "Other projects":
       - 'link "Previous Fire Weather Testbed Evaluation #004 - National Weather Service Fire Warnings Using a Tactical Integrated Warning Team Approach"':
         - /url: /projects/fire-weather-testbed-evaluation-004-national-weather-service

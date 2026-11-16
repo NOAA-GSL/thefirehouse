@@ -277,10 +277,10 @@ overrides are isolated so a re-sync doesn't lose them.
         ("Super Intelligence" and "SI" in place of "artificial intelligence" and "AI").
         On 16 November Eric chose how: the note says "Drafted with Super Intelligence
         (SI) across …", "Where these needs come from" says the projects are read
-        together "with Super Intelligence (SI)" and what the term means, citing the
-        order, and the project pages say the topic areas are "drafted across all projects
-        with Super Intelligence (SI)". None names the tool while the service is
-        undecided. Stephanie and Emily to confirm the wording. It is
+        together "with Super Intelligence (SI)" and, citing the order, that it means the
+        same as artificial intelligence, as the topic pages also say beside the note;
+        the project pages say the needs in the topic areas "are drafted with Super
+        Intelligence (SI)". None names the tool while the service is undecided. Stephanie and Emily to confirm the wording. It is
         the synthesis's disclosure, so it goes through clearance with the reviewed
         synthesis before gsl.noaa.gov;
       - whether the synthesis needs its own line saying whose it is;

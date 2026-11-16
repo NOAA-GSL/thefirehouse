@@ -83,7 +83,7 @@
         - listitem: "Staffing capacity and organizational buy-in to sustain interagency teams . Project count: 2"
     - complementary "Where these needs come from":
       - heading "Where these needs come from" [level=3]
-      - paragraph: Topic areas are not assigned project by project. Every project in The FireHouse is read together with Super Intelligence (SI). Super Intelligence is the federal term, under Executive Order 14434, for the technology formerly called artificial intelligence. The end-user needs submitted by researchers are grouped into the four topic areas above and ranked by prevalence across projects. This pass serves as an initial draft that our team reviews and refines before finalizing each synthesis. Open any topic area to see which specific projects each need draws on; each project page preserves the researchers’ own words.
+      - paragraph: Topic areas are not assigned project by project. Every project in The FireHouse is read together with Super Intelligence (SI). Under Executive Order 14434, federal agencies say “Super Intelligence” for what federal law defines as artificial intelligence; the two terms mean the same thing. The end-user needs submitted by researchers are grouped into the four topic areas above and ranked by prevalence across projects. This pass serves as an initial draft that our team reviews and refines before finalizing each synthesis. Open any topic area to see which specific projects each need draws on; each project page preserves the researchers’ own words.
       - link "Explore all projects":
         - /url: /projects
   - region "Where the research comes from":

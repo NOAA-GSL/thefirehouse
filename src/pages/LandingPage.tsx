@@ -250,7 +250,7 @@ export function LandingPage() {
             <p className="fh-source__body">
               Topic areas are not assigned project by project.{' '}
               {synthesis.model
-                ? 'Every project in The FireHouse is read together with Super Intelligence (SI). Super Intelligence is the federal term, under Executive Order 14434, for the technology formerly called artificial intelligence.'
+                ? 'Every project in The FireHouse is read together with Super Intelligence (SI). Under Executive Order 14434, federal agencies say “Super Intelligence” for what federal law defines as artificial intelligence; the two terms mean the same thing.'
                 : 'Every project in The FireHouse is read together.'}{' '}
               The end-user needs submitted by researchers are grouped into the four topic
               areas above and ranked by prevalence across projects. This pass serves as an initial

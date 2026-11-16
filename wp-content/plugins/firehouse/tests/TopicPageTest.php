@@ -153,7 +153,7 @@ final class TopicPageTest extends WordPressTestCase {
 
 		$this->assertMatchesRegularExpression( '#<h2 id="needs-heading" class="fh-topic__subheading">\s*Top 2 needs\s*</h2>#', $html );
 		$this->assertStringContainsString( '<strong>Drafted with Super Intelligence (SI)</strong> across 4 of 8 projects. <strong>Draft, pending team review</strong> · updated <time datetime="2026-09-17">September 17, 2026</time>.', $html );
-		$this->assertStringContainsString( '<a href="https://example.test/firehouse/#needs-source">How these needs are synthesized</a>', $html );
+		$this->assertStringContainsString( '<p class="fh-topic__how">Project count: the number of projects that raise each need. Under Executive Order 14434, federal agencies say “Super Intelligence” for artificial intelligence. <a href="https://example.test/firehouse/#needs-source">How these needs are synthesized</a></p>', $html );
 
 		$this->assertStringContainsString( '<span class="fh-need__rank" aria-hidden="true">1</span>', $html );
 		$this->assertStringContainsString( '<p class="fh-need__text">Local fuel conditions in &quot;Red Flag&quot; decisions</p>', $html );
@@ -232,6 +232,7 @@ final class TopicPageTest extends WordPressTestCase {
 		);
 
 		$this->assertStringContainsString( '<p class="fh-synthesis-note"><span class="fh-synthesis-note__dot" aria-hidden="true"></span><span><strong>Drafted with Super Intelligence (SI)</strong> across all 8 projects. Reviewed by Pat Reviewer on <time datetime="2026-09-17">September 17, 2026</time>.</span></p>', $html );
+		$this->assertStringContainsString( '<p class="fh-topic__how">Project count: the number of projects that raise each need. <a href=', self::render( array( 'model' => null ) ), 'Without a model the note says "Synthesized", so there is no term to explain.' );
 	}
 
 	/**
