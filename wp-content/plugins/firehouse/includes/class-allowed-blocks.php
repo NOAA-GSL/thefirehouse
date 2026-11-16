@@ -14,37 +14,46 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * A page in the FireHouse tree holds only FireHouse blocks: no core block, no Custom
- * HTML, and nothing but spaces between them (decided by Eric, 14 November). A core
- * block's italic and captions would come out in a slant the fonts don't have, its
- * markup would be the page's, and the page's words are the FireHouse blocks'
- * attributes, which Page_Words keeps as typed only while the page holds nothing else.
+ * A page in the FireHouse tree holds only FireHouse blocks: no other block (core,
+ * another plugin's, Custom HTML), and nothing but spaces between them (decided by
+ * Eric, 14 November). A core block's italic and captions would come out in a slant
+ * the fonts don't have, its markup would be the page's, and the page's words are the
+ * FireHouse blocks' attributes, which Page_Words keeps as typed only while the page
+ * holds nothing else.
  *
  * - The block editor offers only FireHouse blocks on such a page. None of them is in
- *   the inserter, so it offers nothing, and the layout is locked as well
+ *   the inserter, so it offers nothing to add, and the layout is locked as well
  *   (Blocks::lock_layout()).
- * - A save through the REST API, which the block editor saves with, that would give
- *   such a page anything else is refused, and says why. An autosave is left alone:
- *   WordPress would save a refusal as the autosave, and an autosave isn't the page.
- * - Any other route (another editor, another plugin, WP-CLI) is refused by the
- *   backstop, which WordPress reports as empty content.
+ * - A save through the REST API, which the block editor saves with, that would leave
+ *   a page in the tree holding anything else is refused, and says why. That's a page
+ *   in the tree already, one created under it, or one moved into it.
+ * - Any other route (another plugin, XML-RPC, WP-CLI, Quick Edit's Parent) is
+ *   refused by the backstop, which WordPress reports as "Content, title, and excerpt
+ *   are empty."
+ * - The revisions screen's Restore is turned off for a revision that would be
+ *   refused, rather than letting WordPress say it restored one it didn't.
  *
- * It holds for everyone, administrators too. A save that leaves the content as it's
- * stored isn't refused, so a page that already holds another block can still be
- * trashed, restored, published or unpublished, and the other block taken out. Empty
- * content is allowed. Revisions are left alone: restoring one saves the page, and is
- * refused like any save. The pages the Import screen creates are new, so in no tree
- * yet, and hold only FireHouse blocks.
+ * It holds for everyone, administrators too. A save that leaves a page in the tree
+ * with the content it holds already goes through, so a page holding another block
+ * from before can still be published, unpublished, trashed or restored; any other
+ * change to it is refused until a save takes every other block out. Empty content
+ * saves too. An autosave WordPress keeps as a revision is left alone: it isn't the
+ * page, and WordPress would save a refusal as the autosave. A draft's autosave by its
+ * own author saves the page itself, and is checked like any save. While the landing
+ * page is in the trash there is no tree (Capabilities::root_id()), so nothing is
+ * checked until it's restored.
  */
 final class Allowed_Blocks {
 
 	/**
-	 * Hooks the block editor's list, the REST API's save and the backstop.
+	 * Hooks the block editor's list, the REST API's save, the backstop and the
+	 * revisions screen.
 	 */
 	public static function hook(): void {
 		add_filter( 'allowed_block_types_all', array( self::class, 'offer' ), 10, 2 );
 		add_filter( 'rest_pre_insert_page', array( self::class, 'refuse_rest' ), 10, 2 );
 		add_filter( 'wp_insert_post_empty_content', array( self::class, 'refuse_write' ), 10, 2 );
+		add_filter( 'wp_prepare_revision_for_js', array( self::class, 'keep_from_restoring' ), 10, 3 );
 	}
 
 	/**
@@ -57,37 +66,47 @@ final class Allowed_Blocks {
 	 */
 	public static function offer( mixed $allowed, mixed $context ): mixed {
 		$post = is_object( $context ) && isset( $context->post ) ? $context->post : null;
-		if ( ! $post instanceof \WP_Post || ! self::of_the_tree( $post ) ) {
+		if ( ! $post instanceof \WP_Post || 'page' !== $post->post_type || ! Capabilities::in_tree( $post ) ) {
 			return $allowed;
 		}
 		return array_keys( Blocks::attributes() );
 	}
 
 	/**
-	 * Refuses a save through the REST API that would give a page in the FireHouse tree
-	 * anything but FireHouse blocks, and says why. The block editor shows the message.
+	 * Refuses a save through the REST API that would leave a page in the FireHouse tree
+	 * holding anything but FireHouse blocks, and says why. The block editor shows the
+	 * message. A request that sends no content is checked with the content the page
+	 * holds, which a move into the tree would take there.
 	 *
 	 * @param \stdClass|\WP_Error $prepared The page as the request would save it, unslashed.
 	 * @param \WP_REST_Request    $request  The request.
 	 * @return \stdClass|\WP_Error
 	 */
 	public static function refuse_rest( \stdClass|\WP_Error $prepared, \WP_REST_Request $request ): \stdClass|\WP_Error {
-		if ( is_wp_error( $prepared ) || empty( $prepared->ID ) || ! isset( $prepared->post_content ) || ! is_string( $prepared->post_content ) ) {
+		if ( is_wp_error( $prepared ) || str_ends_with( $request->get_route(), '/autosaves' ) ) {
 			return $prepared;
 		}
-		if ( str_ends_with( $request->get_route(), '/autosaves' ) ) {
+		$stored = empty( $prepared->ID ) ? null : get_post( (int) $prepared->ID );
+		if ( ! empty( $prepared->ID ) && ! $stored instanceof \WP_Post ) {
 			return $prepared;
 		}
-		if ( ! self::refuses( get_post( (int) $prepared->ID ), $prepared->post_content ) ) {
+		$parent_id = isset( $prepared->post_parent ) ? (int) $prepared->post_parent : ( $stored instanceof \WP_Post ? $stored->post_parent : 0 );
+		$content   = self::text( $prepared->post_content ?? null ) ?? ( $stored instanceof \WP_Post ? $stored->post_content : '' );
+		if ( ! self::refuses( $stored, 'page', $parent_id, $content, static fn( \WP_Post $page ): array => array( $page->post_content ) ) ) {
 			return $prepared;
 		}
 		return new \WP_Error( 'firehouse_only_firehouse_blocks', self::why(), array( 'status' => 400 ) );
 	}
 
 	/**
-	 * The backstop for every other route: refuses a save that would give a page in the
-	 * FireHouse tree anything but FireHouse blocks. WordPress reports it as empty
+	 * The backstop for every other route: refuses a save that would leave a page in the
+	 * FireHouse tree holding anything but FireHouse blocks. WordPress reports it as empty
 	 * content.
+	 *
+	 * The content here has been through WordPress's filters (kses, for someone who may
+	 * not post unfiltered HTML), so a save that leaves the content as stored is
+	 * recognized by the stored content as those filters would give it, as well as by
+	 * the content itself.
 	 *
 	 * @param bool                 $refuse  Whether WordPress, or an earlier filter, would refuse it already.
 	 * @param array<string, mixed> $postarr The post being saved, slashed.
@@ -96,13 +115,43 @@ final class Allowed_Blocks {
 		if ( $refuse ) {
 			return true;
 		}
-		$id      = (int) ( $postarr['ID'] ?? 0 );
-		$content = $postarr['post_content'] ?? null;
-		if ( 0 === $id || ! is_string( $content ) ) {
+		$id     = (int) ( $postarr['ID'] ?? 0 );
+		$stored = 0 === $id ? null : get_post( $id );
+		if ( 0 !== $id && ! $stored instanceof \WP_Post ) {
 			return false;
 		}
-		// A revision has an ID of its own, so it's never the page.
-		return self::refuses( get_post( $id ), wp_unslash( $content ) );
+		// A revision has an ID and type of its own, so it's never the page.
+		$type      = (string) ( $postarr['post_type'] ?? ( $stored instanceof \WP_Post ? $stored->post_type : 'post' ) );
+		$parent_id = isset( $postarr['post_parent'] ) ? (int) $postarr['post_parent'] : ( $stored instanceof \WP_Post ? $stored->post_parent : 0 );
+		$sent      = self::text( $postarr['post_content'] ?? null );
+		$content   = null === $sent ? ( $stored instanceof \WP_Post ? $stored->post_content : '' ) : wp_unslash( $sent );
+		return self::refuses(
+			$stored,
+			$type,
+			$parent_id,
+			$content,
+			static fn( \WP_Post $page ): array => array( $page->post_content, wp_unslash( (string) sanitize_post_field( 'post_content', wp_slash( $page->post_content ), $page->ID, 'db' ) ) )
+		);
+	}
+
+	/**
+	 * Turns off the revisions screen's Restore for a revision of a page in the tree that
+	 * holds anything but FireHouse blocks: restoring it would be refused, and WordPress
+	 * would still say it had restored it.
+	 *
+	 * @param array<string, mixed> $data     The revision, as the revisions screen gets it.
+	 * @param \WP_Post             $revision The revision.
+	 * @param mixed                $post     The post it's a revision of.
+	 * @return array<string, mixed>
+	 */
+	public static function keep_from_restoring( array $data, \WP_Post $revision, mixed $post ): array {
+		if ( empty( $data['restoreUrl'] ) || ! $post instanceof \WP_Post ) {
+			return $data;
+		}
+		if ( self::refuses( $post, $post->post_type, $post->post_parent, $revision->post_content, array( $post->post_content ) ) ) {
+			$data['restoreUrl'] = false;
+		}
+		return $data;
 	}
 
 	/**
@@ -117,33 +166,63 @@ final class Allowed_Blocks {
 	}
 
 	/**
-	 * Whether this content is refused for this post: it's a page in the FireHouse tree,
-	 * the content isn't what it holds now, and holds something other than FireHouse
-	 * blocks.
+	 * Whether a save is refused: it leaves a page in the FireHouse tree holding
+	 * something other than FireHouse blocks, and isn't a page in the tree already
+	 * keeping what it holds.
 	 *
-	 * @param mixed  $post    The post being saved, as stored.
-	 * @param string $content Its content as it would be saved, unslashed.
+	 * @param \WP_Post|null     $stored  The post as stored, or null for a new one.
+	 * @param string            $type    Its type once saved.
+	 * @param int               $parent_id  Its parent once saved.
+	 * @param string            $content Its content once saved, unslashed.
+	 * @param string[]|\Closure $held    What counts as the content it holds now, or a function of the stored post that gives it.
 	 */
-	private static function refuses( mixed $post, string $content ): bool {
-		if ( ! $post instanceof \WP_Post || ! self::of_the_tree( $post ) ) {
+	private static function refuses( ?\WP_Post $stored, string $type, int $parent_id, string $content, array|\Closure $held ): bool {
+		if ( ! self::lands_in_tree( $stored, $type, $parent_id ) || self::holds_only_firehouse_blocks( $content ) ) {
 			return false;
 		}
-		return ! self::holds_only_firehouse_blocks( $content ) && $content !== $post->post_content;
+		if ( ! $stored instanceof \WP_Post || 'page' !== $stored->post_type || ! Capabilities::in_tree( $stored ) ) {
+			return true;
+		}
+		return ! in_array( $content, $held instanceof \Closure ? $held( $stored ) : $held, true );
 	}
 
 	/**
-	 * Whether a post is a page in the FireHouse tree.
+	 * Whether a save leaves the post a page in the FireHouse tree: the landing page
+	 * itself, or a page whose parent, once saved, is the landing page or in the tree.
 	 *
-	 * @param \WP_Post $post The post.
+	 * @param \WP_Post|null $stored The post as stored, or null for a new one.
+	 * @param string        $type   Its type once saved.
+	 * @param int           $parent_id Its parent once saved.
 	 */
-	private static function of_the_tree( \WP_Post $post ): bool {
-		return 'page' === $post->post_type && Capabilities::in_tree( $post );
+	private static function lands_in_tree( ?\WP_Post $stored, string $type, int $parent_id ): bool {
+		if ( 'page' !== $type ) {
+			return false;
+		}
+		$root = Capabilities::root_id();
+		if ( 0 === $root ) {
+			return false;
+		}
+		if ( ( $stored instanceof \WP_Post && $stored->ID === $root ) || $parent_id === $root ) {
+			return true;
+		}
+		$above = $parent_id > 0 ? get_post( $parent_id ) : null;
+		return $above instanceof \WP_Post && 'page' === $above->post_type && Capabilities::in_tree( $above );
+	}
+
+	/**
+	 * Content as text: a string as it is, a number or boolean as WordPress would store
+	 * it, and anything else as none.
+	 *
+	 * @param mixed $content The content sent.
+	 */
+	private static function text( mixed $content ): ?string {
+		return is_scalar( $content ) ? (string) $content : null;
 	}
 
 	/**
 	 * Why a save was refused, and what to do.
 	 */
 	private static function why(): string {
-		return __( 'This page wasn’t saved: a FireHouse page holds only its FireHouse blocks, so no other block, such as a paragraph, an image or Custom HTML, and no text between them. Take out what was added, then save again.', 'firehouse' );
+		return __( 'This page wasn’t saved: a FireHouse page holds only its FireHouse blocks, so no other block, such as a paragraph, an image or Custom HTML, and no text between them. Take out any other block or text, then save again.', 'firehouse' );
 	}
 }

@@ -605,6 +605,7 @@ final class CapabilitiesTest extends WordPressTestCase {
 	 */
 	private function tree_with( array $published ): \ArrayObject {
 		$asked = new \ArrayObject();
+		Functions\when( 'wp_specialchars_decode' )->alias( static fn( string $text ): string => htmlspecialchars_decode( $text, ENT_QUOTES ) );
 		Functions\when( 'get_posts' )->alias(
 			static function ( array $args ) use ( $published, $asked ): array {
 				if ( isset( $args['post__in'] ) ) {
@@ -687,7 +688,8 @@ final class CapabilitiesTest extends WordPressTestCase {
 	 */
 	public function test_the_trash_screens_say_why_and_name_the_pages(): void {
 		global $pagenow;
-		$this->tree_with( array( self::titled( 11, 'About' ), self::titled( 12, 'Q&A <draft>' ), self::titled( 13, ' ' ) ) );
+		// A title as kses stores it, "R&D" as "R&amp;D", reads as typed.
+		$this->tree_with( array( self::titled( 11, 'About' ), self::titled( 12, 'Q&amp;A <draft>' ), self::titled( 13, ' ' ) ) );
 		Functions\stubTranslationFunctions();
 		Functions\stubEscapeFunctions();
 		Functions\when( 'wp_sprintf' )->alias( static fn( string $pattern, array $items ): string => implode( ', ', $items ) );
@@ -704,6 +706,10 @@ final class CapabilitiesTest extends WordPressTestCase {
 			$pagenow = $screen; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- standing in for the screen WordPress names.
 			$this->assertFalse( Capabilities::keep_tree_root_out_of_trash( null, $this->posts[10] ), $screen );
 		}
+		// The same screen's Ajax, such as an inline action, isn't one of them.
+		$pagenow = 'post.php'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- standing in for the screen WordPress names.
+		Functions\when( 'wp_doing_ajax' )->justReturn( true );
+		$this->assertFalse( Capabilities::keep_tree_root_out_of_trash( null, $this->posts[10] ), 'Ajax.' );
 		$pagenow = null; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- puts it back.
 
 		$this->assertCount( 2, $said, 'Only the Pages screens say why.' );
@@ -724,7 +730,13 @@ final class CapabilitiesTest extends WordPressTestCase {
 		Functions\when( 'wp_sprintf' )->alias( static fn( string $pattern, array $items ): string => implode( ', ', $items ) );
 		Functions\when( 'rest_sanitize_boolean' )->alias( static fn( mixed $value ): bool => in_array( $value, array( true, 1, '1', 'true' ), true ) );
 		$route = '/wp/v2/pages/(?P<id>[\d]+)';
-		$trash = static fn( int $id, array $more = array(), string $method = 'DELETE' ): \WP_REST_Request => new \WP_REST_Request( '/wp/v2/pages/' . $id, $method, array( 'id' => (string) $id ) + $more );
+		$trash = static function ( int $id, array $more = array(), string $method = 'DELETE' ): \WP_REST_Request {
+			$request = new \WP_REST_Request( $method, '/wp/v2/pages/' . $id );
+			foreach ( array( 'id' => (string) $id ) + $more as $key => $value ) {
+				$request->set_param( $key, $value );
+			}
+			return $request;
+		};
 
 		$refused = Capabilities::refuse_rest_trash( null, $trash( 10 ), $route );
 		$this->assertInstanceOf( \WP_Error::class, $refused );
@@ -791,9 +803,9 @@ final class CapabilitiesTest extends WordPressTestCase {
 	 * with a reason; an ordinary save goes through.
 	 */
 	public function test_the_block_editor_says_why(): void {
-		$page = new \WP_REST_Request( '/wp/v2/pages/11' );
+		$page = new \WP_REST_Request( 'POST', '/wp/v2/pages/11' );
 
-		$new = Capabilities::refuse_rest_page_write( (object) array( 'post_title' => 'New' ), new \WP_REST_Request( '/wp/v2/pages' ) );
+		$new = Capabilities::refuse_rest_page_write( (object) array( 'post_title' => 'New' ), new \WP_REST_Request( 'POST', '/wp/v2/pages' ) );
 		$this->assertSame( 'firehouse_cannot_add_page', $new->get_error_code() );
 
 		$moved = Capabilities::refuse_rest_page_write( (object) array( 'ID' => 11, 'post_parent' => 0 ), $page ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
@@ -822,7 +834,7 @@ final class CapabilitiesTest extends WordPressTestCase {
 			'post_content' => 'Draft words',
 		);
 
-		$saved = Capabilities::refuse_rest_page_write( $autosave, new \WP_REST_Request( '/wp/v2/pages/11/autosaves' ) );
+		$saved = Capabilities::refuse_rest_page_write( $autosave, new \WP_REST_Request( 'POST', '/wp/v2/pages/11/autosaves' ) );
 
 		$this->assertSame( array( 'ID', 'post_content' ), array_keys( get_object_vars( $saved ) ) );
 	}

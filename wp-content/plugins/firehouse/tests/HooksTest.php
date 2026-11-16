@@ -113,6 +113,7 @@ final class HooksTest extends WordPressTestCase {
 		Filters\expectAdded( 'allowed_block_types_all' )->once()->with( array( \Firehouse\Allowed_Blocks::class, 'offer' ), 10, 2 );
 		Filters\expectAdded( 'rest_pre_insert_page' )->once()->with( array( \Firehouse\Allowed_Blocks::class, 'refuse_rest' ), 10, 2 );
 		Filters\expectAdded( 'wp_insert_post_empty_content' )->once()->with( array( \Firehouse\Allowed_Blocks::class, 'refuse_write' ), 10, 2 );
+		Filters\expectAdded( 'wp_prepare_revision_for_js' )->once()->with( array( \Firehouse\Allowed_Blocks::class, 'keep_from_restoring' ), 10, 3 );
 
 		\Firehouse\Allowed_Blocks::hook();
 	}

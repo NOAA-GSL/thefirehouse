@@ -473,7 +473,8 @@ final class Capabilities {
 
 	/**
 	 * The titles of the published and scheduled pages under the landing page, at any
-	 * depth, as stored, in the tree's order.
+	 * depth, in the tree's order, as plain text: a title kses stored as "R&amp;D" reads
+	 * "R&D", for the Pages screens to escape and the block editor to show as text.
 	 *
 	 * @param int $root The landing page's ID.
 	 * @return list<string>
@@ -496,7 +497,7 @@ final class Capabilities {
 		$titles = array();
 		foreach ( is_array( $pages ) ? $pages : array() as $page ) {
 			if ( $page instanceof \WP_Post ) {
-				$titles[] = '' === trim( $page->post_title ) ? __( '(no title)', 'firehouse' ) : $page->post_title;
+				$titles[] = '' === trim( $page->post_title ) ? __( '(no title)', 'firehouse' ) : wp_specialchars_decode( $page->post_title, ENT_QUOTES );
 			}
 		}
 		return $titles;

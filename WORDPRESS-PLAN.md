@@ -2039,20 +2039,26 @@ to build say so:
   `scripts/fetch-fonts.mjs`. *Decided: the landing and About pages accept only their
   own FireHouse blocks, so no core block and no Custom HTML. Built 15 November
   (`includes/class-allowed-blocks.php`): every page in the tree, for everyone,
-  administrators too. The block editor offers only FireHouse blocks there, and a save
-  that would add anything else is refused, through the REST API with a message the
-  editor shows, by any other route by a backstop. A save that leaves the content as
-  stored goes through, so a page holding another block from before can still change
-  status and have it taken out. Any FireHouse block is accepted on any FireHouse
-  page, not only the page's own: the check is the layout lock's
-  (`Page_Words::only_firehouse_blocks()`).*
+  administrators too, including a page created under the landing page or moved
+  there. The block editor offers only FireHouse blocks there, and a save that would
+  add anything else is refused, through the REST API with a message the editor shows,
+  by any other route by a backstop; the revisions screen turns off Restore for a
+  revision that would be refused. A save that leaves a page in the tree with what it
+  holds goes through, so a page holding another block from before can still change
+  status and have it taken out. While the landing page is in the trash there's no
+  tree, so nothing is checked until it's restored. My reading, for Eric to confirm:
+  any FireHouse block is accepted on any FireHouse page, not only the page's own (the
+  check is the layout lock's, `Page_Words::only_firehouse_blocks()`).*
 - *The landing page can't be trashed while a published page sits under it (decided;
-  Phase 4's About page note). Built 15 November (`Capabilities`): a published or
-  scheduled page under it at any depth, since a scheduled one would open at the
-  trashed address once its time came; drafts, pending and private pages don't count.
-  The Pages list's Trash link and bulk action, the page's Move to Trash and the block
-  editor's Move to trash say why and name those pages, and any other route is
-  refused too.*
+  Phase 4's About page note). Built 15 November (`Capabilities`): a published page
+  under it at any depth. The Pages list's Trash link and bulk action, the page's Move
+  to Trash and the block editor's Move to trash say why and name those pages, and any
+  other route is refused too. My reading, for Eric to confirm: a scheduled page counts
+  as published, since it would open at the trashed address once its time came;
+  drafts, pending and private pages don't. Left open: the rule covers putting the
+  landing page in the trash, not publishing a draft under one already there, which
+  reopens the same address; and a bulk trash that includes the landing page stops at
+  it, leaving the pages before it in the trash.*
 - The synthesis screen: paste, validation, the comparison against the published
   synthesis, and **Mark reviewed**. Validation includes the order: each topic area's
   needs by project count, highest first, since the About page says so (ties go by

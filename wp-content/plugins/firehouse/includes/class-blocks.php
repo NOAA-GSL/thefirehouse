@@ -58,10 +58,11 @@ final class Blocks {
 	 *
 	 * Only a page in the FireHouse tree made of nothing but FireHouse blocks is locked
 	 * (Page_Words::only_firehouse_blocks()), whatever attributes they hold, so a block
-	 * with a note on it doesn't unlock the page. An empty page there can still be
-	 * written, and one holding another block can have it taken out, which also lets
-	 * Page_Words keep its words as typed again; it's locked when the editor next opens
-	 * it. Other posts are left as they are.
+	 * with a note on it doesn't unlock the page. One holding another block isn't
+	 * locked, so the block can be taken out, which also lets Page_Words keep its words
+	 * as typed again; it's locked when the editor next opens it. An empty one isn't
+	 * locked either, though the editor offers no block to add there (Allowed_Blocks).
+	 * Other posts are left as they are.
 	 *
 	 * @param array<string, mixed> $settings The block editor's settings.
 	 * @param mixed                $context  What the editor edits: WP_Block_Editor_Context, its `post` the post.
