@@ -46,23 +46,26 @@ final class SiteHealthTest extends WordPressTestCase {
 		Functions\when( 'home_url' )->alias( static fn( string $path = '' ): string => 'https://gsl.example' . $path );
 		Functions\when( 'wp_get_environment_type' )->justReturn( 'production' );
 		Functions\when( 'wp_remote_retrieve_header' )->alias( static fn( array $response, string $name ): mixed => $response['headers'][ $name ] ?? '' );
+		Functions\when( 'wp_remote_retrieve_response_code' )->alias( static fn( array $response ): int => $response['response']['code'] );
 		$this->answer( array() );
 	}
 
 	/**
-	 * Answers every request with these headers, or with an error for the hosts in $fail.
+	 * Answers every request with these headers and status, or with an error for the hosts
+	 * in $fail.
 	 *
 	 * @param array<string, string> $headers The response's headers.
 	 * @param string[]              $fail    Hosts that can't be reached.
+	 * @param int                   $code    The response's status.
 	 */
-	private function answer( array $headers, array $fail = array() ): void {
-		$respond = function ( string $url ) use ( $headers, $fail ): mixed {
+	private function answer( array $headers, array $fail = array(), int $code = 200 ): void {
+		$respond = function ( string $url ) use ( $headers, $fail, $code ): mixed {
 			$this->asked[] = $url;
 			if ( in_array( (string) parse_url( $url, PHP_URL_HOST ), $fail, true ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url -- A test's stand-in.
 				return new \WP_Error( 'http_request_failed', 'cURL error 6: Could not resolve host' );
 			}
 			return array(
-				'response' => array( 'code' => 200 ),
+				'response' => array( 'code' => $code ),
 				'headers'  => $headers,
 			);
 		};
@@ -217,6 +220,23 @@ final class SiteHealthTest extends WordPressTestCase {
 	}
 
 	/**
+	 * A redirect, or an error page from an access gate or a challenge, isn't the landing
+	 * page, so its headers prove nothing: the check says it couldn't tell. Headers and
+	 * messages are escaped.
+	 */
+	public function test_a_page_that_isnt_the_landing_page_proves_nothing(): void {
+		foreach ( array( 301, 403, 503 ) as $code ) {
+			$this->answer( array(), array(), $code );
+			$result = Site_Health::caching();
+			$this->assertSame( 'recommended', $result['status'], (string) $code );
+			$this->assertStringContainsString( 'got HTTP ' . $code . ', not the page', $result['description'] );
+		}
+
+		$this->answer( array( 'x-cache' => '<img src=x onerror=alert(1)> HIT' ) );
+		$this->assertStringContainsString( '&lt;img src=x onerror=alert(1)&gt; HIT', Site_Health::caching()['description'] );
+	}
+
+	/**
 	 * Site Health's script gets an answer only with its nonce, and only for whoever may
 	 * see Site Health.
 	 */
@@ -237,6 +257,7 @@ final class SiteHealthTest extends WordPressTestCase {
 		Functions\when( 'current_user_can' )->alias( static fn( string $cap ): bool => 'view_site_health_checks' === $cap );
 		try {
 			Site_Health::answer_caching();
+			$this->fail( 'It should answer.' );
 		} catch ( \RuntimeException $e ) {
 			$this->assertSame( 'answered firehouse_caching', $e->getMessage() );
 		}

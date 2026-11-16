@@ -193,6 +193,14 @@ final class Site_Health {
 			$why = sprintf( __( 'The server couldn’t load the FireHouse landing page from its own address: %s', 'firehouse' ), $response->get_error_message() );
 			return self::result( 'firehouse_caching', 'recommended', __( 'FireHouse couldn’t check whether its pages are cached', 'firehouse' ), '<p>' . esc_html( $why ) . '</p>' . $outside );
 		}
+		// A redirect, an access gate's or a challenge's page, or a missing landing page
+		// says nothing about how the page a visitor gets is cached.
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		if ( 200 !== $code ) {
+			/* translators: %d: the HTTP status code. */
+			$why = sprintf( __( 'The server asked for the FireHouse landing page at its own address and got HTTP %d, not the page, so its headers say nothing about how a visitor’s page is cached.', 'firehouse' ), $code );
+			return self::result( 'firehouse_caching', 'recommended', __( 'FireHouse couldn’t check whether its pages are cached', 'firehouse' ), '<p>' . esc_html( $why ) . '</p>' . $outside );
+		}
 
 		$status = strtoupper( trim( self::header( $response, 'cf-cache-status' ) ) );
 		$age    = self::header( $response, 'age' );
