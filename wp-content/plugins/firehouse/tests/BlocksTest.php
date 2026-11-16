@@ -80,24 +80,42 @@ final class BlocksTest extends WordPressTestCase {
 	}
 
 	/**
-	 * A FireHouse page's layout is locked in the block editor, its parts fixed; any other
-	 * post's editor, a page outside the tree, or an editor with no post is left as it is.
+	 * A FireHouse page made of FireHouse blocks has its layout locked in the block
+	 * editor, its parts fixed; an empty one, one holding another block, any other post's
+	 * editor, a page outside the tree, or an editor with no post is left as it is.
 	 */
 	public function test_a_firehouse_pages_layout_is_locked(): void {
 		Functions\when( 'get_posts' )->justReturn( array( 10 ) );
 		Functions\when( 'get_post_ancestors' )->alias( static fn( \WP_Post $post ): array => 0 === $post->post_parent ? array() : array( $post->post_parent ) );
+		$block    = static fn( string $name ): array => array(
+			'blockName'    => $name,
+			'attrs'        => array(),
+			'innerBlocks'  => array(),
+			'innerHTML'    => '',
+			'innerContent' => array(),
+		);
+		Functions\when( 'parse_blocks' )->alias(
+			static fn( string $content ): array => match ( $content ) {
+				'firehouse' => array( $block( 'firehouse/about-intro' ) ),
+				'mixed'     => array( $block( 'firehouse/about-intro' ), $block( 'core/paragraph' ) ),
+				default     => array(),
+			}
+		);
 		$editing  = static fn( ?\WP_Post $post ): object => (object) array( 'post' => $post );
-		$page     = static fn( int $id, int $parent_id, string $type = 'page' ): \WP_Post => new \WP_Post(
+		$page     = static fn( int $id, int $parent_id, string $type = 'page', string $content = 'firehouse' ): \WP_Post => new \WP_Post(
 			array(
-				'ID'          => $id,
-				'post_type'   => $type,
-				'post_parent' => $parent_id,
+				'ID'           => $id,
+				'post_type'    => $type,
+				'post_parent'  => $parent_id,
+				'post_content' => $content,
 			)
 		);
 		$settings = array( 'titlePlaceholder' => 'Add title' );
 
 		$this->assertSame( 'all', Blocks::lock_layout( $settings, $editing( $page( 10, 0 ) ) )['templateLock'], 'The landing page.' );
 		$this->assertSame( 'all', Blocks::lock_layout( $settings, $editing( $page( 11, 10 ) ) )['templateLock'], 'The About page.' );
+		$this->assertSame( $settings, Blocks::lock_layout( $settings, $editing( $page( 12, 10, 'page', '' ) ) ), 'An empty page in the tree.' );
+		$this->assertSame( $settings, Blocks::lock_layout( $settings, $editing( $page( 13, 10, 'page', 'mixed' ) ) ), 'A page holding another block.' );
 		$this->assertSame( $settings, Blocks::lock_layout( $settings, $editing( $page( 20, 0 ) ) ), 'A page outside the tree.' );
 		$this->assertSame( $settings, Blocks::lock_layout( $settings, $editing( $page( 30, 10, 'post' ) ) ), 'Not a page.' );
 		$this->assertSame( $settings, Blocks::lock_layout( $settings, $editing( null ) ), 'The site editor.' );

@@ -45,7 +45,7 @@ function sprintf(format, ...args) {
  * React's effects: each mounted block keeps its effect's dependencies and clean-up, runs
  * the clean-up and the effect again when they change, and the clean-up when unmounted.
  */
-function load(declared = DECLARED, { stores = true, focused = [] } = {}) {
+function load(declared = DECLARED, { stores = true, focused = [], frame = null } = {}) {
   const registered = new Map();
   const calls = [];
   let current = null;
@@ -75,7 +75,9 @@ function load(declared = DECLARED, { stores = true, focused = [] } = {}) {
     wp,
     firehouseBlocks: declared,
     setTimeout: (fn) => fn(),
-    document: { querySelector: () => null, getElementById: (id) => ({ focus: () => focused.push(id) }) },
+    // The field "Go to" focuses, found by its data attribute, in the editor's frame if
+    // there's one, else in the page.
+    document: { querySelector: (selector) => (selector.startsWith('iframe') ? frame : { focus: () => focused.push(selector) }) },
   };
   new Function('window', SOURCE)(window);
 
@@ -158,7 +160,10 @@ describe('the block editor script', () => {
     const fields = controls(tree);
     expect(Object.keys(fields)).toEqual(['Line above the heading', 'Heading', 'First button text', 'Second button text', 'Text']);
     expect(fields.Heading.props.value).toBe('<b>Fire</b> & weather');
-    expect(fields.Heading.props.id).toBe('fh-abc-heading');
+    expect(fields.Heading.props['data-firehouse-field']).toBe('fh-abc-heading');
+    // No control is given an ID: WordPress's own ties each label to its field, and a
+    // textarea given another loses its label.
+    expect(Object.values(fields).map((field) => field.props.id)).toEqual(Object.values(fields).map(() => undefined));
     expect(fields.Heading.type).toBe(TextControl);
     expect(fields.Text.type).toBe(TextareaControl);
     expect(fields['First button text'].props.value).toBe('Submit a Finding');
@@ -170,7 +175,7 @@ describe('the block editor script', () => {
     // and says how to move between the page's parts by keyboard.
     const placeholder = find(tree, Placeholder)[0];
     expect(placeholder.props.instructions).toBeUndefined();
-    expect(text(find(placeholder, 'p')[0])[0]).toMatch(/^The words on this part of the page\. FireHouse adds everything else.*the Down arrow at the end of a field moves on to the next part’s\. The parts below have their own\.$/);
+    expect(text(find(placeholder, 'p')[0])[0]).toMatch(/^The words on this part of the page\. FireHouse adds everything else.*the Down arrow at the end of a field moves on to the next part’s fields\. The parts below have their own\.$/);
     // The counts it holds follow it, locked.
     expect(find(tree, InnerBlocks)[0].props).toMatchObject({ templateLock: 'all', renderAppender: false });
   });
@@ -197,7 +202,7 @@ describe('the block editor script', () => {
     ];
     const { tree, changes } = edit('firehouse/stats', { items });
     expect(find(tree, 'legend').map((node) => text(node)[0])).toEqual(['Count 1', 'Count 2']);
-    expect(text(tree)).toEqual(expect.arrayContaining(['The projects visitors can see', 'Nothing: it shows the words below as written']));
+    expect(text(tree)).toEqual(expect.arrayContaining(['The projects visitors can see', 'Not counted: it shows the words below as written']));
     // A count that shows words, not a number, has them as a field.
     const fields = [...find(tree, TextControl)];
     expect(fields.filter((node) => node.props.label === 'Shown as').map((node) => node.props.value)).toEqual(['Open']);
@@ -222,9 +227,45 @@ describe('the block editor script', () => {
     expect(SOURCE).not.toMatch(/\.push\(|splice\(|concat\(/);
   });
 
-  it('shows where a link goes, a page or an address', () => {
-    const { tree } = edit('firehouse/about-process', { heading: 'How', steps: [], links: [{ label: 'Needs', to: '/#needs-source' }, { label: 'Survey', href: '' }] });
-    expect(text(tree)).toEqual(expect.arrayContaining(['/#needs-source', 'The Submit a Finding address in FireHouse → Settings']));
+  it('shows where a link goes, a page or an address, and one that goes nowhere as left out', () => {
+    const { tree, calls } = edit('firehouse/about-process', {
+      heading: 'How',
+      steps: [],
+      links: [{ label: 'Needs', to: '/#needs-source' }, { label: 'Survey', href: '' }, { label: '', to: '' }],
+    });
+    expect(text(tree)).toEqual(expect.arrayContaining(['/#needs-source', 'The Submit a Finding address in FireHouse → Settings', 'Nowhere, so the page leaves it out']));
+    expect([...find(tree, TextControl)].filter((node) => node.props.label === 'Link text')).toHaveLength(2);
+    expect(calls.map((call) => call[1])).toEqual(['unlockPostSaving', 'removeNotice']);
+  });
+
+  it('shows a button stored with only its text, which goes to the survey’s address', () => {
+    const { tree } = edit('firehouse/hero', { ...HERO, secondaryCta: { label: 'Explore' } });
+    expect(controls(tree)['Second button text'].props.value).toBe('Explore');
+    expect(text(tree)).toContain('The Submit a Finding address in FireHouse → Settings');
+  });
+
+  it('goes to a field in the editor’s frame when there is one', () => {
+    const focused = [];
+    const frame = { contentDocument: { querySelector: (selector) => ({ focus: () => focused.push('frame ' + selector) }) } };
+    const { calls } = edit('firehouse/about-intro', { heading: '' }, { frame });
+    calls[1][4].actions[0].onClick();
+    expect(focused).toEqual(['frame [data-firehouse-field="fh-abc-heading"]']);
+  });
+
+  it('goes to the field each kind of empty word is in', () => {
+    const cases = [
+      ['firehouse/hero', { ...HERO, primaryCta: { label: '', href: '' } }],
+      ['firehouse/stats', { items: [{ source: 'static', value: '', label: 'Open' }] }],
+      ['firehouse/about-process', { heading: 'How', steps: [{ title: 'One' }, { title: '' }], links: [] }],
+      ['firehouse/about-team', { heading: 'Team', members: [{ name: '', bio: [] }] }],
+    ];
+    for (const [name, attributes] of cases) {
+      const focused = [];
+      const { tree, calls } = edit(name, attributes, { focused });
+      calls[1][4].actions[0].onClick();
+      const fields = [...find(tree, TextControl), ...find(tree, TextareaControl)].map((field) => field.props['data-firehouse-field']);
+      expect(fields, name).toContain(focused[0].slice('[data-firehouse-field="'.length, -2));
+    }
   });
 
   it('shows an entry that isn’t one as it is, never as fields, and keeps it when another changes', () => {
@@ -243,7 +284,7 @@ describe('the block editor script', () => {
     const fields = controls(empty.tree);
     expect(fields.Heading.props['aria-invalid']).toBe(true);
     expect(fields.Heading.props['aria-required']).toBe(true);
-    expect(fields.Heading.props.style).toEqual({ borderColor: '#cc1818', boxShadow: '0 0 0 1px #cc1818' });
+    expect(fields.Heading.props.style).toEqual({ outline: '2px solid #cc1818', outlineOffset: '1px' });
     expect(help(fields.Heading)).toBe('Required. Error: it’s empty, so the page can’t be saved.');
     expect(fields['Line above the heading'].props['aria-required']).toBeUndefined();
     expect(fields['Line above the heading'].props.style).toBeUndefined();
@@ -251,10 +292,10 @@ describe('the block editor script', () => {
     const [, , status, message, options] = empty.calls[1];
     expect([status, message]).toEqual(['error', 'FireHouse hero: fill in Heading, First button text. The page can’t be saved while they’re empty.']);
     expect(options).toMatchObject({ id: 'firehouse-required-abc', isDismissible: false });
-    expect(options.actions.map((action) => action.label)).toEqual(['Go to Heading']);
+    expect(options.actions.map((action) => action.label)).toEqual(['Go to Heading in FireHouse hero']);
     options.actions[0].onClick();
     expect(empty.calls[2]).toEqual(['core/block-editor', 'selectBlock', 'abc']);
-    expect(focused).toEqual(['fh-abc-heading']);
+    expect(focused).toEqual(['[data-firehouse-field="fh-abc-heading"]']);
 
     // Filled in, the hold and the notice go; one gap left reads in the singular.
     empty.rerender({ ...HERO, primaryCta: { label: '', href: '' } });
@@ -294,7 +335,7 @@ describe('the block editor script', () => {
       links: [{ label: '', to: '/about' }],
     });
     expect(calls[1][3]).toBe('FireHouse About process: fill in Step 2: Title, Link 1: Link text. The page can’t be saved while they’re empty.');
-    expect(calls[1][4].actions[0].label).toBe('Go to Step 2: Title');
+    expect(calls[1][4].actions[0].label).toBe('Go to Step 2: Title in FireHouse About process');
   });
 
   it('works where the editor has no stores to hold a save, as in the widgets editor', () => {

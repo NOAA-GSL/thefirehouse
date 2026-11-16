@@ -71,7 +71,7 @@
 		publishedProjectCount: __( 'The projects visitors can see', 'firehouse' ),
 		topicCount: __( 'The topic areas', 'firehouse' ),
 		needCount: __( 'The end-user needs in those projects', 'firehouse' ),
-		static: __( 'Nothing: it shows the words below as written', 'firehouse' ),
+		static: __( 'Not counted: it shows the words below as written', 'firehouse' ),
 	};
 
 	/** Each editable block's fields, in the order the page shows them. */
@@ -104,7 +104,12 @@
 			HEADING,
 			BODY,
 			list( 'steps', __( 'Steps', 'firehouse' ), STEP, [ text( 'title', __( 'Title', 'firehouse' ), { required: true } ), area( 'body', __( 'Text', 'firehouse' ) ) ] ),
-			list( 'links', __( 'Links', 'firehouse' ), LINK, [ text( 'label', __( 'Link text', 'firehouse' ), { required: true } ), fixed( 'to', __( 'Goes to', 'firehouse' ), ( to, entry ) => destination( entry ) ) ] ),
+			// A link that goes nowhere isn't on the page (About_Page::process()), so its
+			// text needn't be filled in.
+			list( 'links', __( 'Links', 'firehouse' ), LINK, [
+				text( 'label', __( 'Link text', 'firehouse' ), { required: true, when: goesSomewhere } ),
+				fixed( 'to', __( 'Goes to', 'firehouse' ), ( to, entry ) => ( goesSomewhere( entry ) ? destination( entry ) : __( 'Nowhere, so the page leaves it out', 'firehouse' ) ) ),
+			] ),
 		],
 		'firehouse/about-team': [
 			EYEBROW,
@@ -184,9 +189,20 @@
 		return String( stored );
 	}
 
-	/** Whether a stored button or link exists: it has somewhere to go, a page or an address. */
+	/**
+	 * Whether a stored button exists: it has somewhere to go, a page or an address, or
+	 * its text, which goes to the survey's address (Page_Blocks::link()).
+	 */
 	function exists( link ) {
-		return isEntry( link ) && ( 'string' === typeof link.to || 'string' === typeof link.href );
+		return isEntry( link ) && ( 'string' === typeof link.to || 'string' === typeof link.href || ! blank( link.label ) );
+	}
+
+	/**
+	 * Whether a stored About link goes somewhere: a FireHouse page, or an address, which
+	 * if empty is the survey's. One with neither isn't on the page.
+	 */
+	function goesSomewhere( link ) {
+		return isEntry( link ) && ( ( 'string' === typeof link.to && '' !== link.to ) || 'string' === typeof link.href );
 	}
 
 	/** Where a stored link goes, in words: a FireHouse page, an address, or the survey's. */
@@ -290,8 +306,11 @@
 					el( 'span', { style: { color: ERROR, fontWeight: 600 } }, __( 'Error: it’s empty, so the page can’t be saved.', 'firehouse' ) )
 			  )
 			: notes || undefined;
+		// The control's own ID is WordPress's, which ties its label to it; the notice's
+		// "Go to" finds it by its data attribute. An empty one is outlined in red, which
+		// leaves WordPress's focus border to show over it, and shows in forced colours.
 		const props = {
-			id,
+			'data-firehouse-field': id,
 			label: prefix ? within( prefix, field.label ) : field.label,
 			value: words( stored ),
 			onChange: change,
@@ -299,7 +318,7 @@
 			__nextHasNoMarginBottom: true,
 			'aria-invalid': empty ? true : undefined,
 			'aria-required': field.required ? true : undefined,
-			style: empty ? { borderColor: ERROR, boxShadow: '0 0 0 1px ' + ERROR } : undefined,
+			style: empty ? { outline: '2px solid ' + ERROR, outlineOffset: '1px' } : undefined,
 		};
 		// Each field with room under it, which WordPress's own spacing for these is going away.
 		return el(
@@ -395,16 +414,21 @@
 		}
 	}
 
-	/** Takes the editor to a block and one of its fields, which may sit in the editor's frame. */
+	/**
+	 * Takes the editor to a block and one of its fields, by its data attribute, in the
+	 * editor's frame or the page. Its ID is made of the block's client ID and the
+	 * attributes' names, so it needs no escaping in a selector.
+	 */
 	function goTo( clientId, id ) {
 		const editor = store( 'core/block-editor' );
 		if ( editor && editor.selectBlock ) {
 			editor.selectBlock( clientId );
 		}
 		window.setTimeout( () => {
+			const selector = '[data-firehouse-field="' + id + '"]';
 			const frame = window.document.querySelector( 'iframe[name="editor-canvas"]' );
-			const inFrame = frame && frame.contentDocument ? frame.contentDocument.getElementById( id ) : null;
-			const field = inFrame || window.document.getElementById( id );
+			const inFrame = frame && frame.contentDocument ? frame.contentDocument.querySelector( selector ) : null;
+			const field = inFrame || window.document.querySelector( selector );
 			if ( field && field.focus ) {
 				field.focus();
 			}
@@ -453,8 +477,8 @@
 						isDismissible: false,
 						actions: [
 							{
-								/* translators: %s: a field, such as "Heading". */
-								label: sprintf( __( 'Go to %s', 'firehouse' ), gaps[ 0 ].name ),
+								/* translators: 1: a field, such as "Heading", 2: a part of the page, such as "FireHouse hero". */
+								label: sprintf( __( 'Go to %1$s in %2$s', 'firehouse' ), gaps[ 0 ].name, title ),
 								onClick: () => goTo( clientId, gaps[ 0 ].id ),
 							},
 						],
@@ -474,7 +498,7 @@
 	/** What the box says about the block: what it stores, what it holds, what FireHouse adds. */
 	function explanation( stores, holds, editable ) {
 		if ( editable ) {
-			const own = __( 'The words on this part of the page. FireHouse adds everything else, and the layout stays as it is. Tab moves through these fields; the Down arrow at the end of a field moves on to the next part’s.', 'firehouse' );
+			const own = __( 'The words on this part of the page. FireHouse adds everything else, and the layout stays as it is. Tab moves through these fields; the Down arrow at the end of a field moves on to the next part’s fields.', 'firehouse' );
 			return holds ? own + ' ' + __( 'The parts below have their own.', 'firehouse' ) : own;
 		}
 		if ( stores && holds ) {

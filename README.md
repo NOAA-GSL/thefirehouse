@@ -479,9 +479,10 @@ nothing from the database. Each class's docblock has the detail; this is the map
     box tells the page's own words from what FireHouse adds from its settings,
     projects and topic areas, and says how to move between the page's parts by
     keyboard. A block that stores nothing and holds no others says FireHouse adds it.
-    On a FireHouse page the editor locks the layout (`Blocks::lock_layout()`): no part
-    can be added, moved or removed there, so Backspace or Enter on a part's outline
-    changes nothing.
+    On a FireHouse page made of nothing but FireHouse blocks the editor locks the
+    layout (`Blocks::lock_layout()`): no part can be added, moved or removed there, so
+    Backspace or Enter on a part's outline changes nothing. An empty page in the tree
+    can still be written, and a page holding another block can have it taken out.
   - Every block saves its inner blocks and nothing else, so saving from the editor
     keeps the page's blocks: the hero keeps the live counts it holds, and the About
     sections block the four sections it holds. `scripts/block-editor.test.mjs` holds
