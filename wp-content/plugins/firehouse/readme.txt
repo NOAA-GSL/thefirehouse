@@ -500,6 +500,8 @@ one is.
   outside services the plugin uses, whether search engines are kept out of a site
   that isn't production, and whether a cache keeps FireHouse's pages (see External
   services). The guide's installing page says what to do about each.
+* The synthesis check gives the closest published page slug for a name that isn't a
+  project's, such as one a model shortened, for the reviewer to judge.
 
 = 0.2.0 =
 * Project and topic post types at the Firehouse addresses, with their fields as post

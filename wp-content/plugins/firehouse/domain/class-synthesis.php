@@ -23,7 +23,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - **Its projects.** Each is named by its page slug or its survey response ID, and
  *   must be one the site shows: a project that isn't on the site, or isn't published,
  *   is named with the need it's in, since the synthesis may only draw on what the
- *   site shows.
+ *   site shows. A name that isn't a project's gets the published page slug closest to
+ *   it, when one is close, for the reviewer to judge.
  * - **Its counts.** A project counts once, so a need's count is the number of
  *   projects it names.
  * - **Its order.** Each area's needs run by project count, highest first, as the
@@ -48,6 +49,12 @@ final class Synthesis {
 	 * How much of a need's text a problem quotes.
 	 */
 	private const QUOTED = 80;
+
+	/**
+	 * The longest name the check looks for a close page slug to: WordPress's longest
+	 * slug.
+	 */
+	private const LONGEST_NAME = 200;
 
 	/**
 	 * Characters that show nothing on their own, beyond spaces, controls and format
@@ -222,7 +229,11 @@ final class Synthesis {
 				$ref     = trim( $ref );
 				$project = $by_slug[ $ref ] ?? $by_id[ $ref ] ?? null;
 				if ( null === $project ) {
-					$problems[] = sprintf( '%1$s: names “%2$s”, which isn’t a project on the site.', $where, $ref );
+					// Only while the problem would be listed: the rest are counted, not read.
+					$closest    = count( $problems ) < self::LISTED ? self::closest( $ref, $by_slug ) : null;
+					$problems[] = null === $closest
+						? sprintf( '%1$s: names “%2$s”, which isn’t a project on the site.', $where, $ref )
+						: sprintf( '%1$s: names “%2$s”, which isn’t a project on the site. The closest page slug is “%3$s”, %4$s: if that’s the project meant, change the name to it and check again.', $where, $ref, $closest['slug'], $closest['title'] );
 					continue;
 				}
 				if ( true !== $project['public'] ) {
@@ -250,6 +261,61 @@ final class Synthesis {
 			'mentions' => $mentions,
 			'projects' => $found,
 		);
+	}
+
+	/**
+	 * The published project whose page slug is closest to a name that isn't a project,
+	 * for the problem to suggest. A model copying a long slug can shorten or reword part
+	 * of it ("…-dss" for "…-decision-support"), or give the page's path or the project's
+	 * title instead. Both are compared in lower case, with each run of other characters
+	 * as one hyphen, and the name without any path before its last slash. A slug is
+	 * suggested only when it's the single closest and a third of its characters, or
+	 * fewer, would have to change. Null when none is.
+	 *
+	 * @param string                              $name    The name the need gives.
+	 * @param array<string, array<string, mixed>> $by_slug The projects by slug.
+	 * @return array<string, mixed>|null
+	 */
+	private static function closest( string $name, array $by_slug ): ?array {
+		$name = self::plain( $name );
+		if ( '' === $name || strlen( $name ) > self::LONGEST_NAME ) {
+			return null;
+		}
+		$closest = null;
+		$least   = PHP_INT_MAX;
+		$tied    = false;
+		foreach ( $by_slug as $slug => $project ) {
+			$plain = self::plain( (string) $slug );
+			$most  = intdiv( max( strlen( $name ), strlen( $plain ) ), 3 );
+			// The distance is at least the difference in length, so a slug that can't
+			// come within either limit isn't measured.
+			if ( true !== $project['public'] || '' === $plain || abs( strlen( $name ) - strlen( $plain ) ) > min( $most, $least ) ) {
+				continue;
+			}
+			$distance = levenshtein( $name, $plain );
+			if ( $distance > $most || $distance > $least ) {
+				continue;
+			}
+			$tied    = $distance === $least;
+			$closest = $project;
+			$least   = $distance;
+		}
+		return $tied ? null : $closest;
+	}
+
+	/**
+	 * A name as the closest slug is found: without any path before its last slash, in
+	 * lower case, each run of characters other than letters and digits one hyphen.
+	 *
+	 * @param string $name The name.
+	 */
+	private static function plain( string $name ): string {
+		$name = trim( $name, "/ \t\n\r" );
+		$last = strrpos( $name, '/' );
+		if ( false !== $last ) {
+			$name = substr( $name, $last + 1 );
+		}
+		return trim( (string) preg_replace( '/[^a-z0-9]+/', '-', strtolower( $name ) ), '-' );
 	}
 
 	/**

@@ -282,4 +282,65 @@ final class SynthesisTest extends DomainTestCase {
 		);
 		$this->assertSame( array( 'Forecasts and Modeling, need 1 (“Miscounted”): counts 3 projects but names 2. A project counts once, so the two must match.' ), self::problems( $synthesis ) );
 	}
+
+	/**
+	 * A name that isn't a project's gets the published page slug closest to it: one a
+	 * model shortened or reworded, or gave as the page's path or the project's title.
+	 * Nothing is suggested when no slug is close, when two are as close, or when the
+	 * closest is a project the site doesn't show; the name is never changed.
+	 */
+	public function test_a_name_gets_the_closest_published_slug(): void {
+		$projects  = array_merge(
+			self::PROJECTS,
+			array(
+				array(
+					'ref'    => 14,
+					'slug'   => 'igniting-impact-advancing-fire-weather-decision-support',
+					'id'     => 'R_impact',
+					'title'  => 'Igniting Impact: Advancing Fire Weather Decision Support',
+					'public' => true,
+				),
+				array(
+					'ref'    => 15,
+					'slug'   => 'smoke-study-2',
+					'id'     => 'R_smoke2',
+					'title'  => 'Smoke study, part 2',
+					'public' => true,
+				),
+				array(
+					'ref'    => 16,
+					'slug'   => 'smoke-study-3',
+					'id'     => 'R_smoke3',
+					'title'  => 'Smoke study, part 3',
+					'public' => true,
+				),
+			)
+		);
+		$where     = 'Forecasts and Modeling, need 1 (“Named”): names “%s”, which isn’t a project on the site.';
+		$suggested = $where . ' The closest page slug is “%s”, %s: if that’s the project meant, change the name to it and check again.';
+		$impact    = array( 'igniting-impact-advancing-fire-weather-decision-support', 'Igniting Impact: Advancing Fire Weather Decision Support' );
+		$cases     = array(
+			'igniting-impact-advancing-fire-weather-dss' => sprintf( $suggested, 'igniting-impact-advancing-fire-weather-dss', ...$impact ),
+			'/projects/igniting-impact-advancing-fire-weather-decision-support/' => sprintf( $suggested, '/projects/igniting-impact-advancing-fire-weather-decision-support/', ...$impact ),
+			'Igniting Impact: Advancing Fire Weather Decision Support' => sprintf( $suggested, 'Igniting Impact: Advancing Fire Weather Decision Support', ...$impact ),
+			'heat-studies'                               => sprintf( $suggested, 'heat-studies', 'heat-study', 'Heat study' ),
+			'smoke-study-4'                              => sprintf( $where, 'smoke-study-4' ),
+			'draft-studies'                              => sprintf( $where, 'draft-studies' ),
+			'no-such-study'                              => sprintf( $where, 'no-such-study' ),
+			'R_impcat'                                   => sprintf( $where, 'R_impcat' ),
+			'/'                                          => sprintf( $where, '/' ),
+			str_repeat( 'heat-study', 21 )               => sprintf( $where, str_repeat( 'heat-study', 21 ) ),
+		);
+		foreach ( $cases as $name => $problem ) {
+			$synthesis                = self::good();
+			$synthesis[0]['topNeeds'] = array(
+				array(
+					'text'     => 'Named',
+					'mentions' => 1,
+					'projects' => array( (string) $name ),
+				),
+			);
+			$this->assertSame( array( $problem ), Synthesis::check( (string) json_encode( $synthesis ), $projects )['problems'], (string) $name );
+		}
+	}
 }
