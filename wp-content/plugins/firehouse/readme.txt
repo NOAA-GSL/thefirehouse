@@ -298,7 +298,7 @@ submission, no private answer, no earlier synthesis and nothing about visitors i
 sent. It runs in WordPress's scheduled events, one at a time, and waits up to five
 minutes for the reply, which the site keeps as that model's latest draft. The key is
 never stored in the database or shown. The models are Meta's, OpenAI's, Google's and
-NVIDIA's, run by Cloudflare.
+Thinking Machines', run by Cloudflare.
 
 Cloudflare's Workers AI data usage, which says it does not use the content it
 processes to train models or keep inputs and outputs after a request:
@@ -491,18 +491,22 @@ one is.
   or exemption rather than "Not recorded".
 * Analyze results on FireHouse → Synthesis, on a site with a Workers AI key in
   wp-config.php: a model picked from Meta's Llama 4 Scout, OpenAI's gpt-oss-120b,
-  Google's Gemma 4 26B and NVIDIA's Nemotron 3 120B drafts a synthesis in the
-  background from the published projects and the prompt under FireHouse → Settings,
-  which can be changed there. Each model's latest draft is kept, to compare; checking
-  one puts it through the screen's check and Mark reviewed, with the model under Made
-  with. The guide's synthesis and settings pages say how (see External services).
+  Google's Gemma 4 26B and Thinking Machines' Inkling 2 Small drafts a synthesis in
+  the background from the published projects and the prompt under FireHouse →
+  Settings, which can be changed there. Each model's latest draft is kept, to compare;
+  checking one puts it through the screen's check and Mark reviewed, with the model
+  under Made with. The guide's synthesis and settings pages say how (see External
+  services).
+* Analyze results asks Gemma 4 26B not to think, since its thinking used up its length
+  limit, and Inkling 2 Small to reason at "low"; a request Cloudflare stops waiting on
+  says the model may be busy.
 * Three FireHouse checks on Tools → Site Health: whether the server reaches the
   outside services the plugin uses, whether search engines are kept out of a site
   that isn't production, and whether a cache keeps FireHouse's pages (see External
   services). The guide's installing page says what to do about each.
 * The synthesis check gives the nearest page slug for a name that isn't a project's,
-  such as one a model shortened, for the reviewer to judge, and refuses a name
-  holding a character that doesn't show.
+  such as one a model shortened, stopped partway or made from the project's title,
+  for the reviewer to judge, and refuses a name holding a character that doesn't show.
 * The synthesis prompt, the plugin's own and NotebookLM's, no longer shows an example
   need, which a model gave word for word as a need, and asks for each project once.
 

@@ -104,6 +104,7 @@ Plugin paths below are under `wp-content/plugins/firehouse/`, laid out as in the
 |---|---|
 | Any change to what a researcher wrote, including corrections carried in from the team's sheet | Stephanie and Emily |
 | Publishing a project or a synthesis | Stephanie or Emily |
+| Any change to the synthesis prompt (`notebooklm/README.md` and the plugin's copy) | Stephanie and Emily, from each changed line, why, and drafts from the old and new prompts on the same projects |
 | Wording on the site | Stephanie and Emily, after any clearance |
 | Releasing a plugin version | GSL's security review |
 | What the survey form may keep, and for how long | The privacy review (plan open question 14) |

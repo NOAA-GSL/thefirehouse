@@ -107,12 +107,12 @@ final class WorkersAiTest extends WordPressTestCase {
 	public function test_only_the_listed_models_are_offered(): void {
 		$this->assertTrue( Workers_Ai::offered( '@cf/meta/llama-4-scout-17b-16e-instruct' ) );
 		$this->assertTrue( Workers_Ai::offered( Workers_Ai::DEFAULT_MODEL ) );
-		foreach ( array( '@cf/qwen/qwq-32b', '@cf/meta/../../x', '', null, 42 ) as $model ) {
+		foreach ( array( '@cf/qwen/qwq-32b', '@cf/nvidia/nemotron-3-120b-a12b', '@cf/meta/../../x', '', null, 42 ) as $model ) {
 			$this->assertFalse( Workers_Ai::offered( $model ), var_export( $model, true ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export -- The failing value, in the message.
 		}
 		$this->assertSame( 'Llama 4 Scout (Meta)', Workers_Ai::label( '@cf/meta/llama-4-scout-17b-16e-instruct' ) );
 		$this->assertSame(
-			array( 'Llama 4 Scout (Meta)', 'gpt-oss-120b (OpenAI)', 'Gemma 4 26B (Google)', 'Nemotron 3 120B (NVIDIA)' ),
+			array( 'Llama 4 Scout (Meta)', 'gpt-oss-120b (OpenAI)', 'Gemma 4 26B (Google)', 'Inkling 2 Small (Thinking Machines)' ),
 			array_column( Workers_Ai::MODELS, 'label' )
 		);
 	}
@@ -163,6 +163,48 @@ final class WorkersAiTest extends WordPressTestCase {
 	}
 
 	/**
+	 * Gemma 4 26B is asked not to think, which left it no room to answer, and Inkling 2
+	 * Small to reason at "low"; the other models get only the messages and their length
+	 * limit.
+	 */
+	#[RunInSeparateProcess]
+	#[PreserveGlobalState( false )]
+	public function test_some_models_are_asked_to_think_less(): void {
+		self::key();
+		$this->answer(
+			200,
+			array(
+				'success' => true,
+				'result'  => array( 'choices' => array( array( 'message' => array( 'content' => '[]' ) ) ) ),
+			)
+		);
+
+		Workers_Ai::ask( '@cf/google/gemma-4-26b-a4b-it', array() );
+		Workers_Ai::ask( Workers_Ai::DEFAULT_MODEL, array() );
+		Workers_Ai::ask( '@cf/thinkingmachines/inkling-2-small', array() );
+
+		$this->assertSame(
+			array(
+				'messages'             => array(),
+				'max_tokens'           => 8192,
+				'chat_template_kwargs' => array( 'enable_thinking' => false ),
+			),
+			json_decode( $this->requests[0][1]['body'], true )
+		);
+		$this->assertSame( array( 'messages', 'max_tokens' ), array_keys( json_decode( $this->requests[1][1]['body'], true ) ) );
+		$this->assertSame( 'https://api.cloudflare.com/client/v4/accounts/' . self::ACCOUNT_ID . '/ai/run/@cf/thinkingmachines/inkling-2-small', $this->requests[2][0] );
+		$this->assertSame(
+			array(
+				'messages'              => array(),
+				'max_tokens'            => 16384,
+				'reasoning_effort'      => 'low',
+				'max_completion_tokens' => 16384,
+			),
+			json_decode( $this->requests[2][1]['body'], true )
+		);
+	}
+
+	/**
 	 * A model not on the list is never asked for, even with the key.
 	 */
 	#[RunInSeparateProcess]
@@ -194,6 +236,28 @@ final class WorkersAiTest extends WordPressTestCase {
 
 		Functions\when( 'wp_safe_remote_post' )->justReturn( new \WP_Error( 'http_request_failed', 'cURL error 28: Operation timed out' ) );
 		$this->assertSame( array( 'problem' => 'Workers AI couldn’t be reached: cURL error 28: Operation timed out' ), Workers_Ai::ask( Workers_Ai::DEFAULT_MODEL, array() ) );
+	}
+
+	/**
+	 * A timeout (HTTP 408) says in plain words that the model may be busy, then
+	 * Cloudflare's reason and request ID, without the key.
+	 */
+	#[RunInSeparateProcess]
+	#[PreserveGlobalState( false )]
+	public function test_a_timeout_says_the_model_may_be_busy(): void {
+		self::key();
+		$busy = 'Cloudflare stopped waiting for the model’s reply, as it can when the model is busy. Try again in a while, or try another model. (HTTP 408: %s)';
+		$this->answer(
+			408,
+			array(
+				'success' => false,
+				'errors'  => array( array( 'message' => 'AiError: AiError: Request timeout (cd9eeec7-2f29-4b34-8187-91641b4b161d) for ' . self::ACCOUNT_ID ) ),
+			)
+		);
+		$this->assertSame( array( 'problem' => sprintf( $busy, 'AiError: AiError: Request timeout (cd9eeec7-2f29-4b34-8187-91641b4b161d) for …' ) ), Workers_Ai::ask( Workers_Ai::DEFAULT_MODEL, array() ) );
+
+		$this->answer( 408, array() );
+		$this->assertSame( array( 'problem' => sprintf( $busy, 'no reason given' ) ), Workers_Ai::ask( Workers_Ai::DEFAULT_MODEL, array() ) );
 	}
 
 	/**

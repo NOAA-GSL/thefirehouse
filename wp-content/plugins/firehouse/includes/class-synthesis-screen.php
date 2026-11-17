@@ -199,7 +199,7 @@ final class Synthesis_Screen {
 			if ( ! is_array( $result ) || 'done' !== ( $result['state'] ?? null ) || ! is_string( $result['json'] ?? null ) ) {
 				self::$state = array(
 					'step'    => 'start',
-					'refused' => __( 'That draft isn’t kept any more. A newer one from the same model replaces it.', 'firehouse' ),
+					'refused' => __( 'That draft isn’t kept any more: a newer one from the same model replaced it, or the model is no longer offered.', 'firehouse' ),
 					'not'     => 'checked',
 				);
 				return;
@@ -217,7 +217,11 @@ final class Synthesis_Screen {
 	/**
 	 * A check of a draft from Analyze results, which keeps saying which draft it is
 	 * through the checks after its JSON is edited: its model, offered for Made with
-	 * unless one was typed, and when it was started, so its whole reply stays in view.
+	 * unless one was typed, and when it was started, so its whole reply stays in view. A
+	 * draft from a model no longer offered, as one Cloudflare retired while the page was
+	 * open, leaves Made with empty for the editor to fill in, rather than saying
+	 * NotebookLM, through every check after: the form keeps naming the draft, though its
+	 * whole reply isn't shown, since the site no longer keeps it.
 	 *
 	 * @param array<string, mixed> $state   The check.
 	 * @param string               $model   The draft's model, or "" for a paste.
@@ -225,13 +229,16 @@ final class Synthesis_Screen {
 	 * @return array<string, mixed>
 	 */
 	private static function from_draft( array $state, string $model, int $started ): array {
-		if ( ! Workers_Ai::offered( $model ) ) {
+		if ( '' === $model ) {
 			return $state;
 		}
 		$state['draft'] = array(
 			'model'   => $model,
 			'started' => $started,
 		);
+		if ( ! Workers_Ai::offered( $model ) ) {
+			return $state + array( 'model' => '' );
+		}
 		/* translators: %s: a model, as "Llama 4 Scout (Meta)". */
 		return $state + array( 'model' => sprintf( __( '%s, on Cloudflare Workers AI', 'firehouse' ), Workers_Ai::label( $model ) ) );
 	}
@@ -849,7 +856,7 @@ final class Synthesis_Screen {
 	 */
 	private static function draft_reply( array $state ): void {
 		$draft = $state['draft'] ?? null;
-		if ( ! is_array( $draft ) ) {
+		if ( ! is_array( $draft ) || ! Workers_Ai::offered( $draft['model'] ) ) {
 			return;
 		}
 		$result = Analysis::state()['results'][ $draft['model'] ] ?? null;

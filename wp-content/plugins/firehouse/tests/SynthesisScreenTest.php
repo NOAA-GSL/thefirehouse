@@ -662,7 +662,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 	/**
 	 * With a key, the screen offers the models, the first picked, and each model's latest
 	 * draft: one done, with the button that checks it, its reply and its prompt; one
-	 * failed, with why.
+	 * failed, with why. A draft from a model no longer offered isn't shown.
 	 */
 	#[RunInSeparateProcess]
 	#[PreserveGlobalState( false )]
@@ -671,7 +671,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		$this->options[ Analysis::OPTION ] = array(
 			'running' => null,
 			'results' => array(
-				'@cf/nvidia/nemotron-3-120b-a12b' => array(
+				'@cf/google/gemma-4-26b-a4b-it'   => array(
 					'state'   => 'failed',
 					'started' => 1700000000,
 					'by'      => 'Pat Reviewer',
@@ -680,15 +680,18 @@ final class SynthesisScreenTest extends WordPressTestCase {
 					'unseen'  => 'U+202E',
 				),
 				Workers_Ai::DEFAULT_MODEL         => self::draft(),
+				'@cf/nvidia/nemotron-3-120b-a12b' => self::draft(),
 			),
 		);
 		$page                              = self::drawn();
+
+		$this->assertStringNotContainsString( 'nemotron', strtolower( $page ), 'A draft from a model no longer offered, as one Cloudflare retired, isn’t shown.' );
 
 		$this->assertStringContainsString( '<label for="firehouse-analysis-model">Model</label>', $page );
 		$this->assertSame( 4, substr_count( $page, '<option ' ) );
 		$this->assertStringContainsString( "value=\"@cf/meta/llama-4-scout-17b-16e-instruct\" selected='selected'>Llama 4 Scout (Meta)</option>", $page );
 		$this->assertStringContainsString( '<button>Analyze results</button>', $page );
-		$this->assertLessThan( strpos( $page, '<h3>Nemotron 3 120B (NVIDIA)</h3>' ), strpos( $page, '<h3>Llama 4 Scout (Meta)</h3>' ), 'In the list’s order.' );
+		$this->assertLessThan( strpos( $page, '<h3>Gemma 4 26B (Google)</h3>' ), strpos( $page, '<h3>Llama 4 Scout (Meta)</h3>' ), 'In the list’s order.' );
 		$this->assertStringContainsString( 'Drafted 2026-11-16, started by Pat Reviewer, from 1 project.', $page );
 		$this->assertStringContainsString( '<button>Check Llama 4 Scout (Meta)’s draft</button>', $page );
 		$this->assertStringContainsString( 'Failed, started 2026-11-16 by Pat Reviewer: Workers AI refused the request (429).', $page );
@@ -1042,7 +1045,22 @@ final class SynthesisScreenTest extends WordPressTestCase {
 			)
 		);
 		$page = self::drawn();
-		$this->assertStringContainsString( 'value="NotebookLM"', $page, 'Not a model the screen offers: a paste.' );
+		$this->assertStringContainsString( 'name="firehouse_model" class="regular-text" value=""', $page, 'Not a model the screen offers, as one Cloudflare retired: Made with is left for the editor, never NotebookLM.' );
+		$this->assertStringNotContainsString( 'whole reply', $page );
+		$this->assertSame( 2, substr_count( $page, '<input type="hidden" name="firehouse_draft" value="@cf/qwen/qwq-32b" />' ), 'Both forms keep naming the draft.' );
+
+		// The JSON edited and checked again: still not a paste.
+		self::send(
+			array(
+				'firehouse_step'          => 'check',
+				'firehouse_synthesis'     => self::synthesis( 'R_smoke' ),
+				'firehouse_draft'         => '@cf/qwen/qwq-32b',
+				'firehouse_draft_started' => '1700000000',
+			)
+		);
+		$page = self::drawn();
+		$this->assertStringContainsString( 'name="firehouse_model" class="regular-text" value=""', $page, 'The second check too.' );
+		$this->assertStringNotContainsString( 'value="NotebookLM"', $page );
 		$this->assertStringNotContainsString( 'whole reply', $page );
 	}
 
@@ -1079,7 +1097,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 			$this->assertSame( 'Not checked: FireHouse synthesis', Synthesis_Screen::title( 'FireHouse synthesis' ) );
 			$page = self::drawn();
 			$this->assertStringContainsString( '<h2>Not checked</h2>', $page );
-			$this->assertStringContainsString( 'That draft isn’t kept any more.', $page );
+			$this->assertStringContainsString( 'That draft isn’t kept any more: a newer one from the same model replaced it, or the model is no longer offered.', $page );
 			$this->assertSame( array(), $this->transients );
 		}
 	}

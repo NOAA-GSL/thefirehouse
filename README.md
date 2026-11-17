@@ -401,7 +401,12 @@ overrides are isolated so a re-sync doesn't lose them.
       request's headers, so its narrow scope is what limits the harm: GSL's security
       review should know. Set a spending alert on the account too: an editor can start
       run after run, each sending every published project. A site with the key also
-      needs WP-Cron running and api.cloudflare.com reachable from its server.
+      needs WP-Cron running and api.cloudflare.com reachable from its server, and the
+      Cloudflare account needs the Workers Paid plan for Inkling 2 Small. Before
+      production, confirm with Cloudflare that Inkling 2 Small runs on Cloudflare's own
+      hardware, as its model page's "Cloudflare-hosted" label says: if it went to
+      Thinking Machines' service, the projects would go to that company too, and it
+      comes off the list (plan, "The models").
 - [ ] **Check that deleting a transient reports whether it deleted one** on each
       WordPress site the plugin runs on, with whatever object cache it has. The
       synthesis screen's Mark reviewed relies on it to publish a check once
@@ -1032,12 +1037,21 @@ nothing from the database. Each class's docblock has the detail; this is the map
   unless shaped like Cloudflare's (32 hex digits; letters, digits, `-` and `_`), so
   neither can add to the address or the header. The models are a fixed list, all from
   US companies (Eric, 16 November): Meta's Llama 4 Scout, OpenAI's gpt-oss-120b,
-  Google's Gemma 4 26B and NVIDIA's Nemotron 3 120B, each reading 128,000 tokens or
-  more. One POST to `api.cloudflare.com/client/v4/accounts/{id}/ai/run/{model}` with
-  `messages` and the model's `max_tokens`, no redirects, five minutes at most; the
-  reply's text is read from a `response`, a chat completion's first choice, or a
-  Responses API output, since the models answer in different shapes. An error says
-  Cloudflare's reason with the key taken out.
+  Google's Gemma 4 26B and Thinking Machines' Inkling 2 Small, each reading 128,000
+  tokens or more. Inkling reasons at `reasoning_effort` "low" with
+  `max_completion_tokens` beside `max_tokens` (Cloudflare calls `max_tokens`
+  deprecated for it), and needs Cloudflare's Workers Paid plan; on an account without
+  it, Cloudflare's refusal shows as any other. Cloudflare's page labels it
+  "Cloudflare-hosted", not "Third-party" as it does the first Inkling, which goes to
+  Thinking Machines' own service. NVIDIA's Nemotron 3 120B is left out: Cloudflare
+  retires it on 20 November 2026. Gemma is asked not to think
+  (`chat_template_kwargs`), since its thinking used up its length limit. One POST to
+  `api.cloudflare.com/client/v4/accounts/{id}/ai/run/{model}` with `messages`, the
+  model's `max_tokens` and any fields its entry adds, no redirects, five minutes at
+  most; the reply's text is read from a `response`, a chat completion's first choice,
+  or a Responses API output, since the models answer in different shapes. An error
+  says Cloudflare's reason with the key taken out; a timeout (HTTP 408) first says in
+  plain words that the model may be busy.
 - `Analysis` is Analyze results. A run is a WP-Cron event (`firehouse_analyze`) that
   carries the run's ID, so it runs that run and no other, one at a time; the option
   `firehouse_analysis` holds the run going and each model's latest result. Every

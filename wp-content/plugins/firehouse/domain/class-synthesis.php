@@ -23,8 +23,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - **Its projects.** Each is named by its page slug or its survey response ID, and
  *   must be one the site shows: a project that isn't on the site, or isn't published,
  *   is named with the need it's in, since the synthesis may only draw on what the
- *   site shows. A name that isn't a project's gets the page slug nearest it, when
- *   one is clearly nearest, for the reviewer to judge.
+ *   site shows. A name that isn't a project's gets the page slug nearest it, or the
+ *   one it cuts short, or the one whose title it is, when one clearly is, for the
+ *   reviewer to judge.
  * - **Its counts.** A project counts once, so a need's count is the number of
  *   projects it names.
  * - **Its order.** Each area's needs run by project count, highest first, as the
@@ -136,6 +137,7 @@ final class Synthesis {
 			if ( '' !== $plain ) {
 				$slugs[] = array(
 					'plain'   => $plain,
+					'title'   => self::plain( str_replace( '/', ' ', (string) ( $project['title'] ?? '' ) ) ),
 					'project' => $project,
 				);
 			}
@@ -205,7 +207,7 @@ final class Synthesis {
 	 * @param int                                 $number   Its place in the area, from 1.
 	 * @param array<string, array<string, mixed>> $by_slug  The projects by slug.
 	 * @param array<string, array<string, mixed>> $by_id    The projects by response ID.
-	 * @param list<array<string, mixed>>          $slugs    Each project with a slug, and the slug as closest() compares it.
+	 * @param list<array<string, mixed>>          $slugs    Each project with a slug, and its slug and title as closest() compares them.
 	 * @param string[]                            $problems What's wrong so far, added to.
 	 * @return array{text: string, mentions: int, projects: list<int>}|null
 	 */
@@ -292,29 +294,58 @@ final class Synthesis {
 	 * A slug is given only when no more than a third of its characters would have to
 	 * change, and it's clearly the nearest: every other slug, published or not, needs
 	 * at least two more changes, or half as many again, whichever is more (one more,
-	 * for a slug that matches exactly). The project may be one the site doesn't show,
-	 * which the problem then says. Null when no slug is given.
+	 * for a slug that matches exactly). Before that, the slug the name cuts short
+	 * (start()); after it, the project whose title, in slug form, is clearly nearest
+	 * by the same measure, since a model can make its own slug from the title
+	 * ("…-products-within-a-fire-partner-decision-making-context" for "…-products").
+	 * The project may be one the site doesn't show, which the problem then says. Null
+	 * when no slug is given.
 	 *
 	 * @param string                     $name  The name the need gives.
-	 * @param list<array<string, mixed>> $slugs Each project with a slug, and the slug as compared.
+	 * @param list<array<string, mixed>> $slugs Each project with a slug, and its slug and title as compared.
 	 * @return array<string, mixed>|null
 	 */
 	private static function closest( string $name, array $slugs ): ?array {
-		$name = self::plain( $name );
+		// A name with a space is a title, whose slashes are words apart, not a path.
+		$name = self::plain( str_contains( $name, ' ' ) ? str_replace( '/', ' ', $name ) : $name );
 		if ( '' === $name || strlen( $name ) > self::LONGEST_NAME ) {
 			return null;
 		}
+		// Each way is tried only when the one before finds nothing near: one that finds
+		// two about as near gives nothing, rather than letting the next pick one of them.
+		foreach ( array( 'start', 'plain', 'title' ) as $way ) {
+			$found = 'start' === $way ? self::start( $name, $slugs ) : self::nearest( $name, $slugs, $way );
+			if ( null !== $found ) {
+				return false === $found ? null : $found;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * The project whose slug, or title in slug form, is clearly nearest the name, with no
+	 * more than a third of it to change (closest()); false when two are about as near;
+	 * null when none is near.
+	 *
+	 * @param string                     $name  The name, as plain() gives it.
+	 * @param list<array<string, mixed>> $slugs Each project with a slug, and its slug and title as compared.
+	 * @param string                     $key   "plain" for the slugs, "title" for the titles.
+	 * @return array<string, mixed>|false|null
+	 */
+	private static function nearest( string $name, array $slugs, string $key ): array|false|null {
 		$nearest = null;
 		$least   = PHP_INT_MAX;
 		$next    = PHP_INT_MAX;
 		foreach ( $slugs as $slug ) {
 			// The distance is at least the difference in length, so a slug that can be
 			// neither the nearest nor near enough to leave the nearest in doubt isn't
-			// measured.
-			if ( abs( strlen( $name ) - strlen( $slug['plain'] ) ) >= self::clear( $least ) ) {
+			// measured; nor is one more than twice the name's length, which could never be
+			// within a third, and would make a long title costly to measure.
+			$length = strlen( $slug[ $key ] );
+			if ( 0 === $length || $length > 2 * strlen( $name ) + 2 || abs( strlen( $name ) - $length ) >= self::clear( $least ) ) {
 				continue;
 			}
-			$distance = levenshtein( $name, $slug['plain'] );
+			$distance = levenshtein( $name, $slug[ $key ] );
 			if ( $distance < $least ) {
 				$next    = $least;
 				$least   = $distance;
@@ -323,10 +354,44 @@ final class Synthesis {
 				$next = $distance;
 			}
 		}
-		if ( null === $nearest || $least > intdiv( strlen( $nearest['plain'] ), 3 ) || $next < self::clear( $least ) ) {
+		if ( null === $nearest || $least > intdiv( strlen( $nearest[ $key ] ), 3 ) ) {
 			return null;
 		}
-		return $nearest['project'];
+		return $next < self::clear( $least ) ? false : $nearest['project'];
+	}
+
+	/**
+	 * The project whose slug the name cuts short: the only slug that starts with the
+	 * name's words, of which the name has at least two-thirds. A model can stop a long
+	 * slug early ("…-fire-weather" for "…-fire-weather-decision-support"), which leaves
+	 * the end too far from it to be nearest, letter by letter, when another slug begins
+	 * the same way. Null when a slug is the name exactly, which nearest() then gives, or
+	 * when the name begins no slug with enough of its words; false when it begins more
+	 * than one so, or when another slug is clearly nearer it, letter by letter.
+	 *
+	 * @param string                     $name  The name, as plain() gives it.
+	 * @param list<array<string, mixed>> $slugs Each project with a slug, and its slug as compared.
+	 * @return array<string, mixed>|false|null
+	 */
+	private static function start( string $name, array $slugs ): array|false|null {
+		$words   = substr_count( $name, '-' ) + 1;
+		$started = array();
+		foreach ( $slugs as $slug ) {
+			if ( $slug['plain'] === $name ) {
+				return null;
+			}
+			if ( str_starts_with( $slug['plain'], $name . '-' ) && 3 * $words >= 2 * ( substr_count( $slug['plain'], '-' ) + 1 ) ) {
+				$started[] = $slug['project'];
+			}
+		}
+		if ( array() === $started ) {
+			return null;
+		}
+		$nearest = self::nearest( $name, $slugs, 'plain' );
+		if ( count( $started ) > 1 || ( is_array( $nearest ) && $nearest['ref'] !== $started[0]['ref'] ) ) {
+			return false;
+		}
+		return $started[0];
 	}
 
 	/**
