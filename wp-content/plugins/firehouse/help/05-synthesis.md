@@ -61,7 +61,7 @@ Keep a copy of your edited version until it's published.
 2. Paste it into **The JSON the prompt gave**, and choose **Check the synthesis**.
 3. If the screen says "Not ready", it lists each problem. Fix them in the box and check again. Nothing is written until the check finds nothing wrong.
 
-A model can shorten or reword a project's page slug. When a need names a project the site doesn't have, the check gives the published page slug closest to that name, with its project's title, if one is close. Change the name to it only if that's the project the need draws on.
+A model can shorten or reword a project's page slug. When a need names a project the site doesn't have, the check gives the page slug nearest that name, with its project's title, when one is clearly nearest. Change the name to it only if the need draws on that project. If that project isn't published, the check says so: take it out of the need.
 
 ## 5. Mark it reviewed
 

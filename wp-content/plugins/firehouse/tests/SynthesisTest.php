@@ -147,7 +147,7 @@ final class SynthesisTest extends DomainTestCase {
 		$problems = self::problems( $synthesis );
 
 		$this->assertSame( 'Forecasts and Modeling, need 1: has no text.', $problems[0] );
-		$this->assertStringContainsString( 'need 2 (“Clearer outlooks', $problems[1] );
+		$this->assertStringStartsWith( 'Forecasts and Modeling, need 2: holds', $problems[1] );
 		$this->assertStringEndsWith( ': holds a character visitors wouldn’t see (U+202E), such as a zero-width space or a direction override. Take it out and check again.', $problems[1] );
 		$this->assertStringContainsString( '(U+E0041)', $problems[2] );
 		$this->assertStringContainsString( '(U+0000)', $problems[3] );
@@ -284,12 +284,12 @@ final class SynthesisTest extends DomainTestCase {
 	}
 
 	/**
-	 * A name that isn't a project's gets the published page slug closest to it: one a
-	 * model shortened or reworded, or gave as the page's path or the project's title.
-	 * Nothing is suggested when no slug is close, when two are as close, or when the
-	 * closest is a project the site doesn't show; the name is never changed.
+	 * A name that isn't a project's gets the page slug nearest it: one a model shortened
+	 * or reworded, or gave as the page's path or the project's title. A project the site
+	 * doesn't show is named as that. Nothing is given when no slug is near, or two are
+	 * about as near; a long name is quoted in part; the name is never changed.
 	 */
-	public function test_a_name_gets_the_closest_published_slug(): void {
+	public function test_a_name_gets_the_nearest_slug(): void {
 		$projects  = array_merge(
 			self::PROJECTS,
 			array(
@@ -317,30 +317,85 @@ final class SynthesisTest extends DomainTestCase {
 			)
 		);
 		$where     = 'Forecasts and Modeling, need 1 (“Named”): names “%s”, which isn’t a project on the site.';
-		$suggested = $where . ' The closest page slug is “%s”, %s: if that’s the project meant, change the name to it and check again.';
+		$published = $where . ' The nearest published page slug is “%s”, for “%s”. If the need draws on that project, change the name to it and check again.';
+		$unshown   = $where . ' The nearest page slug is “%s”, for “%s”, which the site doesn’t show: the synthesis may only draw on published projects.';
 		$impact    = array( 'igniting-impact-advancing-fire-weather-decision-support', 'Igniting Impact: Advancing Fire Weather Decision Support' );
+		$long      = str_repeat( 'heat-study', 21 );
 		$cases     = array(
-			'igniting-impact-advancing-fire-weather-dss' => sprintf( $suggested, 'igniting-impact-advancing-fire-weather-dss', ...$impact ),
-			'/projects/igniting-impact-advancing-fire-weather-decision-support/' => sprintf( $suggested, '/projects/igniting-impact-advancing-fire-weather-decision-support/', ...$impact ),
-			'Igniting Impact: Advancing Fire Weather Decision Support' => sprintf( $suggested, 'Igniting Impact: Advancing Fire Weather Decision Support', ...$impact ),
-			'heat-studies'                               => sprintf( $suggested, 'heat-studies', 'heat-study', 'Heat study' ),
+			'igniting-impact-advancing-fire-weather-dss' => sprintf( $published, 'igniting-impact-advancing-fire-weather-dss', ...$impact ),
+			'/projects/igniting-impact-advancing-fire-weather-decision-support/' => sprintf( $published, '/projects/igniting-impact-advancing-fire-weather-decision-support/', ...$impact ),
+			'Igniting Impact: Advancing Fire Weather Decision Support' => sprintf( $published, 'Igniting Impact: Advancing Fire Weather Decision Support', ...$impact ),
+			'heat-studies'                               => sprintf( $published, 'heat-studies', 'heat-study', 'Heat study' ),
+			'/projects/Smoke-Study-2/'                   => sprintf( $published, '/projects/Smoke-Study-2/', 'smoke-study-2', 'Smoke study, part 2' ),
+			'Draft-Study'                                => sprintf( $unshown, 'Draft-Study', 'draft-study', 'Draft study' ),
 			'smoke-study-4'                              => sprintf( $where, 'smoke-study-4' ),
-			'draft-studies'                              => sprintf( $where, 'draft-studies' ),
 			'no-such-study'                              => sprintf( $where, 'no-such-study' ),
 			'R_impcat'                                   => sprintf( $where, 'R_impcat' ),
 			'/'                                          => sprintf( $where, '/' ),
-			str_repeat( 'heat-study', 21 )               => sprintf( $where, str_repeat( 'heat-study', 21 ) ),
+			$long                                        => sprintf( $where, mb_substr( $long, 0, 79 ) . '…' ),
 		);
 		foreach ( $cases as $name => $problem ) {
-			$synthesis                = self::good();
-			$synthesis[0]['topNeeds'] = array(
-				array(
-					'text'     => 'Named',
-					'mentions' => 1,
-					'projects' => array( (string) $name ),
-				),
-			);
-			$this->assertSame( array( $problem ), Synthesis::check( (string) json_encode( $synthesis ), $projects )['problems'], (string) $name );
+			$this->assertSame( array( $problem ), self::named( (string) $name, $projects ), (string) $name );
 		}
+	}
+
+	/**
+	 * The nearest slug is given only when every other is clearly further, whichever
+	 * comes first in the list, and only when no more than a third of it differs.
+	 */
+	public function test_only_a_clearly_nearest_slug_is_given(): void {
+		$project = static fn( int $ref, string $slug ): array => array(
+			'ref'    => $ref,
+			'slug'   => $slug,
+			'id'     => '',
+			'title'  => ucfirst( str_replace( '-', ' ', $slug ) ),
+			'public' => true,
+		);
+		$given   = static fn( string $name, array $projects ): string => 1 === preg_match( '/The nearest published page slug is “([^”]+)”/u', self::named( $name, $projects )[0], $found ) ? $found[1] : 'none';
+
+		$plumes = array( $project( 1, 'smoke-plume-study-2024' ), $project( 2, 'smoke-plume-study-2025' ), $project( 3, 'smoke-plume-study-2026' ) );
+		$this->assertSame( 'smoke-plume-study-2026', $given( 'Smoke Plume Study 2026', $plumes ), 'Two as near, then a nearer one.' );
+		$this->assertSame( 'smoke-plume-study-2026', $given( 'Smoke Plume Study 2026', array_reverse( $plumes ) ) );
+		$this->assertSame( 'none', $given( 'smoke-plume-study-2027', $plumes ), 'Three as near.' );
+
+		$health = array( $project( 1, 'wildfire-smoke-health-messaging-study' ), $project( 2, 'wildfire-smoke-health-risk-communication' ) );
+		$this->assertSame( 'none', $given( 'wildfire-smoke-health-communication-study', $health ), 'Ten changes against eleven.' );
+		$this->assertSame( 'wildfire-smoke-health-messaging-study', $given( 'wildfire-smoke-health-messaging-studies', $health ) );
+
+		$this->assertSame( 'none', $given( 'heat-sxudy-ab', array( $project( 1, 'heat-study' ) ) ), 'Four changes in ten.' );
+		$this->assertSame( 'heat-study', $given( 'heat-sxudy', array( $project( 1, 'heat-study' ) ) ) );
+	}
+
+	/**
+	 * A name holding a character visitors wouldn't see is a problem of its own, and
+	 * neither it nor the need's text is quoted, since a direction override would turn
+	 * the rest of the problem around.
+	 */
+	public function test_a_name_with_a_hidden_character_isnt_quoted(): void {
+		$this->assertSame(
+			array( 'Forecasts and Modeling, need 1 (“Named”): names a project by a name holding a character visitors wouldn’t see (U+200B), such as a zero-width space or a direction override. Take it out and check again.' ),
+			self::named( "heat-study\u{200B}", self::PROJECTS )
+		);
+		$this->assertStringContainsString( '(U+202E)', self::named( "x\u{202E}heat-study", self::PROJECTS )[0] );
+		$this->assertStringNotContainsString( "\u{202E}", self::named( "x\u{202E}heat-study", self::PROJECTS )[0] );
+	}
+
+	/**
+	 * What's wrong with a synthesis whose one need names one project by this name.
+	 *
+	 * @param string                     $name     The name.
+	 * @param list<array<string, mixed>> $projects The projects.
+	 * @return list<string>
+	 */
+	private static function named( string $name, array $projects ): array {
+		$synthesis                = self::good();
+		$synthesis[0]['topNeeds'] = array(
+			array(
+				'text'     => 'Named',
+				'mentions' => 1,
+				'projects' => array( $name ),
+			),
+		);
+		return Synthesis::check( (string) json_encode( $synthesis ), $projects )['problems'];
 	}
 }

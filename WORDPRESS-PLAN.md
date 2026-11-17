@@ -2313,9 +2313,10 @@ hand.
 - The comparison with NotebookLM: both run on the same published projects, and
   Stephanie and Emily judge the results. *The screen keeps each model's latest draft
   and the prompt it was given. In the first runs (16 November), gpt-oss-120b named a
-  project by a shortened slug, so the check now gives the closest published slug for
-  a name that isn't a project's (`Synthesis::closest()`), only when one slug is
-  closest and no more than a third of it differs.*
+  project by a shortened slug, so the check now gives the nearest page slug for a
+  name that isn't a project's (`Synthesis::closest()`), only when no more than a
+  third of that slug differs and every other slug is clearly further, and says so
+  when its project isn't published.*
 - Site Health checks: outbound reach to doi.org, api.crossref.org, data.crosscite.org
   and the AI service, `noindex` on test, and HTML caching status. *Done: `Site_Health`.
   The test site's check needs `WP_ENVIRONMENT_TYPE` set to `staging` there. The local
