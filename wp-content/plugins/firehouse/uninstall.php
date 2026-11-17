@@ -5,8 +5,9 @@
  * Removes the Firehouse Editor role, so users who had it are left with no role on the
  * site; every Firehouse capability administrators hold; the record of the installed
  * revision; the stored rewrite rules, so WordPress rebuilds them without the Firehouse
- * addresses; and anything still waiting in a transient (a dry run, a synthesis check,
- * a refused save, a publishing rule's notice). The content stays: the projects,
+ * addresses; Analyze results' drafts and any run waiting to start, with its scheduled
+ * event; and anything still waiting in a transient (a dry run, a synthesis check, a
+ * refused save, a publishing rule's notice). The content stays: the projects,
  * topics and settings belong to the site, and reinstalling the plugin shows them
  * again. That includes the survey form's draft projects and their private answers
  * (submitters' emails, job titles and how they shared their results), in the

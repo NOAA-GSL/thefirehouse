@@ -401,12 +401,18 @@ overrides are isolated so a re-sync doesn't lose them.
       request's headers, so its narrow scope is what limits the harm: GSL's security
       review should know. Set a spending alert on the account too: an editor can start
       run after run, each sending every published project. A site with the key also
-      needs WP-Cron running and api.cloudflare.com reachable from its server, and the
-      Cloudflare account needs the Workers Paid plan for Inkling 2 Small. Before
+      needs WP-Cron running often enough that a run starts within half an hour (a run
+      that hasn't is recorded as failed; a system cron every quarter of an hour does),
+      a server that lets that scheduled request run for five minutes while it waits on
+      the model, and api.cloudflare.com reachable from its server; and the
+      Cloudflare account needs the Workers Paid plan for Inkling 2 Small. The survey
+      form's notice names the tool the team uses on submissions (Gemini and
+      NotebookLM): if the approved service changes that, its wording changes first,
+      through Stephanie and Emily and clearance. Before
       production, confirm with Cloudflare that Inkling 2 Small runs on Cloudflare's own
       hardware, as its model page's "Cloudflare-hosted" label says: if it went to
       Thinking Machines' service, the projects would go to that company too, and it
-      comes off the list (plan, "The models").
+      comes off the list (plan, The AI service, "The models").
 - [ ] **Check that deleting a transient reports whether it deleted one** on each
       WordPress site the plugin runs on, with whatever object cache it has. The
       synthesis screen's Mark reviewed relies on it to publish a check once
@@ -1034,8 +1040,9 @@ nothing from the database. Each class's docblock has the detail; this is the map
   NOAA's AI policy still decides, plan open question 7). The account ID and token are
   the constants `FIREHOUSE_WORKERS_AI_ACCOUNT` and `FIREHOUSE_WORKERS_AI_TOKEN` in
   `wp-config.php`: never in the database, a screen, a message or a log, and refused
-  unless shaped like Cloudflare's (32 hex digits; letters, digits, `-` and `_`), so
-  neither can add to the address or the header. The models are a fixed list, all from
+  unless shaped like Cloudflare's (32 lower-case hex digits; 20 to 200 letters, digits,
+  `-` and `_`), so neither can add to the address or the header. A key shaped
+  otherwise counts as none: the screens show no Analyze results, with no message. The models are a fixed list, all from
   US companies (Eric, 16 November): Meta's Llama 4 Scout, OpenAI's gpt-oss-120b,
   Google's Gemma 4 26B and Thinking Machines' Inkling 2 Small, each reading 128,000
   tokens or more. Inkling reasons at `reasoning_effort` "low" with
@@ -1220,7 +1227,14 @@ checks (`Synthesis`):
   allowed); a project, named by page slug or response ID, that the site doesn't show
   or that a need names twice; a count that isn't the number of projects named; an
   area not ordered by count, highest first; and text that shows nothing or holds a
-  control or format character. It lists 50 problems at most and counts the rest.
+  control or format character, in a need or in a project's name. It lists 50 problems
+  at most and counts the rest. For a name that isn't a project's, `closest()` gives
+  the page slug it most likely means, with that project's title, and says when that
+  project isn't published. First the one slug the name cuts short, when the name holds
+  at least two-thirds of its words (`start()`); else the slug, then the title in slug
+  form, with no more than a third of its characters to change and every other at least
+  two changes, or half as many again, further (`nearest()`, `clear()`). Two about as
+  near, at any step, give nothing. The paste is never changed: the reviewer judges.
 - `Json::decode()` reads JSON as the TypeScript sees it: an empty or numbered object
   (`{}`, `{"0": …}`) stays an object, a `Json_Object`, instead of passing for a list.
   `Normalize` turns every one back into an array on the way out, so pages and post meta
@@ -1544,7 +1558,9 @@ change, not audited as a whole; Phase 8's screen-reader audit covers them. So wi
 Phase 7a's survey form at `/firehouse/submit/` and its Settings section: the form has
 no React counterpart, so `npm run reference` and `plugin:compare` don't cover it; the
 Section 508 specialist reviewed it in its pull requests (#62, #68), and the audit
-includes it.
+includes it. Phase 7b's Analyze results, on FireHouse → Synthesis, and its prompt on
+Settings went to the AI service's reviewers instead (#71, #76): the audit covers them
+too.
 
 ## Hosting
 

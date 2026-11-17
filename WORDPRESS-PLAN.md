@@ -226,7 +226,8 @@ wp-content/plugins/firehouse/
                    Topic_Screen), the publishing rules (Project_Rules), the page
                    words and allowed blocks (Page_Words, Allowed_Blocks) and the
                    synthesis screen (Synthesis_Screen), the AI service client
-                   (Workers_Ai) and Analyze results (Analysis)
+                   (Workers_Ai), Analyze results (Analysis) and the Site Health
+                   checks (Site_Health)
   survey/          the survey form, on the plugin's Meta, Store, Settings and
                    Markup (see The survey form)
   domain/          PHP versions of the vocabularies, validation (normalize), derive,
@@ -247,12 +248,14 @@ wp-content/plugins/firehouse/
                    map's script
   shared/          vocabulary.json, the coverage map's colour ramps and basemap, the project and
                    topic schemas, the email pattern, the icon allowlist and test
-                   cases, read by PHP and JS
+                   cases, read by PHP and JS; and the synthesis prompt
+                   (synthesis-prompt.txt), read by PHP only
   help/            the FireHouse guide: Markdown pages and their screenshots, and
                    help.json, built from them (npm run plugin:help), which FireHouse →
                    Help and each FireHouse screen's Help tab show (Help)
   tests/           PHPUnit tests, run without WordPress through Brain Monkey
-  uninstall.php    removes the role and the capabilities; the content stays
+  uninstall.php    removes the role and the capabilities, Analyze results' drafts and
+                   its scheduled event; the content stays
 ```
 
 ### URL map and content model
@@ -543,7 +546,8 @@ short:
 - **A short, documented list of outbound hosts:** doi.org and the two metadata services
   it forwards DOI lookups to (api.crossref.org and data.crosscite.org), the approved
   AI service's endpoint, and the Esri basemap tiles, which the visitor's browser loads
-  directly. The server never fetches a link a researcher typed, and a redirect to any
+  directly. Site Health's caching check also loads the site's own FireHouse landing
+  page at its public address. The server never fetches a link a researcher typed, and a redirect to any
   host off that list is refused.
 - **Only public text goes to the AI service:** the published projects and the team's
   prompt. Drafts and private answers never leave GSL.
@@ -2349,6 +2353,18 @@ hand.
 the screen's validation, and Stephanie and Emily have signed off that it matches
 NotebookLM's in substance. Until the service is approved, the paste-in path is what
 ships.
+
+*Phase 7b's code closed 17 November (#71 to #77, and the close's drift fixes). Its
+"done when" waits on others: the plugin on the test site, after GSL's security review;
+Stephanie and Emily's comparison with NotebookLM, which waits for them to clear the
+prompt change in #75, so that both run the same prompt (NotebookLM wasn't run in the
+16 November model runs); and a key, which a site gets only once NOAA approves the
+service (open question 7). Before production, Cloudflare confirms where Inkling 2
+Small runs (README, Before this goes public). Most models' replies don't give the
+entries behind each need, so the reviewer reads the projects a need names instead; the
+guide says so. The Section 508 specialist hasn't reviewed Analyze results' part of the
+synthesis screen or the prompt on Settings: their pull requests went to the AI
+service's reviewers, so Phase 8's screen-reader audit covers them.*
 
 ### Phase 8 — Review, launch, cutover (1.5–2 weeks)
 

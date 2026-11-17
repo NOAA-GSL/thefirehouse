@@ -18,8 +18,9 @@ Everything happens on **FireHouse → Synthesis**. FireHouse Editors and adminis
 can use it.
 
 On a site with a Workers AI key, **Analyze results** on the same screen has a model
-draft the synthesis in place of steps 1 to 3; the FireHouse guide's synthesis page says
-how. Its prompt starts as the one below: the plugin's copy,
+draft the synthesis in place of steps 1 and 2, and its Check button fills step 4's box
+in place of the copying. The draft still gets step 3's review. The FireHouse guide's
+synthesis page says how. Its prompt starts as the one below: the plugin's copy,
 `wp-content/plugins/firehouse/shared/synthesis-prompt.txt`, is held to it by a test,
 and FireHouse → Settings can change what the plugin sends.
 

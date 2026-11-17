@@ -59,7 +59,10 @@ filtered. The landing page's coverage map shows where the research comes from: a
 of the Geographic Area Coordination Centers, coloured by how many projects are filed
 under each, a count for every region, and the projects filed under the one chosen.
 With JavaScript, a choice on the map or in the list changes the page in place;
-without it, the list works on its own and the map isn't shown.
+without it, the list works on its own and the map isn't shown. On a site given a
+Workers AI key, Analyze results on FireHouse → Synthesis has a model draft the
+synthesis, which goes through the same check and review as a pasted one (see External
+services). Tools → Site Health gets three FireHouse checks.
 
 = Third-party code and fonts =
 
@@ -81,8 +84,10 @@ the checked content waits briefly for the confirmation and is then cleared. The
 synthesis screen keeps a checked synthesis for at most thirty minutes; an edit screen
 keeps refused input for five minutes, and the settings screen for one; a refused
 publish's notice waits an hour; each only for the person it's for. Analyze results keeps
-each model's latest draft, with its whole reply and the prompt it was given, until a
-newer draft from the same model replaces it; it never stores the Workers AI key. Apart
+each model's latest draft, with its whole reply, the prompt it was given and the name
+of whoever started it, until a newer draft from the same model replaces it; it never
+stores the Workers AI key. The synthesis prompt on FireHouse → Settings is stored only
+where it differs from the plugin's own, and isn't published. Apart
 from those and the survey form's answers, below, the plugin stores only what the site
 publishes.
 
@@ -170,8 +175,8 @@ the server looks up a paper's title by its DOI when a survey form submission giv
 one; and, only on a site given a Workers AI key, the server sends the published
 projects to Cloudflare Workers AI when an editor chooses Analyze results. See
 External services. When an administrator opens Tools → Site Health, the plugin's
-checks also ask those services' hosts for their front pages, and load the site's own
-FireHouse landing page. The plugin's code on the server makes no other request to
+checks also ask the DOI lookups' and Workers AI's hosts (not Esri's) for their front
+pages, and load the site's own FireHouse landing page. The plugin's code on the server makes no other request to
 another site, and its fonts, icons and scripts are served from the plugin.
 
 = Who can change what? =
@@ -298,7 +303,9 @@ submission, no private answer, no earlier synthesis and nothing about visitors i
 sent. It runs in WordPress's scheduled events, one at a time, and waits up to five
 minutes for the reply, which the site keeps as that model's latest draft. The key is
 never stored in the database or shown. The models are Meta's, OpenAI's, Google's and
-Thinking Machines', run by Cloudflare.
+Thinking Machines'. Cloudflare's model pages say Cloudflare hosts each of them; for
+Thinking Machines' Inkling 2 Small that is still to be confirmed with Cloudflare, since
+Cloudflare sends the first Inkling model to Thinking Machines' own service.
 
 Cloudflare's Workers AI data usage, which says it does not use the content it
 processes to train models or keep inputs and outputs after a request:

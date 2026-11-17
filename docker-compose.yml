@@ -22,8 +22,9 @@ x-wordpress-env: &wordpress-env
   WORDPRESS_DB_PASSWORD: wordpress
   WORDPRESS_DB_NAME: wordpress
   WORDPRESS_DEBUG: 1
-  # Analyze results' Workers AI key, from .env, which git ignores (README.md, "Analyze
-  # results' key"). Left unset, the plugin offers only the paste.
+  # Analyze results' Workers AI key, from .env, which git ignores (README.md, The
+  # WordPress plugin: "Analyze results needs a Workers AI key"). Left unset, the
+  # plugin offers only the paste.
   FIREHOUSE_WORKERS_AI_ACCOUNT: ${FIREHOUSE_WORKERS_AI_ACCOUNT:-}
   FIREHOUSE_WORKERS_AI_TOKEN: ${FIREHOUSE_WORKERS_AI_TOKEN:-}
   WORDPRESS_CONFIG_EXTRA: |

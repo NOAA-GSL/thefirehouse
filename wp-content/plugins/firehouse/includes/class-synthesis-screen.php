@@ -40,8 +40,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * When the site has a Workers AI key (Workers_Ai), **Analyze results** has a model the
  * editor picks draft the synthesis in the background (Analysis), and the screen keeps
- * each model's latest draft to compare. Checking one puts its JSON through step 2, with
- * the model offered for Made with; nothing else about it differs from a paste.
+ * each model's latest draft to compare. Checking one puts its JSON through step 2, as a
+ * paste is, with the model offered for Made with (nothing, for a model no longer
+ * offered), the model's whole reply under the needs, a note when the site shows a
+ * different number of projects from the number the model read, and which draft it is
+ * carried through every check after the JSON is edited.
  */
 final class Synthesis_Screen {
 
@@ -847,10 +850,11 @@ final class Synthesis_Screen {
 	}
 
 	/**
-	 * While a draft from Analyze results is checked, its model's whole reply, with the
-	 * entries each need draws on, which the JSON leaves out: the reviewer traces each
-	 * need back with it. It's read from what the site keeps, never from the form, and
-	 * only while it's still that draft's.
+	 * While a draft from Analyze results is checked, its model's whole reply: anything
+	 * it wrote besides the JSON, such as the entries each need draws on, which the
+	 * prompt asks for but not every model gives. The reviewer traces each need back with
+	 * it, or in the projects themselves. It's read from what the site keeps, never from
+	 * the form, and only while it's still that draft's.
 	 *
 	 * @param array<string, mixed> $state The check.
 	 */
@@ -874,7 +878,7 @@ final class Synthesis_Screen {
 		}
 		printf(
 			'<p><label for="firehouse-draft-reply">%1$s</label></p><textarea id="firehouse-draft-reply" class="large-text code" rows="12" readonly>%2$s</textarea>',
-			esc_html__( 'Its needs with the entries each draws on, to trace each need back. It’s the model’s draft, not the team’s.', 'firehouse' ),
+			esc_html__( 'Everything the model wrote, with the entries each need draws on if it gave them, to trace each need back. It’s the model’s draft, not the team’s.', 'firehouse' ),
 			esc_textarea( $result['reply'] )
 		);
 	}
