@@ -503,6 +503,8 @@ one is.
 * The synthesis check gives the nearest page slug for a name that isn't a project's,
   such as one a model shortened, for the reviewer to judge, and refuses a name
   holding a character that doesn't show.
+* The synthesis prompt, the plugin's own and NotebookLM's, no longer shows an example
+  need, which a model gave word for word as a need, and asks for each project once.
 
 = 0.2.0 =
 * Project and topic post types at the Firehouse addresses, with their fields as post

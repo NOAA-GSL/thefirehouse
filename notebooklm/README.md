@@ -101,11 +101,10 @@ For each topic area:
 - For each need, count its mentions: the number of projects that raise it. A project
   counts once, however many of its numbered "Entry" blocks raise the need. The same
   entry may count toward needs in more than one topic area.
-- Write each need as one plain-language phrase of no more than 15 words, starting
-  with a noun (e.g. "Longer-lead outlooks for planning windows beyond 72 hours").
-  Name the end-user group when the projects do.
+- Write each need as one plain-language phrase of no more than 15 words, not a
+  sentence. Start with what is needed. Name the end-user group when the projects do.
 - Cite the entries each need draws on, and list the "Page" slug of every project
-  those entries come from (the part after /projects/).
+  those entries come from (the part after /projects/), each project once.
 - Do not invent needs the projects don't support. If a topic area has little
   support in the source, say so and list fewer needs.
 
@@ -123,3 +122,54 @@ Then give the result as JSON in exactly this shape, with no citations inside it:
   { "topic": "governance", "topNeeds": [ ... ] }
 ]
 ```
+
+## Prompt changes
+
+Stephanie and Emily clear every change to the prompt above (CLAUDE.md, "When a person
+decides"). Each change is recorded here: the lines that changed, why, what the old and
+new prompts did with the same projects, and who cleared it, on what text, and when.
+
+### 16 November 2026: the example need, and each project once
+
+**Cleared:** not yet.
+
+Two lines changed; the rest of the prompt is as it was.
+
+| Line | Before | After |
+|---|---|---|
+| The need's shape | Write each need as one plain-language phrase of no more than 15 words, starting with a noun (e.g. "Longer-lead outlooks for planning windows beyond 72 hours"). Name the end-user group when the projects do. | Write each need as one plain-language phrase of no more than 15 words, not a sentence. Start with what is needed. Name the end-user group when the projects do. |
+| The projects | …list the "Page" slug of every project those entries come from (the part after /projects/). | …list the "Page" slug of every project those entries come from (the part after /projects/), each project once. |
+
+Why:
+
+- **The example became a need.** In all three runs with the old prompt, Llama 4 Scout,
+  Analyze results' default model, gave the example word for word as the first
+  Forecasts need, which would have led that area on the site. No project says "beyond
+  72 hours": the one that asks for longer Red Flag Warning lead times asks for 48
+  hours. Each run credited the example to two to four projects, of which at most two
+  mention lead times.
+- **Without an example, the same model wrote sentences.** In a first draft that took
+  the example out and put nothing in its place, Llama 4 Scout wrote 18 of its 20 needs
+  as sentences ("Forecasts include local fuel data"), so the line now says what shape
+  to use instead of showing one.
+- **Each project once.** An earlier gpt-oss-120b run, with the old prompt, listed the
+  same project twice in a need, which the synthesis screen refuses.
+
+What the old and new prompts did, with the same eight published projects, through
+Cloudflare Workers AI on 16 November (NotebookLM wasn't run):
+
+| Model | Prompt | Runs | Example given as a need | Needs written as sentences | Check problems |
+|---|---|---|---|---|---|
+| Llama 4 Scout | before | 3 | 3 runs | none | one run: a wrong slug; one run: an area out of order |
+| Llama 4 Scout | after | 3 | none | none | none |
+| gpt-oss-120b | before | 2 | none | none | one run: one slug shortened, in 5 needs |
+| gpt-oss-120b | after | 2 | none | none | both runs: the same slug shortened, in 6 and 9 needs |
+
+- One gpt-oss-120b run with the new prompt gave 11 needs, two or three an area, instead
+  of five each; the other gave 20.
+- gpt-oss-120b shortens the same long slug under both prompts, and Gemma 4 26B
+  lengthened two from their titles. A sentence telling the model to copy slugs exactly
+  made no difference in a first draft, so it isn't here: the synthesis screen's check
+  catches these names and gives the nearest slug.
+- Gemma 4 26B isn't in the table: with the new prompt it twice ran out of length
+  before finishing its reply.

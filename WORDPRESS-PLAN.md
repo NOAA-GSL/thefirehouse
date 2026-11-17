@@ -2316,7 +2316,11 @@ hand.
   project by a shortened slug, so the check now gives the nearest page slug for a
   name that isn't a project's (`Synthesis::closest()`), only when no more than a
   third of that slug differs and every other slug is clearly further, and says so
-  when its project isn't published.*
+  when its project isn't published. The prompt's first change takes out its example
+  need, which Llama 4 Scout gave word for word as a need in every run, and asks for
+  each project once, run against the old prompt on both models; it waits on Stephanie
+  and Emily's clearance (`notebooklm/README.md`, "Prompt changes"), who also decide
+  whether needs are short phrases or action sentences, as in their 27 October one.*
 - Site Health checks: outbound reach to doi.org, api.crossref.org, data.crosscite.org
   and the AI service, `noindex` on test, and HTML caching status. *Done: `Site_Health`.
   The test site's check needs `WP_ENVIRONMENT_TYPE` set to `staging` there. The local

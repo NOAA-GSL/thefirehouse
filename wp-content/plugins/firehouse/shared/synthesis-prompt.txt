@@ -10,11 +10,10 @@ For each topic area:
 - For each need, count its mentions: the number of projects that raise it. A project
   counts once, however many of its numbered "Entry" blocks raise the need. The same
   entry may count toward needs in more than one topic area.
-- Write each need as one plain-language phrase of no more than 15 words, starting
-  with a noun (e.g. "Longer-lead outlooks for planning windows beyond 72 hours").
-  Name the end-user group when the projects do.
+- Write each need as one plain-language phrase of no more than 15 words, not a
+  sentence. Start with what is needed. Name the end-user group when the projects do.
 - Cite the entries each need draws on, and list the "Page" slug of every project
-  those entries come from (the part after /projects/).
+  those entries come from (the part after /projects/), each project once.
 - Do not invent needs the projects don't support. If a topic area has little
   support in the source, say so and list fewer needs.
 
