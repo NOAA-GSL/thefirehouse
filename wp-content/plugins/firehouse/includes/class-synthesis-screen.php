@@ -109,8 +109,19 @@ final class Synthesis_Screen {
 		);
 		if ( $hook ) {
 			add_action( 'load-' . $hook, array( self::class, 'handle' ) );
+			add_action( 'load-' . $hook, array( self::class, 'style' ) );
 			add_filter( 'admin_title', array( self::class, 'title' ) );
 		}
+	}
+
+	/**
+	 * Lets a button that names a model wrap, as "Check Inkling 2 Small (Thinking
+	 * Machines)’s draft", rather than run past a narrow window: WordPress's buttons don't
+	 * wrap, and at 320 CSS pixels that one needs the page to scroll sideways (WCAG
+	 * 1.4.10; Section 508 review, Phase 7b's close).
+	 */
+	public static function style(): void {
+		wp_add_inline_style( 'common', '#firehouse-analyze .button{white-space:normal;max-width:100%;height:auto}' );
 	}
 
 	/**
@@ -167,6 +178,18 @@ final class Synthesis_Screen {
 		}
 		if ( ! isset( $_POST['firehouse_step'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Only checks whether a form was sent; each form's nonce is checked below.
 			self::drop();
+			self::$state = null;
+			// Back from starting a run: the person who started it hears so first, once.
+			$started = get_transient( self::started() );
+			if ( is_string( $started ) && Workers_Ai::offered( $started ) ) {
+				delete_transient( self::started() );
+				$running     = Analysis::state()['running'];
+				self::$state = array(
+					'step'    => 'start',
+					'started' => $started,
+					'going'   => null !== $running && $running['model'] === $started,
+				);
+			}
 			return;
 		}
 		$step  = sanitize_key( wp_unslash( $_POST['firehouse_step'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Each step checks its nonce next.
@@ -185,9 +208,12 @@ final class Synthesis_Screen {
 			}
 		} elseif ( 'analyze' === $step ) {
 			check_admin_referer( 'firehouse_synthesis_analyze' );
-			$problem = Analysis::start( $field( 'firehouse_analysis_model' ) );
+			$model   = $field( 'firehouse_analysis_model' );
+			$problem = Analysis::start( $model );
 			if ( null === $problem ) {
-				// To the screen itself, so reloading it doesn't send the request again.
+				// To the screen itself, so reloading it doesn't send the request again; the
+				// screen then says the run started, at the top, where the focus goes.
+				set_transient( self::started(), $model, 300 );
 				wp_safe_redirect( admin_url( Post_Types::MENU . '&page=' . self::PAGE ) );
 				exit;
 			}
@@ -208,13 +234,14 @@ final class Synthesis_Screen {
 				return;
 			}
 			self::$state = self::from_draft( self::check( $result['json'] ), $model, (int) ( $result['started'] ?? 0 ) );
-			// The topic pages will say how many projects the site shows when it's marked
-			// reviewed, so a draft that read fewer, or more, says so.
-			$read = (int) ( $result['projects'] ?? 0 );
-			if ( Store::public_project_count() !== $read ) {
-				self::$state['read'] = $read;
-			}
 		}
+	}
+
+	/**
+	 * The transient that tells the person who started a run, once, that it started.
+	 */
+	private static function started(): string {
+		return 'firehouse_synthesis_started_' . get_current_user_id();
 	}
 
 	/**
@@ -224,7 +251,9 @@ final class Synthesis_Screen {
 	 * draft from a model no longer offered, as one Cloudflare retired while the page was
 	 * open, leaves Made with empty for the editor to fill in, rather than saying
 	 * NotebookLM, through every check after: the form keeps naming the draft, though its
-	 * whole reply isn't shown, since the site no longer keeps it.
+	 * whole reply isn't shown, since the site no longer keeps it. While the site keeps
+	 * the draft, each check also notes when the site shows a different number of
+	 * projects from the number it read.
 	 *
 	 * @param array<string, mixed> $state   The check.
 	 * @param string               $model   The draft's model, or "" for a paste.
@@ -242,6 +271,12 @@ final class Synthesis_Screen {
 		if ( ! Workers_Ai::offered( $model ) ) {
 			return $state + array( 'model' => '' );
 		}
+		// The topic pages will say how many projects the site shows when it's marked
+		// reviewed, so a draft that read fewer, or more, says so, on every check of it.
+		$result = Analysis::state()['results'][ $model ] ?? null;
+		if ( is_array( $result ) && ( $result['started'] ?? null ) === $started && isset( $result['projects'] ) && Store::public_project_count() !== (int) $result['projects'] ) {
+			$state['read'] = (int) $result['projects'];
+		}
 		/* translators: %s: a model, as "Llama 4 Scout (Meta)". */
 		return $state + array( 'model' => sprintf( __( '%s, on Cloudflare Workers AI', 'firehouse' ), Workers_Ai::label( $model ) ) );
 	}
@@ -252,13 +287,16 @@ final class Synthesis_Screen {
 	 * @param string $title The admin page's title.
 	 */
 	public static function title( string $title ): string {
-		$state  = self::$state ?? array();
-		$prefix = match ( true ) {
-			! isset( $state['step'] )                                       => '',
-			'start' === $state['step']                                      => isset( $state['refused'] ) ? ( 'checked' === ( $state['not'] ?? null ) ? __( 'Not checked:', 'firehouse' ) : __( 'Not started:', 'firehouse' ) ) : '',
+		$state = self::$state ?? array();
+		// While a run goes, a reload's title says so, and its absence says it's done.
+		$drafting = static fn(): string => Workers_Ai::configured() && null !== Analysis::state()['running'] ? __( 'Drafting:', 'firehouse' ) : '';
+		$prefix   = match ( true ) {
+			! isset( $state['step'] )                                       => $drafting(),
+			'start' === $state['step']                                      => isset( $state['refused'] ) ? ( 'checked' === ( $state['not'] ?? null ) ? __( 'Not checked:', 'firehouse' ) : __( 'Not started:', 'firehouse' ) ) : $drafting(),
 			! empty( $state['changed'] ) || ! empty( $state['missing'] )    => __( 'Not published:', 'firehouse' ),
 			'gone' === $state['step']                                       => __( 'Not published:', 'firehouse' ),
 			'problems' === $state['step']                                   => __( 'Not ready:', 'firehouse' ),
+			'checked' === $state['step'] && isset( $state['read'] )         => __( 'Ready to mark reviewed, with a warning:', 'firehouse' ),
 			'checked' === $state['step']                                    => __( 'Ready to mark reviewed:', 'firehouse' ),
 			array() === $state['saved']                                     => __( 'Not published:', 'firehouse' ),
 			array() !== $state['problems']                                  => __( 'Published, with problems:', 'firehouse' ),
@@ -490,22 +528,25 @@ final class Synthesis_Screen {
 				self::summary(
 					'error',
 					! empty( $state['changed'] ) ? __( 'Not published: the projects changed since the check', 'firehouse' ) : __( 'Not ready: the synthesis has problems', 'firehouse' ),
-					array( __( 'Nothing was written. Fix each problem in the JSON below, then check it again.', 'firehouse' ) ),
+					array_merge( array( __( 'Nothing was written. Fix each problem in the JSON below, then check it again.', 'firehouse' ) ), self::read_note( $state ) ),
 					$state['problems']
 				);
-				self::read_note( $state );
 				self::draft_reply( $state );
 				self::paste_form( (string) $state['pasted'], $state['draft'] ?? null, (string) ( $state['model'] ?? '' ) );
 				break;
 			case 'checked':
+				// A draft that read a different number of projects says so in the summary,
+				// which takes the focus, rather than after it (Section 508 review).
+				$read = self::read_note( $state );
 				if ( ! empty( $state['changed'] ) ) {
-					self::summary( 'warning', __( 'Not published: the projects changed since the check', 'firehouse' ), array( __( 'The synthesis was checked again against the projects as they are now. Review it below, then mark it reviewed.', 'firehouse' ) ) );
+					self::summary( 'warning', __( 'Not published: the projects changed since the check', 'firehouse' ), array_merge( array( __( 'The synthesis was checked again against the projects as they are now. Review it below, then mark it reviewed.', 'firehouse' ) ), $read ) );
 				} elseif ( ! empty( $state['missing'] ) ) {
-					self::summary( 'error', __( 'Not published: a field is empty', 'firehouse' ), array(), $state['missing'] );
+					self::summary( 'error', __( 'Not published: a field is empty', 'firehouse' ), $read, $state['missing'] );
+				} elseif ( array() !== $read ) {
+					self::summary( 'warning', __( 'Ready to mark reviewed, with a warning', 'firehouse' ), array_merge( $read, array( __( 'Nothing else is wrong with the synthesis. Review its needs below. Nothing reaches the site until you mark it reviewed.', 'firehouse' ) ) ) );
 				} else {
 					self::summary( 'success', __( 'Ready to mark reviewed', 'firehouse' ), array( __( 'Nothing is wrong with the synthesis. Review its needs below. Nothing reaches the site until you mark it reviewed.', 'firehouse' ) ) );
 				}
-				self::read_note( $state );
 				self::needs( $state['needs'] );
 				self::draft_reply( $state );
 				self::review_form( (string) $state['token'], (string) ( $state['reviewer'] ?? wp_get_current_user()->display_name ), (string) ( $state['model'] ?? 'NotebookLM' ), $state['draft'] ?? null );
@@ -543,6 +584,15 @@ final class Synthesis_Screen {
 			default:
 				if ( isset( $state['refused'] ) ) {
 					self::summary( 'error', 'checked' === ( $state['not'] ?? null ) ? __( 'Not checked', 'firehouse' ) : __( 'Not started', 'firehouse' ), array( (string) $state['refused'] ) );
+				} elseif ( isset( $state['started'] ) ) {
+					$label = Workers_Ai::label( (string) $state['started'] );
+					if ( ! empty( $state['going'] ) ) {
+						/* translators: %s: a model, as "Llama 4 Scout (Meta)". */
+						self::summary( 'info', sprintf( __( '%s is drafting a synthesis', 'firehouse' ), $label ), array( __( 'It takes a few minutes. Reload this page to see when it’s done: its draft appears under Analyze results, under its name.', 'firehouse' ) ) );
+					} else {
+						/* translators: %s: a model, as "Llama 4 Scout (Meta)". */
+						self::summary( 'info', sprintf( __( '%s has finished', 'firehouse' ), $label ), array( __( 'Its draft, or why it failed, is under Analyze results, under its name.', 'firehouse' ) ) );
+					}
 				}
 				echo '<p>' . esc_html(
 					Workers_Ai::configured()
@@ -558,24 +608,24 @@ final class Synthesis_Screen {
 
 	/**
 	 * When a draft from Analyze results read a different number of projects from the
-	 * number the site shows now, says so: the topic pages give the number the site shows
-	 * when it's marked reviewed.
+	 * number the site shows now, what the summary says of it: the topic pages give the
+	 * number the site shows when it's marked reviewed.
 	 *
 	 * @param array<string, mixed> $state The check.
+	 * @return list<string> The sentence, or none.
 	 */
-	private static function read_note( array $state ): void {
+	private static function read_note( array $state ): array {
 		if ( ! isset( $state['read'] ) ) {
-			return;
+			return array();
 		}
-		$shows = Store::public_project_count();
-		echo '<div class="notice notice-warning inline"><p>' . esc_html(
+		return array(
 			sprintf(
 				/* translators: 1: how many projects the draft read, 2: how many the site shows now. */
 				_n( 'This draft read %1$d project, and the site shows %2$d now. The topic pages would say the synthesis read all %2$d, so have the model draft it again before you mark it reviewed.', 'This draft read %1$d projects, and the site shows %2$d now. The topic pages would say the synthesis read all %2$d, so have the model draft it again before you mark it reviewed.', (int) $state['read'], 'firehouse' ),
 				(int) $state['read'],
-				$shows
-			)
-		) . '</p></div>';
+				Store::public_project_count()
+			),
+		);
 	}
 
 	/**
@@ -620,7 +670,7 @@ final class Synthesis_Screen {
 						<?php endforeach; ?>
 					</select>
 				</p>
-				<?php submit_button( __( 'Analyze results', 'firehouse' ), 'secondary', 'submit', false ); ?>
+				<?php submit_button( __( 'Analyze results', 'firehouse' ), 'secondary', 'submit', false, array( 'id' => 'firehouse-analyze-submit' ) ); ?>
 			</form>
 			<?php
 		}
@@ -646,8 +696,10 @@ final class Synthesis_Screen {
 		$label   = Workers_Ai::label( $model );
 		$format  = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
 		$started = is_int( $result['started'] ?? null ) ? wp_date( $format, $result['started'] ) : '';
-		echo '<h3>' . esc_html( $label ) . '</h3>';
-		if ( 'done' === ( $result['state'] ?? null ) ) {
+		$done    = 'done' === ( $result['state'] ?? null );
+		/* translators: %s: a model, as "Llama 4 Scout (Meta)". */
+		echo '<h3>' . esc_html( $done ? $label : sprintf( __( '%s: failed', 'firehouse' ), $label ) ) . '</h3>';
+		if ( $done ) {
 			echo '<p>' . esc_html(
 				sprintf(
 					/* translators: 1: a date and time, 2: who started it, 3: how many projects it read. */
@@ -664,7 +716,7 @@ final class Synthesis_Screen {
 				<input type="hidden" name="firehouse_analysis_model" value="<?php echo esc_attr( $model ); ?>" />
 				<?php
 				/* translators: %s: a model, as "Llama 4 Scout (Meta)". */
-				submit_button( sprintf( __( 'Check %s’s draft', 'firehouse' ), $label ), 'secondary', 'submit', false );
+				submit_button( sprintf( __( 'Check %s’s draft', 'firehouse' ), $label ), 'secondary', 'submit', false, array( 'id' => $id . '-check' ) );
 				?>
 			</form>
 			<?php
@@ -679,8 +731,9 @@ final class Synthesis_Screen {
 				)
 			) . '</p>';
 		}
-		if ( is_string( $result['unseen'] ?? null ) ) {
-			echo '<p><strong>' . esc_html(
+		$unseen = is_string( $result['unseen'] ?? null );
+		if ( $unseen ) {
+			echo '<p id="' . esc_attr( $id . '-unseen' ) . '"><strong>' . esc_html(
 				sprintf(
 					/* translators: %s: a character's code, as U+202E. */
 					__( 'Its reply holds a character that doesn’t show (%s), so it may read differently from what it says. Read it with care: nothing in it reaches the site except through the check.', 'firehouse' ),
@@ -693,12 +746,16 @@ final class Synthesis_Screen {
 			'prompt' => __( 'The prompt it was given', 'firehouse' ),
 		) as $part => $summary ) {
 			if ( is_string( $result[ $part ] ?? null ) && '' !== $result[ $part ] ) {
+				// Each draft's disclosures are named for its model too, for a screen reader's
+				// or voice control's list of them; the visible words still come first.
 				printf(
-					'<details><summary>%1$s</summary><p><label for="%2$s">%3$s</label></p><textarea id="%2$s" class="large-text code" rows="12" readonly>%4$s</textarea></details>',
+					'<details><summary>%1$s<span class="screen-reader-text">: %2$s</span></summary><p><label for="%3$s">%4$s</label></p><textarea id="%3$s" class="large-text code" rows="12" readonly%5$s>%6$s</textarea></details>',
 					esc_html( $summary ),
+					esc_html( $label ),
 					esc_attr( $id . '-' . $part ),
 					/* translators: 1: "Its whole reply" or "The prompt it was given", 2: a model. */
 					esc_html( sprintf( __( '%1$s: %2$s', 'firehouse' ), $summary, $label ) ),
+					$unseen && 'reply' === $part ? ' aria-describedby="' . esc_attr( $id . '-unseen' ) . '"' : '',
 					esc_textarea( (string) $result[ $part ] )
 				);
 			}
@@ -754,6 +811,7 @@ final class Synthesis_Screen {
 	 * @param string                                  $made   What Made with will start as.
 	 */
 	private static function paste_form( string $pasted, ?array $draft = null, string $made = '' ): void {
+		$noted = null !== $draft && '' !== $made;
 		?>
 		<h2><?php esc_html_e( 'The synthesis', 'firehouse' ); ?></h2>
 		<form method="post">
@@ -761,17 +819,17 @@ final class Synthesis_Screen {
 			<input type="hidden" name="firehouse_step" value="check" />
 			<?php self::draft_fields( $draft ); ?>
 			<p><label for="firehouse-synthesis"><?php esc_html_e( 'The JSON the prompt gave', 'firehouse' ); ?></label></p>
-			<textarea id="firehouse-synthesis" name="firehouse_synthesis" class="large-text code" rows="16" required aria-describedby="firehouse-synthesis-description"><?php echo esc_textarea( $pasted ); ?></textarea>
+			<textarea id="firehouse-synthesis" name="firehouse_synthesis" class="large-text code" rows="16" required aria-describedby="firehouse-synthesis-description<?php echo $noted ? ' firehouse-synthesis-made' : ''; ?>"><?php echo esc_textarea( $pasted ); ?></textarea>
 			<p class="description" id="firehouse-synthesis-description"><?php esc_html_e( 'The four topic areas, each with up to five needs, by project count, highest first. Each need names its projects by page slug or response ID. Edit the wording here before checking: the published wording is the team’s, not the model’s.', 'firehouse' ); ?></p>
-			<?php if ( null !== $draft && '' !== $made ) : ?>
-				<p class="description">
+			<?php if ( $noted ) : ?>
+				<p class="description" id="firehouse-synthesis-made">
 					<?php
 					/* translators: %s: what made the synthesis, as "Llama 4 Scout (Meta), on Cloudflare Workers AI". */
 					echo esc_html( sprintf( __( 'Made with will start as “%s” when you mark it reviewed. If you paste in a synthesis made some other way, change it there.', 'firehouse' ), $made ) );
 					?>
 				</p>
 			<?php endif; ?>
-			<?php submit_button( __( 'Check the synthesis', 'firehouse' ), 'secondary' ); ?>
+			<?php submit_button( __( 'Check the synthesis', 'firehouse' ), 'secondary', 'submit', true, array( 'id' => 'firehouse-synthesis-submit' ) ); ?>
 		</form>
 		<?php
 	}
@@ -828,7 +886,7 @@ final class Synthesis_Screen {
 				<input type="text" id="firehouse-model" name="firehouse_model" class="regular-text" value="<?php echo esc_attr( $model ); ?>" required aria-describedby="firehouse-model-description" />
 			</p>
 			<p class="description" id="firehouse-model-description"><?php esc_html_e( 'The topic pages show who reviewed it, what made it and today’s date. Marking it reviewed publishes it at once.', 'firehouse' ); ?></p>
-			<?php submit_button( __( 'Mark reviewed and publish', 'firehouse' ), 'primary' ); ?>
+			<?php submit_button( __( 'Mark reviewed and publish', 'firehouse' ), 'primary', 'submit', true, array( 'id' => 'firehouse-publish-submit' ) ); ?>
 		</form>
 		<?php
 	}
@@ -865,21 +923,29 @@ final class Synthesis_Screen {
 		}
 		$result = Analysis::state()['results'][ $draft['model'] ] ?? null;
 		$label  = Workers_Ai::label( $draft['model'] );
+		/* translators: %s: a model, as "Llama 4 Scout (Meta)". */
+		$heading = sprintf( __( '%s’s whole reply', 'firehouse' ), $label );
+		// Under its heading either way, so moving by heading finds it, or why it's gone.
+		echo '<h2>' . esc_html( $heading ) . '</h2>';
 		if ( ! is_array( $result ) || ( $result['started'] ?? null ) !== $draft['started'] || ! is_string( $result['reply'] ?? null ) ) {
 			/* translators: %s: a model, as "Llama 4 Scout (Meta)". */
 			echo '<p>' . esc_html( sprintf( __( '%s’s whole reply for this draft isn’t kept any more: a newer draft from it replaced it.', 'firehouse' ), $label ) ) . '</p>';
 			return;
 		}
-		/* translators: %s: a model, as "Llama 4 Scout (Meta)". */
-		echo '<h2>' . esc_html( sprintf( __( '%s’s whole reply', 'firehouse' ), $label ) ) . '</h2>';
+		$described = 'firehouse-draft-reply-description';
 		if ( is_string( $result['unseen'] ?? null ) ) {
 			/* translators: %s: a character's code, as U+202E. */
-			echo '<p><strong>' . esc_html( sprintf( __( 'It holds a character that doesn’t show (%s), so it may read differently from what it says. Read it with care: nothing in it reaches the site except through the check.', 'firehouse' ), $result['unseen'] ) ) . '</strong></p>';
+			echo '<p id="firehouse-draft-reply-unseen"><strong>' . esc_html( sprintf( __( 'It holds a character that doesn’t show (%s), so it may read differently from what it says. Read it with care: nothing in it reaches the site except through the check.', 'firehouse' ), $result['unseen'] ) ) . '</strong></p>';
+			$described = 'firehouse-draft-reply-unseen ' . $described;
 		}
+		// A short name for the box, and what it holds as its description, so a screen
+		// reader doesn't read the whole of it each time the focus enters it.
 		printf(
-			'<p><label for="firehouse-draft-reply">%1$s</label></p><textarea id="firehouse-draft-reply" class="large-text code" rows="12" readonly>%2$s</textarea>',
-			esc_html__( 'Everything the model wrote, with the entries each need draws on if it gave them, to trace each need back. It’s the model’s draft, not the team’s.', 'firehouse' ),
-			esc_textarea( $result['reply'] )
+			'<p><label for="firehouse-draft-reply">%1$s</label></p><textarea id="firehouse-draft-reply" class="large-text code" rows="12" readonly aria-describedby="%2$s">%3$s</textarea><p class="description" id="firehouse-draft-reply-description">%4$s</p>',
+			esc_html( $heading ),
+			esc_attr( $described ),
+			esc_textarea( $result['reply'] ),
+			esc_html__( 'Everything the model wrote, with the entries each need draws on if it gave them, to trace each need back. It’s the model’s draft, not the team’s.', 'firehouse' )
 		);
 	}
 

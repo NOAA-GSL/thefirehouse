@@ -2364,9 +2364,14 @@ prompt change in #75, so that both run the same prompt (NotebookLM wasn't run in
 service (open question 7). Before production, Cloudflare confirms where Inkling 2
 Small runs (README, Before this goes public). Most models' replies don't give the
 entries behind each need, so the reviewer reads the projects a need names instead; the
-guide says so. The Section 508 specialist hasn't reviewed Analyze results' part of the
-synthesis screen or the prompt on Settings: their pull requests went to the AI
-service's reviewers, so Phase 8's screen-reader audit covers them.*
+guide says so. Analyze results' part of the synthesis screen and the prompt on
+Settings, whose pull requests went to the AI service's reviewers, had the Section 508
+specialist's review at the close (Eric, 17 November), and its fixes are in #78: the
+project-count warning in the summary that takes the focus, on every check of a draft;
+the person who starts a run told so first, and "Drafting:" in the title while one
+goes; buttons that wrap at 320 pixels; ids, names and descriptions for each draft's
+controls; and the prompt's errors naming the character and its line, or the length.
+Phase 8's screen-reader audit covers them too.*
 
 ### Phase 8 — Review, launch, cutover (1.5–2 weeks)
 

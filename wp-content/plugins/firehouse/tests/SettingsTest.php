@@ -526,12 +526,16 @@ final class SettingsTest extends WordPressTestCase {
 		Functions\when( 'number_format_i18n' )->alias( static fn( int $number ): string => number_format( $number ) );
 		Functions\when( 'get_option' )->justReturn( array( 'synthesisPrompt' => 'Kept.' ) );
 
-		$this->assertSame( 'Kept.', Settings::sanitize( self::valid() + array( 'synthesisPrompt' => "List needs.\u{E0041}\u{E0042}" ) )['synthesisPrompt'] );
-		$this->assertSame( array( 'firehouse-synthesisPrompt' => 'The synthesis prompt has a character that doesn’t show, such as a direction override or a tag character. Type it again.' ), array_column( $this->errors, 'message', 'code' ) );
+		$this->assertSame( 'Kept.', Settings::sanitize( self::valid() + array( 'synthesisPrompt' => "List needs.\r\nBy area.\nEach once.\u{E0041}\u{E0042}" ) )['synthesisPrompt'] );
+		$this->assertSame( array( 'firehouse-synthesisPrompt' => 'The synthesis prompt has a character that doesn’t show (U+E0041), on line 3. Type that line again.' ), array_column( $this->errors, 'message', 'code' ), 'The first such character and its line, whatever the line endings.' );
+
+		$this->errors = array();
+		$this->assertSame( 'Kept.', Settings::sanitize( self::valid() + array( 'synthesisPrompt' => "List needs.\xFF" ) )['synthesisPrompt'] );
+		$this->assertSame( array( 'firehouse-synthesisPrompt' => 'The synthesis prompt has a character that doesn’t show, such as a direction override or a tag character. Type it again.' ), array_column( $this->errors, 'message', 'code' ), 'Text that isn’t UTF-8 has no character to name.' );
 
 		$this->errors = array();
 		$this->assertSame( 'Kept.', Settings::sanitize( self::valid() + array( 'synthesisPrompt' => str_repeat( 'x', Analysis::LONGEST_PROMPT + 1 ) ) )['synthesisPrompt'] );
-		$this->assertSame( array( 'firehouse-synthesisPrompt' => 'The synthesis prompt has more than 20,000 characters.' ), array_column( $this->errors, 'message', 'code' ) );
+		$this->assertSame( array( 'firehouse-synthesisPrompt' => 'The synthesis prompt has 20,001 characters; it can have 20,000 at most.' ), array_column( $this->errors, 'message', 'code' ) );
 	}
 
 	/**

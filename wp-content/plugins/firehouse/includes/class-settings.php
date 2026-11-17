@@ -624,13 +624,28 @@ final class Settings {
 	 */
 	private static function prompt( mixed $value ): array {
 		$value = is_string( $value ) ? $value : '';
-		if ( 1 !== preg_match( '//u', $value ) || 1 === preg_match( Survey\Submission::HIDDEN, $value ) ) {
+		if ( 1 !== preg_match( '//u', $value ) ) {
 			return array( '', __( 'The synthesis prompt has a character that doesn’t show, such as a direction override or a tag character. Type it again.', 'firehouse' ) );
 		}
-		$text = trim( str_replace( array( "\r\n", "\r" ), "\n", $value ) );
-		if ( mb_strlen( $text ) > Analysis::LONGEST_PROMPT ) {
-			/* translators: %s: the most characters allowed. */
-			return array( $text, sprintf( __( 'The synthesis prompt has more than %s characters.', 'firehouse' ), number_format_i18n( Analysis::LONGEST_PROMPT ) ) );
+		$lines = str_replace( array( "\r\n", "\r" ), "\n", $value );
+		// Named, with its line, since the box shows it back and a screen reader may say
+		// nothing for it (Section 508 review, Phase 7b's close).
+		if ( 1 === preg_match( Survey\Submission::HIDDEN, $lines, $found, PREG_OFFSET_CAPTURE ) ) {
+			return array(
+				'',
+				sprintf(
+					/* translators: 1: a character's code, as U+202E; 2: a line number. */
+					__( 'The synthesis prompt has a character that doesn’t show (%1$s), on line %2$s. Type that line again.', 'firehouse' ),
+					(string) Domain\Synthesis::hidden( $found[0][0] ),
+					number_format_i18n( substr_count( substr( $lines, 0, $found[0][1] ), "\n" ) + 1 )
+				),
+			);
+		}
+		$text = trim( $lines );
+		$long = mb_strlen( $text );
+		if ( $long > Analysis::LONGEST_PROMPT ) {
+			/* translators: 1: how many characters the prompt has, 2: the most allowed. */
+			return array( $text, sprintf( __( 'The synthesis prompt has %1$s characters; it can have %2$s at most.', 'firehouse' ), number_format_i18n( $long ), number_format_i18n( Analysis::LONGEST_PROMPT ) ) );
 		}
 		return array( $text, null );
 	}

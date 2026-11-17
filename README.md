@@ -1036,13 +1036,17 @@ nothing from the database. Each class's docblock has the detail; this is the map
   - **Analyze results** shows only while `Workers_Ai::configured()`. It starts a run
     with the model picked (`Analysis::start()`), then returns to the screen, so a
     reload doesn't start another, and shows the run going, or the form that starts one,
-    then each model's latest draft: when, by whom, from how many projects, its whole reply and the prompt it
-    was given. **Check** puts a draft's JSON through the same check as a paste, with
+    then each model's latest draft: when, by whom, from how many projects, its whole
+    reply and the prompt it was given. Back on the screen, the person who started the
+    run hears first that it's drafting (a transient for them, read once), and while a
+    run goes the page's title starts "Drafting:". A button that names a model may
+    wrap, so the screen doesn't scroll sideways at 320 pixels (Section 508 review). **Check** puts a draft's JSON through the same check as a paste, with
     "<model>, on Cloudflare Workers AI" offered for Made with (nothing, for a model no
     longer offered), and the model's whole reply shown under the needs, read from what the site keeps. The paste and review
     forms carry which draft it is (its model and when it was started) through the
     checks after the JSON is edited; a draft replaced since says so. A draft that read
-    a different number of projects from the number the site shows says so too, since
+    a different number of projects from the number the site shows says so too, in the
+    summary that takes the focus, on every check of it while the site keeps it, since
     the topic pages give the number shown when it's marked reviewed.
 - `Workers_Ai` asks a model on Cloudflare Workers AI (Eric, 16 November: try it first;
   NOAA's AI policy still decides, plan open question 7). The account ID and token are
@@ -1571,8 +1575,9 @@ Phase 7a's survey form at `/firehouse/submit/` and its Settings section: the for
 no React counterpart, so `npm run reference` and `plugin:compare` don't cover it; the
 Section 508 specialist reviewed it in its pull requests (#62, #68), and the audit
 includes it. Phase 7b's Analyze results, on FireHouse → Synthesis, and its prompt on
-Settings went to the AI service's reviewers instead (#71, #76): the audit covers them
-too.
+Settings went to the AI service's reviewers in their pull requests (#71, #76); the
+Section 508 specialist reviewed them at Phase 7b's close (#78), whose fixes are in, and
+the audit includes them too.
 
 ## Hosting
 

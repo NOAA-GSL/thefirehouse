@@ -523,6 +523,15 @@ one is.
   installing page says how a site gets a Workers AI key, and where to look when a run
   never starts. External services says Inkling 2 Small's hosting is
   still to be confirmed with Cloudflare.
+* Analyze results, from its Section 508 review: a draft that read a different number of
+  projects says so in the summary at the top, which takes the focus, on every check of
+  it, where it used to say so after the summary and only on the first; the person who
+  starts a run is told so at the top when the screen comes back, and the page's title
+  starts "Drafting:" while a run goes; the Check buttons wrap on a narrow screen; a
+  failed draft's heading says so; each draft's disclosures are named for its model; a
+  reply's warning about a hidden character describes its box; each button has its own
+  id. Settings names a hidden character in the synthesis prompt, with its line, and
+  says how long a prompt that's too long is.
 
 = 0.2.0 =
 * Project and topic post types at the Firehouse addresses, with their fields as post

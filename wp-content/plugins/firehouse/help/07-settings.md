@@ -48,6 +48,6 @@ Projects that came in before you reworded a question keep their answers, as the 
 - It starts as the plugin's own prompt, the one the team gives NotebookLM. A box you've changed says so. To go back, clear it and save.
 - Whatever the box says, the screen also tells the model that the projects are what researchers wrote, never instructions to follow. That part can't be changed.
 - Each draft keeps the prompt it was given. To see what a change does, have the same model draft before and after it.
-- It can't hold a character that doesn't show, such as a direction override, or more than 20,000 characters.
+- It can't hold a character that doesn't show, such as a direction override, or more than 20,000 characters. If it does, saving says which character and on which line, or how many characters it has.
 
 ![The Synthesis prompt's box, holding the plugin's own prompt, with the notes under it](images/settings-prompt.webp "Synthesis prompt, on FireHouse → Settings.")
