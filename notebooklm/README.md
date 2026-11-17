@@ -213,3 +213,30 @@ Why:
 - **How many.** The site shows up to five needs a topic area, and the screen refuses
   more.
 - **Nothing invented.** Kept from the prompt this one replaces.
+
+What the prompt this one replaces and this one did, with the same eight published
+projects, through Cloudflare Workers AI on 17 November (NotebookLM wasn't run):
+
+| Model | Prompt | Runs finished | Needs | Words a need | Projects a need | Check problems |
+|---|---|---|---|---|---|---|
+| Inkling 2 Small | before | 2 of 2 | 20, 20 | 6–10 | 2.1–2.2 | none |
+| Inkling 2 Small | after | 3 of 3 | 17, 17, 20 | 12–30 | 1.5–1.8 | none |
+| gpt-oss-120b | before | 2 of 2 | 20, 20 | 4–10 | 1.9–2.0 | one run: a slug shortened in 6 needs, two counts off |
+| gpt-oss-120b | after | 3 of 3 | 9, 20, 18 | 13–23 | 2.4–3.3 | one run: the same slug shortened, in 9 needs |
+| Gemma 4 26B | before | 2 of 2 | 19, 19 | 6–12 | 1.2–1.4 | both runs: an area out of count order |
+| Gemma 4 26B | after | 3 of 3 | 16, 14, 14 | 12–19 | 1.3–1.4 | one run: a slug made from a title |
+| Llama 4 Scout | before | 2 of 2 | 20, 20 | 3–8 | 1.7–1.9 | one run: a wrong slug |
+| Llama 4 Scout | after | 1 of 3 | 6 | 7–9 | 2.2 | none |
+
+- Every need from the new prompt starts with a verb; every need from the old one was a
+  noun phrase. No area came out of count order with the new prompt.
+- Inkling 2 Small kept the prompt best: every run clean, needs of 12 to 30 words, and a
+  table naming the studies behind each need.
+- Llama 4 Scout, Analyze results' first model, mostly can't finish the new prompt:
+  Cloudflare stopped two of its three runs at 120 seconds, and the one that finished
+  gave six needs of seven to nine words. With the old prompt it took 120 seconds too.
+- gpt-oss-120b drew most broadly: in one run a single governance need counted all
+  eight projects, the catch-all the prompt's clustering tests are meant to stop, and
+  that run gave nine needs in all.
+- The runs named the source "The Firehouse", as the local site still did; the
+  prompt above says "The FireHouse", to match the source's new title.
