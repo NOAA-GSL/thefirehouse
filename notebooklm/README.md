@@ -166,6 +166,10 @@ Cloudflare Workers AI on 16 November (NotebookLM wasn't run):
 | gpt-oss-120b | after | 2 | none | none | both runs: the same slug shortened, in 6 and 9 needs |
 | Gemma 4 26B | before | 2 | none | none | one run clean; one gave the areas by name, not key |
 | Gemma 4 26B | after | 3 | none | none | one run clean; one: two counts off and a slug lengthened; one: two areas out of order |
+| Inkling 2 Small | before | 2 | none | none | one run: a count off |
+| Inkling 2 Small | after | 2 | none | one run: all 20 ("Agencies need …") | none |
+| gpt-oss-20b | before | 2 | none | one run: all 20 | none |
+| gpt-oss-20b | after | 2 | none | none | none |
 
 - One gpt-oss-120b run with the new prompt gave 11 needs, two or three an area, instead
   of five each; the other gave 20.
@@ -176,6 +180,12 @@ Cloudflare Workers AI on 16 November (NotebookLM wasn't run):
 - Gemma 4 26B ran with its thinking off, as Analyze results now asks it to (#76):
   thinking, it used up its length limit under both prompts and gave no reply, or half
   of one.
+- Thinking Machines' Inkling 2 Small (reasoning set low) and OpenAI's gpt-oss-20b ran
+  through the same client from a scratch script, since Analyze results doesn't offer
+  them. gpt-oss-20b drew nearly every need from a single project (1.0 to 1.1 projects
+  a need, against 1.2 to 3.2 for the others), listing findings rather than putting
+  them together. Inkling 2 Small drew on the most (2.1 to 2.8) and named no project
+  wrongly.
 - Nemotron 3 120B isn't in the table: all 16 requests to it timed out, under both
   prompts, and Cloudflare retires it on 20 November 2026, so Analyze results no longer
   offers it (#76).
