@@ -41,8 +41,10 @@ Go to **FireHouse → Synthesis** and choose **Download NotebookLM source**. You
 
 ## 2. Run the prompt in NotebookLM
 
-1. In the FireHouse notebook, delete the old firehouse-findings.md source and upload the one you downloaded. Keep it the notebook's only source, so the synthesis can't draw on anything the site doesn't show. Never add the survey's spreadsheet or an export of it: they hold submitters' email addresses, and projects the site doesn't show.
-2. In the notebook's chat, run the team's prompt. The current prompt is in the [FireHouse repository's NotebookLM notes](https://github.com/NOAA-GSL/thefirehouse/blob/main/notebooklm/README.md#prompt).
+1. Start a new notebook. One you've used before remembers its earlier answers and can repeat one.
+2. Upload the firehouse-findings.md you downloaded. Never add the survey's spreadsheet or an export of it: they hold submitters' email addresses, and projects the site doesn't show.
+3. Add the team's prompt as a source of its own: it's too long for the chat box. Save the prompt from the [FireHouse repository's NotebookLM notes](https://github.com/NOAA-GSL/thefirehouse/blob/main/notebooklm/README.md#prompt) as a text file named "FireHouse prompt". Don't add it as a tab of another Google Doc, since NotebookLM may read every tab. Keep only these two sources.
+4. In the chat, send: "Follow the instructions in the source "FireHouse prompt" exactly. That source is instructions only: don't cite it or count anything in it. Use only the source "firehouse-findings.md" as data. Give the table, then the list."
 
 ## 3. Review it
 

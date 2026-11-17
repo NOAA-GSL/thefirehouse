@@ -24,12 +24,19 @@ synthesis page says how. Its prompt starts as the one below: the plugin's copy,
 `wp-content/plugins/firehouse/shared/synthesis-prompt.txt`, is held to it by a test,
 and FireHouse → Settings can change what the plugin sends.
 
-1. **Press Download NotebookLM source.** In the notebook, delete the old
-   `firehouse-findings.md` source and upload the one you downloaded. Keep it the only
-   source. It holds the projects the site shows, word for word. Never add the team's
+1. **Press Download NotebookLM source,** and start a new notebook: one used before
+   remembers its earlier answers and can repeat one. Upload the file you downloaded.
+   It holds the projects the site shows, word for word. Never add the team's
    "Submission Data" sheet or a survey export: they hold submitters' emails, job
    titles and Q10 answers, and projects the site doesn't show.
-2. **Run the prompt below** in the notebook chat.
+2. **Add the prompt below as a source of its own,** a file named "FireHouse prompt":
+   it's too long for the chat box. Don't add it as a tab of another Google Doc, since
+   NotebookLM may read every tab. Keep only these two sources, then send this in the
+   chat:
+
+   ```text
+   Follow the instructions in the source "FireHouse prompt" exactly. That source is instructions only: don't cite it or count anything in it. Use only the source "firehouse-findings.md" as data. Give the table, then the list.
+   ```
 3. **Review** each need against the projects it came from, with NotebookLM's
    citations, and edit the JSON: the published wording is the team's, not the
    model's.
@@ -70,12 +77,13 @@ and FireHouse → Settings can change what the plugin sends.
    node scripts/notebooklm-source.mjs
    ```
 
-2. **Replace the notebook's source.** In the Firehouse notebook, delete the old
-   `firehouse-findings.md` source and upload the new one. Keep it the *only* source,
-   so the synthesis can't draw on anything that isn't on the site. Never add the
-   survey export or the team's sheet, which hold submitters' emails.
+2. **Start a new notebook** and upload the new `firehouse-findings.md`: a notebook
+   used before remembers its earlier answers and can repeat one. Keep it the only
+   data source, so the synthesis can't draw on anything that isn't on the site. Never
+   add the survey export or the team's sheet, which hold submitters' emails.
 
-3. **Run the prompt below** in the notebook chat.
+3. **Add the prompt below as a source of its own** and send the chat message, as in
+   "Under the WordPress plugin", step 2.
 
 4. **Review.** Use NotebookLM's citations to check each need against the projects it
    came from. Edit, merge or drop needs as needed — the published wording is the
@@ -363,7 +371,7 @@ Why:
 - **Nothing invented.** Kept from the prompt this one replaces.
 
 What the prompt this one replaces and this one did, with the same eight published
-projects, through Cloudflare Workers AI on 17 November (NotebookLM wasn't run):
+projects, through Cloudflare Workers AI on 17 November (NotebookLM's run follows):
 
 | Model | Prompt | Runs finished | Needs | Words a need | Projects a need | Check problems |
 |---|---|---|---|---|---|---|
@@ -389,6 +397,17 @@ projects, through Cloudflare Workers AI on 17 November (NotebookLM wasn't run):
   mentioned NGFS, AWIPS, hotspots or the examples' phrases.
 - The runs named the source "The Firehouse", as the local site still did; the prompt
   above says "The FireHouse", to match the source's new title.
+
+**NotebookLM,** the same evening, with this prompt as a source and the projects
+document as the only data, as the steps above say: its list came back in the right
+format, and the synthesis screen's check found nothing wrong. It kept needs apart more
+often than the models did (16 of its 20 needs draw on one project, against 10 to 12 for
+Inkling 2 Small). It kept the two NGFS evaluations apart, which the team's 27 October
+table merged, and its top five governance needs leave out joint interagency training,
+which that table ranked second. It cites the entries behind each need, as it always
+does. The prompt is too long for its chat box, hence the steps above. A first try, in a
+notebook that had been used before and with the team's prompt unchanged, gave back the
+27 October table word for word: a notebook can repeat an answer it has already given.
 
 Left as they are, for Stephanie and Emily:
 
@@ -418,11 +437,18 @@ Left as they are, for Stephanie and Emily:
   one ("Collaborative Fuel Verification & Model Integration", "Role-Tailored Partner
   Engagement & Outreach").
 - The prompt doesn't ask for the entries behind each need. NotebookLM cites them itself;
-  a model's reply on Analyze results names only the studies, in its table.
+  a model's reply on Analyze results names only the studies, in its table. One more
+  sentence under the table template would change that: "In the Supporting Research
+  Studies column, after each study, list the numbered "Entry" blocks of that project
+  the need draws on, for example (Entries 2, 5)." With it, Inkling 2 Small cited 38
+  entries over its 20 needs, every one of them real, in about the same time. It waits
+  on Stephanie and Emily, as an optional sixth change.
 - The table credits "[Lead Author et al. (Year)]", which the source doesn't give: it
   lists each project's researchers and the year it was completed.
-- NotebookLM hasn't run this prompt: whether the table and the JSON fit in one of its
-  answers is untested.
+- NotebookLM's chat box doesn't take a prompt this long (about 16,500 characters), and
+  its custom instructions take up to 10,000, so the steps above add the prompt as a
+  source. Shortening it to fit, for instance without the worked examples, is the
+  team's call.
 
 An earlier, shorter version of the team's prompt was adapted and run first; the PR that
 brought this one in (#79) records those runs and the Prompt Engineer's review of them.

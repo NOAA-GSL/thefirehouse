@@ -750,7 +750,7 @@ key offers only the paste.*
   from Thinking Machines Lab in San Francisco, was added after four runs at reasoning
   "low" answered in 16 to 28 seconds, named no project wrongly, and drew each need
   from 2.1 to 2.8 projects, more than any other model; it was also the only one to
-  give the entries behind each need, as the prompt asks. It needs Cloudflare's Workers
+  give the entries behind each need, as the prompt then asked. It needs Cloudflare's Workers
   Paid plan (README's deploy checklist). Cloudflare's page labels it
   "Cloudflare-hosted", not "Third-party" as it does the first Inkling, which goes to
   Thinking Machines' own service; that is to be confirmed with Cloudflare before
@@ -2363,12 +2363,12 @@ NotebookLM's in substance. Until the service is approved, the paste-in path is w
 ships.
 
 *Phase 7b's code closed 17 November (#71 to #73, #76, #77, and the close's drift
-fixes; #74 changed CLAUDE.md, and #75, the prompt change, stays a draft until
-Stephanie and Emily clear it). Its
+fixes; #74 changed CLAUDE.md, and #79, the prompt change, stays a draft until
+Stephanie and Emily clear it; #75, its first version, was closed). Its
 "done when" waits on others: the plugin on the test site, after GSL's security review;
 Stephanie and Emily's comparison with NotebookLM, which waits for them to clear the
-prompt change in #75, so that both run the same prompt (NotebookLM wasn't run in the
-16 November model runs); and a key, which a site gets only once NOAA approves the
+prompt change in #79, so that both run the same prompt (Eric ran #79's prompt in
+NotebookLM on 17 November, as a baseline for theirs); and a key, which a site gets only once NOAA approves the
 service (open question 7). Before production, Cloudflare confirms where Inkling 2
 Small runs (README, Before this goes public). Most models' replies don't give the
 entries behind each need, so the reviewer reads the projects a need names instead; the
