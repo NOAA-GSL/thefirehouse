@@ -24,6 +24,12 @@ use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 final class SynthesisScreenTest extends WordPressTestCase {
 
 	/**
+	 * Llama 4 Scout, a model with nothing added to its request, whose drafts these tests
+	 * show: no longer the model offered first.
+	 */
+	private const LLAMA = '@cf/meta/llama-4-scout-17b-16e-instruct';
+
+	/**
 	 * Posts by ID: two projects, 11 shown and 12 a draft, and the four topics.
 	 *
 	 * @var array<int, \WP_Post>
@@ -688,7 +694,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 					'reply'   => "Ignore the team.\u{202E}",
 					'unseen'  => 'U+202E',
 				),
-				Workers_Ai::DEFAULT_MODEL         => self::draft(),
+				self::LLAMA                       => self::draft(),
 				'@cf/nvidia/nemotron-3-120b-a12b' => self::draft(),
 			),
 		);
@@ -698,7 +704,8 @@ final class SynthesisScreenTest extends WordPressTestCase {
 
 		$this->assertStringContainsString( '<label for="firehouse-analysis-model">Model</label>', $page );
 		$this->assertSame( 4, substr_count( $page, '<option ' ) );
-		$this->assertStringContainsString( "value=\"@cf/meta/llama-4-scout-17b-16e-instruct\" selected='selected'>Llama 4 Scout (Meta)</option>", $page );
+		$this->assertStringContainsString( "value=\"@cf/thinkingmachines/inkling-2-small\" selected='selected'>Inkling 2 Small (Thinking Machines)</option>", $page, 'Inkling 2 Small is offered first.' );
+		$this->assertStringContainsString( '<option value="@cf/meta/llama-4-scout-17b-16e-instruct">Llama 4 Scout (Meta)</option>', $page );
 		$this->assertStringContainsString( '<button>Analyze results</button>', $page );
 		$this->assertLessThan( strpos( $page, '<h3>Gemma 4 26B (Google): failed</h3>' ), strpos( $page, '<h3>Llama 4 Scout (Meta)</h3>' ), 'In the list’s order, a failed draft’s heading saying so.' );
 		$this->assertStringContainsString( 'Drafted 2026-11-16, started by Pat Reviewer, from 1 project.', $page );
@@ -750,9 +757,9 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		self::key();
 		$this->options[ Analysis::OPTION ]                 = array(
 			'running' => null,
-			'results' => array( Workers_Ai::DEFAULT_MODEL => self::draft() ),
+			'results' => array( self::LLAMA => self::draft() ),
 		);
-		$this->transients['firehouse_synthesis_started_6'] = Workers_Ai::DEFAULT_MODEL;
+		$this->transients['firehouse_synthesis_started_6'] = self::LLAMA;
 		self::send( array() );
 
 		$this->assertSame( 'FireHouse synthesis', Synthesis_Screen::title( 'FireHouse synthesis' ) );
@@ -1025,17 +1032,17 @@ final class SynthesisScreenTest extends WordPressTestCase {
 	public function test_checking_a_draft_keeps_its_model_and_reply(): void {
 		$this->options[ Analysis::OPTION ] = array(
 			'running' => null,
-			'results' => array( Workers_Ai::DEFAULT_MODEL => self::draft() ),
+			'results' => array( self::LLAMA => self::draft() ),
 		);
 		$fields                            = '<input type="hidden" name="firehouse_draft" value="@cf/meta/llama-4-scout-17b-16e-instruct" /><input type="hidden" name="firehouse_draft_started" value="1700000000" />';
 		$draft                             = array(
-			'firehouse_draft'         => Workers_Ai::DEFAULT_MODEL,
+			'firehouse_draft'         => self::LLAMA,
 			'firehouse_draft_started' => '1700000000',
 		);
 		self::send(
 			array(
 				'firehouse_step'           => 'take',
-				'firehouse_analysis_model' => Workers_Ai::DEFAULT_MODEL,
+				'firehouse_analysis_model' => self::LLAMA,
 			)
 		);
 		$page = self::drawn();

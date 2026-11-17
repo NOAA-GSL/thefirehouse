@@ -86,9 +86,11 @@ final class Workers_Ai {
 	);
 
 	/**
-	 * The model offered first.
+	 * The model offered first: Inkling 2 Small, the only one to finish every run of the
+	 * team's prompt with nothing for the check to catch (17 November). Llama 4 Scout,
+	 * offered first before, ran past Cloudflare's 120 seconds on that prompt every time.
 	 */
-	public const DEFAULT_MODEL = '@cf/meta/llama-4-scout-17b-16e-instruct';
+	public const DEFAULT_MODEL = '@cf/thinkingmachines/inkling-2-small';
 
 	/**
 	 * How long a request may take, in seconds: a long reply from a large model takes

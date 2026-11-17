@@ -759,6 +759,9 @@ key offers only the paste.*
   keeps each model's latest draft, so the team can compare them. Commercial models,
   such as OpenAI's GPT or Anthropic's Claude, can be reached through Cloudflare's AI
   Gateway, but the projects would then go to that company too, so they aren't offered.
+  *Inkling 2 Small is offered first since 17 November (Eric): with the team's prompt
+  it finished every run with nothing for the check to catch, while Llama 4 Scout,
+  offered first before, ran past Cloudflare's 120 seconds every time.*
 - **It runs in the background,** in a scheduled event, since a reply takes minutes.
   Each model's sampling settings are its own; only the reply's length is set,
   Gemma 4 26B is asked not to think, and Inkling 2 Small to reason at "low".
