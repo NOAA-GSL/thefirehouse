@@ -29,7 +29,7 @@ A zip of any other commit is on that commit's "WordPress plugin" run in the repo
 
 ## Analyze results
 
-Analyze results, on FireHouse → Synthesis, shows only on a site with a Workers AI key. Nothing in the dashboard sets it: it's two lines in the site's wp-config.php, which whoever runs the server adds, and only once NOAA has approved the service. The [FireHouse repository's README](https://github.com/NOAA-GSL/thefirehouse#before-this-goes-public) says what they need.
+Analyze results, on FireHouse → Synthesis, shows only on a site with a Workers AI key. Nothing in the dashboard sets it: it's two lines in the site's wp-config.php, which whoever runs the server adds, and only once NOAA has approved the service. The [FireHouse repository's README](https://github.com/NOAA-GSL/thefirehouse#before-this-goes-public) says what they need. The Cloudflare account needs the Workers Paid plan for Inkling 2 Small, the model Analyze results picks to start with: without it, that model's runs fail with Cloudflare's refusal.
 
 Analyze results runs in WordPress's scheduled events (WP-Cron), as a survey submission's DOI lookups do. If an editor says a draft never started, open **Tools → Site Health**: WordPress's own checks there say whether scheduled events are running late. Once the site has the key, FireHouse's Outside services check names api.cloudflare.com too.
 
