@@ -2354,7 +2354,9 @@ the screen's validation, and Stephanie and Emily have signed off that it matches
 NotebookLM's in substance. Until the service is approved, the paste-in path is what
 ships.
 
-*Phase 7b's code closed 17 November (#71 to #77, and the close's drift fixes). Its
+*Phase 7b's code closed 17 November (#71 to #73, #76, #77, and the close's drift
+fixes; #74 changed CLAUDE.md, and #75, the prompt change, stays a draft until
+Stephanie and Emily clear it). Its
 "done when" waits on others: the plugin on the test site, after GSL's security review;
 Stephanie and Emily's comparison with NotebookLM, which waits for them to clear the
 prompt change in #75, so that both run the same prompt (NotebookLM wasn't run in the

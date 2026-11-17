@@ -12,7 +12,7 @@ Make a new one when projects have been published or taken off the site since the
 
 There are two ways to make one. Either way, it goes through the same check and Mark reviewed step.
 
-- **Analyze results**, on FireHouse → Synthesis, has a model on Cloudflare Workers AI draft it. You see it only on a site an administrator has given a Workers AI key; see the next section.
+- **Analyze results**, on FireHouse → Synthesis, has a model on Cloudflare Workers AI draft it. You see it only on a site whose server has been given a Workers AI key; see the next section.
 - **NotebookLM:** download the source, run the team's prompt in the notebook, and paste the result. Start at step 1.
 
 ## Analyze results
@@ -20,18 +20,18 @@ There are two ways to make one. Either way, it goes through the same check and M
 The model is sent the published projects, word for word, the four topic areas, and the prompt on FireHouse → Settings. Nothing private goes, and no earlier synthesis.
 
 1. On **FireHouse → Synthesis**, under **Analyze results**, pick a **Model** and choose **Analyze results**.
-2. The model drafts in the background, which takes a few minutes. Reload the page to see when it's done. One model drafts at a time.
-3. Each model's latest draft is kept under its name, so you can have several draft and compare them. **Its whole reply** shows everything the model wrote, with the entries each need draws on if the model gave them: the prompt asks for them, but not every model gives them. **The prompt it was given** shows the prompt it ran.
+2. The model drafts in the background, which takes a few minutes, or up to a quarter of an hour longer on some sites. Reload the page to see when it's done. One model drafts at a time.
+3. Each model's latest draft is kept under its name, so you can have several models draft and compare them. **Its whole reply** shows everything the model wrote, with the entries each need draws on if the model gave them: the prompt asks for them, but not every model gives them. **The prompt it was given** shows the prompt it ran.
 4. Choose **Check** under the draft you want: the button names the model, as in "Check Llama 4 Scout (Meta)'s draft". Its JSON goes into the box at the bottom and is checked, as in step 4 below, and **Made with** starts with the model's name.
-5. Review it as in step 3, with the model's whole reply, which stays under the needs while you check and edit, in place of NotebookLM's citations. Where the reply doesn't give the entries behind a need, read the projects the need names, on their pages, before you keep it. Then mark it reviewed as in step 5.
+5. Review it as in step 3, with the model's whole reply, which stays under the needs while you check and edit, in place of NotebookLM's citations. Where the reply doesn't give the entries behind a need, read the projects the need names before you keep it. The needs table gives their titles: find each under **FireHouse → Projects**, or on the site under /firehouse/projects/. Then mark it reviewed as in step 5.
 
 ![The Analyze results section: a Model list with Llama 4 Scout (Meta) picked, the Analyze results button, and two kept drafts, each with its Check button](images/analyze-results.webp "Analyze results, on FireHouse → Synthesis.")
 
-To compare models, have each draft with the same prompt, then check each in turn: the screen shows the needs each would publish. Checking one drops the check before it, so mark reviewed only the one the team chooses.
+To compare models, have each draft with the same prompt, then check each in turn: the screen shows the needs each would publish. Checking one drops the check before it, so mark reviewed only the one the team chooses. A new run of a model replaces its last draft, even if the new run fails.
 
-A draft that failed says why. Workers AI may have refused the request or be busy, or the reply may hold no JSON or have stopped at its length limit. Try again, or try another model. If one says it never started, tell an administrator: the site's scheduled tasks may not be running. If one says it didn't finish, try again, and tell an administrator if it happens again.
+A draft that failed says why. Workers AI may have refused the request or be busy, or the reply may hold no JSON or have stopped at its length limit. Try again, or try another model. If one says it never started, tell an administrator: the site's scheduled events (WP-Cron) may not be running. If one says it didn't finish, try again, and tell an administrator if it happens again.
 
-The reply is the model's, not the team's: read it as a draft. If it holds a character that doesn't show, the screen says so, since it may then read differently from what it says. If the site shows a different number of projects from the number the model read, checking the draft says so. It compares only the number, so it can't tell when one project was published and another taken off in between: after any change to which projects are published, have the model draft again before you mark it reviewed.
+The reply is the model's, not the team's: read it as a draft. If it holds a character that doesn't show, the screen says so, since it may then read differently from what it says. If the site shows a different number of projects from the number the model read, the draft's Check button says so. It compares only the number, so it can't tell when one project was published and another taken off in between: after any change to which projects are published, have the model draft again before you mark it reviewed.
 
 ## 1. Download the source
 

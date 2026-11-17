@@ -86,8 +86,9 @@ keeps refused input for five minutes, and the settings screen for one; a refused
 publish's notice waits an hour; each only for the person it's for. Analyze results keeps
 each model's latest draft, with its whole reply, the prompt it was given and the name
 of whoever started it, until a newer draft from the same model replaces it; it never
-stores the Workers AI key. The synthesis prompt on FireHouse → Settings is stored only
-where it differs from the plugin's own, and isn't published. Apart
+stores the Workers AI key. Deleting the plugin removes those drafts. The synthesis
+prompt on FireHouse → Settings is stored only where it differs from the plugin's own,
+and isn't published. Apart
 from those and the survey form's answers, below, the plugin stores only what the site
 publishes.
 
@@ -176,8 +177,8 @@ one; and, only on a site given a Workers AI key, the server sends the published
 projects to Cloudflare Workers AI when an editor chooses Analyze results. See
 External services. When an administrator opens Tools → Site Health, the plugin's
 checks also ask the DOI lookups' and Workers AI's hosts (not Esri's) for their front
-pages, and load the site's own FireHouse landing page. The plugin's code on the server makes no other request to
-another site, and its fonts, icons and scripts are served from the plugin.
+pages, and load the site's own FireHouse landing page. The plugin's code on the server
+makes no other request to another site, and its fonts, icons and scripts are served from the plugin.
 
 = Who can change what? =
 
@@ -517,8 +518,10 @@ one is.
 * A model's whole reply, under a draft's check, is labelled as giving the entries
   behind each need only if the model gave them, since most don't; the guide says to
   read the projects a need names then. The guide also says the draft's check compares
-  only the number of projects, that a run that didn't finish is tried again, and when
-  the caching check is critical. External services says Inkling 2 Small's hosting is
+  only the number of projects, that an editor tries a run that didn't finish again
+  before telling an administrator, and when the caching check is critical. Its
+  installing page says how a site gets a Workers AI key, and where to look when a run
+  never starts. External services says Inkling 2 Small's hosting is
   still to be confirmed with Cloudflare.
 
 = 0.2.0 =

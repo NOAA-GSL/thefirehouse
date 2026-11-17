@@ -10,7 +10,7 @@ The FireHouse is a section of the site at /firehouse/. In WordPress you look aft
 
 - **Projects:** one for each research project a researcher submitted through the survey. You review each one, add a few words of your own, and decide when it's published.
 - **Topic areas:** the four areas the needs are grouped into, such as Warnings and Immediate Response. You keep their short names and descriptions up to date.
-- **The synthesis:** the top needs in each topic area, across all the published projects. You make it in NotebookLM, or have a model draft it with Analyze results, then check it and publish it.
+- **The synthesis:** the top needs in each topic area, across all the published projects. You make it in NotebookLM, or, on a site with a Workers AI key, have a model draft it with Analyze results; then you check it and publish it.
 - **The landing and About pages:** their headings, text and buttons, and the About page's team.
 
 ## The FireHouse menu

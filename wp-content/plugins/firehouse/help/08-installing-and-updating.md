@@ -27,6 +27,12 @@ A zip of any other commit is on that commit's "WordPress plugin" run in the repo
 - **Search engines:** a test or local site should keep search engines out, under **Settings → Reading → Search engine visibility**, so its pages aren't taken for the public site's; the public site should let them in. Which kind of site it is comes from WP_ENVIRONMENT_TYPE in the site's wp-config.php.
 - **Page caching:** whether a cache in front of the site keeps FireHouse's pages. If it does, a project you hide stays on the pages that showed it until the cache expires: turn the cache off for /firehouse/, or tell the developer. It's marked critical when Cloudflare says it keeps them, and recommended when another cache's headers suggest one does. The server checks its own page, which may not pass through Cloudflare as a visitor's does; the check says how to look from outside.
 
+## Analyze results
+
+Analyze results, on FireHouse → Synthesis, shows only on a site with a Workers AI key. Nothing in the dashboard sets it: it's two lines in the site's wp-config.php, which whoever runs the server adds, and only once NOAA has approved the service. The [FireHouse repository's README](https://github.com/NOAA-GSL/thefirehouse#before-this-goes-public) says what they need.
+
+Analyze results runs in WordPress's scheduled events (WP-Cron), as a survey submission's DOI lookups do. If an editor says a draft never started, open **Tools → Site Health**: WordPress's own checks there say whether scheduled events are running late. Once the site has the key, FireHouse's Outside services check names api.cloudflare.com too.
+
 ## Update it
 
 Upload the new version's zip the same way. WordPress shows the installed and uploaded versions side by side; choose **Replace current with uploaded**. The content and the settings stay.

@@ -391,28 +391,36 @@ overrides are isolated so a re-sync doesn't lose them.
       own checks there cover WP-Cron.
 - [ ] **Give a site Analyze results' key only once the service is approved for it**
       (plan open question 7). Until then it has none, and its synthesis screen offers
-      only the paste. The key is the site's `wp-config.php` constants
-      `FIREHOUSE_WORKERS_AI_ACCOUNT` and `FIREHOUSE_WORKERS_AI_TOKEN`: a Cloudflare
-      account ID, and a token made from Cloudflare's "Workers AI" template (Workers AI
-      Read and Edit, on that account only), with an expiry date. Never put either in
-      the database, the repository or a chat; if one is exposed, roll the token in
-      Cloudflare's dashboard. Any other plugin on the site can see the token in
-      WordPress's HTTP hooks (`http_request_args`, `http_api_debug`), as it can any
-      request's headers, so its narrow scope is what limits the harm: GSL's security
-      review should know. Set a spending alert on the account too: an editor can start
-      run after run, each sending every published project. A site with the key also
-      needs WP-Cron running often enough that a run starts within half an hour (a run
-      that hasn't is recorded as failed; a system cron every quarter of an hour does),
-      a server that lets that scheduled request run for five minutes while it waits on
-      the model, and api.cloudflare.com reachable from its server; and the
-      Cloudflare account needs the Workers Paid plan for Inkling 2 Small. The survey
-      form's notice names the tool the team uses on submissions (Gemini and
-      NotebookLM): if the approved service changes that, its wording changes first,
-      through Stephanie and Emily and clearance. Before
-      production, confirm with Cloudflare that Inkling 2 Small runs on Cloudflare's own
-      hardware, as its model page's "Cloudflare-hosted" label says: if it went to
-      Thinking Machines' service, the projects would go to that company too, and it
-      comes off the list (plan, The AI service, "The models").
+      only the paste.
+      - **Before the key:** the survey form's notice, which names only Gemini and
+        NotebookLM as the tools the team uses on submissions, is reworded to name the
+        approved service too, through Stephanie and Emily and then clearance. Before
+        production, confirm with Cloudflare that Inkling 2 Small runs on Cloudflare's
+        own hardware, as its model page's "Cloudflare-hosted" label says: if it went to
+        Thinking Machines' service, the projects would go to that company too, and it
+        comes off the list (plan, The AI service, "The models").
+      - **The key:** the site's `wp-config.php` constants
+        `FIREHOUSE_WORKERS_AI_ACCOUNT` and `FIREHOUSE_WORKERS_AI_TOKEN`: a Cloudflare
+        account ID, and a token made from Cloudflare's "Workers AI" template (Workers
+        AI Read and Edit, on that account only), with an expiry date. Never put either
+        in the database, the repository or a chat; if one is exposed, roll the token in
+        Cloudflare's dashboard. Any other plugin on the site can see the token in
+        WordPress's HTTP hooks (`http_request_args`, `http_api_debug`), as it can any
+        request's headers, so its narrow scope is what limits the harm: GSL's security
+        review should know. Once the key is taken, Site Health's Outside services check
+        names api.cloudflare.com; a key in the wrong shape counts as none, with no
+        message.
+      - **The server:** api.cloudflare.com reachable from it, and WP-Cron running
+        often enough that a run starts within half an hour (a run that hasn't is
+        recorded as failed; a system cron every quarter of an hour does). The run waits
+        up to five minutes for the model inside that scheduled request, so whatever
+        limits the request's time where WP-Cron runs it through `wp-cron.php` (such as
+        PHP-FPM's `request_terminate_timeout`, or the web server's own timeout) must
+        allow that. PHP's `max_execution_time` doesn't count the wait on Linux, and a
+        system cron that runs WP-CLI (`wp cron event run --due-now`) has no such limit.
+      - **The Cloudflare account:** a spending alert, since an editor can start run
+        after run, each sending every published project; and the Workers Paid plan,
+        for Inkling 2 Small.
 - [ ] **Check that deleting a transient reports whether it deleted one** on each
       WordPress site the plugin runs on, with whatever object cache it has. The
       synthesis screen's Mark reviewed relies on it to publish a check once
@@ -1027,11 +1035,11 @@ nothing from the database. Each class's docblock has the detail; this is the map
     re-sort when counts change come after launch (Eric, 16 November).
   - **Analyze results** shows only while `Workers_Ai::configured()`. It starts a run
     with the model picked (`Analysis::start()`), then returns to the screen, so a
-    reload doesn't start another, and shows the run going or each model's latest
-    draft: when, by whom, from how many projects, its whole reply and the prompt it
+    reload doesn't start another, and shows the run going, or the form that starts one,
+    then each model's latest draft: when, by whom, from how many projects, its whole reply and the prompt it
     was given. **Check** puts a draft's JSON through the same check as a paste, with
-    "<model>, on Cloudflare Workers AI" offered for Made with, and the model's whole
-    reply shown beside the needs, read from what the site keeps. The paste and review
+    "<model>, on Cloudflare Workers AI" offered for Made with (nothing, for a model no
+    longer offered), and the model's whole reply shown under the needs, read from what the site keeps. The paste and review
     forms carry which draft it is (its model and when it was started) through the
     checks after the JSON is edited; a draft replaced since says so. A draft that read
     a different number of projects from the number the site shows says so too, since
@@ -1042,8 +1050,9 @@ nothing from the database. Each class's docblock has the detail; this is the map
   `wp-config.php`: never in the database, a screen, a message or a log, and refused
   unless shaped like Cloudflare's (32 lower-case hex digits; 20 to 200 letters, digits,
   `-` and `_`), so neither can add to the address or the header. A key shaped
-  otherwise counts as none: the screens show no Analyze results, with no message. The models are a fixed list, all from
-  US companies (Eric, 16 November): Meta's Llama 4 Scout, OpenAI's gpt-oss-120b,
+  otherwise counts as none: the screens show no Analyze results, with no message, and
+  Site Health's Outside services check doesn't name api.cloudflare.com. The models are
+  a fixed list, all from US companies (Eric, 16 November): Meta's Llama 4 Scout, OpenAI's gpt-oss-120b,
   Google's Gemma 4 26B and Thinking Machines' Inkling 2 Small, each reading 128,000
   tokens or more. Inkling reasons at `reasoning_effort` "low" with
   `max_completion_tokens` beside `max_tokens` (Cloudflare calls `max_tokens`
@@ -1070,7 +1079,7 @@ nothing from the database. Each class's docblock has the detail; this is the map
   its own five, is recorded as failed, and a late one never overwrites a newer run or
   draft. A source in which a topic area or a project holds a character that doesn't
   show (`Submission::HIDDEN`) isn't sent: the project is named, to be corrected from
-  the survey record. The run sends the
+  the survey record, or the topic area, to be corrected under FireHouse → Topics. The run sends the
   published projects' NotebookLM source text (`Notebook_Source::parts()`), each
   project between `<project number="N" key="…">` markers with a random key no
   project's text holds, under fixed instructions that only those markers count and
@@ -1079,8 +1088,9 @@ nothing from the database. Each class's docblock has the detail; this is the map
   keeps equal to `notebooklm/README.md`'s). No earlier synthesis is sent. The reply's
   JSON is the last fenced block holding a list of topic areas, or else the first
   stretch from a `[{` to a later `]`, the furthest first, that reads as one, past any
-  `<think>` block, so a citation such as `[7]` isn't taken for it; a reply without
-  one, or cut off, is kept as failed, with the reply to read. A reply holding a
+  `<think>` block, so a citation such as `[7]` isn't taken for it. A reply without
+  one is kept as failed, with the reply to read, saying so when it stopped at its
+  length limit; one cut off after its JSON is complete is kept as a draft. A reply holding a
   character that doesn't show is marked, and the screen says so above it.
 - `Site_Health` adds three checks to Tools → Site Health, badged FireHouse:
   - **Outside services** (async): a HEAD request to the front page of doi.org,
@@ -1227,13 +1237,14 @@ checks (`Synthesis`):
   allowed); a project, named by page slug or response ID, that the site doesn't show
   or that a need names twice; a count that isn't the number of projects named; an
   area not ordered by count, highest first; and text that shows nothing or holds a
-  control or format character, in a need or in a project's name. It lists 50 problems
+  control or format character, in a need or in the name a need gives a project. It lists 50 problems
   at most and counts the rest. For a name that isn't a project's, `closest()` gives
   the page slug it most likely means, with that project's title, and says when that
   project isn't published. First the one slug the name cuts short, when the name holds
   at least two-thirds of its words (`start()`); else the slug, then the title in slug
-  form, with no more than a third of its characters to change and every other at least
-  two changes, or half as many again, further (`nearest()`, `clear()`). Two about as
+  form, with no more than a third of its characters to change and every other further
+  by at least two changes, or half as many again, whichever is more (`nearest()`,
+  `clear()`). Two about as
   near, at any step, give nothing. The paste is never changed: the reviewer judges.
 - `Json::decode()` reads JSON as the TypeScript sees it: an empty or numbered object
   (`{}`, `{"0": …}`) stays an object, a `Json_Object`, instead of passing for a list.
@@ -1357,7 +1368,8 @@ WP-Cron starts scheduled events (DOI lookups, Analyze results) by calling the si
 own address, `localhost:8090`, which reaches nothing inside the container, where
 Apache listens on port 80. `docker-compose.yml` sends that call to port 80, still
 asking for `localhost:8090`, through a `cron_request` filter set in `wp-config.php`,
-so they run locally as on GSL's sites; after changing it, `docker compose up -d`. To
+so they run locally as on GSL's sites; after changing `docker-compose.yml`, run
+`docker compose up -d`. To
 run a waiting event at once: `bin/wp cron event run firehouse_analyze` (from bash,
 since `bin/wp` is a bash script). The filter reroutes only WP-Cron's call, so on the
 local copy Site Health's FireHouse page-caching check, and WordPress's own loopback
