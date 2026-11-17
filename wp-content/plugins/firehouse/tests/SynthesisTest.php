@@ -395,9 +395,37 @@ final class SynthesisTest extends DomainTestCase {
 		$this->assertSame( 'igniting-impact-advancing-fire-weather-decision-support', $given( 'igniting-impact-advancing-fire-weather' ), 'Cut short: 17 changes against 24 is no clear nearest, letter by letter.' );
 		$this->assertSame( 'an-evaluation-of-the-next-generation-fire-system-ngfs', $given( 'an-evaluation-of-the-next-generation-fire-system-for-predictive-services' ), 'Made from the title, five letters off.' );
 		$this->assertSame( 'igniting-insight-evaluating-nws-fire-weather-products', $given( 'igniting-insight-evaluating-nws-fire-weather-products-within-a-fire-partner-decision-making-context' ), 'Made from the title exactly.' );
-		$this->assertSame( 'fire-weather-testbed-evaluations-002-fire-detection', $given( 'fire-weather-testbed-evaluation-002-fire-detection' ), 'Letter by letter first: one letter off, not the slug with four of its first words.' );
+		$this->assertSame( 'fire-weather-testbed-evaluations-002-fire-detection', $given( 'fire-weather-testbed-evaluation-002-fire-detection' ), 'One letter off, and the start of no slug: letter by letter, not the slug that shares its first four words.' );
 		$this->assertSame( 'none', $given( 'fire-weather-testbed-evaluation' ), 'Four of eight words.' );
-		$this->assertSame( 'none', $given( 'igniting' ), 'Begins two slugs.' );
+		$this->assertSame( 'none', $given( 'igniting' ), 'Begins two slugs, with too few of their words.' );
+	}
+
+	/**
+	 * A name that is a slug once written plainly (a path, other case, the title) gets
+	 * that slug, never a longer one it begins, such as WordPress's "-2" for a repeated
+	 * title; a name cut short from one slug but a letter from another gives nothing; a
+	 * title given with a slash keeps the words either side of it.
+	 */
+	public function test_an_exact_name_or_a_doubt_isnt_cut_short(): void {
+		$project = static fn( int $ref, string $slug, string $title, bool $shown = true ): array => array(
+			'ref'    => $ref,
+			'slug'   => $slug,
+			'id'     => '',
+			'title'  => $title,
+			'public' => $shown,
+		);
+		$given   = static fn( string $name, array $projects ): string => 1 === preg_match( '/The nearest (?:published )?page slug is “([^”]+)”/u', self::named( $name, $projects )[0], $found ) ? $found[1] : 'none';
+
+		$twice = array( $project( 1, 'smoke-alerts-for-evacuation', 'Smoke Alerts for Evacuation' ), $project( 2, 'smoke-alerts-for-evacuation-2', 'Smoke Alerts for Evacuation', false ) );
+		foreach ( array( '/firehouse/projects/smoke-alerts-for-evacuation/', 'Smoke-Alerts-For-Evacuation', 'smoke_alerts_for_evacuation', 'Smoke Alerts for Evacuation' ) as $name ) {
+			$this->assertSame( 'smoke-alerts-for-evacuation', $given( $name, $twice ), $name );
+		}
+		$this->assertSame( 'heat-study', $given( 'Heat-Study', array( $project( 1, 'heat-study', 'Heat study' ), $project( 2, 'heat-study-2', 'Heat study' ) ) ) );
+		$this->assertSame( 'smoke-alerts', $given( 'Smoke-Alerts', array( $project( 1, 'smoke-alerts', 'Smoke alerts' ), $project( 2, 'smoke-alerts-for-tribal-leadership-and-fire-managers', 'Smoke alerts for Tribal leadership' ), $project( 3, 'smoke-alerts-for-dispatchers-in-the-western-states', 'Smoke alerts for dispatchers' ) ) ) );
+
+		$this->assertSame( 'none', $given( 'smoke-alerts-for-evacuation', array( $project( 1, 'smoke-alerts-for-evacuations', 'Smoke alerts for evacuations' ), $project( 2, 'smoke-alerts-for-evacuation-zones', 'Smoke alerts for evacuation zones' ) ) ), 'Cut short from one, a letter from the other.' );
+
+		$this->assertSame( 'evaluating-nws-products-fire-smoke', $given( 'Evaluating NWS Products for Fire/Smoke Decision Support', array( $project( 1, 'evaluating-nws-products-fire-smoke', 'Evaluating NWS Products for Fire/Smoke Decision Support' ), $project( 2, 'smoke-decision-support-tools', 'Smoke decision support tools' ) ) ) );
 	}
 
 	/**

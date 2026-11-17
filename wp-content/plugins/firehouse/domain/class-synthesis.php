@@ -306,7 +306,8 @@ final class Synthesis {
 	 * @return array<string, mixed>|null
 	 */
 	private static function closest( string $name, array $slugs ): ?array {
-		$name = self::plain( $name );
+		// A name with a space is a title, whose slashes are words apart, not a path.
+		$name = self::plain( str_contains( $name, ' ' ) ? str_replace( '/', ' ', $name ) : $name );
 		if ( '' === $name || strlen( $name ) > self::LONGEST_NAME ) {
 			return null;
 		}
@@ -338,8 +339,10 @@ final class Synthesis {
 		foreach ( $slugs as $slug ) {
 			// The distance is at least the difference in length, so a slug that can be
 			// neither the nearest nor near enough to leave the nearest in doubt isn't
-			// measured.
-			if ( '' === $slug[ $key ] || abs( strlen( $name ) - strlen( $slug[ $key ] ) ) >= self::clear( $least ) ) {
+			// measured; nor is one more than twice the name's length, which could never be
+			// within a third, and would make a long title costly to measure.
+			$length = strlen( $slug[ $key ] );
+			if ( 0 === $length || $length > 2 * strlen( $name ) + 2 || abs( strlen( $name ) - $length ) >= self::clear( $least ) ) {
 				continue;
 			}
 			$distance = levenshtein( $name, $slug[ $key ] );
@@ -362,22 +365,33 @@ final class Synthesis {
 	 * name's words, of which the name has at least two-thirds. A model can stop a long
 	 * slug early ("…-fire-weather" for "…-fire-weather-decision-support"), which leaves
 	 * the end too far from it to be nearest, letter by letter, when another slug begins
-	 * the same way. False when it begins more than one slug; null when it begins none,
-	 * or too little of one.
+	 * the same way. Null when a slug is the name exactly, which nearest() then gives, or
+	 * when the name begins no slug with enough of its words; false when it begins more
+	 * than one so, or when another slug is clearly nearer it, letter by letter.
 	 *
 	 * @param string                     $name  The name, as plain() gives it.
 	 * @param list<array<string, mixed>> $slugs Each project with a slug, and its slug as compared.
 	 * @return array<string, mixed>|false|null
 	 */
 	private static function start( string $name, array $slugs ): array|false|null {
-		$started = array_values( array_filter( $slugs, static fn( array $slug ): bool => str_starts_with( $slug['plain'], $name . '-' ) ) );
-		if ( count( $started ) > 1 ) {
-			return false;
+		$words   = substr_count( $name, '-' ) + 1;
+		$started = array();
+		foreach ( $slugs as $slug ) {
+			if ( $slug['plain'] === $name ) {
+				return null;
+			}
+			if ( str_starts_with( $slug['plain'], $name . '-' ) && 3 * $words >= 2 * ( substr_count( $slug['plain'], '-' ) + 1 ) ) {
+				$started[] = $slug['project'];
+			}
 		}
-		if ( array() === $started || 3 * ( substr_count( $name, '-' ) + 1 ) < 2 * ( substr_count( $started[0]['plain'], '-' ) + 1 ) ) {
+		if ( array() === $started ) {
 			return null;
 		}
-		return $started[0]['project'];
+		$nearest = self::nearest( $name, $slugs, 'plain' );
+		if ( count( $started ) > 1 || ( is_array( $nearest ) && $nearest['ref'] !== $started[0]['ref'] ) ) {
+			return false;
+		}
+		return $started[0];
 	}
 
 	/**
