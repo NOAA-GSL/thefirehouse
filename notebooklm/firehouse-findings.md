@@ -1,6 +1,6 @@
-# The Firehouse — collected project findings
+# The FireHouse — collected project findings
 
-Source document for the topic-area synthesis. It contains all 8 published projects in The Firehouse, NOAA Global Systems Laboratory's hub for fire weather social science. Each project's abstract, takeaways, needs and recommendations are reproduced exactly as the researchers submitted them.
+Source document for the topic-area synthesis. It contains all 8 published projects in The FireHouse, NOAA Global Systems Laboratory's hub for fire weather social science. Each project's abstract, takeaways, needs and recommendations are reproduced exactly as the researchers submitted them.
 
 Topic areas are a lens across the whole collection. No project is assigned to a topic area; a single project may inform several areas or none.
 

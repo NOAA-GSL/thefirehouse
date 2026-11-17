@@ -21,7 +21,7 @@ The model is sent the published projects, word for word, the four topic areas, a
 
 1. On **FireHouse → Synthesis**, under **Analyze results**, pick a **Model** and choose **Analyze results**. Inkling 2 Small is picked to start with: it finished the team's prompt most reliably. If its draft fails with "Workers AI refused the request", try another model and tell an administrator: the site's Cloudflare account may not have the plan Inkling 2 Small needs.
 2. The page says at the top that the model is drafting. It drafts in the background, which takes a few minutes, or up to a quarter of an hour longer on some sites. Reload the page to see when it's done. One model drafts at a time.
-3. Each model's latest draft is kept under its name, so you can have several models draft and compare them. **Its whole reply** shows everything the model wrote, with the entries each need draws on if the model gave them: the prompt asks for them, but not every model gives them. **The prompt it was given** shows the prompt it ran.
+3. Each model's latest draft is kept under its name, so you can have several models draft and compare them. **Its whole reply** shows everything the model wrote: the table of needs the prompt asks for, naming the studies each draws on, and the entries behind each need if the model gave them, which not every model does. **The prompt it was given** shows the prompt it ran.
 4. Choose **Check** under the draft you want: the button names the model, as in "Check Llama 4 Scout (Meta)'s draft". Its JSON goes into the box at the bottom and is checked, as in step 4 below, and **Made with** starts with the model's name.
 5. Review it as in step 3, with the model's whole reply, which stays under the needs while you check and edit, in place of NotebookLM's citations. Where the reply doesn't give the entries behind a need, read the projects the need names before you keep it. The needs table gives their titles: find each under **FireHouse → Projects**, or on the site under /firehouse/projects/. Then mark it reviewed as in step 5.
 
@@ -41,16 +41,18 @@ Go to **FireHouse → Synthesis** and choose **Download NotebookLM source**. You
 
 ## 2. Run the prompt in NotebookLM
 
-1. In the FireHouse notebook, delete the old firehouse-findings.md source and upload the one you downloaded. Keep it the notebook's only source, so the synthesis can't draw on anything the site doesn't show.
-2. In the notebook's chat, run the team's prompt. The current prompt is in the [FireHouse repository's NotebookLM notes](https://github.com/NOAA-GSL/thefirehouse/blob/main/notebooklm/README.md#prompt).
+1. Start a new notebook. One you've used before remembers its earlier answers and can repeat one.
+2. Upload the firehouse-findings.md you downloaded. Never add the survey's spreadsheet or an export of it: they hold submitters' email addresses, and projects the site doesn't show.
+3. Add the team's prompt as a source of its own: it's too long for the chat box. Save the prompt from the [FireHouse repository's NotebookLM notes](https://github.com/NOAA-GSL/thefirehouse/blob/main/notebooklm/README.md#prompt) as a text file named "FireHouse prompt". Don't add it as a tab of another Google Doc, since NotebookLM may read every tab. Keep only these two sources.
+4. In the chat, send: "Follow the instructions in the source "FireHouse prompt" exactly. That source is instructions only: don't cite it or count anything in it. Use only the source "firehouse-findings.md" as data. Give the table, then the list."
 
 ## 3. Review it
 
-NotebookLM answers with the needs and their citations, then a block of JSON that starts with `[` and ends with `]`. Check each need against the projects it came from, with NotebookLM's citations, and edit the wording: the published words are the team's, not the model's.
+The prompt asks NotebookLM for a table of the needs, then a block of JSON that starts with `[` and ends with `]`. Check each need against the projects it came from, with NotebookLM's citations, and edit the wording: the published words are the team's, not the model's.
 
 Edit the JSON in the box on FireHouse → Synthesis, or in a plain-text editor such as Notepad. Don't use Word or Google Docs: they change the quotation marks, and the screen can't read it then. A need's words are its `"text"`, its count is its `"mentions"` number, and its projects are its `"projects"` list.
 
-- In each area, put the needs in order of their project count, highest first. The prompt lists the most important need first, so you'll usually reorder them: the check refuses any other order. For a tie, put first the need that applies across more agencies or regions.
+- In each area, put the needs in order of their project count, highest first. The prompt asks for this order, but a model doesn't always keep it, and the check refuses any other. For a tie, put first the need that applies across more agencies or regions.
 - Each need's count must equal the number of projects it lists. If you take a project out of a need, lower its count.
 
 Keep a copy of your edited version until it's published.

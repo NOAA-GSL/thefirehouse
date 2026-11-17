@@ -535,6 +535,10 @@ one is.
   reply's warning about a hidden character describes its box; each button has its own
   id. Settings names a hidden character in the synthesis prompt, with its line, and
   says how long a prompt that's too long is.
+* The synthesis prompt, the plugin's own and NotebookLM's, is the FireHouse team's:
+  each need in one topic area, ranked by project count, as a sentence that starts
+  with what to do, with a table of the needs before the JSON. The NotebookLM source's
+  title is spelled "The FireHouse".
 
 = 0.2.0 =
 * Project and topic post types at the Firehouse addresses, with their fields as post

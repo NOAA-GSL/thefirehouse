@@ -63,7 +63,7 @@ that produced it).
 | Responses so far | Qualtrics is closed, and every real submission was re-entered through the Google Form (28 October), so the form's Sheet is the complete record. |
 | Survey API sync | **Dropped** (29 October). With the form in the plugin there is no Sheet to sync. |
 | AI synthesis | **Runs from the plugin** (agreed with Stephanie and Emily, 28 October). An **Analyze results** button sends the published projects and the team's prompt to an approved AI service, and the result waits as a draft for review. The service will likely be Cloudflare Workers AI or Amazon Bedrock, and either needs approval under NOAA's AI policy (open question 7). The model is still open (1 November) and is chosen by checking its output. Until then, and as the fallback, the synthesis screen takes NotebookLM's output by paste. See [The AI service](#the-ai-service). *Cloudflare Workers AI is tried first (Eric, 16 November), with its key in `wp-config.php` and a choice of models from US companies only (Eric, 16 November). It stays a trial until NOAA's AI policy approves it.* |
-| Need counts | **Once per project** (28 October): a need mentioned several times in one project counts once. |
+| Need counts | **Once per project** (28 October): a need mentioned several times in one project counts once. *Each need goes in one topic area (the team's prompt, 17 November): one that spans several goes to governance first, then warnings, then forecasts, then observations.* |
 | Link previews through Cloudflare | Found out during testing (see [Link previews](#page-titles-descriptions-and-link-previews)). |
 | AMS bridge | Probably possible, and recommended, starting on the test site for the mid-November WPO meeting (see [The AMS bridge](#the-ams-bridge)). |
 | Hosting outside GSL | **Not allowed** (October 2026 review of the intake documents). The earlier prototype on the former developer's personal domain was taken down in October 2026, and `netlify.toml` is removed from the repository so it is not redeployed. |
@@ -750,7 +750,7 @@ key offers only the paste.*
   from Thinking Machines Lab in San Francisco, was added after four runs at reasoning
   "low" answered in 16 to 28 seconds, named no project wrongly, and drew each need
   from 2.1 to 2.8 projects, more than any other model; it was also the only one to
-  give the entries behind each need, as the prompt asks. It needs Cloudflare's Workers
+  give the entries behind each need, as the prompt then asked. It needs Cloudflare's Workers
   Paid plan (README's deploy checklist). Cloudflare's page labels it
   "Cloudflare-hosted", not "Third-party" as it does the first Inkling, which goes to
   Thinking Machines' own service; that is to be confirmed with Cloudflare before
@@ -2207,7 +2207,10 @@ number of changes down: what isn't needed for it says *After launch*.
   (Final)" replaces the one in `notebooklm/README.md` once its text arrives, after the
   Prompt Engineer runs both on the same projects. In the same change the source's
   title becomes "The FireHouse — collected project findings", the spelling people
-  see, which the prompt names it by.
+  see, which the prompt names it by. *Its text came 17 November: the team's "FireHouse
+  Prompt" as Emily left it that day, adapted in five places so it reads the source
+  and gives the screen's JSON (`notebooklm/README.md`, "Prompt changes"), with the
+  source's new title. It waits on Stephanie and Emily's clearance of those five.*
 - Download NotebookLM source, for the paste-in fallback. *Built 16 November
   (`domain/class-notebook-source.php`), held to `scripts/notebooklm-source.mjs` by
   `shared/cases/notebooklm-source.json`; on the local copy the two documents are the
@@ -2360,12 +2363,12 @@ NotebookLM's in substance. Until the service is approved, the paste-in path is w
 ships.
 
 *Phase 7b's code closed 17 November (#71 to #73, #76, #77, and the close's drift
-fixes; #74 changed CLAUDE.md, and #75, the prompt change, stays a draft until
-Stephanie and Emily clear it). Its
+fixes; #74 changed CLAUDE.md, and #79, the prompt change, stays a draft until
+Stephanie and Emily clear it; #75, its first version, was closed). Its
 "done when" waits on others: the plugin on the test site, after GSL's security review;
 Stephanie and Emily's comparison with NotebookLM, which waits for them to clear the
-prompt change in #75, so that both run the same prompt (NotebookLM wasn't run in the
-16 November model runs); and a key, which a site gets only once NOAA approves the
+prompt change in #79, so that both run the same prompt (Eric ran #79's prompt in
+NotebookLM on 17 November, as a baseline for theirs); and a key, which a site gets only once NOAA approves the
 service (open question 7). Before production, Cloudflare confirms where Inkling 2
 Small runs (README, Before this goes public). Most models' replies don't give the
 entries behind each need, so the reviewer reads the projects a need names instead; the
