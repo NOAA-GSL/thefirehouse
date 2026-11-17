@@ -377,9 +377,9 @@ projects, through Cloudflare Workers AI on 17 November (NotebookLM wasn't run):
 - Every need from the new prompt starts with a verb, as its table asks; every need from
   the old one was a noun phrase.
 - Inkling 2 Small kept the prompt best: both runs clean.
-- Llama 4 Scout, Analyze results' first model, can't finish it: Cloudflare stopped both
-  runs at 120 seconds. gpt-oss-120b ran out of time once too, after 238 seconds, which
-  it hadn't before.
+- Llama 4 Scout, which Analyze results picked to start with until #80, can't finish
+  it: Cloudflare stopped both runs at 120 seconds. gpt-oss-120b ran out of time once
+  too, after 238 seconds, which it hadn't before.
 - Gemma 4 26B named needs after the examples' categories when their projects were there
   ("Formalize Interagency Integrated Warning Team Frameworks"), and made slugs from
   titles, which the check catches.

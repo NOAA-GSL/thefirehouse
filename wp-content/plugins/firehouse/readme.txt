@@ -515,6 +515,9 @@ one is.
 * The synthesis check gives the nearest page slug for a name that isn't a project's,
   such as one a model shortened, stopped partway or made from the project's title,
   for the reviewer to judge, and refuses a name holding a character that doesn't show.
+* Analyze results picks Inkling 2 Small to start with: Llama 4 Scout, picked before,
+  took all the time Cloudflare gives a reply with the plugin's prompt, and ran out of
+  it with the team's longer one. Inkling 2 Small needs Cloudflare's Workers Paid plan.
 * A model's whole reply, under a draft's check, is labelled as giving the entries
   behind each need only if the model gave them, since most don't; the guide says to
   read the projects a need names then. The guide also says the draft's check compares

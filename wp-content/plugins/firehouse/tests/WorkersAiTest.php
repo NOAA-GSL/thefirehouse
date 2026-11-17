@@ -180,7 +180,7 @@ final class WorkersAiTest extends WordPressTestCase {
 		);
 
 		Workers_Ai::ask( '@cf/google/gemma-4-26b-a4b-it', array() );
-		Workers_Ai::ask( Workers_Ai::DEFAULT_MODEL, array() );
+		Workers_Ai::ask( '@cf/meta/llama-4-scout-17b-16e-instruct', array() );
 		Workers_Ai::ask( '@cf/thinkingmachines/inkling-2-small', array() );
 
 		$this->assertSame(
@@ -286,7 +286,7 @@ final class WorkersAiTest extends WordPressTestCase {
 				'text' => 'Partly [',
 				'cut'  => true,
 			),
-			Workers_Ai::ask( Workers_Ai::DEFAULT_MODEL, array() )
+			Workers_Ai::ask( '@cf/meta/llama-4-scout-17b-16e-instruct', array() )
 		);
 
 		$this->answer(
@@ -296,7 +296,7 @@ final class WorkersAiTest extends WordPressTestCase {
 				'result'  => array( 'response' => '  ' ),
 			)
 		);
-		$this->assertSame( array( 'problem' => 'Workers AI answered, but with no reply the screen can read.' ), Workers_Ai::ask( Workers_Ai::DEFAULT_MODEL, array() ) );
+		$this->assertSame( array( 'problem' => 'Workers AI answered, but with no reply the screen can read.' ), Workers_Ai::ask( '@cf/meta/llama-4-scout-17b-16e-instruct', array() ) );
 
 		// Llama's shape says nothing of why it stopped, but its count of tokens does.
 		$this->answer(
@@ -309,7 +309,7 @@ final class WorkersAiTest extends WordPressTestCase {
 				),
 			)
 		);
-		$this->assertTrue( Workers_Ai::ask( Workers_Ai::DEFAULT_MODEL, array() )['cut'] );
+		$this->assertTrue( Workers_Ai::ask( '@cf/meta/llama-4-scout-17b-16e-instruct', array() )['cut'] );
 
 		// A reasoning model that spent its whole limit thinking gives no reply at all.
 		$this->answer(

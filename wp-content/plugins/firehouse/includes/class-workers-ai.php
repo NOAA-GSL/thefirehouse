@@ -86,9 +86,13 @@ final class Workers_Ai {
 	);
 
 	/**
-	 * The model offered first.
+	 * The model the synthesis screen picks to start with: Inkling 2 Small. In runs on 17
+	 * November, Llama 4 Scout, picked before, took 120 seconds, Cloudflare's limit, with
+	 * the plugin's prompt, and ran out of time on both runs of the team's longer prompt
+	 * proposed in #79, where Inkling 2 Small finished every run with nothing for the check
+	 * to catch.
 	 */
-	public const DEFAULT_MODEL = '@cf/meta/llama-4-scout-17b-16e-instruct';
+	public const DEFAULT_MODEL = '@cf/thinkingmachines/inkling-2-small';
 
 	/**
 	 * How long a request may take, in seconds: a long reply from a large model takes
