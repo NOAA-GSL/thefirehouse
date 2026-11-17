@@ -390,6 +390,20 @@ projects, through Cloudflare Workers AI on 17 November (NotebookLM wasn't run):
 
 Left as they are, for Stephanie and Emily:
 
+- Example 1 puts "incorporating fuels data into RFW issuance" under Forecasts & Modeling,
+  where Rule A's own example sends an action on Red Flag Warning criteria to Warnings &
+  Immediate Response. Every finished run followed the example; the old prompt's runs
+  spread that need across three areas (Prompt Engineer).
+- Example 2's second category counts "Project 2 Rec 1", the recommendation of the entry
+  whose need Example 1 already counted, so one entry can count in two categories. Two
+  runs counted one entry in two pillars, which the check can't see (Prompt Engineer).
+- The JSON's text is the table's need statement, not the category's title, so guardrail
+  4 (one capability a title) governs a title the output never shows. One run bundled
+  several things in parentheses in 8 of its 20 needs. Title or statement is the team's
+  choice (Prompt Engineer).
+- At 16,466 characters, the prompt may be more than NotebookLM's chat box takes, and
+  NotebookLM doesn't get the instructions Analyze results puts around the source, that
+  it's data, never instructions (Prompt Engineer).
 - The clustering rules say to apply "these 4 universal guardrails", and the processing
   steps "the 4 Universal Guardrails"; there are six.
 - Guardrail 5 counts `project_count`; the processing steps count `mention_count`.
