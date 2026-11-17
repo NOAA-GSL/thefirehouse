@@ -23,7 +23,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - **Its projects.** Each is named by its page slug or its survey response ID, and
  *   must be one the site shows: a project that isn't on the site, or isn't published,
  *   is named with the need it's in, since the synthesis may only draw on what the
- *   site shows.
+ *   site shows. A name that isn't a project's gets the page slug nearest it, when
+ *   one is clearly nearest, for the reviewer to judge.
  * - **Its counts.** A project counts once, so a need's count is the number of
  *   projects it names.
  * - **Its order.** Each area's needs run by project count, highest first, as the
@@ -48,6 +49,12 @@ final class Synthesis {
 	 * How much of a need's text a problem quotes.
 	 */
 	private const QUOTED = 80;
+
+	/**
+	 * The longest name the check looks for a close page slug to: WordPress's longest
+	 * slug.
+	 */
+	private const LONGEST_NAME = 200;
 
 	/**
 	 * Characters that show nothing on their own, beyond spaces, controls and format
@@ -119,10 +126,18 @@ final class Synthesis {
 
 		$by_slug = array();
 		$by_id   = array();
+		$slugs   = array();
 		foreach ( $projects as $project ) {
 			$by_slug[ (string) $project['slug'] ] = $project;
 			if ( '' !== (string) ( $project['id'] ?? '' ) ) {
 				$by_id[ (string) $project['id'] ] = $project;
+			}
+			$plain = self::plain( (string) $project['slug'] );
+			if ( '' !== $plain ) {
+				$slugs[] = array(
+					'plain'   => $plain,
+					'project' => $project,
+				);
 			}
 		}
 
@@ -153,7 +168,7 @@ final class Synthesis {
 			$needs[ $key ] = array();
 			$before        = count( $problems );
 			foreach ( $list as $position => $need ) {
-				$checked = self::need( $need, $label, $position + 1, $by_slug, $by_id, $problems );
+				$checked = self::need( $need, $label, $position + 1, $by_slug, $by_id, $slugs, $problems );
 				if ( null !== $checked ) {
 					$needs[ $key ][] = $checked;
 				}
@@ -190,19 +205,21 @@ final class Synthesis {
 	 * @param int                                 $number   Its place in the area, from 1.
 	 * @param array<string, array<string, mixed>> $by_slug  The projects by slug.
 	 * @param array<string, array<string, mixed>> $by_id    The projects by response ID.
+	 * @param list<array<string, mixed>>          $slugs    Each project with a slug, and the slug as closest() compares it.
 	 * @param string[]                            $problems What's wrong so far, added to.
 	 * @return array{text: string, mentions: int, projects: list<int>}|null
 	 */
-	private static function need( mixed $need, string $label, int $number, array $by_slug, array $by_id, array &$problems ): ?array {
+	private static function need( mixed $need, string $label, int $number, array $by_slug, array $by_id, array $slugs, array &$problems ): ?array {
 		if ( ! is_array( $need ) || ( array_is_list( $need ) && array() !== $need ) ) {
 			$problems[] = sprintf( '%1$s, need %2$d: isn’t a need: each is { "text": …, "mentions": …, "projects": [ … ] }.', $label, $number );
 			return null;
 		}
 		$text   = is_string( $need['text'] ?? null ) ? trim( $need['text'] ) : '';
 		$blank  = self::blank( $text );
-		$quoted = mb_strlen( $text ) > self::QUOTED ? mb_substr( $text, 0, self::QUOTED - 1 ) . '…' : $text;
-		$where  = $blank ? sprintf( '%1$s, need %2$d', $label, $number ) : sprintf( '%1$s, need %2$d (“%3$s”)', $label, $number, $quoted );
 		$hidden = self::hidden( $text );
+		// Text with a character that doesn't show isn't quoted: a direction override in
+		// it would turn the rest of the problem around.
+		$where = $blank || null !== $hidden ? sprintf( '%1$s, need %2$d', $label, $number ) : sprintf( '%1$s, need %2$d (“%3$s”)', $label, $number, self::quote( $text ) );
 		if ( $blank ) {
 			$problems[] = $where . ': has no text.';
 		} elseif ( null !== $hidden ) {
@@ -219,18 +236,31 @@ final class Synthesis {
 					$problems[] = $where . ': names a project by something other than its page slug or response ID.';
 					continue;
 				}
-				$ref     = trim( $ref );
+				$ref    = trim( $ref );
+				$unseen = self::hidden( $ref );
+				if ( null !== $unseen ) {
+					$problems[] = sprintf( '%1$s: names a project by a name holding a character visitors wouldn’t see (%2$s), such as a zero-width space or a direction override. Take it out and check again.', $where, $unseen );
+					continue;
+				}
 				$project = $by_slug[ $ref ] ?? $by_id[ $ref ] ?? null;
 				if ( null === $project ) {
-					$problems[] = sprintf( '%1$s: names “%2$s”, which isn’t a project on the site.', $where, $ref );
+					$problem = sprintf( '%1$s: names “%2$s”, which isn’t a project on the site.', $where, self::quote( $ref ) );
+					// Only while the problem would be listed: the rest are counted, not read.
+					$closest = count( $problems ) < self::LISTED ? self::closest( $ref, $slugs ) : null;
+					if ( null !== $closest && true === $closest['public'] ) {
+						$problem .= sprintf( ' The nearest published page slug is “%1$s”, for “%2$s”. If the need draws on that project, change the name to it and check again.', $closest['slug'], self::title( $closest ) );
+					} elseif ( null !== $closest ) {
+						$problem .= sprintf( ' The nearest page slug is “%1$s”, for “%2$s”, which the site doesn’t show: the synthesis may only draw on published projects.', $closest['slug'], self::title( $closest ) );
+					}
+					$problems[] = $problem;
 					continue;
 				}
 				if ( true !== $project['public'] ) {
-					$problems[] = sprintf( '%1$s: names “%2$s”, %3$s, which the site doesn’t show: the synthesis may only draw on published projects.', $where, $ref, $project['title'] );
+					$problems[] = sprintf( '%1$s: names “%2$s”, %3$s, which the site doesn’t show: the synthesis may only draw on published projects.', $where, $ref, self::title( $project ) );
 					continue;
 				}
 				if ( in_array( $project['ref'], $found, true ) ) {
-					$problems[] = sprintf( '%1$s: names %2$s twice.', $where, $project['title'] );
+					$problems[] = sprintf( '%1$s: names %2$s twice.', $where, self::title( $project ) );
 					continue;
 				}
 				$found[] = $project['ref'];
@@ -250,6 +280,100 @@ final class Synthesis {
 			'mentions' => $mentions,
 			'projects' => $found,
 		);
+	}
+
+	/**
+	 * The project whose page slug is nearest a name that isn't a project's, for the
+	 * problem to give. A model copying a long slug can shorten or reword part of it
+	 * ("…-dss" for "…-decision-support"), or give the page's path or the project's
+	 * title instead. Both are compared in lower case, with each run of other characters
+	 * as one hyphen, and the name without any path before its last slash.
+	 *
+	 * A slug is given only when no more than a third of its characters would have to
+	 * change, and it's clearly the nearest: every other slug, published or not, needs
+	 * at least two more changes, or half as many again, whichever is more (one more,
+	 * for a slug that matches exactly). The project may be one the site doesn't show,
+	 * which the problem then says. Null when no slug is given.
+	 *
+	 * @param string                     $name  The name the need gives.
+	 * @param list<array<string, mixed>> $slugs Each project with a slug, and the slug as compared.
+	 * @return array<string, mixed>|null
+	 */
+	private static function closest( string $name, array $slugs ): ?array {
+		$name = self::plain( $name );
+		if ( '' === $name || strlen( $name ) > self::LONGEST_NAME ) {
+			return null;
+		}
+		$nearest = null;
+		$least   = PHP_INT_MAX;
+		$next    = PHP_INT_MAX;
+		foreach ( $slugs as $slug ) {
+			// The distance is at least the difference in length, so a slug that can be
+			// neither the nearest nor near enough to leave the nearest in doubt isn't
+			// measured.
+			if ( abs( strlen( $name ) - strlen( $slug['plain'] ) ) >= self::clear( $least ) ) {
+				continue;
+			}
+			$distance = levenshtein( $name, $slug['plain'] );
+			if ( $distance < $least ) {
+				$next    = $least;
+				$least   = $distance;
+				$nearest = $slug;
+			} elseif ( $distance < $next ) {
+				$next = $distance;
+			}
+		}
+		if ( null === $nearest || $least > intdiv( strlen( $nearest['plain'] ), 3 ) || $next < self::clear( $least ) ) {
+			return null;
+		}
+		return $nearest['project'];
+	}
+
+	/**
+	 * How far the next slug must be for the nearest, this far, to be clearly nearest.
+	 *
+	 * @param int $least The nearest slug's distance.
+	 */
+	private static function clear( int $least ): int {
+		if ( PHP_INT_MAX === $least ) {
+			return PHP_INT_MAX;
+		}
+		return 0 === $least ? 1 : $least + max( 2, intdiv( $least + 1, 2 ) );
+	}
+
+	/**
+	 * Text as a problem quotes it: cut short when it's long.
+	 *
+	 * @param string $text The text.
+	 */
+	private static function quote( string $text ): string {
+		return mb_strlen( $text ) > self::QUOTED ? mb_substr( $text, 0, self::QUOTED - 1 ) . '…' : $text;
+	}
+
+	/**
+	 * A project's title as a problem names it: without control or format characters,
+	 * since a direction override among them would turn the rest of the problem around.
+	 * Only the problem's copy changes; the title stays as the researcher wrote it.
+	 *
+	 * @param array<string, mixed> $project The project.
+	 */
+	private static function title( array $project ): string {
+		return (string) preg_replace( '/[\p{Cc}\p{Cf}]/u', '', (string) $project['title'] );
+	}
+
+	/**
+	 * A name as the closest slug is found: without any path before its last slash, in
+	 * lower case, each run of characters other than letters and digits one hyphen.
+	 *
+	 * @param string $name The name.
+	 */
+	private static function plain( string $name ): string {
+		$name = trim( $name, "/ \t\n\r" );
+		$last = strrpos( $name, '/' );
+		if ( false !== $last ) {
+			$name = substr( $name, $last + 1 );
+		}
+		return trim( (string) preg_replace( '/[^a-z0-9]+/', '-', strtolower( $name ) ), '-' );
 	}
 
 	/**

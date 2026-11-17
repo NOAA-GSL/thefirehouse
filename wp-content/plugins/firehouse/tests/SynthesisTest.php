@@ -147,7 +147,7 @@ final class SynthesisTest extends DomainTestCase {
 		$problems = self::problems( $synthesis );
 
 		$this->assertSame( 'Forecasts and Modeling, need 1: has no text.', $problems[0] );
-		$this->assertStringContainsString( 'need 2 (“Clearer outlooks', $problems[1] );
+		$this->assertStringStartsWith( 'Forecasts and Modeling, need 2: holds', $problems[1] );
 		$this->assertStringEndsWith( ': holds a character visitors wouldn’t see (U+202E), such as a zero-width space or a direction override. Take it out and check again.', $problems[1] );
 		$this->assertStringContainsString( '(U+E0041)', $problems[2] );
 		$this->assertStringContainsString( '(U+0000)', $problems[3] );
@@ -281,5 +281,144 @@ final class SynthesisTest extends DomainTestCase {
 			),
 		);
 		$this->assertSame( array( 'Forecasts and Modeling, need 1 (“Miscounted”): counts 3 projects but names 2. A project counts once, so the two must match.' ), self::problems( $synthesis ) );
+	}
+
+	/**
+	 * A name that isn't a project's gets the page slug nearest it: one a model shortened
+	 * or reworded, or gave as the page's path or the project's title. A project the site
+	 * doesn't show is named as that. Nothing is given when no slug is near, or two are
+	 * about as near; a long name is quoted in part; the name is never changed.
+	 */
+	public function test_a_name_gets_the_nearest_slug(): void {
+		$projects  = array_merge(
+			self::PROJECTS,
+			array(
+				array(
+					'ref'    => 14,
+					'slug'   => 'igniting-impact-advancing-fire-weather-decision-support',
+					'id'     => 'R_impact',
+					'title'  => 'Igniting Impact: Advancing Fire Weather Decision Support',
+					'public' => true,
+				),
+				array(
+					'ref'    => 15,
+					'slug'   => 'smoke-study-2',
+					'id'     => 'R_smoke2',
+					'title'  => 'Smoke study, part 2',
+					'public' => true,
+				),
+				array(
+					'ref'    => 16,
+					'slug'   => 'smoke-study-3',
+					'id'     => 'R_smoke3',
+					'title'  => 'Smoke study, part 3',
+					'public' => true,
+				),
+			)
+		);
+		$where     = 'Forecasts and Modeling, need 1 (“Named”): names “%s”, which isn’t a project on the site.';
+		$published = $where . ' The nearest published page slug is “%s”, for “%s”. If the need draws on that project, change the name to it and check again.';
+		$unshown   = $where . ' The nearest page slug is “%s”, for “%s”, which the site doesn’t show: the synthesis may only draw on published projects.';
+		$impact    = array( 'igniting-impact-advancing-fire-weather-decision-support', 'Igniting Impact: Advancing Fire Weather Decision Support' );
+		$long      = str_repeat( 'heat-study', 21 );
+		$cases     = array(
+			'igniting-impact-advancing-fire-weather-dss' => sprintf( $published, 'igniting-impact-advancing-fire-weather-dss', ...$impact ),
+			'/projects/igniting-impact-advancing-fire-weather-decision-support/' => sprintf( $published, '/projects/igniting-impact-advancing-fire-weather-decision-support/', ...$impact ),
+			'Igniting Impact: Advancing Fire Weather Decision Support' => sprintf( $published, 'Igniting Impact: Advancing Fire Weather Decision Support', ...$impact ),
+			'heat-studies'                               => sprintf( $published, 'heat-studies', 'heat-study', 'Heat study' ),
+			'/projects/Smoke-Study-2/'                   => sprintf( $published, '/projects/Smoke-Study-2/', 'smoke-study-2', 'Smoke study, part 2' ),
+			'Draft-Study'                                => sprintf( $unshown, 'Draft-Study', 'draft-study', 'Draft study' ),
+			'smoke-study-4'                              => sprintf( $where, 'smoke-study-4' ),
+			'no-such-study'                              => sprintf( $where, 'no-such-study' ),
+			'R_impcat'                                   => sprintf( $where, 'R_impcat' ),
+			'/'                                          => sprintf( $where, '/' ),
+			$long                                        => sprintf( $where, mb_substr( $long, 0, 79 ) . '…' ),
+		);
+		foreach ( $cases as $name => $problem ) {
+			$this->assertSame( array( $problem ), self::named( (string) $name, $projects ), (string) $name );
+		}
+	}
+
+	/**
+	 * The nearest slug is given only when every other is clearly further, whichever
+	 * comes first in the list, and only when no more than a third of it differs.
+	 */
+	public function test_only_a_clearly_nearest_slug_is_given(): void {
+		$project = static fn( int $ref, string $slug ): array => array(
+			'ref'    => $ref,
+			'slug'   => $slug,
+			'id'     => '',
+			'title'  => ucfirst( str_replace( '-', ' ', $slug ) ),
+			'public' => true,
+		);
+		$given   = static fn( string $name, array $projects ): string => 1 === preg_match( '/The nearest published page slug is “([^”]+)”/u', self::named( $name, $projects )[0], $found ) ? $found[1] : 'none';
+
+		$plumes = array( $project( 1, 'smoke-plume-study-2024' ), $project( 2, 'smoke-plume-study-2025' ), $project( 3, 'smoke-plume-study-2026' ) );
+		$this->assertSame( 'smoke-plume-study-2026', $given( 'Smoke Plume Study 2026', $plumes ), 'Two as near, then a nearer one.' );
+		$this->assertSame( 'smoke-plume-study-2026', $given( 'Smoke Plume Study 2026', array_reverse( $plumes ) ) );
+		$this->assertSame( 'none', $given( 'smoke-plume-study-2027', $plumes ), 'Three as near.' );
+
+		$this->assertSame( 'none', $given( 'fire-weather-study-abcde', array( $project( 1, 'fire-weather-study-vwxyz' ), $project( 2, 'fire-weather-study-vwxyzqr' ) ) ), 'Five changes against seven: half again rounds up.' );
+		$this->assertSame( 'fire-weather-study-vwxyz', $given( 'fire-weather-study-abcde', array( $project( 1, 'fire-weather-study-vwxyz' ), $project( 2, 'fire-weather-study-vwxyzqrs' ) ) ), 'Five against eight.' );
+
+		$health = array( $project( 1, 'wildfire-smoke-health-messaging-study' ), $project( 2, 'wildfire-smoke-health-risk-communication' ) );
+		$this->assertSame( 'none', $given( 'wildfire-smoke-health-communication-study', $health ), 'Ten changes against eleven.' );
+		$this->assertSame( 'wildfire-smoke-health-messaging-study', $given( 'wildfire-smoke-health-messaging-studies', $health ) );
+
+		$this->assertSame( 'none', $given( 'heat-sxudy-ab', array( $project( 1, 'heat-study' ) ) ), 'Four changes in ten.' );
+		$this->assertSame( 'heat-study', $given( 'heat-sxudy', array( $project( 1, 'heat-study' ) ) ) );
+	}
+
+	/**
+	 * A name holding a character visitors wouldn't see is a problem of its own, and
+	 * neither it nor the need's text is quoted, since a direction override would turn
+	 * the rest of the problem around. A project's title is named without such
+	 * characters, in every problem that names it.
+	 */
+	public function test_a_name_with_a_hidden_character_isnt_quoted(): void {
+		$this->assertSame(
+			array( 'Forecasts and Modeling, need 1 (“Named”): names a project by a name holding a character visitors wouldn’t see (U+200B), such as a zero-width space or a direction override. Take it out and check again.' ),
+			self::named( "heat-study\u{200B}", self::PROJECTS )
+		);
+		$this->assertStringContainsString( '(U+202E)', self::named( "x\u{202E}heat-study", self::PROJECTS )[0] );
+		$this->assertStringNotContainsString( "\u{202E}", self::named( "x\u{202E}heat-study", self::PROJECTS )[0] );
+
+		$projects                 = self::PROJECTS;
+		$projects[1]['title']     = "Heat\u{202E} study\u{200B}";
+		$projects[2]['title']     = "Draft\u{202E} study";
+		$projects[2]['public']    = false;
+		$synthesis                = self::good();
+		$synthesis[0]['topNeeds'] = array(
+			array(
+				'text'     => 'Named',
+				'mentions' => 5,
+				'projects' => array( 'heat-studies', 'draft-studies', 'R_draft', 'heat-study', 'heat-study' ),
+			),
+		);
+		$problems                 = Synthesis::check( (string) json_encode( $synthesis ), $projects )['problems'];
+		$this->assertStringEndsWith( 'for “Heat study”. If the need draws on that project, change the name to it and check again.', $problems[0], 'A title is named without the characters that don’t show.' );
+		$this->assertStringContainsString( 'for “Draft study”, which the site doesn’t show', $problems[1] );
+		$this->assertStringContainsString( '“R_draft”, Draft study, which', $problems[2] );
+		$this->assertStringEndsWith( 'names Heat study twice.', $problems[3] );
+		$this->assertCount( 4, $problems );
+	}
+
+	/**
+	 * What's wrong with a synthesis whose one need names one project by this name.
+	 *
+	 * @param string                     $name     The name.
+	 * @param list<array<string, mixed>> $projects The projects.
+	 * @return list<string>
+	 */
+	private static function named( string $name, array $projects ): array {
+		$synthesis                = self::good();
+		$synthesis[0]['topNeeds'] = array(
+			array(
+				'text'     => 'Named',
+				'mentions' => 1,
+				'projects' => array( $name ),
+			),
+		);
+		return Synthesis::check( (string) json_encode( $synthesis ), $projects )['problems'];
 	}
 }
