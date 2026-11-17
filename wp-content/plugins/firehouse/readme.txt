@@ -514,6 +514,12 @@ one is.
 * The synthesis check gives the nearest page slug for a name that isn't a project's,
   such as one a model shortened, stopped partway or made from the project's title,
   for the reviewer to judge, and refuses a name holding a character that doesn't show.
+* A model's whole reply, under a draft's check, is labelled as giving the entries
+  behind each need only if the model gave them, since most don't; the guide says to
+  read the projects a need names then. The guide also says the draft's check compares
+  only the number of projects, that a run that didn't finish is tried again, and when
+  the caching check is critical. External services says Inkling 2 Small's hosting is
+  still to be confirmed with Cloudflare.
 
 = 0.2.0 =
 * Project and topic post types at the Firehouse addresses, with their fields as post
