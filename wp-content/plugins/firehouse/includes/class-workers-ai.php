@@ -46,10 +46,20 @@ final class Workers_Ai {
 	public const HOST = 'api.cloudflare.com';
 
 	/**
-	 * The models offered, by Workers AI's name for each: what the screen calls it, and
-	 * the most tokens its reply may take, which leaves a reasoning model room to think
-	 * as well as answer. Each reads at least 128,000 tokens, many times the source.
-	 * Llama 3.3 70B is left out: its 24,000 would run out as projects arrive.
+	 * The models offered, by Workers AI's name for each: what the screen calls it, the
+	 * most tokens its reply may take, which leaves a reasoning model room to think as
+	 * well as answer, and anything else its request needs (`body`), which can add fields
+	 * but never replace `messages` or `max_tokens`. Gemma 4 26B is asked not to think:
+	 * when it did, it spent its 8,192 tokens thinking in four runs out of five and gave
+	 * no reply, or half of one; without, five runs answered in 15 to 36 seconds.
+	 * Thinking Machines' Inkling 2 Small (San Francisco) reasons at "low", not its
+	 * "high": four runs answered in 16 to 28 seconds, drawing each need from more
+	 * projects than any other model. Its limit goes as `max_completion_tokens` too, the
+	 * name Cloudflare gives it in place of `max_tokens`, which it calls deprecated. It
+	 * needs Cloudflare's Workers Paid plan. Each model reads at least 128,000 tokens,
+	 * many times the source. Llama 3.3 70B is left out: its 24,000 would run out as
+	 * projects arrive. NVIDIA's Nemotron 3 120B is left out: Cloudflare retires it on 20
+	 * November 2026.
 	 */
 	public const MODELS = array(
 		'@cf/meta/llama-4-scout-17b-16e-instruct' => array(
@@ -63,10 +73,15 @@ final class Workers_Ai {
 		'@cf/google/gemma-4-26b-a4b-it'           => array(
 			'label'      => 'Gemma 4 26B (Google)',
 			'max_tokens' => 8192,
+			'body'       => array( 'chat_template_kwargs' => array( 'enable_thinking' => false ) ),
 		),
-		'@cf/nvidia/nemotron-3-120b-a12b'         => array(
-			'label'      => 'Nemotron 3 120B (NVIDIA)',
+		'@cf/thinkingmachines/inkling-2-small'    => array(
+			'label'      => 'Inkling 2 Small (Thinking Machines)',
 			'max_tokens' => 16384,
+			'body'       => array(
+				'reasoning_effort'      => 'low',
+				'max_completion_tokens' => 16384,
+			),
 		),
 	);
 
@@ -144,7 +159,7 @@ final class Workers_Ai {
 					array(
 						'messages'   => $messages,
 						'max_tokens' => self::MODELS[ $model ]['max_tokens'],
-					)
+					) + ( self::MODELS[ $model ]['body'] ?? array() )
 				),
 				'user-agent'          => 'FireHouse WordPress plugin',
 				'limit_response_size' => self::MOST_BYTES,
@@ -159,10 +174,20 @@ final class Workers_Ai {
 		$body = is_array( $body ) ? $body : array();
 		if ( 200 !== $code || false === ( $body['success'] ?? true ) ) {
 			$error = $body['errors'][0]['message'] ?? $body['error']['message'] ?? $body['error'] ?? '';
+			$error = is_string( $error ) ? self::said( $error, $credentials ) : '';
+			if ( 408 === $code ) {
+				// Cloudflare's words alone ("AiError: AiError: Request timeout" and an ID) tell an
+				// editor nothing; in the prompt comparison this came after two minutes, for Llama 4
+				// Scout now and then, where the same request had answered in one. They follow,
+				// for the request ID Cloudflare's support would ask for.
+				/* translators: %s: Cloudflare's error message, with its request ID. */
+				$busy = __( 'Cloudflare stopped waiting for the model’s reply, as it can when the model is busy. Try again in a while, or try another model. (HTTP 408: %s)', 'firehouse' );
+				return array( 'problem' => sprintf( $busy, '' !== $error ? $error : __( 'no reason given', 'firehouse' ) ) );
+			}
 			return array(
-				'problem' => is_string( $error ) && '' !== $error
+				'problem' => '' !== $error
 					/* translators: 1: the HTTP status code, 2: Cloudflare's error message. */
-					? sprintf( __( 'Workers AI refused the request (%1$d): %2$s', 'firehouse' ), $code, self::said( $error, $credentials ) )
+					? sprintf( __( 'Workers AI refused the request (%1$d): %2$s', 'firehouse' ), $code, $error )
 					/* translators: %d: the HTTP status code. */
 					: sprintf( __( 'Workers AI refused the request (%d).', 'firehouse' ), $code ),
 			);
@@ -203,7 +228,7 @@ final class Workers_Ai {
 
 	/**
 	 * A reply's text, in any of the shapes Workers AI's models give it: `response` (as
-	 * Llama's), a chat completion's first choice (as Gemma's and Nemotron's), or a
+	 * Llama's), a chat completion's first choice (as Gemma's), or a
 	 * Responses API output's text (as gpt-oss can). Null when there's none.
 	 *
 	 * @param mixed $result The result.
