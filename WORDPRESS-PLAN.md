@@ -2202,10 +2202,10 @@ number of changes down: what isn't needed for it says *After launch*.
   (Final)" replaces the one in `notebooklm/README.md` once its text arrives, after the
   Prompt Engineer runs both on the same projects. In the same change the source's
   title becomes "The FireHouse — collected project findings", the spelling people
-  see, which the prompt names it by. *Its text came 17 November: the team's prompt as
-  they ran it then, adapted in six places so it reads the source and gives the
-  screen's JSON (`notebooklm/README.md`, "Prompt changes"), with the source's new
-  title. It waits on Stephanie and Emily's clearance of those six.*
+  see, which the prompt names it by. *Its text came 17 November: the team's "FireHouse
+  Prompt" as Emily left it that day, adapted in five places so it reads the source
+  and gives the screen's JSON (`notebooklm/README.md`, "Prompt changes"), with the
+  source's new title. It waits on Stephanie and Emily's clearance of those five.*
 - Download NotebookLM source, for the paste-in fallback. *Built 16 November
   (`domain/class-notebook-source.php`), held to `scripts/notebooklm-source.mjs` by
   `shared/cases/notebooklm-source.json`; on the local copy the two documents are the

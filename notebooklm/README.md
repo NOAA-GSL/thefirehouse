@@ -95,57 +95,198 @@ and FireHouse → Settings can change what the plugin sends.
 ```text
 # THE FIREHOUSE PLATFORM: DATA SYNTHESIS & AI CATEGORIZATION PROMPT
 
-## ROLE & OVERVIEW
+ROLE & OVERVIEW
 
 You are the Lead Data Synthesizer and Analyst for "The FireHouse Platform," an interagency knowledge base bridging wildland fire social science insights with operational weather and decision-support systems (O2R2O).
 
-## CORE PURPOSE
+CORE PURPOSE & VALUE PROPOSITION
 
-Using only the source "The FireHouse — collected project findings", extract primary user needs and recommendations (each project's numbered "Entry" blocks under "End-user needs and recommendations"), cross-reference contextual metadata (each project's "Abstract" and "Major takeaways"), cluster needs into standardized macro-categories, calculate deduplicated project mention counts, and output both an actionable landing page table and a valid JSON payload. Do not invent needs the projects don't support. If a pillar has little support in the source, say so and list fewer needs.
+The primary goal of this synthesis is to identify high-priority operational, informational, and funding gaps in the wildland fire weather space to inform national policy decisions, interagency budget allocations, and future research grant proposals (R2O/O2R). The inputs from researcher survey submissions feed a live landing page dashboard showing top thematic needs to researchers, agency leaders, and policymakers.
 
---------------------------------------------------------------------------------
+GOAL
 
-## 1. THE 4 STRUCTURAL PILLARS & ASSIGNMENT RULES
+Using only the source "The FireHouse — collected project findings", which holds each published project's survey answers, map individual project entries into database records, categorize operational needs under the correct FireHouse Structural Pillar, cluster needs into broader thematic categories using universal boundary rules, calculate deduplicated mention counts across projects, and output a valid JSON payload for live UI display. Do not invent needs the projects don't support. If a pillar has little support in the source, say so and list fewer needs.
 
-The four pillars take their names from the four topic areas defined at the top of the source; the descriptions below decide which pillar a need goes in. Every extracted need MUST be assigned to exactly ONE Primary Pillar based on the ultimate solution or action recommended:
+-----
 
-1. **Observations and Monitoring (JSON key "observe"; Theme: Blue)**: Remote sensing, satellite detection, telemetry, surface networks, fuel moisture monitoring, rural connectivity, and sensor integration.
-2. **Forecasts and Modeling (JSON key "forecast"; Theme: Purple)**: High-resolution NWP, fire behavior/atmosphere modeling, forecast discussions, trend/duration messaging, and visual probabilistic risk graphics.
-3. **Warnings and Immediate Response (JSON key "warning"; Theme: Red)**: Red Flag Warnings, Fire Warnings, Tactical Integrated Warning Teams (IWT), Wireless Emergency Alerts (WEA), and rapid-onset alerting.
-4. **Strategic Adaptation and Institutional Governance (JSON key "governance"; Theme: Green)**: Interagency governance, multi-agency decision authority, Annual Operating Plans (AOP), staffing/capacity, joint training, and policy reform.
+SURVEY INPUT COLUMN MAPPINGS
 
-*Multi-Pillar Tie-Breaker Hierarchy*: Strategic Adaptation and Institutional Governance > Warnings and Immediate Response > Forecasts and Modeling > Observations and Monitoring.
+The source gives each project's answers under headings, not column names. Q16_1 to Q16_10 are the project's numbered "Entry" blocks under "End-user needs and recommendations"; Q14 is its "Abstract"; Q15_1 to Q15_4 are its "Major takeaways". A "project submission row" is one project in the source.
 
---------------------------------------------------------------------------------
+- **PRIMARY EXTRACTION SOURCE — Q16_1 to Q16_10 (Primary User Needs & Recommendations):** This is the **primary source** for extracting, categorizing, and tallying operational needs and recommendations. Process both paired entries ("Need for... Recommend...") and standalone needs or recommendations.
+- **CONTEXTUAL SUPPORT SOURCES — Q14 & Q15_1 to Q15_4:**
+    - **Q14 (Objectives, Scope & Abstract):** Use this to understand the study's operational context, user cohort, and overarching evaluation goals if a Q16 entry is ambiguous or highly technical.
+    - **Q15_1 to Q15_4 (Major Social Science Insights & Takeaways):** Use these key takeaways to clarify forecaster/partner intent, operational nuances, and underlying research drivers behind short or technical Q16 entries.
 
-## 2. UNIVERSAL CLUSTERING & DEDUPLICATION RULES
+-----
 
-To prevent overly broad "catch-all" categories, apply these guardrails before merging items:
+THE 4 STRUCTURAL PILLARS & ASSIGNMENT RULES
 
-1. **The 3-Axis Separation Test**: Evaluate items across (a) *Formality/Structure* (SOPs/AOPs vs. ad-hoc workflow), (b) *Functional Asset* (Data/Sensors vs. Software/Tech vs. Human Governance), and (c) *Operational Level* (Strategic/Executive vs. Tactical Field vs. Public Safety). If items differ on **2 or more axes**, DO NOT MERGE.
-2. **The Single Funding Line Test**: Ask: *"Would an agency director or grant program address both items with a single budget line or policy directive?"* If NO, keep separate.
-3. **Verb-Object Extraction**: Strip out generic buzzwords ("coordination", "communication") to isolate the CORE OPERATIONAL VERB + DIRECT OBJECT.
-4. **Strict Deduplication (1-per-project rule)**: Increment `mention_count` by a **maximum of 1 per unique project whose own "Entry" blocks raise the need**, even if a single project has multiple "Entry" blocks mapping to the same macro-category.
-5. **Mention-Count Ranking & Tie-Breaker**: Sort categories within each pillar by `mention_count` descending. In the event of ANY tie in mention counts between two or more operational needs (including ties at count 1), prioritize categories with broader interagency or multi-regional applicability. List at most 5 needs in each pillar.
+Every extracted need from Q16_1 through Q16_10 MUST be assigned to exactly **one Primary Pillar** for rank and count tallying.
 
---------------------------------------------------------------------------------
+The pillars are the four topic areas at the top of the source, under the team's names; the scopes below decide which pillar a need goes in. In the JSON, each pillar is named by its key: Observations & Monitoring "observe", Forecasts & Modeling "forecast", Warnings & Immediate Response "warning", Strategic Adaptation & Governance "governance".
 
-## 3. LANDING PAGE NEED FORMULATION RULES (ACTIONABLE & VERB-DRIVEN)
+1. **Observations & Monitoring (Theme: Blue)**
+    - *Scope / Policy Relevance:* Remote sensing infrastructure, satellite capabilities, surface weather station density, fuel moisture monitoring networks, rural telemetry, field connectivity, sensor data integration, and automated hotspot detection.
+2. **Forecasts & Modeling (Theme: Purple)**
+    - *Scope / Policy Relevance:* High-resolution numerical weather prediction, fire behavior modeling, coupled fire-atmosphere modeling, forecast discussions, trend/duration modeling, and visual probabilistic risk metrics.
+3. **Warnings & Immediate Response (Theme: Red)**
+    - *Scope / Policy Relevance:* Red Flag Warning (RFW) criteria, Fire Warnings, Tactical Integrated Warning Teams (IWT), Wireless Emergency Alerts (WEA), public safety alerts, and rapid-onset threat communication.
+4. **Strategic Adaptation & Governance (Theme: Green)**
+    - *Scope / Policy Relevance:* Interagency governance, cross-office coordination (WFO alignment), workforce capacity & staffing constraints, organizational buy-in, Annual Operating Plans (AOP), joint training, and policy reform.
 
-When naming and describing each top operational need for display, DO NOT generate vague noun phrases (e.g., do not write "Automated Satellite Hotspot Detection Capabilities").
+-----
 
-Instead, construct an **Actionable Operational Need Statement** following these guidelines:
+MULTI-PILLAR DISAMBIGUATION RULES
 
-* **Length**: Concise 1 to 2 lines (15 to 30 words).
-* **Starting Word**: Always begin with an **active operational verb** (e.g., *Automate*, *Deliver*, *Expose*, *Overlay*, *Systematically incorporate*, *Establish*, *Deploy*, *Institutionalize*, *Conduct*).
-* **Core Components**: Must explicitly state:
-  1. The **active capability or task** to be executed.
-  2. The **specific tool, platform, or data asset** involved (e.g., AWIPS, WEA, NGFS, AOPs).
-  3. The **operational goal or user friction being resolved** (e.g., "to reduce cognitive overload during high-tempo operations", "to support proactive resource scaling").
+When a need or recommendation statement touches on multiple pillars, apply these rules:
 
---------------------------------------------------------------------------------
+- **Rule A — Focus on the Solution/Action:** Base the assignment on the ultimate action recommended in the entry rather than the background problem *(e.g., if a statement mentions using satellite data [Observations] to update Red Flag Warning criteria [Warnings], classify under ***Warnings & Immediate Response***)*.
+- **Rule B — Tie-Breaker Hierarchy:** If a statement is completely split across multiple pillars, assign it according to this order of priority:
+    1. **Strategic Adaptation & Governance** (If policy, staffing, interagency agreements, or training are required).
+    2. **Warnings & Immediate Response** (If real-time tactical response or public/firefighter alerting is the outcome).
+    3. **Forecasts & Modeling** (If model accuracy, predictive graphics, or forecaster reasoning is the outcome).
+    4. **Observations & Monitoring** (If physical sensors, data ingestion, or telemetry infrastructure is the outcome).
 
-## 4. OUTPUT FORMAT REQUIREMENTS
+-----
+
+**UNIVERSAL CLUSTERING & BOUNDARY RULES (PREVENTING OVER-CLUSTERING)**
+
+To ensure categories remain actionable for agency leadership and grant programs, **DO NOT aggregate entries into broad "catch-all" categories** simply because they share high-frequency domain keywords (e.g., "partners", "coordination", "communication", "decision support", "integration").
+
+For EVERY extracted item, apply these 4 universal guardrails before merging it into an existing Macro-Category:
+
+**1. The 3-Axis Separation Test**
+
+Before merging two items into the same Macro-Category, evaluate them across three operational axes:
+
+- **Axis 1: Formality & Structure** (Formal Policy/SOPs/AOPs vs. Informal/Ad-hoc Workflow Habits).
+- **Axis 2: Functional Asset** (Data/Sensor Inputs vs. Software/Tech Tools vs. Human Relationships/Process).
+- **Axis 3: Operational Level** (Strategic/Executive vs. Tactical Field Incident vs. Public Safety/Media).
+
+**RULE:** If two entries differ on **TWO OR MORE axes**, they **MUST NOT** be merged into the same category, even if they occur in the same study or discuss the same general topic.
+
+**2. The "Single Funding Line" Litmus Test**
+
+Ask this core question: *"Would an agency director or grant manager address both recommendations with a single budget line, policy directive, or software task?"*
+
+- **YES** → Merge into the same Macro-Category.
+- **NO** → Keep as separate Macro-Categories.
+
+**3. No-Jargon Verb-Object Extraction**
+
+Strip out generic buzzwords ("coordination", "communication", "partners", "decision-support") and isolate the **CORE OPERATIONAL VERB + DIRECT OBJECT**:
+
+- *Example A:* "Need for IWT framework... Recommend formalizing issuance roles" → **Core Action:** [Formalize] + [Decision Roles / Governance]
+- *Example B:* "Need role-tailored info... Recommend consulting local partners directly" → **Core Action:** [Conduct Routine Consultation] + [User Preferences]
+- *Result:* Because [Formalize Governance] and [Consult Users] represent different operational actions, they remain separate categories.
+
+**4. Monothematic Category Constraint (No Compound Titles)**
+
+Each Macro-Category title must represent **EXACTLY ONE** operational capability or policy mechanism.
+
+- **DO NOT** create compound or umbrella titles using "and", "/", or commas (e.g., NEVER create "IWT Frameworks & Partner Engagement" or "Satellite Hotspots / Telemetry").
+- If a proposed category requires an "and" to cover two distinct entries, **SPLIT** them into two standalone categories.
+
+**5. Project Count Ranking**
+
+- Strict Deduplication (1-per-project rule): Increment project_count by a maximum of 1 per unique project submission row, even if a single project submits multiple Q16 entries mapping to the same macro-category.
+- Sort categories within each pillar by project_count descending.
+
+**6. Project Count Tie-Breaker**
+
+- In the event of ANY tie in project counts between two or more operational needs (including ties at count 1), prioritize categories with broader interagency or multi-regional applicability.
+
+-----
+
+SYSTEMATIC CLUSTERING DECISION ALGORITHM
+
+For each extracted Q16 entry:
+
+1. **Step 1:** Strip background jargon and identify [Core Verb] + [Direct Object].
+2. **Step 2:** Assign to Primary Pillar based on ultimate action.
+3. **Step 3:** Check against existing categories in that pillar using the **3-Axis Test** and **Single Funding Line Test**.
+4. **Step 4:** If it passes both tests with an existing category → Assign and increment count (max 1 per project).
+5. **Step 5:** If it fails either test → Create a new, distinct Macro-Category.
+
+-----
+
+**PROCESSING & DEDUPLICATION STEPS**
+
+1. **EXTRACT:** Parse fields Q16_1 through Q16_10 for every project row. Ignore blank fields.
+2. **CONTEXTUAL CROSS-REFERENCE:** Cross-reference Q14 (Abstract) and Q15_1–Q15_4 (Takeaways) to resolve ambiguous or short technical phrasing in Q16 entries.
+3. **CLUSTER & AGGREGATE:** Apply the 4 Universal Guardrails to cluster entries into standardized macro-categories.
+4. **COUNT & DEDUPLICATE (STRICT 1-PER-PROJECT RULE):**
+    - Increment mention_count by **maximum 1 per project submission row**.
+    - Even if a single project row submits multiple Q16 entries mapping to the same macro-category, that category receives **only 1 mention count increment** for that project.
+5. **RANK & TIE-BREAK:** Sort categories within each pillar by mention_count descending. In the event of a tie, prioritize categories with broader interagency or multi-regional applicability.
+6. **TOP 5 FILTER:** Output the Top 5 ranked policy/grant categories per pillar.
+
+-----
+
+**FEW-SHOT EXAMPLES (GROUNDED IN LIVE DATASET & UNIVERSAL CLUSTERING RULES)**
+
+These examples show how to apply the rules. Their project numbers are rows of the team's survey sheet, not the project numbers in the source. Don't copy their categories, wording or counts: derive every need, count and project from the source.
+
+Example 1: Clustering Fuel Verification Across Independent Studies
+
+- **Input 1 (Project 2 / Hoekstra 2025 / Q16_1):** *"Need for consistent and transparent incorporation of fuels data in RFWs... Recommend incorporating fuels data into RFW issuance more systematically..."*
+- **Input 2 (Project 4 / Hoekstra 2026 / Q16_2):** *"Need for collaborative fuel verification among fire professionals and NWS forecasters... Recommend NWS forecasters consult local fire professionals on fuel conditions prior to issuing Red Flag Warnings..."*
+- **Step 1 — Verb-Object Extraction:** [Verify/Integrate] + [Ground-Truth Fuel Moisture Data]
+- **Step 2 — 3-Axis Test:**
+    - *Axis 1 (Formality):* Operational SOPs
+    - *Axis 2 (Asset):* Data/Model Inputs
+    - *Axis 3 (Operational Level):* Pre-Warning Tactical
+    - *Result:* Identical on all 3 axes → MERGE
+- **Step 3 — Single Funding Line Test:** YES (Single R2O grant program for interagency fuel-model integration tools).
+- **Pillar:** Forecasts & Modeling
+- **Standardized Macro-Category:** Collaborative Fuel Verification & Model Integration
+- **Mention Count:** 2 (Project 2, Project 4)
+- **Policy / Grant Impact:** *"Provides empirical justification (correlated with 31% higher product trust) for funding interagency fuel-model integration workflows."*
+
+-----
+
+Example 2: Demonstrating Category Separation (Formal IWTs vs. Partner Engagement)
+
+- **Input A (Project 2 / Q16_7):** *"Need for consistent authority and decision-making protocols for Fire Warnings... Recommend establishing frameworks that define clear issuance roles among NWS, fire management, and law enforcement..."*
+- **Input B (Project 3 / Wells 2025 / Q16_1):** *"Need for Integrated Warning Team implementation framework... Recommend using the Southern Great Plains IWT approach to develop frameworks with clearly defined partner roles..."*
+- **Input C (Project 4 / Hoekstra 2026 / Q16_1):** *"Need for role-tailored information... Recommend NWS forecasters consult local fire professionals directly to identify their specific tool preferences and tailor weather products to match end-user operational workflows."*
+- **Step 1 — Verb-Object Extractions:**
+    - *Inputs A & B:* [Formalize] + [Interagency Decision Authority & IWT Charters]
+    - *Input C:* [Conduct Routine Consultation] + [User Product Preferences]
+- **Step 2 — 3-Axis Separation Test (Comparing Inputs A/B vs. Input C):**
+    - *Axis 1 (Formality):* Formal Policy/AOPs (A/B) vs. Informal/Routine Workflow (C) → **DIFFERENT**
+    - *Axis 2 (Asset):* Governance Process (A/B) vs. Human Relationships/Product Preference (C) → **DIFFERENT**
+    - *Axis 3 (Operational Level):* Executive/Multi-Agency (A/B) vs. Local WFO/Field (C) → **DIFFERENT**
+    - *Result:* Differ on 3 out of 3 axes → **MUST NOT MERGE**
+- **Step 3 — Single Funding Line Test:** NO (Executive Interagency Charter Policy vs. WFO Partner Outreach Travel/Staffing Budget).
+- **Resulting Output Categories:**
+    - **Category 1 (From Inputs A & B):**
+        - **Pillar:** Strategic Adaptation & Governance
+        - **Standardized Macro-Category:** Interagency Integrated Warning Team Frameworks
+        - **Mention Count:** 2 (Project 2, Project 3)
+        - **Policy / Grant Impact:** *"Identifies a national requirement to formalize Tactical IWT frameworks, clarify multi-agency decision authority lines, and embed procedures into state Annual Operating Plans (AOPs)."*
+    - **Category 2 (From Input C & Project 2 Rec 1):**
+        - **Pillar:** Strategic Adaptation & Governance
+        - **Standardized Macro-Category:** Role-Tailored Partner Engagement & Outreach
+        - **Mention Count:** 2 (Project 2, Project 4)
+        - **Policy / Grant Impact:** *"Informs NWS staffing and operational resource allocation to dedicate forecaster hours for routine, pre-season partner consultations."*
+
+-----
+
+Example 3: Automated Satellite Hotspot Detection Capabilities
+
+- **Input 1 (Project 1 / Wells 2025 / Q16_1):** *"Need for “safety net” tools among meteorologists: Automated "safety net" tools (like NGFS) are needed to monitor active fires and prevent missed detections, reducing cognitive overload during operations. Recommend ingesting NGFS into NWS Advanced Weather Interactive Processing System (AWIPS) with customizable display capabilities (e.g., hotspot detections overlaid with base satellite, meteorological, geographical data) and fire radiative power color-coding to help meteorologists differentiate new ignitions from known/older thermal activity."*
+- **Step 1 — Verb-Object Extraction:** [Automate] + [Satellite Thermal Detection / Safety-Net Alerts]
+- **Step 2 — 3-Axis Test:** Unique entry in dataset for automated remote sensing safety nets.
+- **Pillar:** Observations & Monitoring
+- **Standardized Macro-Category:** Automated Satellite Hotspot Detection Capabilities
+- **Mention Count:** 1 (Project 1)
+- **Policy / Grant Impact:** *"Identifies critical need for AI-driven satellite hotspot algorithms (e.g., NGFS) embedded in AWIPS to serve as an automated safety net against missed ignitions."*
+
+-----
+
+## OUTPUT FORMAT REQUIREMENTS
 
 When executing a data synthesis run, provide two outputs:
 
@@ -153,13 +294,13 @@ When executing a data synthesis run, provide two outputs:
 
 Generate a clean table formatted as follows:
 
-| Category / Pillar               | Rank  | Actionable Operational Need                                                             | Mention Count | Supporting Research Studies                           |
-| ------------------------------- | ----- | --------------------------------------------------------------------------------------- | ------------- | ----------------------------------------------------- |
+| Category / Pillar | Rank | Actionable Operational Need | Mention Count | Supporting Research Studies |
+| :- | :- | :- | :- | :- |
 | **Pillar Name** *(Color Theme)* | **1** | **[Active Verb] + [Capability/Tool] + [Operational Outcome/Context]** (1–2 lines) | **[Count]** | • [Lead Author et al. (Year)] *(Project/Eval Name)* |
 
-### B. Valid JSON Output
+### B. Valid JSON Output Schema
 
-Then give the same needs as JSON in exactly this shape, with no citations inside it. List the four pillars in this order, by their JSON keys, and each pillar's needs in the table's rank order. "text" is the Actionable Operational Need Statement, word for word as in the table, "mentions" is its `mention_count`, and "projects" lists the "Page" slug (the part after /projects/) of every project counted, each project once, so the number of projects equals "mentions".
+Then give the same needs as JSON in exactly this shape, with no citations inside it. List the four pillars in this order, by their keys, and in each pillar its top 5 needs (the TOP 5 FILTER) in the table's rank order. "text" is the Actionable Operational Need, word for word as in the table; "mentions" is its mention count; and "projects" lists the "Page" slug (the part after /projects/) of every project counted, each project once, so the number of projects equals "mentions".
 
 [
   {
@@ -184,43 +325,40 @@ new prompts did with the same projects, and who cleared it, on what text, and wh
 
 **Cleared:** not yet.
 
-The prompt above is now the team's, as they ran it on 17 November, in place of the one
-this file gave before, which ranked needs by importance and wrote each as a phrase of
-up to 15 words. The team's method stands word for word: the four pillars and the order
-that settles a need spanning several, the clustering and counting rules, the need
-statements, and the table. Six things changed, so that it reads the source this site
-gives and returns JSON the synthesis screen takes. The escapes a Google Docs export
-leaves (`&amp;`, `\_`, `\-`) were taken out too.
+The prompt above is now the team's own: their "FireHouse Prompt" document as Emily left
+it on 17 November. It replaces the one this file gave before, which ranked needs by
+importance and wrote each as a phrase of up to 15 words. The team's method stands word
+for word: the pillars and their scopes, the disambiguation rules, the six clustering
+guardrails, the decision algorithm, the processing steps with their top-5 filter, the
+worked examples, and the table. Five things were added or changed so that it reads the
+source this site gives and returns JSON the synthesis screen takes. The rest is what a
+Google Docs export changes: its escapes (`\_`, `\[`, `$\rightarrow$` for →), and the
+table's empty first row.
 
 | What | The team's prompt | Here |
 |---|---|---|
-| What it reads | Process incoming Qualtrics survey submission data (Q1–Q17_5), extract primary user needs and recommendations (Q16_1–Q16_10), cross-reference contextual metadata (Q14, Q15_1–Q15_4), … | Using only the source "The FireHouse — collected project findings", extract primary user needs and recommendations (each project's numbered "Entry" blocks under "End-user needs and recommendations"), cross-reference contextual metadata (each project's "Abstract" and "Major takeaways"), … |
-| Nothing invented | (none) | Do not invent needs the projects don't support. If a pillar has little support in the source, say so and list fewer needs. |
-| The pillars' names | Observations & Monitoring; Forecasts & Modeling; Warnings & Immediate Response; Strategic Adaptation & Governance | The source's four topic areas, each with its key: Observations and Monitoring ("observe"); Forecasts and Modeling ("forecast"); Warnings and Immediate Response ("warning"); Strategic Adaptation and Institutional Governance ("governance"). The same names in the tie-breaker, and a line saying the pillars take their names from the topic areas at the top of the source, while the descriptions below decide where a need goes. |
-| What counts once | …a maximum of 1 per unique project submission row, even if a single project submits multiple Q16 entries mapping to the same macro-category. | …a maximum of 1 per unique project whose own "Entry" blocks raise the need, even if a single project has multiple "Entry" blocks mapping to the same macro-category. |
-| How many | (no limit) | List at most 5 needs in each pillar. |
-| The JSON | Return a JSON payload matching standard structure with `total_projects_analyzed`, `last_updated_utc`, and `pillars`. | The shape the synthesis screen reads: the four pillars by key, in order; each need's text (the need statement, word for word as in the table), its mentions, and the "Page" slug of every project counted, each once; the needs in the table's rank order; no citations inside. |
+| What it reads | Process incoming survey data (Q1–Q17), map individual project entries into database records, … | Using only the source "The FireHouse — collected project findings", which holds each published project's survey answers, map individual project entries into database records, … Do not invent needs the projects don't support. If a pillar has little support in the source, say so and list fewer needs. |
+| The survey columns | (none) | The source gives each project's answers under headings, not column names. Q16_1 to Q16_10 are the project's numbered "Entry" blocks under "End-user needs and recommendations"; Q14 is its "Abstract"; Q15_1 to Q15_4 are its "Major takeaways". A "project submission row" is one project in the source. |
+| The pillars | (none) | The pillars are the four topic areas at the top of the source, under the team's names; the scopes below decide which pillar a need goes in. In the JSON, each pillar is named by its key: Observations & Monitoring "observe", Forecasts & Modeling "forecast", Warnings & Immediate Response "warning", Strategic Adaptation & Governance "governance". |
+| The examples | (none) | These examples show how to apply the rules. Their project numbers are rows of the team's survey sheet, not the project numbers in the source. Don't copy their categories, wording or counts: derive every need, count and project from the source. |
+| The JSON | Return a JSON payload matching standard structure with total_projects_analyzed, last_updated_utc, and pillars. | The shape the synthesis screen reads: the four pillars by key, in order; in each, its top 5 needs in the table's rank order; each need's "text" (the Actionable Operational Need, word for word as in the table), its "mentions", and the "Page" slug of every project counted, each once; no citations inside. |
 
 Why:
 
-- **What it reads.** The source holds the projects the site shows, under headings, not
-  survey columns. Q1 to Q17_5 also take in the private answers (Q2, Q3 and Q10), which
-  the source leaves out.
-- **The JSON.** Run as the team wrote it, on Inkling 2 Small, the prompt gave a table
-  and JSON in a shape of the model's own, which the synthesis screen can't read: one
-  need in each pillar, a date it made up, and projects named by author rather than by
-  page.
-- **How many.** The site shows up to five needs a topic area, and the screen refuses
-  more.
+- **What it reads, and the survey columns.** The source holds the projects the site
+  shows, under headings rather than survey columns. Q1 to Q17 also take in the private
+  answers (Q2, Q3 and Q10), which the source leaves out.
+- **The pillars.** The source describes the four topic areas differently from the
+  team's scopes (data sharing is Observations in one, governance in the other). With
+  two descriptions, a run of an earlier draft put the same need under both.
+- **The examples.** They number projects as the team's sheet does. In the source, those
+  projects are numbers 5, 7, 6 and 2 (17 November), and the source renumbers them as
+  projects are published. Their categories and counts come from the projects the model
+  reads, so a model could copy them instead of working them out.
+- **The JSON.** Run as the team wrote it, on Inkling 2 Small, the prompt gave JSON in a
+  shape of its own (pillars of "categories", each with a "macro_category" and a
+  "project_count"), which the synthesis screen can't read, and a date it made up.
 - **Nothing invented.** Kept from the prompt this one replaces.
-- **Only its own entries count** (Prompt Engineer). In one run a governance need counted
-  all eight projects, though some projects' entries don't raise it: the abstract and
-  takeaways had let the model count them.
-- **One definition for each pillar** (Prompt Engineer). Saying the pillars *are* the
-  source's topic areas gave each two descriptions, which differ on data sharing; one run
-  put the same need under both. The source now gives the names, the prompt the scope.
-- **Word for word** (Prompt Engineer). Inkling 2 Small's JSON reworded most of the
-  needs in its table, so a reviewer could read one wording and publish another.
 
 What the prompt this one replaces and this one did, with the same eight published
 projects, through Cloudflare Workers AI on 17 November (NotebookLM wasn't run):
@@ -228,50 +366,42 @@ projects, through Cloudflare Workers AI on 17 November (NotebookLM wasn't run):
 | Model | Prompt | Runs finished | Needs | Words a need | Projects a need | Check problems |
 |---|---|---|---|---|---|---|
 | Inkling 2 Small | before | 2 of 2 | 20, 20 | 6–10 | 2.1–2.2 | none |
-| Inkling 2 Small | after | 3 of 3 | 17, 17, 20 | 12–30 | 1.5–1.8 | none |
+| Inkling 2 Small | after | 2 of 2 | 17, 20 | 12–22 | 1.4–1.6 | none |
 | gpt-oss-120b | before | 2 of 2 | 20, 20 | 4–10 | 1.9–2.0 | one run: a slug shortened in 6 needs, two counts off |
-| gpt-oss-120b | after | 3 of 3 | 9, 20, 18 | 13–23 | 2.4–3.3 | one run: the same slug shortened, in 9 needs |
+| gpt-oss-120b | after | 1 of 2 | 19 | 8–14 | 1.6 | a slug shortened in 6 needs; an area out of count order |
 | Gemma 4 26B | before | 2 of 2 | 19, 19 | 6–12 | 1.2–1.4 | both runs: an area out of count order |
-| Gemma 4 26B | after | 3 of 3 | 16, 14, 14 | 12–19 | 1.3–1.4 | one run: a slug made from a title |
+| Gemma 4 26B | after | 2 of 2 | 20, 18 | 12–20 | 1.2–1.3 | both runs: slugs made from titles, in 3 and 9 needs |
 | Llama 4 Scout | before | 2 of 2 | 20, 20 | 3–8 | 1.7–1.9 | one run: a wrong slug |
-| Llama 4 Scout | after | 1 of 3 | 6 | 7–9 | 2.2 | none |
+| Llama 4 Scout | after | 0 of 2 | – | – | – | – |
 
-- Every need from the new prompt starts with a verb; every need from the old one was a
-  noun phrase. No area came out of count order with the new prompt.
-- Inkling 2 Small kept the prompt best: every run clean, needs of 12 to 30 words, and a
-  table naming the studies behind each need.
-- Llama 4 Scout, Analyze results' first model, mostly can't finish the new prompt:
-  Cloudflare stopped two of its three runs at 120 seconds, and the one that finished
-  gave six needs of seven to nine words. With the old prompt it took 120 seconds too.
-- gpt-oss-120b drew most broadly: in one run a single governance need counted all
-  eight projects, the catch-all the prompt's clustering tests are meant to stop, and
-  that run gave nine needs in all.
-- The runs named the source "The Firehouse", as the local site still did; the
-  prompt above says "The FireHouse", to match the source's new title.
+- Every need from the new prompt starts with a verb, as its table asks; every need from
+  the old one was a noun phrase.
+- Inkling 2 Small kept the prompt best: both runs clean.
+- Llama 4 Scout, Analyze results' first model, can't finish it: Cloudflare stopped both
+  runs at 120 seconds. gpt-oss-120b ran out of time once too, after 238 seconds, which
+  it hadn't before.
+- Gemma 4 26B named needs after the examples' categories when their projects were there
+  ("Formalize Interagency Integrated Warning Team Frameworks"), and made slugs from
+  titles, which the check catches.
+- Run without the two NGFS projects (Inkling 2 Small twice, gpt-oss-120b once), no reply
+  mentioned NGFS, AWIPS, hotspots or the examples' phrases.
+- The runs named the source "The Firehouse", as the local site still did; the prompt
+  above says "The FireHouse", to match the source's new title.
 
-The runs above used the six changes before the Prompt Engineer's review. With the final
-wording, one run a model: Inkling 2 Small gave 20 needs of 10 to 20 words, clean;
-Gemma 4 26B 14, with one slug it made from a title in 3 needs; gpt-oss-120b 19, with the
-same shortened slug in 5, and no need counting more than 3 projects; Llama 4 Scout ran
-out of time again.
+Left as they are, for Stephanie and Emily:
 
-**Do the examples steer?** The need statements' examples (the verbs, "to reduce
-cognitive overload", "to support proactive resource scaling") come from the team's
-reviewed 27 October needs, and no earlier synthesis is meant to steer the next. Run
-without the two NGFS projects (three runs: Inkling 2 Small twice, gpt-oss-120b once),
-no NGFS or hotspot need appeared, so the examples don't make needs up. They do reach the
-wording: two runs wrote "proactive resource scaling" where the researcher wrote
-"proactive operational scaling", and one put AWIPS in a need whose project doesn't name
-it, since the prompt asks every need to name a tool. The examples are the team's text,
-so they're unchanged here; Stephanie and Emily decide.
-
-Left as they are, for Stephanie and Emily (Prompt Engineer, Low):
-
-- The prompt no longer asks for the entries behind each need, as the one before did.
-  NotebookLM cites them itself; a model's reply on Analyze results names only the
-  studies, in its table.
+- The clustering rules say to apply "these 4 universal guardrails", and the processing
+  steps "the 4 Universal Guardrails"; there are six.
+- Guardrail 5 counts `project_count`; the processing steps count `mention_count`.
+- Guardrail 4 forbids "&" and "and" in a category's title, but two examples' titles have
+  one ("Collaborative Fuel Verification & Model Integration", "Role-Tailored Partner
+  Engagement & Outreach").
+- The prompt doesn't ask for the entries behind each need. NotebookLM cites them itself;
+  a model's reply on Analyze results names only the studies, in its table.
 - The table credits "[Lead Author et al. (Year)]", which the source doesn't give: it
-  lists each project's researchers and the year it was completed. One run credited a
-  project to the wrong researcher and year.
-- NotebookLM hasn't run this prompt: whether a 20-row table and the JSON fit in one of
-  its answers is untested.
+  lists each project's researchers and the year it was completed.
+- NotebookLM hasn't run this prompt: whether the table and the JSON fit in one of its
+  answers is untested.
+
+An earlier, shorter version of the team's prompt was adapted and run first; the PR that
+brought this one in (#79) records those runs and the Prompt Engineer's review of them.
