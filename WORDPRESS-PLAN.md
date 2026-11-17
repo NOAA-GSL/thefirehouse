@@ -2316,7 +2316,12 @@ hand.
   project by a shortened slug, so the check now gives the nearest page slug for a
   name that isn't a project's (`Synthesis::closest()`), only when no more than a
   third of that slug differs and every other slug is clearly further, and says so
-  when its project isn't published.*
+  when its project isn't published. Later runs that day showed models stopping a slug
+  partway (gpt-oss-120b) and making their own from the title (Gemma 4 26B), so the
+  check also gives the one slug a name is the start of, when the name has two-thirds
+  of its words, and the project whose title, in slug form, is clearly nearest; a tie
+  in any of these gives nothing. Every wrong name from that day's runs gets the right
+  slug.*
 - Site Health checks: outbound reach to doi.org, api.crossref.org, data.crosscite.org
   and the AI service, `noindex` on test, and HTML caching status. *Done: `Site_Health`.
   The test site's check needs `WP_ENVIRONMENT_TYPE` set to `staging` there. The local

@@ -370,6 +370,37 @@ final class SynthesisTest extends DomainTestCase {
 	}
 
 	/**
+	 * When no slug is clearly nearest, letter by letter, a name gets the slug it cuts
+	 * short, if it begins no other and has two-thirds of its words; then the project
+	 * whose title, in slug form, is clearly nearest, as a model makes its own slug from
+	 * a title. The names are the ones models gave on 16 November.
+	 */
+	public function test_a_name_cut_short_or_made_from_a_title_gets_its_slug(): void {
+		$project  = static fn( int $ref, string $slug, string $title ): array => array(
+			'ref'    => $ref,
+			'slug'   => $slug,
+			'id'     => '',
+			'title'  => $title,
+			'public' => true,
+		);
+		$projects = array(
+			$project( 1, 'igniting-impact-advancing-fire-weather-decision-support', 'Igniting Impact: Advancing Fire Weather Decision Support Services' ),
+			$project( 2, 'igniting-insight-evaluating-nws-fire-weather-products', 'Igniting Insight: Evaluating NWS Fire Weather Products within a Fire Partner Decision-Making Context' ),
+			$project( 3, 'an-evaluation-of-the-next-generation-fire-system-ngfs', 'An Evaluation of the Next Generation Fire System (NGFS) for Predictive Services' ),
+			$project( 4, 'fire-weather-testbed-evaluation-004-national-weather-service', 'Fire Weather Testbed Evaluation #004 - National Weather Service Fire Warnings' ),
+			$project( 5, 'fire-weather-testbed-evaluations-002-fire-detection', 'Fire Weather Testbed Evaluations #002: Fire Detection and Dissemination' ),
+		);
+		$given    = static fn( string $name ): string => 1 === preg_match( '/The nearest published page slug is “([^”]+)”/u', self::named( $name, $projects )[0], $found ) ? $found[1] : 'none';
+
+		$this->assertSame( 'igniting-impact-advancing-fire-weather-decision-support', $given( 'igniting-impact-advancing-fire-weather' ), 'Cut short: 17 changes against 24 is no clear nearest, letter by letter.' );
+		$this->assertSame( 'an-evaluation-of-the-next-generation-fire-system-ngfs', $given( 'an-evaluation-of-the-next-generation-fire-system-for-predictive-services' ), 'Made from the title, five letters off.' );
+		$this->assertSame( 'igniting-insight-evaluating-nws-fire-weather-products', $given( 'igniting-insight-evaluating-nws-fire-weather-products-within-a-fire-partner-decision-making-context' ), 'Made from the title exactly.' );
+		$this->assertSame( 'fire-weather-testbed-evaluations-002-fire-detection', $given( 'fire-weather-testbed-evaluation-002-fire-detection' ), 'Letter by letter first: one letter off, not the slug with four of its first words.' );
+		$this->assertSame( 'none', $given( 'fire-weather-testbed-evaluation' ), 'Four of eight words.' );
+		$this->assertSame( 'none', $given( 'igniting' ), 'Begins two slugs.' );
+	}
+
+	/**
 	 * A name holding a character visitors wouldn't see is a problem of its own, and
 	 * neither it nor the need's text is quoted, since a direction override would turn
 	 * the rest of the problem around. A project's title is named without such
