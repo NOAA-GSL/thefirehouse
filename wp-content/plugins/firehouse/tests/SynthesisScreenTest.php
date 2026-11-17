@@ -1047,6 +1047,21 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		$page = self::drawn();
 		$this->assertStringContainsString( 'name="firehouse_model" class="regular-text" value=""', $page, 'Not a model the screen offers, as one Cloudflare retired: Made with is left for the editor, never NotebookLM.' );
 		$this->assertStringNotContainsString( 'whole reply', $page );
+		$this->assertSame( 2, substr_count( $page, '<input type="hidden" name="firehouse_draft" value="@cf/qwen/qwq-32b" />' ), 'Both forms keep naming the draft.' );
+
+		// The JSON edited and checked again: still not a paste.
+		self::send(
+			array(
+				'firehouse_step'          => 'check',
+				'firehouse_synthesis'     => self::synthesis( 'R_smoke' ),
+				'firehouse_draft'         => '@cf/qwen/qwq-32b',
+				'firehouse_draft_started' => '1700000000',
+			)
+		);
+		$page = self::drawn();
+		$this->assertStringContainsString( 'name="firehouse_model" class="regular-text" value=""', $page, 'The second check too.' );
+		$this->assertStringNotContainsString( 'value="NotebookLM"', $page );
+		$this->assertStringNotContainsString( 'whole reply', $page );
 	}
 
 	/**

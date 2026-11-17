@@ -220,7 +220,8 @@ final class Synthesis_Screen {
 	 * unless one was typed, and when it was started, so its whole reply stays in view. A
 	 * draft from a model no longer offered, as one Cloudflare retired while the page was
 	 * open, leaves Made with empty for the editor to fill in, rather than saying
-	 * NotebookLM.
+	 * NotebookLM, through every check after: the form keeps naming the draft, though its
+	 * whole reply isn't shown, since the site no longer keeps it.
 	 *
 	 * @param array<string, mixed> $state   The check.
 	 * @param string               $model   The draft's model, or "" for a paste.
@@ -231,13 +232,13 @@ final class Synthesis_Screen {
 		if ( '' === $model ) {
 			return $state;
 		}
-		if ( ! Workers_Ai::offered( $model ) ) {
-			return $state + array( 'model' => '' );
-		}
 		$state['draft'] = array(
 			'model'   => $model,
 			'started' => $started,
 		);
+		if ( ! Workers_Ai::offered( $model ) ) {
+			return $state + array( 'model' => '' );
+		}
 		/* translators: %s: a model, as "Llama 4 Scout (Meta)". */
 		return $state + array( 'model' => sprintf( __( '%s, on Cloudflare Workers AI', 'firehouse' ), Workers_Ai::label( $model ) ) );
 	}
@@ -855,7 +856,7 @@ final class Synthesis_Screen {
 	 */
 	private static function draft_reply( array $state ): void {
 		$draft = $state['draft'] ?? null;
-		if ( ! is_array( $draft ) ) {
+		if ( ! is_array( $draft ) || ! Workers_Ai::offered( $draft['model'] ) ) {
 			return;
 		}
 		$result = Analysis::state()['results'][ $draft['model'] ] ?? null;
