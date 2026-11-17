@@ -24,8 +24,8 @@ use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 final class SynthesisScreenTest extends WordPressTestCase {
 
 	/**
-	 * Llama 4 Scout, a model with nothing added to its request, whose drafts these tests
-	 * show: no longer the model offered first.
+	 * Llama 4 Scout, whose label these tests expect on its drafts: no longer the model the
+	 * screen picks to start with.
 	 */
 	private const LLAMA = '@cf/meta/llama-4-scout-17b-16e-instruct';
 
@@ -675,7 +675,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 	}
 
 	/**
-	 * With a key, the screen offers the models, the first picked, and each model's latest
+	 * With a key, the screen offers the models, Inkling 2 Small picked, and each model's latest
 	 * draft: one done, with the button that checks it, its reply and its prompt; one
 	 * failed, with why. A draft from a model no longer offered isn't shown.
 	 */
@@ -704,7 +704,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 
 		$this->assertStringContainsString( '<label for="firehouse-analysis-model">Model</label>', $page );
 		$this->assertSame( 4, substr_count( $page, '<option ' ) );
-		$this->assertStringContainsString( "value=\"@cf/thinkingmachines/inkling-2-small\" selected='selected'>Inkling 2 Small (Thinking Machines)</option>", $page, 'Inkling 2 Small is offered first.' );
+		$this->assertStringContainsString( "value=\"@cf/thinkingmachines/inkling-2-small\" selected='selected'>Inkling 2 Small (Thinking Machines)</option>", $page, 'Inkling 2 Small is picked to start with.' );
 		$this->assertStringContainsString( '<option value="@cf/meta/llama-4-scout-17b-16e-instruct">Llama 4 Scout (Meta)</option>', $page );
 		$this->assertStringContainsString( '<button>Analyze results</button>', $page );
 		$this->assertLessThan( strpos( $page, '<h3>Gemma 4 26B (Google): failed</h3>' ), strpos( $page, '<h3>Llama 4 Scout (Meta)</h3>' ), 'In the list’s order, a failed draft’s heading saying so.' );
@@ -1083,7 +1083,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 			array(
 				'firehouse_step'          => 'check',
 				'firehouse_synthesis'     => self::synthesis( 'R_smoke' ),
-				'firehouse_draft'         => Workers_Ai::DEFAULT_MODEL,
+				'firehouse_draft'         => self::LLAMA,
 				'firehouse_draft_started' => '1700000999',
 			)
 		);

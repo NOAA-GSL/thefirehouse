@@ -19,7 +19,7 @@ There are two ways to make one. Either way, it goes through the same check and M
 
 The model is sent the published projects, word for word, the four topic areas, and the prompt on FireHouse → Settings. Nothing private goes, and no earlier synthesis.
 
-1. On **FireHouse → Synthesis**, under **Analyze results**, pick a **Model** and choose **Analyze results**. Inkling 2 Small is picked to start with: it finished the team's prompt most reliably.
+1. On **FireHouse → Synthesis**, under **Analyze results**, pick a **Model** and choose **Analyze results**. Inkling 2 Small is picked to start with: it finished the team's prompt most reliably. If its draft fails with "Workers AI refused the request", try another model and tell an administrator: the site's Cloudflare account may not have the plan Inkling 2 Small needs.
 2. The page says at the top that the model is drafting. It drafts in the background, which takes a few minutes, or up to a quarter of an hour longer on some sites. Reload the page to see when it's done. One model drafts at a time.
 3. Each model's latest draft is kept under its name, so you can have several models draft and compare them. **Its whole reply** shows everything the model wrote, with the entries each need draws on if the model gave them: the prompt asks for them, but not every model gives them. **The prompt it was given** shows the prompt it ran.
 4. Choose **Check** under the draft you want: the button names the model, as in "Check Llama 4 Scout (Meta)'s draft". Its JSON goes into the box at the bottom and is checked, as in step 4 below, and **Made with** starts with the model's name.

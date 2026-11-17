@@ -395,11 +395,11 @@ overrides are isolated so a re-sync doesn't lose them.
       - **Before the key:** the survey form's notice, which names only Gemini and
         NotebookLM as the tools the team uses on submissions, is reworded to name the
         approved service too, through Stephanie and Emily and then clearance. Before
-        production, confirm with Cloudflare that Inkling 2 Small runs on Cloudflare's
-        own hardware, as its model page's "Cloudflare-hosted" label says: if it went to
-        Thinking Machines' service, the projects would go to that company too, and it
-        comes off the list, with another model offered first in its place (plan, The
-        AI service, "The models").
+        the key goes on any GSL site, test or production, confirm with Cloudflare
+        that Inkling 2 Small runs on Cloudflare's own hardware, as its model page's
+        "Cloudflare-hosted" label says: if it went to Thinking Machines' service, the
+        projects would go to that company too, and it comes off the list, with another
+        model picked to start with in its place (plan, The AI service, "The models").
       - **The key:** the site's `wp-config.php` constants
         `FIREHOUSE_WORKERS_AI_ACCOUNT` and `FIREHOUSE_WORKERS_AI_TOKEN`: a Cloudflare
         account ID, and a token made from Cloudflare's "Workers AI" template (Workers
@@ -421,7 +421,8 @@ overrides are isolated so a re-sync doesn't lose them.
         system cron that runs WP-CLI (`wp cron event run --due-now`) has no such limit.
       - **The Cloudflare account:** a spending alert, since an editor can start run
         after run, each sending every published project; and the Workers Paid plan,
-        for Inkling 2 Small, the model offered first: without it, its runs fail.
+        for Inkling 2 Small, the model the screen picks to start with: without it,
+        its runs fail.
 - [ ] **Check that deleting a transient reports whether it deleted one** on each
       WordPress site the plugin runs on, with whatever object cache it has. The
       synthesis screen's Mark reviewed relies on it to publish a check once
@@ -1059,10 +1060,11 @@ nothing from the database. Each class's docblock has the detail; this is the map
   Site Health's Outside services check doesn't name api.cloudflare.com. The models are
   a fixed list, all from US companies (Eric, 16 November): Meta's Llama 4 Scout, OpenAI's gpt-oss-120b,
   Google's Gemma 4 26B and Thinking Machines' Inkling 2 Small, each reading 128,000
-  tokens or more. Inkling 2 Small is offered first (`Workers_Ai::DEFAULT_MODEL`,
-  Eric, 17 November): with the team's prompt it finished every run with nothing for
-  the check to catch, where Llama 4 Scout, offered first before, ran past
-  Cloudflare's 120 seconds every time. Inkling reasons at `reasoning_effort` "low" with
+  tokens or more. The synthesis screen picks Inkling 2 Small to start with
+  (`Workers_Ai::DEFAULT_MODEL`, Eric, 17 November). In runs that day, Llama 4 Scout,
+  picked before, took 120 seconds, Cloudflare's limit, with the plugin's prompt, and
+  ran out of time on both runs of the team's longer prompt proposed in #79; Inkling 2
+  Small finished every run of it with nothing for the check to catch. Inkling reasons at `reasoning_effort` "low" with
   `max_completion_tokens` beside `max_tokens` (Cloudflare calls `max_tokens`
   deprecated for it), and needs Cloudflare's Workers Paid plan; on an account without
   it, Cloudflare's refusal shows as any other. Cloudflare's page labels it
