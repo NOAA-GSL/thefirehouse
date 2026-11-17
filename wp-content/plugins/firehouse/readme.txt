@@ -505,8 +505,8 @@ one is.
   that isn't production, and whether a cache keeps FireHouse's pages (see External
   services). The guide's installing page says what to do about each.
 * The synthesis check gives the nearest page slug for a name that isn't a project's,
-  such as one a model shortened, for the reviewer to judge, and refuses a name
-  holding a character that doesn't show.
+  such as one a model shortened, stopped partway or made from the project's title,
+  for the reviewer to judge, and refuses a name holding a character that doesn't show.
 
 = 0.2.0 =
 * Project and topic post types at the Firehouse addresses, with their fields as post
