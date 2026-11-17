@@ -297,8 +297,8 @@ the four topic areas, and the prompt on FireHouse → Settings. No unpublished
 submission, no private answer, no earlier synthesis and nothing about visitors is
 sent. It runs in WordPress's scheduled events, one at a time, and waits up to five
 minutes for the reply, which the site keeps as that model's latest draft. The key is
-never stored in the database or shown. The models are Meta's, OpenAI's, Google's and
-NVIDIA's, run by Cloudflare.
+never stored in the database or shown. The models are Meta's, OpenAI's and Google's,
+run by Cloudflare.
 
 Cloudflare's Workers AI data usage, which says it does not use the content it
 processes to train models or keep inputs and outputs after a request:
@@ -496,9 +496,8 @@ one is.
   model's latest draft is kept, to compare; checking one puts it through the screen's
   check and Mark reviewed, with the model under Made with. The guide's synthesis and
   settings pages say how (see External services).
-* Analyze results no longer offers NVIDIA's Nemotron 3 120B, which Cloudflare retires
-  on 20 November 2026. Gemma 4 26B is asked not to think, which used up its length
-  limit, and a request Cloudflare stops waiting on says the model was busy.
+* Analyze results asks Gemma 4 26B not to think, since its thinking used up its length
+  limit, and a request Cloudflare stops waiting on says the model may be busy.
 * Three FireHouse checks on Tools → Site Health: whether the server reaches the
   outside services the plugin uses, whether search engines are kept out of a site
   that isn't production, and whether a cache keeps FireHouse's pages (see External

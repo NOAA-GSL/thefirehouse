@@ -48,11 +48,13 @@ final class Workers_Ai {
 	/**
 	 * The models offered, by Workers AI's name for each: what the screen calls it, the
 	 * most tokens its reply may take, which leaves a reasoning model room to think as
-	 * well as answer, and anything else its request needs. Gemma 4 26B is asked not to
-	 * think: when it did, it spent its 8,192 tokens thinking in four runs out of five
-	 * and gave no reply, or half of one; without, it answers in under a minute. Each reads at least 128,000 tokens, many times the source.
-	 * Llama 3.3 70B is left out: its 24,000 would run out as projects arrive. NVIDIA's
-	 * Nemotron 3 120B was offered until Cloudflare retired it on 20 November 2026.
+	 * well as answer, and anything else its request needs (`body`), which can add fields
+	 * but never replace `messages` or `max_tokens`. Gemma 4 26B is asked not to think:
+	 * when it did, it spent its 8,192 tokens thinking in four runs out of five and gave
+	 * no reply, or half of one; without, five runs answered in 15 to 36 seconds. Each
+	 * reads at least 128,000 tokens, many times the source. Llama 3.3 70B is left out:
+	 * its 24,000 would run out as projects arrive. NVIDIA's Nemotron 3 120B is left out:
+	 * Cloudflare retires it on 20 November 2026.
 	 */
 	public const MODELS = array(
 		'@cf/meta/llama-4-scout-17b-16e-instruct' => array(
@@ -155,20 +157,24 @@ final class Workers_Ai {
 			return array( 'problem' => sprintf( __( 'Workers AI couldn’t be reached: %s', 'firehouse' ), self::said( $response->get_error_message(), $credentials ) ) );
 		}
 		$code = (int) wp_remote_retrieve_response_code( $response );
-		if ( 408 === $code ) {
-			// Cloudflare's own words for this ("AiError: AiError: Request timeout" and an ID)
-			// tell an editor nothing; in the prompt comparison it came after two minutes, for
-			// Llama 4 Scout now and then, while the same request had answered in one.
-			return array( 'problem' => __( 'Cloudflare stopped waiting for the model’s reply (HTTP 408), as it can when the model is busy. Try again in a while, or try another model.', 'firehouse' ) );
-		}
 		$body = json_decode( (string) wp_remote_retrieve_body( $response ), true );
 		$body = is_array( $body ) ? $body : array();
 		if ( 200 !== $code || false === ( $body['success'] ?? true ) ) {
 			$error = $body['errors'][0]['message'] ?? $body['error']['message'] ?? $body['error'] ?? '';
+			$error = is_string( $error ) ? self::said( $error, $credentials ) : '';
+			if ( 408 === $code ) {
+				// Cloudflare's words alone ("AiError: AiError: Request timeout" and an ID) tell an
+				// editor nothing; in the prompt comparison this came after two minutes, for Llama 4
+				// Scout now and then, where the same request had answered in one. They follow,
+				// for the request ID Cloudflare's support would ask for.
+				/* translators: %s: Cloudflare's error message, with its request ID. */
+				$busy = __( 'Cloudflare stopped waiting for the model’s reply, as it can when the model is busy. Try again in a while, or try another model. (HTTP 408: %s)', 'firehouse' );
+				return array( 'problem' => sprintf( $busy, '' !== $error ? $error : __( 'no reason given', 'firehouse' ) ) );
+			}
 			return array(
-				'problem' => is_string( $error ) && '' !== $error
+				'problem' => '' !== $error
 					/* translators: 1: the HTTP status code, 2: Cloudflare's error message. */
-					? sprintf( __( 'Workers AI refused the request (%1$d): %2$s', 'firehouse' ), $code, self::said( $error, $credentials ) )
+					? sprintf( __( 'Workers AI refused the request (%1$d): %2$s', 'firehouse' ), $code, $error )
 					/* translators: %d: the HTTP status code. */
 					: sprintf( __( 'Workers AI refused the request (%d).', 'firehouse' ), $code ),
 			);

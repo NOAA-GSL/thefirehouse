@@ -734,17 +734,21 @@ key offers only the paste.*
 - **The models** are a fixed list, from US companies only (Eric, 16 November), each
   reading at least 128,000 tokens: Meta's Llama 4 Scout, OpenAI's gpt-oss-120b and
   Google's Gemma 4 26B. Llama 3.3 70B is left out: its 24,000 would run out as
-  projects arrive. *NVIDIA's Nemotron 3 120B was offered too, until Cloudflare retired
-  it on 20 November 2026: every request to it in the prompt comparison (16 November)
-  timed out, and Cloudflare suggests no US-made replacement but Gemma 4 26B. Gemma is
-  asked not to think: thinking, it used its whole 8,192-token limit in four runs out of
-  five and gave no reply or half of one; without, it answered in 36 seconds.* The editor picks one on the synthesis
-  screen, and the screen keeps each model's latest draft, so the team can compare
-  them. Commercial models, such as OpenAI's GPT or Anthropic's Claude, can be reached
+  projects arrive. *NVIDIA's Nemotron 3 120B is left out too: Cloudflare retires it on
+  20 November 2026, every request to it in the prompt comparison (16 November) timed
+  out, and Cloudflare suggests no US-made replacement but Gemma 4 26B. Gemma is asked
+  not to think: thinking, it used its whole 8,192-token limit in four runs out of five
+  and gave no reply or half of one; without, five runs answered in 15 to 36 seconds,
+  with 1,300 to 1,500 tokens. A run of a model taken off the list that is still out
+  when the plugin is updated is dropped without a record, and its editor may start
+  another while it finishes; only an administrator's update can cause it.* The editor
+  picks one on the synthesis screen, and the screen keeps each model's latest draft, so
+  the team can compare them. Commercial models, such as OpenAI's GPT or Anthropic's Claude, can be reached
   through Cloudflare's AI Gateway, but the projects would then go to that company too,
   so they aren't offered.
 - **It runs in the background,** in a scheduled event, since a reply takes minutes.
-  Each model's sampling settings are its own; only the reply's length is set.
+  Each model's sampling settings are its own; only the reply's length is set, and
+  Gemma 4 26B is asked not to think.
 
 - **Analyze results** sends the published projects' text and the team's prompt, and
   the reply lands on the synthesis screen with the same checks and **Mark

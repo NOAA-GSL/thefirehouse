@@ -222,17 +222,30 @@ final class WorkersAiTest extends WordPressTestCase {
 
 		$this->assertSame( array( 'problem' => 'Workers AI refused the request (401): Bad token … for account …' ), Workers_Ai::ask( Workers_Ai::DEFAULT_MODEL, array() ) );
 
+		Functions\when( 'wp_safe_remote_post' )->justReturn( new \WP_Error( 'http_request_failed', 'cURL error 28: Operation timed out' ) );
+		$this->assertSame( array( 'problem' => 'Workers AI couldn’t be reached: cURL error 28: Operation timed out' ), Workers_Ai::ask( Workers_Ai::DEFAULT_MODEL, array() ) );
+	}
+
+	/**
+	 * A timeout (HTTP 408) says in plain words that the model may be busy, then
+	 * Cloudflare's reason and request ID, without the key.
+	 */
+	#[RunInSeparateProcess]
+	#[PreserveGlobalState( false )]
+	public function test_a_timeout_says_the_model_may_be_busy(): void {
+		self::key();
+		$busy = 'Cloudflare stopped waiting for the model’s reply, as it can when the model is busy. Try again in a while, or try another model. (HTTP 408: %s)';
 		$this->answer(
 			408,
 			array(
 				'success' => false,
-				'errors'  => array( array( 'message' => 'AiError: AiError: Request timeout (cd9eeec7-2f29-4b34-8187-91641b4b161d)' ) ),
+				'errors'  => array( array( 'message' => 'AiError: AiError: Request timeout (cd9eeec7-2f29-4b34-8187-91641b4b161d) for ' . self::ACCOUNT_ID ) ),
 			)
 		);
-		$this->assertSame( array( 'problem' => 'Cloudflare stopped waiting for the model’s reply (HTTP 408), as it can when the model is busy. Try again in a while, or try another model.' ), Workers_Ai::ask( Workers_Ai::DEFAULT_MODEL, array() ) );
+		$this->assertSame( array( 'problem' => sprintf( $busy, 'AiError: AiError: Request timeout (cd9eeec7-2f29-4b34-8187-91641b4b161d) for …' ) ), Workers_Ai::ask( Workers_Ai::DEFAULT_MODEL, array() ) );
 
-		Functions\when( 'wp_safe_remote_post' )->justReturn( new \WP_Error( 'http_request_failed', 'cURL error 28: Operation timed out' ) );
-		$this->assertSame( array( 'problem' => 'Workers AI couldn’t be reached: cURL error 28: Operation timed out' ), Workers_Ai::ask( Workers_Ai::DEFAULT_MODEL, array() ) );
+		$this->answer( 408, array() );
+		$this->assertSame( array( 'problem' => sprintf( $busy, 'no reason given' ) ), Workers_Ai::ask( Workers_Ai::DEFAULT_MODEL, array() ) );
 	}
 
 	/**

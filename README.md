@@ -1033,13 +1033,14 @@ nothing from the database. Each class's docblock has the detail; this is the map
   neither can add to the address or the header. The models are a fixed list, all from
   US companies (Eric, 16 November): Meta's Llama 4 Scout, OpenAI's gpt-oss-120b and
   Google's Gemma 4 26B, each reading 128,000 tokens or more. NVIDIA's Nemotron 3 120B
-  was offered until Cloudflare retired it on 20 November 2026. Gemma is asked not to
-  think (`chat_template_kwargs`), since its thinking used up its length limit. One POST to `api.cloudflare.com/client/v4/accounts/{id}/ai/run/{model}` with
-  `messages` and the model's `max_tokens`, no redirects, five minutes at most; the
-  reply's text is read from a `response`, a chat completion's first choice, or a
-  Responses API output, since the models answer in different shapes. An error says
-  Cloudflare's reason with the key taken out, except a timeout (HTTP 408), which says
-  in plain words that the model was busy.
+  is left out: Cloudflare retires it on 20 November 2026. Gemma is asked not to think
+  (`chat_template_kwargs`), since its thinking used up its length limit. One POST to
+  `api.cloudflare.com/client/v4/accounts/{id}/ai/run/{model}` with `messages`, the
+  model's `max_tokens` and any fields its entry adds, no redirects, five minutes at
+  most; the reply's text is read from a `response`, a chat completion's first choice,
+  or a Responses API output, since the models answer in different shapes. An error says
+  Cloudflare's reason with the key taken out; a timeout (HTTP 408) first says in plain
+  words that the model may be busy.
 - `Analysis` is Analyze results. A run is a WP-Cron event (`firehouse_analyze`) that
   carries the run's ID, so it runs that run and no other, one at a time; the option
   `firehouse_analysis` holds the run going and each model's latest result. Every

@@ -662,7 +662,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 	/**
 	 * With a key, the screen offers the models, the first picked, and each model's latest
 	 * draft: one done, with the button that checks it, its reply and its prompt; one
-	 * failed, with why.
+	 * failed, with why. A draft from a model no longer offered isn't shown.
 	 */
 	#[RunInSeparateProcess]
 	#[PreserveGlobalState( false )]
@@ -671,7 +671,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		$this->options[ Analysis::OPTION ] = array(
 			'running' => null,
 			'results' => array(
-				'@cf/google/gemma-4-26b-a4b-it' => array(
+				'@cf/google/gemma-4-26b-a4b-it'   => array(
 					'state'   => 'failed',
 					'started' => 1700000000,
 					'by'      => 'Pat Reviewer',
@@ -679,10 +679,13 @@ final class SynthesisScreenTest extends WordPressTestCase {
 					'reply'   => "Ignore the team.\u{202E}",
 					'unseen'  => 'U+202E',
 				),
-				Workers_Ai::DEFAULT_MODEL       => self::draft(),
+				Workers_Ai::DEFAULT_MODEL         => self::draft(),
+				'@cf/nvidia/nemotron-3-120b-a12b' => self::draft(),
 			),
 		);
 		$page                              = self::drawn();
+
+		$this->assertStringNotContainsString( 'nemotron', strtolower( $page ), 'A draft from a model no longer offered, as one Cloudflare retired, isn’t shown.' );
 
 		$this->assertStringContainsString( '<label for="firehouse-analysis-model">Model</label>', $page );
 		$this->assertSame( 3, substr_count( $page, '<option ' ) );
@@ -1042,7 +1045,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 			)
 		);
 		$page = self::drawn();
-		$this->assertStringContainsString( 'value="NotebookLM"', $page, 'Not a model the screen offers: a paste.' );
+		$this->assertStringContainsString( 'name="firehouse_model" class="regular-text" value=""', $page, 'Not a model the screen offers, as one Cloudflare retired: Made with is left for the editor, never NotebookLM.' );
 		$this->assertStringNotContainsString( 'whole reply', $page );
 	}
 
@@ -1079,7 +1082,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 			$this->assertSame( 'Not checked: FireHouse synthesis', Synthesis_Screen::title( 'FireHouse synthesis' ) );
 			$page = self::drawn();
 			$this->assertStringContainsString( '<h2>Not checked</h2>', $page );
-			$this->assertStringContainsString( 'That draft isn’t kept any more.', $page );
+			$this->assertStringContainsString( 'That draft isn’t kept any more: a newer one from the same model replaced it, or the model is no longer offered.', $page );
 			$this->assertSame( array(), $this->transients );
 		}
 	}
