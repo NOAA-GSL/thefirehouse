@@ -358,6 +358,9 @@ final class SynthesisTest extends DomainTestCase {
 		$this->assertSame( 'smoke-plume-study-2026', $given( 'Smoke Plume Study 2026', array_reverse( $plumes ) ) );
 		$this->assertSame( 'none', $given( 'smoke-plume-study-2027', $plumes ), 'Three as near.' );
 
+		$this->assertSame( 'none', $given( 'fire-weather-study-abcde', array( $project( 1, 'fire-weather-study-vwxyz' ), $project( 2, 'fire-weather-study-vwxyzqr' ) ) ), 'Five changes against seven: half again rounds up.' );
+		$this->assertSame( 'fire-weather-study-vwxyz', $given( 'fire-weather-study-abcde', array( $project( 1, 'fire-weather-study-vwxyz' ), $project( 2, 'fire-weather-study-vwxyzqrs' ) ) ), 'Five against eight.' );
+
 		$health = array( $project( 1, 'wildfire-smoke-health-messaging-study' ), $project( 2, 'wildfire-smoke-health-risk-communication' ) );
 		$this->assertSame( 'none', $given( 'wildfire-smoke-health-communication-study', $health ), 'Ten changes against eleven.' );
 		$this->assertSame( 'wildfire-smoke-health-messaging-study', $given( 'wildfire-smoke-health-messaging-studies', $health ) );
@@ -369,7 +372,8 @@ final class SynthesisTest extends DomainTestCase {
 	/**
 	 * A name holding a character visitors wouldn't see is a problem of its own, and
 	 * neither it nor the need's text is quoted, since a direction override would turn
-	 * the rest of the problem around.
+	 * the rest of the problem around. A project's title is named without such
+	 * characters, in every problem that names it.
 	 */
 	public function test_a_name_with_a_hidden_character_isnt_quoted(): void {
 		$this->assertSame(
@@ -378,6 +382,25 @@ final class SynthesisTest extends DomainTestCase {
 		);
 		$this->assertStringContainsString( '(U+202E)', self::named( "x\u{202E}heat-study", self::PROJECTS )[0] );
 		$this->assertStringNotContainsString( "\u{202E}", self::named( "x\u{202E}heat-study", self::PROJECTS )[0] );
+
+		$projects                 = self::PROJECTS;
+		$projects[1]['title']     = "Heat\u{202E} study\u{200B}";
+		$projects[2]['title']     = "Draft\u{202E} study";
+		$projects[2]['public']    = false;
+		$synthesis                = self::good();
+		$synthesis[0]['topNeeds'] = array(
+			array(
+				'text'     => 'Named',
+				'mentions' => 5,
+				'projects' => array( 'heat-studies', 'draft-studies', 'R_draft', 'heat-study', 'heat-study' ),
+			),
+		);
+		$problems                 = Synthesis::check( (string) json_encode( $synthesis ), $projects )['problems'];
+		$this->assertStringEndsWith( 'for “Heat study”. If the need draws on that project, change the name to it and check again.', $problems[0], 'A title is named without the characters that don’t show.' );
+		$this->assertStringContainsString( 'for “Draft study”, which the site doesn’t show', $problems[1] );
+		$this->assertStringContainsString( '“R_draft”, Draft study, which', $problems[2] );
+		$this->assertStringEndsWith( 'names Heat study twice.', $problems[3] );
+		$this->assertCount( 4, $problems );
 	}
 
 	/**

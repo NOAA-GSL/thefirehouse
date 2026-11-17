@@ -248,19 +248,19 @@ final class Synthesis {
 					// Only while the problem would be listed: the rest are counted, not read.
 					$closest = count( $problems ) < self::LISTED ? self::closest( $ref, $slugs ) : null;
 					if ( null !== $closest && true === $closest['public'] ) {
-						$problem .= sprintf( ' The nearest published page slug is “%1$s”, for “%2$s”. If the need draws on that project, change the name to it and check again.', $closest['slug'], $closest['title'] );
+						$problem .= sprintf( ' The nearest published page slug is “%1$s”, for “%2$s”. If the need draws on that project, change the name to it and check again.', $closest['slug'], self::title( $closest ) );
 					} elseif ( null !== $closest ) {
-						$problem .= sprintf( ' The nearest page slug is “%1$s”, for “%2$s”, which the site doesn’t show: the synthesis may only draw on published projects.', $closest['slug'], $closest['title'] );
+						$problem .= sprintf( ' The nearest page slug is “%1$s”, for “%2$s”, which the site doesn’t show: the synthesis may only draw on published projects.', $closest['slug'], self::title( $closest ) );
 					}
 					$problems[] = $problem;
 					continue;
 				}
 				if ( true !== $project['public'] ) {
-					$problems[] = sprintf( '%1$s: names “%2$s”, %3$s, which the site doesn’t show: the synthesis may only draw on published projects.', $where, $ref, $project['title'] );
+					$problems[] = sprintf( '%1$s: names “%2$s”, %3$s, which the site doesn’t show: the synthesis may only draw on published projects.', $where, $ref, self::title( $project ) );
 					continue;
 				}
 				if ( in_array( $project['ref'], $found, true ) ) {
-					$problems[] = sprintf( '%1$s: names %2$s twice.', $where, $project['title'] );
+					$problems[] = sprintf( '%1$s: names %2$s twice.', $where, self::title( $project ) );
 					continue;
 				}
 				$found[] = $project['ref'];
@@ -338,7 +338,7 @@ final class Synthesis {
 		if ( PHP_INT_MAX === $least ) {
 			return PHP_INT_MAX;
 		}
-		return 0 === $least ? 1 : $least + max( 2, intdiv( $least, 2 ) );
+		return 0 === $least ? 1 : $least + max( 2, intdiv( $least + 1, 2 ) );
 	}
 
 	/**
@@ -348,6 +348,17 @@ final class Synthesis {
 	 */
 	private static function quote( string $text ): string {
 		return mb_strlen( $text ) > self::QUOTED ? mb_substr( $text, 0, self::QUOTED - 1 ) . '…' : $text;
+	}
+
+	/**
+	 * A project's title as a problem names it: without control or format characters,
+	 * since a direction override among them would turn the rest of the problem around.
+	 * Only the problem's copy changes; the title stays as the researcher wrote it.
+	 *
+	 * @param array<string, mixed> $project The project.
+	 */
+	private static function title( array $project ): string {
+		return (string) preg_replace( '/[\p{Cc}\p{Cf}]/u', '', (string) $project['title'] );
 	}
 
 	/**
