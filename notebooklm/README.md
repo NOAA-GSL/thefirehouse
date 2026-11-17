@@ -164,6 +164,10 @@ Cloudflare Workers AI on 16 November (NotebookLM wasn't run):
 | Llama 4 Scout | after | 3 | none | none | none |
 | gpt-oss-120b | before | 2 | none | none | one run: one slug shortened, in 5 needs |
 | gpt-oss-120b | after | 2 | none | none | both runs: the same slug shortened, in 6 and 9 needs |
+| Gemma 4 26B | before | 2 | none | none | one run: two slugs lengthened from the titles; the other ran out of length |
+| Gemma 4 26B | after | 2 | | | neither finished: both ran out of length |
+| Nemotron 3 120B | before | 2 | | | neither finished: Cloudflare stopped all 8 tries at 120 seconds |
+| Nemotron 3 120B | after | 2 | | | neither finished: Cloudflare stopped all 8 tries at 120 seconds |
 
 - One gpt-oss-120b run with the new prompt gave 11 needs, two or three an area, instead
   of five each; the other gave 20.
@@ -171,5 +175,7 @@ Cloudflare Workers AI on 16 November (NotebookLM wasn't run):
   lengthened two from their titles. A sentence telling the model to copy slugs exactly
   made no difference in a first draft, so it isn't here: the synthesis screen's check
   catches these names and gives the nearest slug.
-- Gemma 4 26B isn't in the table: with the new prompt it twice ran out of length
-  before finishing its reply.
+- Gemma 4 26B and Nemotron 3 120B can't be compared yet, and with either prompt:
+  Gemma spends most of its length limit (`Workers_Ai::MODELS`, half the others') on
+  reasoning, and Nemotron never finished within Cloudflare's 120 seconds. Both run
+  again once Analyze results' settings are fixed.
