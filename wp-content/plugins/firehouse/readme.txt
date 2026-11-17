@@ -490,12 +490,15 @@ one is.
   which never changes a submission, and a "No" to the IRB question shows as no approval
   or exemption rather than "Not recorded".
 * Analyze results on FireHouse → Synthesis, on a site with a Workers AI key in
-  wp-config.php: a model picked from Meta's Llama 4 Scout, OpenAI's gpt-oss-120b,
-  Google's Gemma 4 26B and NVIDIA's Nemotron 3 120B drafts a synthesis in the
-  background from the published projects and the prompt under FireHouse → Settings,
-  which can be changed there. Each model's latest draft is kept, to compare; checking
-  one puts it through the screen's check and Mark reviewed, with the model under Made
-  with. The guide's synthesis and settings pages say how (see External services).
+  wp-config.php: a model picked from Meta's Llama 4 Scout, OpenAI's gpt-oss-120b and
+  Google's Gemma 4 26B drafts a synthesis in the background from the published
+  projects and the prompt under FireHouse → Settings, which can be changed there. Each
+  model's latest draft is kept, to compare; checking one puts it through the screen's
+  check and Mark reviewed, with the model under Made with. The guide's synthesis and
+  settings pages say how (see External services).
+* Analyze results no longer offers NVIDIA's Nemotron 3 120B, which Cloudflare retires
+  on 20 November 2026. Gemma 4 26B is asked not to think, which used up its length
+  limit, and a request Cloudflare stops waiting on says the model was busy.
 * Three FireHouse checks on Tools → Site Health: whether the server reaches the
   outside services the plugin uses, whether search engines are kept out of a site
   that isn't production, and whether a cache keeps FireHouse's pages (see External

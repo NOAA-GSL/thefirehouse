@@ -732,9 +732,13 @@ key offers only the paste.*
   database, so no backup, export or screen holds them, and the plugin sends them only
   to api.cloudflare.com. The local copy reads them from its ignored `.env`.
 - **The models** are a fixed list, from US companies only (Eric, 16 November), each
-  reading at least 128,000 tokens: Meta's Llama 4 Scout, OpenAI's gpt-oss-120b,
-  Google's Gemma 4 26B and NVIDIA's Nemotron 3 120B. Llama 3.3 70B is left out: its
-  24,000 would run out as projects arrive. The editor picks one on the synthesis
+  reading at least 128,000 tokens: Meta's Llama 4 Scout, OpenAI's gpt-oss-120b and
+  Google's Gemma 4 26B. Llama 3.3 70B is left out: its 24,000 would run out as
+  projects arrive. *NVIDIA's Nemotron 3 120B was offered too, until Cloudflare retired
+  it on 20 November 2026: every request to it in the prompt comparison (16 November)
+  timed out, and Cloudflare suggests no US-made replacement but Gemma 4 26B. Gemma is
+  asked not to think: thinking, it used its whole 8,192-token limit in four runs out of
+  five and gave no reply or half of one; without, it answered in 36 seconds.* The editor picks one on the synthesis
   screen, and the screen keeps each model's latest draft, so the team can compare
   them. Commercial models, such as OpenAI's GPT or Anthropic's Claude, can be reached
   through Cloudflare's AI Gateway, but the projects would then go to that company too,

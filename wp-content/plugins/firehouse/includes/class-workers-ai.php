@@ -46,10 +46,13 @@ final class Workers_Ai {
 	public const HOST = 'api.cloudflare.com';
 
 	/**
-	 * The models offered, by Workers AI's name for each: what the screen calls it, and
-	 * the most tokens its reply may take, which leaves a reasoning model room to think
-	 * as well as answer. Each reads at least 128,000 tokens, many times the source.
-	 * Llama 3.3 70B is left out: its 24,000 would run out as projects arrive.
+	 * The models offered, by Workers AI's name for each: what the screen calls it, the
+	 * most tokens its reply may take, which leaves a reasoning model room to think as
+	 * well as answer, and anything else its request needs. Gemma 4 26B is asked not to
+	 * think: when it did, it spent its 8,192 tokens thinking in four runs out of five
+	 * and gave no reply, or half of one; without, it answers in under a minute. Each reads at least 128,000 tokens, many times the source.
+	 * Llama 3.3 70B is left out: its 24,000 would run out as projects arrive. NVIDIA's
+	 * Nemotron 3 120B was offered until Cloudflare retired it on 20 November 2026.
 	 */
 	public const MODELS = array(
 		'@cf/meta/llama-4-scout-17b-16e-instruct' => array(
@@ -63,10 +66,7 @@ final class Workers_Ai {
 		'@cf/google/gemma-4-26b-a4b-it'           => array(
 			'label'      => 'Gemma 4 26B (Google)',
 			'max_tokens' => 8192,
-		),
-		'@cf/nvidia/nemotron-3-120b-a12b'         => array(
-			'label'      => 'Nemotron 3 120B (NVIDIA)',
-			'max_tokens' => 16384,
+			'body'       => array( 'chat_template_kwargs' => array( 'enable_thinking' => false ) ),
 		),
 	);
 
@@ -144,7 +144,7 @@ final class Workers_Ai {
 					array(
 						'messages'   => $messages,
 						'max_tokens' => self::MODELS[ $model ]['max_tokens'],
-					)
+					) + ( self::MODELS[ $model ]['body'] ?? array() )
 				),
 				'user-agent'          => 'FireHouse WordPress plugin',
 				'limit_response_size' => self::MOST_BYTES,
@@ -155,6 +155,12 @@ final class Workers_Ai {
 			return array( 'problem' => sprintf( __( 'Workers AI couldn’t be reached: %s', 'firehouse' ), self::said( $response->get_error_message(), $credentials ) ) );
 		}
 		$code = (int) wp_remote_retrieve_response_code( $response );
+		if ( 408 === $code ) {
+			// Cloudflare's own words for this ("AiError: AiError: Request timeout" and an ID)
+			// tell an editor nothing; in the prompt comparison it came after two minutes, for
+			// Llama 4 Scout now and then, while the same request had answered in one.
+			return array( 'problem' => __( 'Cloudflare stopped waiting for the model’s reply (HTTP 408), as it can when the model is busy. Try again in a while, or try another model.', 'firehouse' ) );
+		}
 		$body = json_decode( (string) wp_remote_retrieve_body( $response ), true );
 		$body = is_array( $body ) ? $body : array();
 		if ( 200 !== $code || false === ( $body['success'] ?? true ) ) {
@@ -203,7 +209,7 @@ final class Workers_Ai {
 
 	/**
 	 * A reply's text, in any of the shapes Workers AI's models give it: `response` (as
-	 * Llama's), a chat completion's first choice (as Gemma's and Nemotron's), or a
+	 * Llama's), a chat completion's first choice (as Gemma's), or a
 	 * Responses API output's text (as gpt-oss can). Null when there's none.
 	 *
 	 * @param mixed $result The result.

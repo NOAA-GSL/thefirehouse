@@ -107,12 +107,12 @@ final class WorkersAiTest extends WordPressTestCase {
 	public function test_only_the_listed_models_are_offered(): void {
 		$this->assertTrue( Workers_Ai::offered( '@cf/meta/llama-4-scout-17b-16e-instruct' ) );
 		$this->assertTrue( Workers_Ai::offered( Workers_Ai::DEFAULT_MODEL ) );
-		foreach ( array( '@cf/qwen/qwq-32b', '@cf/meta/../../x', '', null, 42 ) as $model ) {
+		foreach ( array( '@cf/qwen/qwq-32b', '@cf/nvidia/nemotron-3-120b-a12b', '@cf/meta/../../x', '', null, 42 ) as $model ) {
 			$this->assertFalse( Workers_Ai::offered( $model ), var_export( $model, true ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export -- The failing value, in the message.
 		}
 		$this->assertSame( 'Llama 4 Scout (Meta)', Workers_Ai::label( '@cf/meta/llama-4-scout-17b-16e-instruct' ) );
 		$this->assertSame(
-			array( 'Llama 4 Scout (Meta)', 'gpt-oss-120b (OpenAI)', 'Gemma 4 26B (Google)', 'Nemotron 3 120B (NVIDIA)' ),
+			array( 'Llama 4 Scout (Meta)', 'gpt-oss-120b (OpenAI)', 'Gemma 4 26B (Google)' ),
 			array_column( Workers_Ai::MODELS, 'label' )
 		);
 	}
@@ -163,6 +163,36 @@ final class WorkersAiTest extends WordPressTestCase {
 	}
 
 	/**
+	 * Gemma 4 26B is asked not to think, which left it no room to answer; the other
+	 * models get only the messages and their length limit.
+	 */
+	#[RunInSeparateProcess]
+	#[PreserveGlobalState( false )]
+	public function test_gemma_is_asked_not_to_think(): void {
+		self::key();
+		$this->answer(
+			200,
+			array(
+				'success' => true,
+				'result'  => array( 'choices' => array( array( 'message' => array( 'content' => '[]' ) ) ) ),
+			)
+		);
+
+		Workers_Ai::ask( '@cf/google/gemma-4-26b-a4b-it', array() );
+		Workers_Ai::ask( Workers_Ai::DEFAULT_MODEL, array() );
+
+		$this->assertSame(
+			array(
+				'messages'             => array(),
+				'max_tokens'           => 8192,
+				'chat_template_kwargs' => array( 'enable_thinking' => false ),
+			),
+			json_decode( $this->requests[0][1]['body'], true )
+		);
+		$this->assertSame( array( 'messages', 'max_tokens' ), array_keys( json_decode( $this->requests[1][1]['body'], true ) ) );
+	}
+
+	/**
 	 * A model not on the list is never asked for, even with the key.
 	 */
 	#[RunInSeparateProcess]
@@ -191,6 +221,15 @@ final class WorkersAiTest extends WordPressTestCase {
 		);
 
 		$this->assertSame( array( 'problem' => 'Workers AI refused the request (401): Bad token … for account …' ), Workers_Ai::ask( Workers_Ai::DEFAULT_MODEL, array() ) );
+
+		$this->answer(
+			408,
+			array(
+				'success' => false,
+				'errors'  => array( array( 'message' => 'AiError: AiError: Request timeout (cd9eeec7-2f29-4b34-8187-91641b4b161d)' ) ),
+			)
+		);
+		$this->assertSame( array( 'problem' => 'Cloudflare stopped waiting for the model’s reply (HTTP 408), as it can when the model is busy. Try again in a while, or try another model.' ), Workers_Ai::ask( Workers_Ai::DEFAULT_MODEL, array() ) );
 
 		Functions\when( 'wp_safe_remote_post' )->justReturn( new \WP_Error( 'http_request_failed', 'cURL error 28: Operation timed out' ) );
 		$this->assertSame( array( 'problem' => 'Workers AI couldn’t be reached: cURL error 28: Operation timed out' ), Workers_Ai::ask( Workers_Ai::DEFAULT_MODEL, array() ) );

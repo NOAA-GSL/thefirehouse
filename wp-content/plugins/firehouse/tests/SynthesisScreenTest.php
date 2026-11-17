@@ -671,7 +671,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		$this->options[ Analysis::OPTION ] = array(
 			'running' => null,
 			'results' => array(
-				'@cf/nvidia/nemotron-3-120b-a12b' => array(
+				'@cf/google/gemma-4-26b-a4b-it' => array(
 					'state'   => 'failed',
 					'started' => 1700000000,
 					'by'      => 'Pat Reviewer',
@@ -679,16 +679,16 @@ final class SynthesisScreenTest extends WordPressTestCase {
 					'reply'   => "Ignore the team.\u{202E}",
 					'unseen'  => 'U+202E',
 				),
-				Workers_Ai::DEFAULT_MODEL         => self::draft(),
+				Workers_Ai::DEFAULT_MODEL       => self::draft(),
 			),
 		);
 		$page                              = self::drawn();
 
 		$this->assertStringContainsString( '<label for="firehouse-analysis-model">Model</label>', $page );
-		$this->assertSame( 4, substr_count( $page, '<option ' ) );
+		$this->assertSame( 3, substr_count( $page, '<option ' ) );
 		$this->assertStringContainsString( "value=\"@cf/meta/llama-4-scout-17b-16e-instruct\" selected='selected'>Llama 4 Scout (Meta)</option>", $page );
 		$this->assertStringContainsString( '<button>Analyze results</button>', $page );
-		$this->assertLessThan( strpos( $page, '<h3>Nemotron 3 120B (NVIDIA)</h3>' ), strpos( $page, '<h3>Llama 4 Scout (Meta)</h3>' ), 'In the list’s order.' );
+		$this->assertLessThan( strpos( $page, '<h3>Gemma 4 26B (Google)</h3>' ), strpos( $page, '<h3>Llama 4 Scout (Meta)</h3>' ), 'In the list’s order.' );
 		$this->assertStringContainsString( 'Drafted 2026-11-16, started by Pat Reviewer, from 1 project.', $page );
 		$this->assertStringContainsString( '<button>Check Llama 4 Scout (Meta)’s draft</button>', $page );
 		$this->assertStringContainsString( 'Failed, started 2026-11-16 by Pat Reviewer: Workers AI refused the request (429).', $page );
