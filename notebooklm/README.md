@@ -107,7 +107,7 @@ Using only the source "The FireHouse — collected project findings", extract pr
 
 ## 1. THE 4 STRUCTURAL PILLARS & ASSIGNMENT RULES
 
-The four pillars are the four topic areas defined at the top of the source. Every extracted need MUST be assigned to exactly ONE Primary Pillar based on the ultimate solution or action recommended:
+The four pillars take their names from the four topic areas defined at the top of the source; the descriptions below decide which pillar a need goes in. Every extracted need MUST be assigned to exactly ONE Primary Pillar based on the ultimate solution or action recommended:
 
 1. **Observations and Monitoring (JSON key "observe"; Theme: Blue)**: Remote sensing, satellite detection, telemetry, surface networks, fuel moisture monitoring, rural connectivity, and sensor integration.
 2. **Forecasts and Modeling (JSON key "forecast"; Theme: Purple)**: High-resolution NWP, fire behavior/atmosphere modeling, forecast discussions, trend/duration messaging, and visual probabilistic risk graphics.
@@ -125,7 +125,7 @@ To prevent overly broad "catch-all" categories, apply these guardrails before me
 1. **The 3-Axis Separation Test**: Evaluate items across (a) *Formality/Structure* (SOPs/AOPs vs. ad-hoc workflow), (b) *Functional Asset* (Data/Sensors vs. Software/Tech vs. Human Governance), and (c) *Operational Level* (Strategic/Executive vs. Tactical Field vs. Public Safety). If items differ on **2 or more axes**, DO NOT MERGE.
 2. **The Single Funding Line Test**: Ask: *"Would an agency director or grant program address both items with a single budget line or policy directive?"* If NO, keep separate.
 3. **Verb-Object Extraction**: Strip out generic buzzwords ("coordination", "communication") to isolate the CORE OPERATIONAL VERB + DIRECT OBJECT.
-4. **Strict Deduplication (1-per-project rule)**: Increment `mention_count` by a **maximum of 1 per unique project**, even if a single project has multiple "Entry" blocks mapping to the same macro-category.
+4. **Strict Deduplication (1-per-project rule)**: Increment `mention_count` by a **maximum of 1 per unique project whose own "Entry" blocks raise the need**, even if a single project has multiple "Entry" blocks mapping to the same macro-category.
 5. **Mention-Count Ranking & Tie-Breaker**: Sort categories within each pillar by `mention_count` descending. In the event of ANY tie in mention counts between two or more operational needs (including ties at count 1), prioritize categories with broader interagency or multi-regional applicability. List at most 5 needs in each pillar.
 
 --------------------------------------------------------------------------------
@@ -159,7 +159,7 @@ Generate a clean table formatted as follows:
 
 ### B. Valid JSON Output
 
-Then give the same needs as JSON in exactly this shape, with no citations inside it. List the four pillars in this order, by their JSON keys, and each pillar's needs in the table's rank order. "text" is the Actionable Operational Need Statement, "mentions" is its `mention_count`, and "projects" lists the "Page" slug (the part after /projects/) of every project counted, each project once, so the number of projects equals "mentions".
+Then give the same needs as JSON in exactly this shape, with no citations inside it. List the four pillars in this order, by their JSON keys, and each pillar's needs in the table's rank order. "text" is the Actionable Operational Need Statement, word for word as in the table, "mentions" is its `mention_count`, and "projects" lists the "Page" slug (the part after /projects/) of every project counted, each project once, so the number of projects equals "mentions".
 
 [
   {
@@ -196,10 +196,10 @@ leaves (`&amp;`, `\_`, `\-`) were taken out too.
 |---|---|---|
 | What it reads | Process incoming Qualtrics survey submission data (Q1–Q17_5), extract primary user needs and recommendations (Q16_1–Q16_10), cross-reference contextual metadata (Q14, Q15_1–Q15_4), … | Using only the source "The FireHouse — collected project findings", extract primary user needs and recommendations (each project's numbered "Entry" blocks under "End-user needs and recommendations"), cross-reference contextual metadata (each project's "Abstract" and "Major takeaways"), … |
 | Nothing invented | (none) | Do not invent needs the projects don't support. If a pillar has little support in the source, say so and list fewer needs. |
-| The pillars' names | Observations & Monitoring; Forecasts & Modeling; Warnings & Immediate Response; Strategic Adaptation & Governance | The source's four topic areas, each with its key: Observations and Monitoring ("observe"); Forecasts and Modeling ("forecast"); Warnings and Immediate Response ("warning"); Strategic Adaptation and Institutional Governance ("governance"). The same names in the tie-breaker, and a line saying they're the topic areas defined at the top of the source. |
-| What counts once | …a maximum of 1 per unique project submission row, even if a single project submits multiple Q16 entries mapping to the same macro-category. | …a maximum of 1 per unique project, even if a single project has multiple "Entry" blocks mapping to the same macro-category. |
+| The pillars' names | Observations & Monitoring; Forecasts & Modeling; Warnings & Immediate Response; Strategic Adaptation & Governance | The source's four topic areas, each with its key: Observations and Monitoring ("observe"); Forecasts and Modeling ("forecast"); Warnings and Immediate Response ("warning"); Strategic Adaptation and Institutional Governance ("governance"). The same names in the tie-breaker, and a line saying the pillars take their names from the topic areas at the top of the source, while the descriptions below decide where a need goes. |
+| What counts once | …a maximum of 1 per unique project submission row, even if a single project submits multiple Q16 entries mapping to the same macro-category. | …a maximum of 1 per unique project whose own "Entry" blocks raise the need, even if a single project has multiple "Entry" blocks mapping to the same macro-category. |
 | How many | (no limit) | List at most 5 needs in each pillar. |
-| The JSON | Return a JSON payload matching standard structure with `total_projects_analyzed`, `last_updated_utc`, and `pillars`. | The shape the synthesis screen reads: the four pillars by key, in order; each need's text (the need statement), its mentions, and the "Page" slug of every project counted, each once; the needs in the table's rank order; no citations inside. |
+| The JSON | Return a JSON payload matching standard structure with `total_projects_analyzed`, `last_updated_utc`, and `pillars`. | The shape the synthesis screen reads: the four pillars by key, in order; each need's text (the need statement, word for word as in the table), its mentions, and the "Page" slug of every project counted, each once; the needs in the table's rank order; no citations inside. |
 
 Why:
 
@@ -213,6 +213,14 @@ Why:
 - **How many.** The site shows up to five needs a topic area, and the screen refuses
   more.
 - **Nothing invented.** Kept from the prompt this one replaces.
+- **Only its own entries count** (Prompt Engineer). In one run a governance need counted
+  all eight projects, though some projects' entries don't raise it: the abstract and
+  takeaways had let the model count them.
+- **One definition for each pillar** (Prompt Engineer). Saying the pillars *are* the
+  source's topic areas gave each two descriptions, which differ on data sharing; one run
+  put the same need under both. The source now gives the names, the prompt the scope.
+- **Word for word** (Prompt Engineer). Inkling 2 Small's JSON reworded most of the
+  needs in its table, so a reviewer could read one wording and publish another.
 
 What the prompt this one replaces and this one did, with the same eight published
 projects, through Cloudflare Workers AI on 17 November (NotebookLM wasn't run):
@@ -240,3 +248,30 @@ projects, through Cloudflare Workers AI on 17 November (NotebookLM wasn't run):
   that run gave nine needs in all.
 - The runs named the source "The Firehouse", as the local site still did; the
   prompt above says "The FireHouse", to match the source's new title.
+
+The runs above used the six changes before the Prompt Engineer's review. With the final
+wording, one run a model: Inkling 2 Small gave 20 needs of 10 to 20 words, clean;
+Gemma 4 26B 14, with one slug it made from a title in 3 needs; gpt-oss-120b 19, with the
+same shortened slug in 5, and no need counting more than 3 projects; Llama 4 Scout ran
+out of time again.
+
+**Do the examples steer?** The need statements' examples (the verbs, "to reduce
+cognitive overload", "to support proactive resource scaling") come from the team's
+reviewed 27 October needs, and no earlier synthesis is meant to steer the next. Run
+without the two NGFS projects (three runs: Inkling 2 Small twice, gpt-oss-120b once),
+no NGFS or hotspot need appeared, so the examples don't make needs up. They do reach the
+wording: two runs wrote "proactive resource scaling" where the researcher wrote
+"proactive operational scaling", and one put AWIPS in a need whose project doesn't name
+it, since the prompt asks every need to name a tool. The examples are the team's text,
+so they're unchanged here; Stephanie and Emily decide.
+
+Left as they are, for Stephanie and Emily (Prompt Engineer, Low):
+
+- The prompt no longer asks for the entries behind each need, as the one before did.
+  NotebookLM cites them itself; a model's reply on Analyze results names only the
+  studies, in its table.
+- The table credits "[Lead Author et al. (Year)]", which the source doesn't give: it
+  lists each project's researchers and the year it was completed. One run credited a
+  project to the wrong researcher and year.
+- NotebookLM hasn't run this prompt: whether a 20-row table and the JSON fit in one of
+  its answers is untested.

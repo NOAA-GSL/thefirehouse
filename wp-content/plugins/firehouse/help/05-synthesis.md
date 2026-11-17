@@ -46,7 +46,7 @@ Go to **FireHouse → Synthesis** and choose **Download NotebookLM source**. You
 
 ## 3. Review it
 
-NotebookLM answers with a table of the needs, with its citations, then a block of JSON that starts with `[` and ends with `]`. Check each need against the projects it came from, with NotebookLM's citations, and edit the wording: the published words are the team's, not the model's.
+The prompt asks NotebookLM for a table of the needs, then a block of JSON that starts with `[` and ends with `]`. Check each need against the projects it came from, with NotebookLM's citations, and edit the wording: the published words are the team's, not the model's.
 
 Edit the JSON in the box on FireHouse → Synthesis, or in a plain-text editor such as Notepad. Don't use Word or Google Docs: they change the quotation marks, and the screen can't read it then. A need's words are its `"text"`, its count is its `"mentions"` number, and its projects are its `"projects"` list.
 

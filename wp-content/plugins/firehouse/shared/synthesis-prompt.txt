@@ -12,7 +12,7 @@ Using only the source "The FireHouse — collected project findings", extract pr
 
 ## 1. THE 4 STRUCTURAL PILLARS & ASSIGNMENT RULES
 
-The four pillars are the four topic areas defined at the top of the source. Every extracted need MUST be assigned to exactly ONE Primary Pillar based on the ultimate solution or action recommended:
+The four pillars take their names from the four topic areas defined at the top of the source; the descriptions below decide which pillar a need goes in. Every extracted need MUST be assigned to exactly ONE Primary Pillar based on the ultimate solution or action recommended:
 
 1. **Observations and Monitoring (JSON key "observe"; Theme: Blue)**: Remote sensing, satellite detection, telemetry, surface networks, fuel moisture monitoring, rural connectivity, and sensor integration.
 2. **Forecasts and Modeling (JSON key "forecast"; Theme: Purple)**: High-resolution NWP, fire behavior/atmosphere modeling, forecast discussions, trend/duration messaging, and visual probabilistic risk graphics.
@@ -30,7 +30,7 @@ To prevent overly broad "catch-all" categories, apply these guardrails before me
 1. **The 3-Axis Separation Test**: Evaluate items across (a) *Formality/Structure* (SOPs/AOPs vs. ad-hoc workflow), (b) *Functional Asset* (Data/Sensors vs. Software/Tech vs. Human Governance), and (c) *Operational Level* (Strategic/Executive vs. Tactical Field vs. Public Safety). If items differ on **2 or more axes**, DO NOT MERGE.
 2. **The Single Funding Line Test**: Ask: *"Would an agency director or grant program address both items with a single budget line or policy directive?"* If NO, keep separate.
 3. **Verb-Object Extraction**: Strip out generic buzzwords ("coordination", "communication") to isolate the CORE OPERATIONAL VERB + DIRECT OBJECT.
-4. **Strict Deduplication (1-per-project rule)**: Increment `mention_count` by a **maximum of 1 per unique project**, even if a single project has multiple "Entry" blocks mapping to the same macro-category.
+4. **Strict Deduplication (1-per-project rule)**: Increment `mention_count` by a **maximum of 1 per unique project whose own "Entry" blocks raise the need**, even if a single project has multiple "Entry" blocks mapping to the same macro-category.
 5. **Mention-Count Ranking & Tie-Breaker**: Sort categories within each pillar by `mention_count` descending. In the event of ANY tie in mention counts between two or more operational needs (including ties at count 1), prioritize categories with broader interagency or multi-regional applicability. List at most 5 needs in each pillar.
 
 --------------------------------------------------------------------------------
@@ -64,7 +64,7 @@ Generate a clean table formatted as follows:
 
 ### B. Valid JSON Output
 
-Then give the same needs as JSON in exactly this shape, with no citations inside it. List the four pillars in this order, by their JSON keys, and each pillar's needs in the table's rank order. "text" is the Actionable Operational Need Statement, "mentions" is its `mention_count`, and "projects" lists the "Page" slug (the part after /projects/) of every project counted, each project once, so the number of projects equals "mentions".
+Then give the same needs as JSON in exactly this shape, with no citations inside it. List the four pillars in this order, by their JSON keys, and each pillar's needs in the table's rank order. "text" is the Actionable Operational Need Statement, word for word as in the table, "mentions" is its `mention_count`, and "projects" lists the "Page" slug (the part after /projects/) of every project counted, each project once, so the number of projects equals "mentions".
 
 [
   {
