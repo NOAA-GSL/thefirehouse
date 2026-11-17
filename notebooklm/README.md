@@ -181,11 +181,12 @@ Cloudflare Workers AI on 16 November (NotebookLM wasn't run):
   thinking, it used up its length limit under both prompts and gave no reply, or half
   of one.
 - Thinking Machines' Inkling 2 Small (reasoning set low) and OpenAI's gpt-oss-20b ran
-  through the same client from a scratch script, since Analyze results doesn't offer
-  them. gpt-oss-20b drew nearly every need from a single project (1.0 to 1.1 projects
-  a need, against 1.2 to 3.2 for the others), listing findings rather than putting
-  them together. Inkling 2 Small drew on the most (2.1 to 2.8) and named no project
-  wrongly.
+  through the same client from a scratch script, since Analyze results didn't offer
+  them then. gpt-oss-20b drew nearly every need from a single project (1.0 to 1.1
+  projects a need, against 1.2 to 3.2 for the others), listing findings rather than
+  putting them together. Inkling 2 Small drew on the most (2.1 to 2.8), named no
+  project wrongly, and was the only model to give the entries behind each need;
+  Analyze results offers it since #76.
 - Nemotron 3 120B isn't in the table: all 16 requests to it timed out, under both
   prompts, and Cloudflare retires it on 20 November 2026, so Analyze results no longer
   offers it (#76).
