@@ -340,7 +340,10 @@ overrides are isolated so a re-sync doesn't lose them.
       prompt orders them that way; the current one, which ranks by importance, doesn't.
       The plugin's own prompt, `shared/synthesis-prompt.txt`, changes with it: a test
       holds it to the one in `notebooklm/README.md`, so Analyze results and NotebookLM
-      are compared on the same words.
+      are compared on the same words. *Brought in 17 November, with the source's new
+      title: the team's prompt, adapted in six places so it reads the source and gives
+      the screen's JSON (`notebooklm/README.md`, "Prompt changes"). Ticked when
+      Stephanie and Emily clear those six.*
 - [ ] **Review the topic-area `covers` copy** in `topics.json` — the bullet list in
       the callout, and now the only area copy on `/topics/…`. The longer `intro`
       paragraphs are no longer rendered (September 2026 review) but are kept in the

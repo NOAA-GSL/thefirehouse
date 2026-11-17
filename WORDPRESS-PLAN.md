@@ -63,7 +63,7 @@ that produced it).
 | Responses so far | Qualtrics is closed, and every real submission was re-entered through the Google Form (28 October), so the form's Sheet is the complete record. |
 | Survey API sync | **Dropped** (29 October). With the form in the plugin there is no Sheet to sync. |
 | AI synthesis | **Runs from the plugin** (agreed with Stephanie and Emily, 28 October). An **Analyze results** button sends the published projects and the team's prompt to an approved AI service, and the result waits as a draft for review. The service will likely be Cloudflare Workers AI or Amazon Bedrock, and either needs approval under NOAA's AI policy (open question 7). The model is still open (1 November) and is chosen by checking its output. Until then, and as the fallback, the synthesis screen takes NotebookLM's output by paste. See [The AI service](#the-ai-service). *Cloudflare Workers AI is tried first (Eric, 16 November), with its key in `wp-config.php` and a choice of models from US companies only (Eric, 16 November). It stays a trial until NOAA's AI policy approves it.* |
-| Need counts | **Once per project** (28 October): a need mentioned several times in one project counts once. |
+| Need counts | **Once per project** (28 October): a need mentioned several times in one project counts once. *Each need goes in one topic area (the team's prompt, 17 November): one that spans several goes to governance first, then warnings, then forecasts, then observations.* |
 | Link previews through Cloudflare | Found out during testing (see [Link previews](#page-titles-descriptions-and-link-previews)). |
 | AMS bridge | Probably possible, and recommended, starting on the test site for the mid-November WPO meeting (see [The AMS bridge](#the-ams-bridge)). |
 | Hosting outside GSL | **Not allowed** (October 2026 review of the intake documents). The earlier prototype on the former developer's personal domain was taken down in October 2026, and `netlify.toml` is removed from the repository so it is not redeployed. |
@@ -2202,7 +2202,10 @@ number of changes down: what isn't needed for it says *After launch*.
   (Final)" replaces the one in `notebooklm/README.md` once its text arrives, after the
   Prompt Engineer runs both on the same projects. In the same change the source's
   title becomes "The FireHouse — collected project findings", the spelling people
-  see, which the prompt names it by.
+  see, which the prompt names it by. *Its text came 17 November: the team's prompt as
+  they ran it then, adapted in six places so it reads the source and gives the
+  screen's JSON (`notebooklm/README.md`, "Prompt changes"), with the source's new
+  title. It waits on Stephanie and Emily's clearance of those six.*
 - Download NotebookLM source, for the paste-in fallback. *Built 16 November
   (`domain/class-notebook-source.php`), held to `scripts/notebooklm-source.mjs` by
   `shared/cases/notebooklm-source.json`; on the local copy the two documents are the

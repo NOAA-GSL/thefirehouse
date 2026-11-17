@@ -109,10 +109,10 @@ export function buildNotebookSource(projects, topics) {
     .join('\n\n');
 
   return `${[
-    '# The Firehouse — collected project findings',
+    '# The FireHouse — collected project findings',
     '',
     `Source document for the topic-area synthesis. It contains all ${published.length} ` +
-      'published projects in The Firehouse, NOAA Global Systems Laboratory\'s hub for ' +
+      'published projects in The FireHouse, NOAA Global Systems Laboratory\'s hub for ' +
       'fire weather social science. Each project\'s abstract, takeaways, needs and ' +
       'recommendations are reproduced exactly as the researchers submitted them.',
     '',

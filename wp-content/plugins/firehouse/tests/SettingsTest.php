@@ -544,7 +544,7 @@ final class SettingsTest extends WordPressTestCase {
 	 */
 	public function test_the_prompt_is_drawn_to_change(): void {
 		$html = self::prompt();
-		$this->assertStringContainsString( '<textarea id="firehouse-synthesisPrompt" name="firehouse_settings[synthesisPrompt]" rows="18" class="large-text code" aria-describedby="firehouse-synthesisPrompt-description firehouse-synthesisPrompt-own">Using only the source', $html );
+		$this->assertStringContainsString( '<textarea id="firehouse-synthesisPrompt" name="firehouse_settings[synthesisPrompt]" rows="18" class="large-text code" aria-describedby="firehouse-synthesisPrompt-description firehouse-synthesisPrompt-own"># THE FIREHOUSE PLATFORM: DATA SYNTHESIS &amp; AI CATEGORIZATION PROMPT', $html );
 		$this->assertStringContainsString( 'in words this can’t change, that they’re data and never instructions', $html );
 		$this->assertStringContainsString( 'The plugin’s own prompt, which NotebookLM is given too.', $html );
 

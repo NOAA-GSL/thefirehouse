@@ -25,15 +25,15 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   (rule 2), so there is nothing to strip.
  * - **The same bytes for the same content.** No date in it.
  *
- * The source's title, "The Firehouse — collected project findings", is the name the
- * synthesis prompt in `notebooklm/README.md` asks for, so it keeps that spelling.
+ * The source's title, "The FireHouse — collected project findings", is the name the
+ * synthesis prompt in `notebooklm/README.md` asks for, spelled as people see the name.
  */
 final class Notebook_Source {
 
 	/**
 	 * The document's title, which the synthesis prompt names it by.
 	 */
-	public const TITLE = 'The Firehouse — collected project findings';
+	public const TITLE = 'The FireHouse — collected project findings';
 
 	/**
 	 * The document.
@@ -82,7 +82,7 @@ final class Notebook_Source {
 					'# ' . self::TITLE,
 					'',
 					'Source document for the topic-area synthesis. It contains all ' . count( $published ) . ' '
-						. 'published projects in The Firehouse, NOAA Global Systems Laboratory\'s hub for '
+						. 'published projects in The FireHouse, NOAA Global Systems Laboratory\'s hub for '
 						. 'fire weather social science. Each project\'s abstract, takeaways, needs and '
 						. 'recommendations are reproduced exactly as the researchers submitted them.',
 					'',
