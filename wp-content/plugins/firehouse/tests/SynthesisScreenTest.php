@@ -688,7 +688,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		$this->assertStringNotContainsString( 'nemotron', strtolower( $page ), 'A draft from a model no longer offered, as one Cloudflare retired, isn’t shown.' );
 
 		$this->assertStringContainsString( '<label for="firehouse-analysis-model">Model</label>', $page );
-		$this->assertSame( 3, substr_count( $page, '<option ' ) );
+		$this->assertSame( 4, substr_count( $page, '<option ' ) );
 		$this->assertStringContainsString( "value=\"@cf/meta/llama-4-scout-17b-16e-instruct\" selected='selected'>Llama 4 Scout (Meta)</option>", $page );
 		$this->assertStringContainsString( '<button>Analyze results</button>', $page );
 		$this->assertLessThan( strpos( $page, '<h3>Gemma 4 26B (Google)</h3>' ), strpos( $page, '<h3>Llama 4 Scout (Meta)</h3>' ), 'In the list’s order.' );

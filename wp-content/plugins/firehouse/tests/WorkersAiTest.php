@@ -112,7 +112,7 @@ final class WorkersAiTest extends WordPressTestCase {
 		}
 		$this->assertSame( 'Llama 4 Scout (Meta)', Workers_Ai::label( '@cf/meta/llama-4-scout-17b-16e-instruct' ) );
 		$this->assertSame(
-			array( 'Llama 4 Scout (Meta)', 'gpt-oss-120b (OpenAI)', 'Gemma 4 26B (Google)' ),
+			array( 'Llama 4 Scout (Meta)', 'gpt-oss-120b (OpenAI)', 'Gemma 4 26B (Google)', 'Inkling 2 Small (Thinking Machines)' ),
 			array_column( Workers_Ai::MODELS, 'label' )
 		);
 	}
@@ -163,12 +163,13 @@ final class WorkersAiTest extends WordPressTestCase {
 	}
 
 	/**
-	 * Gemma 4 26B is asked not to think, which left it no room to answer; the other
-	 * models get only the messages and their length limit.
+	 * Gemma 4 26B is asked not to think, which left it no room to answer, and Inkling 2
+	 * Small to reason at "low"; the other models get only the messages and their length
+	 * limit.
 	 */
 	#[RunInSeparateProcess]
 	#[PreserveGlobalState( false )]
-	public function test_gemma_is_asked_not_to_think(): void {
+	public function test_some_models_are_asked_to_think_less(): void {
 		self::key();
 		$this->answer(
 			200,
@@ -180,6 +181,7 @@ final class WorkersAiTest extends WordPressTestCase {
 
 		Workers_Ai::ask( '@cf/google/gemma-4-26b-a4b-it', array() );
 		Workers_Ai::ask( Workers_Ai::DEFAULT_MODEL, array() );
+		Workers_Ai::ask( '@cf/thinkingmachines/inkling-2-small', array() );
 
 		$this->assertSame(
 			array(
@@ -190,6 +192,15 @@ final class WorkersAiTest extends WordPressTestCase {
 			json_decode( $this->requests[0][1]['body'], true )
 		);
 		$this->assertSame( array( 'messages', 'max_tokens' ), array_keys( json_decode( $this->requests[1][1]['body'], true ) ) );
+		$this->assertSame( 'https://api.cloudflare.com/client/v4/accounts/' . self::ACCOUNT_ID . '/ai/run/@cf/thinkingmachines/inkling-2-small', $this->requests[2][0] );
+		$this->assertSame(
+			array(
+				'messages'         => array(),
+				'max_tokens'       => 16384,
+				'reasoning_effort' => 'low',
+			),
+			json_decode( $this->requests[2][1]['body'], true )
+		);
 	}
 
 	/**

@@ -51,7 +51,10 @@ final class Workers_Ai {
 	 * well as answer, and anything else its request needs (`body`), which can add fields
 	 * but never replace `messages` or `max_tokens`. Gemma 4 26B is asked not to think:
 	 * when it did, it spent its 8,192 tokens thinking in four runs out of five and gave
-	 * no reply, or half of one; without, five runs answered in 15 to 36 seconds. Each
+	 * no reply, or half of one; without, five runs answered in 15 to 36 seconds.
+	 * Thinking Machines' Inkling 2 Small (San Francisco) reasons at "low", not its
+	 * "high": four runs answered in 16 to 28 seconds, drawing each need from more
+	 * projects than any other model. It needs Cloudflare's Workers Paid plan. Each
 	 * reads at least 128,000 tokens, many times the source. Llama 3.3 70B is left out:
 	 * its 24,000 would run out as projects arrive. NVIDIA's Nemotron 3 120B is left out:
 	 * Cloudflare retires it on 20 November 2026.
@@ -69,6 +72,11 @@ final class Workers_Ai {
 			'label'      => 'Gemma 4 26B (Google)',
 			'max_tokens' => 8192,
 			'body'       => array( 'chat_template_kwargs' => array( 'enable_thinking' => false ) ),
+		),
+		'@cf/thinkingmachines/inkling-2-small'    => array(
+			'label'      => 'Inkling 2 Small (Thinking Machines)',
+			'max_tokens' => 16384,
+			'body'       => array( 'reasoning_effort' => 'low' ),
 		),
 	);
 

@@ -1031,8 +1031,11 @@ nothing from the database. Each class's docblock has the detail; this is the map
   `wp-config.php`: never in the database, a screen, a message or a log, and refused
   unless shaped like Cloudflare's (32 hex digits; letters, digits, `-` and `_`), so
   neither can add to the address or the header. The models are a fixed list, all from
-  US companies (Eric, 16 November): Meta's Llama 4 Scout, OpenAI's gpt-oss-120b and
-  Google's Gemma 4 26B, each reading 128,000 tokens or more. NVIDIA's Nemotron 3 120B
+  US companies (Eric, 16 November): Meta's Llama 4 Scout, OpenAI's gpt-oss-120b,
+  Google's Gemma 4 26B and Thinking Machines' Inkling 2 Small, each reading 128,000
+  tokens or more. Inkling reasons at `reasoning_effort` "low" and needs Cloudflare's
+  Workers Paid plan; on an account without it, Cloudflare refuses the request and the
+  screen says why. NVIDIA's Nemotron 3 120B
   is left out: Cloudflare retires it on 20 November 2026. Gemma is asked not to think
   (`chat_template_kwargs`), since its thinking used up its length limit. One POST to
   `api.cloudflare.com/client/v4/accounts/{id}/ai/run/{model}` with `messages`, the
