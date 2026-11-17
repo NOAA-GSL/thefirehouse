@@ -733,28 +733,31 @@ key offers only the paste.*
   to api.cloudflare.com. The local copy reads them from its ignored `.env`.
 - **The models** are a fixed list, from US companies only (Eric, 16 November), each
   reading at least 128,000 tokens: Meta's Llama 4 Scout, OpenAI's gpt-oss-120b,
-  Google's Gemma 4 26B and Thinking Machines' Inkling 2 Small (Eric, 16 November).
-  Llama 3.3 70B is left out: its 24,000 would run out as projects arrive. *NVIDIA's
-  Nemotron 3 120B is left out too: Cloudflare retires it on 20 November 2026, every
-  request to it in the prompt comparison (16 November) timed out, and Cloudflare
-  suggests no US-made replacement but Gemma 4 26B. Gemma is asked not to think:
-  thinking, it used its whole 8,192-token limit in four runs out of five and gave no
-  reply or half of one; without, five runs answered in 15 to 36 seconds, with 1,300 to
-  1,500 tokens. A run of a model taken off the list that is still out when the plugin
-  is updated is dropped without a record, and its editor may start another while it
-  finishes; only an administrator's update can cause it. Inkling 2 Small, from
-  Thinking Machines Lab in San Francisco, was added after four runs at reasoning "low"
-  answered in 16 to 28 seconds, named no project wrongly, and drew each need from 2.1
-  to 2.8 projects, more than any other model; it needs Cloudflare's Workers Paid plan,
-  which the test site's and production's Cloudflare account must have. OpenAI's
-  gpt-oss-20b was tried too and left out: it drew nearly every need from one project.*
-  The editor picks one on the synthesis screen, and the screen keeps each model's
-  latest draft, so the team can compare them. Commercial models, such as OpenAI's GPT
-  or Anthropic's Claude, can be reached through Cloudflare's AI Gateway, but the
-  projects would then go to that company too, so they aren't offered.
+  Google's Gemma 4 26B and Thinking Machines' Inkling 2 Small, added by Eric the same
+  day. Llama 3.3 70B is left out: its 24,000 would run out as projects arrive.
+  *NVIDIA's Nemotron 3 120B is left out too: Cloudflare retires it on 20 November
+  2026, every request to it in the prompt comparison (16 November) timed out, and
+  Cloudflare suggests no US-made replacement but Gemma 4 26B. Gemma is asked not to
+  think: thinking, it used its whole 8,192-token limit in four runs out of five and
+  gave no reply or half of one; without, five runs answered in 15 to 36 seconds, with
+  1,300 to 1,500 tokens. A run of a model taken off the list that is still out when
+  the plugin is updated is dropped without a record, and its editor may start another
+  while it finishes; only an administrator's update can cause it. Inkling 2 Small,
+  from Thinking Machines Lab in San Francisco, was added after four runs at reasoning
+  "low" answered in 16 to 28 seconds, named no project wrongly, and drew each need
+  from 2.1 to 2.8 projects, more than any other model; it was also the only one to
+  give the entries behind each need, as the prompt asks. It needs Cloudflare's Workers
+  Paid plan (README's deploy checklist). Cloudflare's page labels it
+  "Cloudflare-hosted", not "Third-party" as it does the first Inkling, which goes to
+  Thinking Machines' own service; that is to be confirmed with Cloudflare before
+  production. OpenAI's gpt-oss-20b was tried too and left out: it drew nearly every
+  need from one project.* The editor picks one on the synthesis screen, and the screen
+  keeps each model's latest draft, so the team can compare them. Commercial models,
+  such as OpenAI's GPT or Anthropic's Claude, can be reached through Cloudflare's AI
+  Gateway, but the projects would then go to that company too, so they aren't offered.
 - **It runs in the background,** in a scheduled event, since a reply takes minutes.
-  Each model's sampling settings are its own; only the reply's length is set, Gemma
-  4 26B is asked not to think, and Inkling 2 Small to reason at "low".
+  Each model's sampling settings are its own; only the reply's length is set,
+  Gemma 4 26B is asked not to think, and Inkling 2 Small to reason at "low".
 
 - **Analyze results** sends the published projects' text and the team's prompt, and
   the reply lands on the synthesis screen with the same checks and **Mark

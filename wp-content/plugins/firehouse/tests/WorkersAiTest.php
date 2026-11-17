@@ -195,9 +195,10 @@ final class WorkersAiTest extends WordPressTestCase {
 		$this->assertSame( 'https://api.cloudflare.com/client/v4/accounts/' . self::ACCOUNT_ID . '/ai/run/@cf/thinkingmachines/inkling-2-small', $this->requests[2][0] );
 		$this->assertSame(
 			array(
-				'messages'         => array(),
-				'max_tokens'       => 16384,
-				'reasoning_effort' => 'low',
+				'messages'              => array(),
+				'max_tokens'            => 16384,
+				'reasoning_effort'      => 'low',
+				'max_completion_tokens' => 16384,
 			),
 			json_decode( $this->requests[2][1]['body'], true )
 		);

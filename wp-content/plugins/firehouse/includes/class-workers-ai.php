@@ -54,10 +54,12 @@ final class Workers_Ai {
 	 * no reply, or half of one; without, five runs answered in 15 to 36 seconds.
 	 * Thinking Machines' Inkling 2 Small (San Francisco) reasons at "low", not its
 	 * "high": four runs answered in 16 to 28 seconds, drawing each need from more
-	 * projects than any other model. It needs Cloudflare's Workers Paid plan. Each
-	 * reads at least 128,000 tokens, many times the source. Llama 3.3 70B is left out:
-	 * its 24,000 would run out as projects arrive. NVIDIA's Nemotron 3 120B is left out:
-	 * Cloudflare retires it on 20 November 2026.
+	 * projects than any other model. Its limit goes as `max_completion_tokens` too, the
+	 * name Cloudflare gives it in place of `max_tokens`, which it calls deprecated. It
+	 * needs Cloudflare's Workers Paid plan. Each model reads at least 128,000 tokens,
+	 * many times the source. Llama 3.3 70B is left out: its 24,000 would run out as
+	 * projects arrive. NVIDIA's Nemotron 3 120B is left out: Cloudflare retires it on 20
+	 * November 2026.
 	 */
 	public const MODELS = array(
 		'@cf/meta/llama-4-scout-17b-16e-instruct' => array(
@@ -76,7 +78,10 @@ final class Workers_Ai {
 		'@cf/thinkingmachines/inkling-2-small'    => array(
 			'label'      => 'Inkling 2 Small (Thinking Machines)',
 			'max_tokens' => 16384,
-			'body'       => array( 'reasoning_effort' => 'low' ),
+			'body'       => array(
+				'reasoning_effort'      => 'low',
+				'max_completion_tokens' => 16384,
+			),
 		),
 	);
 
