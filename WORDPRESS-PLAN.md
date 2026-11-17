@@ -2314,7 +2314,10 @@ hand.
   Stephanie and Emily judge the results. *The screen keeps each model's latest draft
   and the prompt it was given; the runs wait on Eric's key.*
 - Site Health checks: outbound reach to doi.org, api.crossref.org, data.crosscite.org
-  and the AI service, `noindex` on test, and HTML caching status.
+  and the AI service, `noindex` on test, and HTML caching status. *Done: `Site_Health`.
+  The test site's check needs `WP_ENVIRONMENT_TYPE` set to `staging` there. The local
+  copy's WP-Cron, which couldn't reach itself inside its container, now runs through
+  a `cron_request` filter in `docker-compose.yml`.*
 
 **Done when:** Analyze results produces a draft synthesis on the test site that passes
 the screen's validation, and Stephanie and Emily have signed off that it matches
