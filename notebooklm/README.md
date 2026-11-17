@@ -111,7 +111,7 @@ Using only the source "The FireHouse — collected project findings", which hold
 
 SURVEY INPUT COLUMN MAPPINGS
 
-The source gives each project's answers under headings, not column names. Q16_1 to Q16_10 are the project's numbered "Entry" blocks under "End-user needs and recommendations"; Q14 is its "Abstract"; Q15_1 to Q15_4 are its "Major takeaways". A "project submission row" is one project in the source.
+The source gives each project's answers under headings, not column names. Q16_1 to Q16_10 are the project's numbered "Entry" blocks under "End-user needs and recommendations", all of them, however many there are, since one answer can hold more than one entry; Q14 is its "Abstract"; Q15_1 to Q15_4 are its "Major takeaways". A "project submission row" is one project in the source.
 
 - **PRIMARY EXTRACTION SOURCE — Q16_1 to Q16_10 (Primary User Needs & Recommendations):** This is the **primary source** for extracting, categorizing, and tallying operational needs and recommendations. Process both paired entries ("Need for... Recommend...") and standalone needs or recommendations.
 - **CONTEXTUAL SUPPORT SOURCES — Q14 & Q15_1 to Q15_4:**
@@ -338,7 +338,7 @@ table's empty first row.
 | What | The team's prompt | Here |
 |---|---|---|
 | What it reads | Process incoming survey data (Q1–Q17), map individual project entries into database records, … | Using only the source "The FireHouse — collected project findings", which holds each published project's survey answers, map individual project entries into database records, … Do not invent needs the projects don't support. If a pillar has little support in the source, say so and list fewer needs. |
-| The survey columns | (none) | The source gives each project's answers under headings, not column names. Q16_1 to Q16_10 are the project's numbered "Entry" blocks under "End-user needs and recommendations"; Q14 is its "Abstract"; Q15_1 to Q15_4 are its "Major takeaways". A "project submission row" is one project in the source. |
+| The survey columns | (none) | The source gives each project's answers under headings, not column names. Q16_1 to Q16_10 are the project's numbered "Entry" blocks under "End-user needs and recommendations", all of them, however many there are, since one answer can hold more than one entry; Q14 is its "Abstract"; Q15_1 to Q15_4 are its "Major takeaways". A "project submission row" is one project in the source. |
 | The pillars | (none) | The pillars are the four topic areas at the top of the source, under the team's names; the scopes below decide which pillar a need goes in. In the JSON, each pillar is named by its key: Observations & Monitoring "observe", Forecasts & Modeling "forecast", Warnings & Immediate Response "warning", Strategic Adaptation & Governance "governance". |
 | The examples | (none) | These examples show how to apply the rules. Their project numbers are rows of the team's survey sheet, not the project numbers in the source. Don't copy their categories, wording or counts: derive every need, count and project from the source. |
 | The JSON | Return a JSON payload matching standard structure with total_projects_analyzed, last_updated_utc, and pillars. | The shape the synthesis screen reads: the four pillars by key, in order; in each, its top 5 needs in the table's rank order; each need's "text" (the Actionable Operational Need, word for word as in the table), its "mentions", and the "Page" slug of every project counted, each once; no citations inside. |
@@ -347,7 +347,9 @@ Why:
 
 - **What it reads, and the survey columns.** The source holds the projects the site
   shows, under headings rather than survey columns. Q1 to Q17 also take in the private
-  answers (Q2, Q3 and Q10), which the source leaves out.
+  answers (Q2, Q3 and Q10), which the source leaves out. An Entry isn't one survey
+  column: the import splits a box holding two entries, so a project can have more
+  than ten, and the line says every Entry counts (Copilot).
 - **The pillars.** The source describes the four topic areas differently from the
   team's scopes (data sharing is Observations in one, governance in the other). With
   two descriptions, a run of an earlier draft put the same need under both.
@@ -390,6 +392,11 @@ projects, through Cloudflare Workers AI on 17 November (NotebookLM wasn't run):
 
 Left as they are, for Stephanie and Emily:
 
+- The worked examples quote four published projects' entries word for word. Analyze
+  results sends the prompt with every run, so if one of those projects comes off the
+  site, its words still go to the model, and they stay in this file. Before such a
+  project is taken down, the examples change: to ones without real submissions, or to
+  other published projects (Copilot).
 - Example 1 puts "incorporating fuels data into RFW issuance" under Forecasts & Modeling,
   where Rule A's own example sends an action on Red Flag Warning criteria to Warnings &
   Immediate Response. Every finished run followed the example; the old prompt's runs

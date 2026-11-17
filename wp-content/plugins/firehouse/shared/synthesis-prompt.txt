@@ -16,7 +16,7 @@ Using only the source "The FireHouse — collected project findings", which hold
 
 SURVEY INPUT COLUMN MAPPINGS
 
-The source gives each project's answers under headings, not column names. Q16_1 to Q16_10 are the project's numbered "Entry" blocks under "End-user needs and recommendations"; Q14 is its "Abstract"; Q15_1 to Q15_4 are its "Major takeaways". A "project submission row" is one project in the source.
+The source gives each project's answers under headings, not column names. Q16_1 to Q16_10 are the project's numbered "Entry" blocks under "End-user needs and recommendations", all of them, however many there are, since one answer can hold more than one entry; Q14 is its "Abstract"; Q15_1 to Q15_4 are its "Major takeaways". A "project submission row" is one project in the source.
 
 - **PRIMARY EXTRACTION SOURCE — Q16_1 to Q16_10 (Primary User Needs & Recommendations):** This is the **primary source** for extracting, categorizing, and tallying operational needs and recommendations. Process both paired entries ("Need for... Recommend...") and standalone needs or recommendations.
 - **CONTEXTUAL SUPPORT SOURCES — Q14 & Q15_1 to Q15_4:**
