@@ -52,6 +52,13 @@ final class SynthesisScreenTest extends WordPressTestCase {
 	private array $transients = array();
 
 	/**
+	 * The id each button drawn would have, in order.
+	 *
+	 * @var list<string>
+	 */
+	private array $buttons = array();
+
+	/**
 	 * What wp_update_post() was given.
 	 *
 	 * @var list<array<string, mixed>>
@@ -160,7 +167,9 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		Functions\when( 'wp_nonce_url' )->returnArg();
 		Functions\when( 'admin_url' )->alias( static fn( string $path ): string => '/wp-admin/' . $path );
 		Functions\when( 'submit_button' )->alias(
-			static function ( string $text ): void {
+			function ( string $text, string $type = 'primary', string $name = 'submit', bool $wrap = true, mixed $other = null ): void {
+				// The id WordPress would give the button: its own, or its name's.
+				$this->buttons[] = is_array( $other ) && isset( $other['id'] ) ? $other['id'] : $name;
 				echo '<button>' . $text . '</button>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- A test's stand-in.
 			}
 		);
@@ -691,13 +700,17 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		$this->assertSame( 4, substr_count( $page, '<option ' ) );
 		$this->assertStringContainsString( "value=\"@cf/meta/llama-4-scout-17b-16e-instruct\" selected='selected'>Llama 4 Scout (Meta)</option>", $page );
 		$this->assertStringContainsString( '<button>Analyze results</button>', $page );
-		$this->assertLessThan( strpos( $page, '<h3>Gemma 4 26B (Google)</h3>' ), strpos( $page, '<h3>Llama 4 Scout (Meta)</h3>' ), 'In the list’s order.' );
+		$this->assertLessThan( strpos( $page, '<h3>Gemma 4 26B (Google): failed</h3>' ), strpos( $page, '<h3>Llama 4 Scout (Meta)</h3>' ), 'In the list’s order, a failed draft’s heading saying so.' );
 		$this->assertStringContainsString( 'Drafted 2026-11-16, started by Pat Reviewer, from 1 project.', $page );
 		$this->assertStringContainsString( '<button>Check Llama 4 Scout (Meta)’s draft</button>', $page );
 		$this->assertStringContainsString( 'Failed, started 2026-11-16 by Pat Reviewer: Workers AI refused the request (429).', $page );
-		$this->assertStringContainsString( '<p><strong>Its reply holds a character that doesn’t show (U+202E), so it may read differently from what it says.', $page );
+		$this->assertStringContainsString( '<p id="firehouse-draft--cf-google-gemma-4-26b-a4b-it-unseen"><strong>Its reply holds a character that doesn’t show (U+202E), so it may read differently from what it says.', $page );
+		$this->assertStringContainsString( 'id="firehouse-draft--cf-google-gemma-4-26b-a4b-it-reply" class="large-text code" rows="12" readonly aria-describedby="firehouse-draft--cf-google-gemma-4-26b-a4b-it-unseen">', $page, 'The warning describes the box it’s about.' );
 		$this->assertSame( 1, substr_count( $page, 'doesn’t show (U+' ), 'Only the reply that has one.' );
+		$this->assertSame( 1, substr_count( $page, 'aria-describedby="firehouse-draft-' ), 'No other box is described by it.' );
+		$this->assertStringContainsString( '<summary>Its whole reply<span class="screen-reader-text">: Llama 4 Scout (Meta)</span></summary>', $page, 'Each draft’s disclosures are named for its model.' );
 		$this->assertStringContainsString( '<label for="firehouse-draft--cf-meta-llama-4-scout-17b-16e-instruct-reply">Its whole reply: Llama 4 Scout (Meta)</label>', $page );
+		$this->assertSame( array( 'firehouse-analyze-submit', 'firehouse-draft--cf-meta-llama-4-scout-17b-16e-instruct-check', 'firehouse-synthesis-submit' ), $this->buttons, 'Each button its own id, none WordPress’s shared "submit".' );
 		$this->assertStringContainsString( 'The team’s prompt.</textarea>', $page );
 	}
 
@@ -721,6 +734,30 @@ final class SynthesisScreenTest extends WordPressTestCase {
 
 		$this->assertStringContainsString( 'Gemma 4 26B (Google) is drafting a synthesis, started at 2026-11-16 by Pat Reviewer.', $page );
 		$this->assertStringNotContainsString( '<select', $page );
+		$this->assertSame( 'Drafting: FireHouse synthesis', Synthesis_Screen::title( 'FireHouse synthesis' ), 'A reload’s title says it’s still going.' );
+
+		$this->options[ Analysis::OPTION ]['running'] = null;
+		$this->assertSame( 'FireHouse synthesis', Synthesis_Screen::title( 'FireHouse synthesis' ), 'And stops saying so once it’s done.' );
+	}
+
+	/**
+	 * Back from starting a run that has finished already, the person who started it
+	 * hears so first.
+	 */
+	#[RunInSeparateProcess]
+	#[PreserveGlobalState( false )]
+	public function test_a_run_finished_by_the_return_says_so(): void {
+		self::key();
+		$this->options[ Analysis::OPTION ]                 = array(
+			'running' => null,
+			'results' => array( Workers_Ai::DEFAULT_MODEL => self::draft() ),
+		);
+		$this->transients['firehouse_synthesis_started_6'] = Workers_Ai::DEFAULT_MODEL;
+		self::send( array() );
+
+		$this->assertSame( 'FireHouse synthesis', Synthesis_Screen::title( 'FireHouse synthesis' ) );
+		$this->assertStringContainsString( '<h2>Llama 4 Scout (Meta) has finished</h2><p>Its draft, or why it failed, is under Analyze results, under its name.</p>', self::drawn() );
+		$this->assertArrayNotHasKey( 'firehouse_synthesis_started_6', $this->transients );
 	}
 
 	/**
@@ -755,6 +792,14 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		$this->assertSame( array( array( Analysis::EVENT, array( 'TheToken000000000001' ) ) ), $scheduled, 'The event carries the run’s ID.' );
 		$this->assertSame( 'TheToken000000000001', $this->options[ Analysis::OPTION ]['running']['id'] );
 		$this->assertSame( array( 'SELECT GET_LOCK(\'firehouse_analysis_wp_\', 10)', 'SELECT RELEASE_LOCK(\'firehouse_analysis_wp_\')' ), array_slice( $GLOBALS['wpdb']->queries, 0, 2 ), 'Started under the lock.' );
+
+		// Back on the screen: the person who started it hears so first, once.
+		self::send( array() );
+		$page = self::drawn();
+		$this->assertSame( 'Drafting: FireHouse synthesis', Synthesis_Screen::title( 'FireHouse synthesis' ) );
+		$this->assertStringContainsString( '<div id="firehouse-synthesis-summary" class="notice notice-info inline" tabindex="-1" autofocus><h2>gpt-oss-120b (OpenAI) is drafting a synthesis</h2><p>It takes a few minutes.', $page );
+		self::send( array() );
+		$this->assertStringNotContainsString( 'firehouse-synthesis-summary', self::drawn(), 'Once: a reload doesn’t say it again.' );
 
 		self::send(
 			array(
@@ -999,7 +1044,8 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		$this->assertStringContainsString( 'id="firehouse-model" name="firehouse_model" class="regular-text" value="Llama 4 Scout (Meta), on Cloudflare Workers AI"', $page );
 		$this->assertSame( 2, substr_count( $page, $fields ), 'In the review form and the paste form.' );
 		$this->assertStringContainsString( '<h2>Llama 4 Scout (Meta)’s whole reply</h2>', $page );
-		$this->assertStringContainsString( 'readonly>Needs, cited.', $page );
+		$this->assertStringContainsString( '<label for="firehouse-draft-reply">Llama 4 Scout (Meta)’s whole reply</label><textarea id="firehouse-draft-reply" class="large-text code" rows="12" readonly aria-describedby="firehouse-draft-reply-description">Needs, cited.', str_replace( '</p>', '', $page ), 'A short name, and what it holds as its description.' );
+		$this->assertSame( array( 'firehouse-publish-submit', 'firehouse-synthesis-submit' ), $this->buttons, 'Each button its own id.' );
 		$this->assertLessThan( strpos( $page, 'Mark it reviewed' ), strpos( $page, 'whole reply</h2>' ), 'Beside the needs, before the review.' );
 		$this->assertStringContainsString( 'Made with will start as “Llama 4 Scout (Meta), on Cloudflare Workers AI” when you mark it reviewed.', $page, 'Shown, not only carried.' );
 		$this->assertStringNotContainsString( 'This draft read', $page, 'It read as many projects as the site shows.' );
@@ -1012,7 +1058,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		);
 		$page = self::drawn();
 		$this->assertStringContainsString( 'value="Llama 4 Scout (Meta), on Cloudflare Workers AI"', $page );
-		$this->assertStringContainsString( 'readonly>Needs, cited.', $page );
+		$this->assertStringContainsString( 'aria-describedby="firehouse-draft-reply-description">Needs, cited.', $page );
 
 		self::send(
 			array(
@@ -1024,7 +1070,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 		);
 		$page = self::drawn();
 		$this->assertStringContainsString( 'value="Typed by hand"', $page, 'Made with stays as typed.' );
-		$this->assertStringContainsString( 'readonly>Needs, cited.', $page );
+		$this->assertStringContainsString( 'aria-describedby="firehouse-draft-reply-description">Needs, cited.', $page );
 
 		self::send(
 			array(
@@ -1066,12 +1112,18 @@ final class SynthesisScreenTest extends WordPressTestCase {
 
 	/**
 	 * A draft that read a different number of projects from the number the site shows now
-	 * says so when checked.
+	 * says so when checked, in the summary that takes the focus, and on every check of it
+	 * after: with the JSON edited, and with Mark reviewed sent back to fix a field.
 	 */
 	public function test_a_draft_that_read_fewer_projects_says_so(): void {
 		$this->options[ Analysis::OPTION ] = array(
 			'running' => null,
 			'results' => array( Workers_Ai::DEFAULT_MODEL => array( 'projects' => 2 ) + self::draft() ),
+		);
+		$note                              = '<p>This draft read 2 projects, and the site shows 1 now. The topic pages would say the synthesis read all 1, so have the model draft it again before you mark it reviewed.</p>';
+		$draft                             = array(
+			'firehouse_draft'         => Workers_Ai::DEFAULT_MODEL,
+			'firehouse_draft_started' => '1700000000',
 		);
 		self::send(
 			array(
@@ -1079,8 +1131,51 @@ final class SynthesisScreenTest extends WordPressTestCase {
 				'firehouse_analysis_model' => Workers_Ai::DEFAULT_MODEL,
 			)
 		);
+		$page = self::drawn();
 
-		$this->assertStringContainsString( 'This draft read 2 projects, and the site shows 1 now. The topic pages would say the synthesis read all 1, so have the model draft it again before you mark it reviewed.', self::drawn() );
+		$this->assertSame( 'Ready to mark reviewed, with a warning: FireHouse synthesis', Synthesis_Screen::title( 'FireHouse synthesis' ) );
+		$this->assertStringContainsString( 'class="notice notice-warning inline" tabindex="-1" autofocus><h2>Ready to mark reviewed, with a warning</h2>' . $note . '<p>Nothing else is wrong with the synthesis.', $page );
+		$this->assertSame( 1, substr_count( $page, 'This draft read' ), 'Only in the summary.' );
+
+		self::send(
+			array(
+				'firehouse_step'      => 'check',
+				'firehouse_synthesis' => self::synthesis( 'R_smoke' ),
+			) + $draft
+		);
+		$this->assertStringContainsString( $note, self::drawn(), 'Still, with the JSON edited.' );
+
+		self::send(
+			array(
+				'firehouse_step'      => 'check',
+				'firehouse_synthesis' => '[]',
+			) + $draft
+		);
+		$this->assertStringContainsString( $note, self::drawn(), 'And beside the problems of a check that finds some.' );
+
+		self::send(
+			array(
+				'firehouse_step'      => 'check',
+				'firehouse_synthesis' => self::synthesis( 'R_smoke' ),
+			) + $draft
+		);
+		self::send(
+			array(
+				'firehouse_step'     => 'publish',
+				'firehouse_token'    => 'TheToken000000000001',
+				'firehouse_reviewer' => '',
+				'firehouse_model'    => 'Typed by hand',
+			) + $draft
+		);
+		$this->assertStringContainsString( $note, self::drawn(), 'And with Mark reviewed sent back to fix a field.' );
+
+		self::send(
+			array(
+				'firehouse_step'      => 'check',
+				'firehouse_synthesis' => self::synthesis( 'R_smoke' ),
+			)
+		);
+		$this->assertStringNotContainsString( 'This draft read', self::drawn(), 'Not for a paste.' );
 	}
 
 	/**

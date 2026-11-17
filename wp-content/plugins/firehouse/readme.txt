@@ -59,7 +59,10 @@ filtered. The landing page's coverage map shows where the research comes from: a
 of the Geographic Area Coordination Centers, coloured by how many projects are filed
 under each, a count for every region, and the projects filed under the one chosen.
 With JavaScript, a choice on the map or in the list changes the page in place;
-without it, the list works on its own and the map isn't shown.
+without it, the list works on its own and the map isn't shown. On a site given a
+Workers AI key, Analyze results on FireHouse → Synthesis has a model draft the
+synthesis, which goes through the same check and review as a pasted one (see External
+services). Tools → Site Health gets three FireHouse checks.
 
 = Third-party code and fonts =
 
@@ -81,8 +84,11 @@ the checked content waits briefly for the confirmation and is then cleared. The
 synthesis screen keeps a checked synthesis for at most thirty minutes; an edit screen
 keeps refused input for five minutes, and the settings screen for one; a refused
 publish's notice waits an hour; each only for the person it's for. Analyze results keeps
-each model's latest draft, with its whole reply and the prompt it was given, until a
-newer draft from the same model replaces it; it never stores the Workers AI key. Apart
+each model's latest draft, with its whole reply, the prompt it was given and the name
+of whoever started it, until a newer draft from the same model replaces it; it never
+stores the Workers AI key. Deleting the plugin removes those drafts. The synthesis
+prompt on FireHouse → Settings is stored only where it differs from the plugin's own,
+and isn't published. Apart
 from those and the survey form's answers, below, the plugin stores only what the site
 publishes.
 
@@ -170,9 +176,9 @@ the server looks up a paper's title by its DOI when a survey form submission giv
 one; and, only on a site given a Workers AI key, the server sends the published
 projects to Cloudflare Workers AI when an editor chooses Analyze results. See
 External services. When an administrator opens Tools → Site Health, the plugin's
-checks also ask those services' hosts for their front pages, and load the site's own
-FireHouse landing page. The plugin's code on the server makes no other request to
-another site, and its fonts, icons and scripts are served from the plugin.
+checks also ask the DOI lookups' and Workers AI's hosts (not Esri's) for their front
+pages, and load the site's own FireHouse landing page. The plugin's code on the server
+makes no other request to another site, and its fonts, icons and scripts are served from the plugin.
 
 = Who can change what? =
 
@@ -298,7 +304,9 @@ submission, no private answer, no earlier synthesis and nothing about visitors i
 sent. It runs in WordPress's scheduled events, one at a time, and waits up to five
 minutes for the reply, which the site keeps as that model's latest draft. The key is
 never stored in the database or shown. The models are Meta's, OpenAI's, Google's and
-Thinking Machines', run by Cloudflare.
+Thinking Machines'. Cloudflare's model pages say Cloudflare hosts each of them; for
+Thinking Machines' Inkling 2 Small that is still to be confirmed with Cloudflare, since
+Cloudflare sends the first Inkling model to Thinking Machines' own service.
 
 Cloudflare's Workers AI data usage, which says it does not use the content it
 processes to train models or keep inputs and outputs after a request:
@@ -507,6 +515,23 @@ one is.
 * The synthesis check gives the nearest page slug for a name that isn't a project's,
   such as one a model shortened, stopped partway or made from the project's title,
   for the reviewer to judge, and refuses a name holding a character that doesn't show.
+* A model's whole reply, under a draft's check, is labelled as giving the entries
+  behind each need only if the model gave them, since most don't; the guide says to
+  read the projects a need names then. The guide also says the draft's check compares
+  only the number of projects, that an editor tries a run that didn't finish again
+  before telling an administrator, and when the caching check is critical. Its
+  installing page says how a site gets a Workers AI key, and where to look when a run
+  never starts. External services says Inkling 2 Small's hosting is
+  still to be confirmed with Cloudflare.
+* Analyze results, from its Section 508 review: a draft that read a different number of
+  projects says so in the summary at the top, which takes the focus, on every check of
+  it, where it used to say so after the summary and only on the first; the person who
+  starts a run is told so at the top when the screen comes back, and the page's title
+  starts "Drafting:" while a run goes; the Check buttons wrap on a narrow screen; a
+  failed draft's heading says so; each draft's disclosures are named for its model; a
+  reply's warning about a hidden character describes its box; each button has its own
+  id. Settings names a hidden character in the synthesis prompt, with its line, and
+  says how long a prompt that's too long is.
 
 = 0.2.0 =
 * Project and topic post types at the Firehouse addresses, with their fields as post
