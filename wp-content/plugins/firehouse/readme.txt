@@ -337,8 +337,10 @@ below. Its GitHub release stays a draft until it has passed that review.
 * The Workers AI key can be saved on FireHouse → Settings, by an administrator, for a
   site whose administrators can't edit wp-config.php. The token is sealed with the
   site's AUTH_KEY and AUTH_SALT and never shown again; a key saved there comes before
-  one in wp-config.php. Site Health says where the key comes from, and when a saved one
-  can't be read.
+  one in wp-config.php. It isn't saved on a site whose wp-config.php doesn't set its
+  own AUTH_KEY and AUTH_SALT, and Remove the key saved here, or deleting the plugin,
+  removes it. Site Health says where the key comes from, and when a saved one can't be
+  read. The guide's settings and installing pages say how.
 * The tests name the warning Plugin Check gives for their Workers AI key constants
   (VariableConstantNameFound), so Plugin Check on a copy with tests/, as the local site
   has, reports only the Update URI header.
