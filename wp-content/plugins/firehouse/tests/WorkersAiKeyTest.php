@@ -153,9 +153,13 @@ final class WorkersAiKeyTest extends WordPressTestCase {
 		$this->assertSame( 'recommended', $health['status'] );
 		$this->assertSame( 'FireHouse’s saved Workers AI key can’t be read', $health['label'] );
 
-		// Tampered with, it doesn't open either.
-		$this->salt                                       = 'wp-config-key|wp-config-salt';
-		$this->options[ Workers_Ai_Key::OPTION ]['token'] = substr_replace( $this->options[ Workers_Ai_Key::OPTION ]['token'], '00', -2 );
+		// Tampered with, it doesn't open either: its last hex digit changed, always to
+		// another.
+		$this->salt = 'wp-config-key|wp-config-salt';
+		$this->assertNotNull( Workers_Ai_Key::credentials(), 'It opens again under its own salts.' );
+		$sealed = $this->options[ Workers_Ai_Key::OPTION ]['token'];
+		$this->options[ Workers_Ai_Key::OPTION ]['token'] = substr( $sealed, 0, -1 ) . ( '0' === substr( $sealed, -1 ) ? '1' : '0' );
+		$this->assertNotSame( $sealed, $this->options[ Workers_Ai_Key::OPTION ]['token'] );
 		$this->assertNull( Workers_Ai_Key::credentials() );
 		$this->options[ Workers_Ai_Key::OPTION ]['token'] = 'fh1.zz';
 		$this->assertNull( Workers_Ai_Key::credentials() );
