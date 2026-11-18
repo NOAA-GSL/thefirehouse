@@ -3,7 +3,7 @@ Tags: research, social science, fire weather, wildfire, science communication
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.2.0
+Stable tag: 0.3.0
 License: Apache-2.0
 License URI: https://www.apache.org/licenses/LICENSE-2.0
 
@@ -327,9 +327,9 @@ terms and privacy policies are above.
 
 == Changelog ==
 
-= Unreleased =
-Built since 0.2.0, and not yet through a release review; the version stays 0.2.0 until
-one is.
+= 0.3.0 =
+The first version offered for GSL's security review: everything built since 0.2.0. Its
+GitHub release stays a draft until it has passed that review.
 * The frame: every FireHouse page in the theme's header and footer, with the plugin's
   stylesheets and self-hosted fonts, and the theme's hero and footer mission section
   hidden.

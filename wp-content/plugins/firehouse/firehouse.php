@@ -3,7 +3,7 @@
  * Plugin Name:       The FireHouse
  * Plugin URI:        https://github.com/NOAA-GSL/thefirehouse
  * Description:       Public-facing hub for NOAA GSL's fire weather social science needs and findings.
- * Version:           0.2.0
+ * Version:           0.3.0
  * Requires at least: 6.7
  * Requires PHP:      8.1
  * Author:            NOAA Global Systems Laboratory
@@ -43,7 +43,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Plugin version. Kept in step with the header above and readme.txt.
  */
-const VERSION = '0.2.0';
+const VERSION = '0.3.0';
 
 require_once __DIR__ . '/domain/class-content-error.php';
 require_once __DIR__ . '/domain/class-js.php';

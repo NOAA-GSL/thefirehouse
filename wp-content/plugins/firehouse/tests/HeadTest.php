@@ -346,7 +346,7 @@ final class HeadTest extends WordPressTestCase {
 		$this->assertStringContainsString( '<meta property="og:title" content="R&amp;amp;D on &quot;smoke&quot; &lt;alerts&gt; — The FireHouse" />', $html );
 		$this->assertStringContainsString( '<meta property="og:description" content="What the researchers studied, in their words &amp; no one else&#039;s." />', $html );
 		$this->assertStringContainsString( '<meta property="og:url" content="https://example.test/firehouse/projects/smoke-alerts/" />', $html );
-		$this->assertMatchesRegularExpression( '#<meta property="og:image" content="https://example\.test/wp-content/plugins/firehouse/assets/preview/og-image\.png\?ver=0\.2\.0-[0-9]+" />#', $html );
+		$this->assertMatchesRegularExpression( '#<meta property="og:image" content="https://example\.test/wp-content/plugins/firehouse/assets/preview/og-image\.png\?ver=' . preg_quote( \Firehouse\VERSION, '#' ) . '-[0-9]+" />#', $html );
 		$this->assertStringContainsString( '<meta property="og:image:width" content="1200" />', $html );
 		$this->assertStringContainsString( '<meta name="twitter:card" content="summary_large_image" />', $html );
 		$this->assertSame( 15, substr_count( $html, '<meta ' ), 'The description, ten Open Graph tags and four Twitter tags.' );

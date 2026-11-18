@@ -1411,7 +1411,10 @@ named for it (`git tag v0.3.0 && git push origin v0.3.0`): CI checks the tag mat
 runs the checks, and drafts a GitHub release with `firehouse-0.3.0.zip`. The release
 job downloads the zip by the package job's artifact ID and checks its SHA-256 before
 attaching it, and the draft's notes name the commit and the hash, so the security
-review can record exactly what it passed. Publish the draft once it has.
+review can record exactly what it passed. Publish the draft once it has. Then start a
+new `= Unreleased =` section at the top of readme.txt's changelog, so the next pull
+request's line doesn't land under the tagged version; fixes the review asks for ship as
+the next patch version, since a tag and its draft aren't reused.
 
 `wordpress-org/` holds what a WordPress.org listing would need beyond the zip, and
 what submitting it waits on (`wordpress-org/README.md`). The plugin isn't submitted.
