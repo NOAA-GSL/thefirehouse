@@ -333,10 +333,13 @@ terms and privacy policies are above.
 
 = Unreleased =
 * The Workers AI key can be saved on FireHouse → Settings, by an administrator, for a
-  site whose administrators can't edit wp-config.php. The token is sealed with the site's
-  AUTH_KEY and AUTH_SALT and never shown again; a key saved there comes before one in
-  wp-config.php. Site Health says where the key comes from, and when a saved one can't
+  site whose administrators can't edit wp-config.php. The token is sealed with the
+  site's AUTH_KEY and AUTH_SALT and never shown again; a key saved there comes before
+  one in wp-config.php. Site Health says where the key comes from, and when a saved one can't
   be read.
+* The tests name the warning Plugin Check gives for their Workers AI key constants
+  (VariableConstantNameFound), so Plugin Check on a copy with tests/, as the local site
+  has, reports only the Update URI header.
 
 = 0.3.0 =
 The first version offered for GSL's security review: everything built since 0.2.0. Its

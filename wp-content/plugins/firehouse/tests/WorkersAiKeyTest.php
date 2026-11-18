@@ -166,8 +166,8 @@ final class WorkersAiKeyTest extends WordPressTestCase {
 	 * it doesn't open, wp-config.php's is used.
 	 */
 	public function test_the_saved_key_comes_before_wp_configs(): void {
-		define( Workers_Ai::ACCOUNT, self::OTHER_ACCOUNT ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- The plugin's own constant, as wp-config.php sets it.
-		define( Workers_Ai::TOKEN, 'wp-config-token_0123456789ABCDEF' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- The plugin's own constant, as wp-config.php sets it.
+		define( Workers_Ai::ACCOUNT, self::OTHER_ACCOUNT ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.VariableConstantNameFound -- The plugin's own constant, as wp-config.php sets it.
+		define( Workers_Ai::TOKEN, 'wp-config-token_0123456789ABCDEF' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.VariableConstantNameFound -- The plugin's own constant, as wp-config.php sets it.
 		$this->assertSame( Workers_Ai::FROM_CONFIG, Workers_Ai::source() );
 		$this->assertSame( 'Analyze results uses the key in wp-config.php. A key saved here would be used in its place.', Workers_Ai_Key::status() );
 
