@@ -2395,7 +2395,10 @@ Phase 8's screen-reader audit covers them too.*
   job downloads the zip by its artifact ID and checks its SHA-256, and `firehouse.php`
   has an `Update URI` naming GitHub, so WordPress.org can't offer another plugin's
   update for it, with Plugin Check's `plugin_updater` check left out; on the day the
-  plugin is submitted to WordPress.org, both come out.*
+  plugin is submitted to WordPress.org, both come out. 0.3.0, the first version
+  offered for GSL's security review, was set on 17 November (Eric), ahead of the
+  reviews for installing it on GSL's sites; its release stays a draft until the
+  security review passes it.*
 - A runbook for editors and for administrators, including how to remove a project
   for good (trash, then Delete Permanently, which takes its fields and revisions
   with it). *Started 16 November, ahead of the phase at Eric's request, as the
