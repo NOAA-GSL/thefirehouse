@@ -74,8 +74,8 @@ final class WorkersAiTest extends WordPressTestCase {
 	 * @param string $token   The token.
 	 */
 	private static function key( string $account = self::ACCOUNT_ID, string $token = self::API_TOKEN ): void {
-		define( Workers_Ai::ACCOUNT, $account ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- The plugin's own constant, as wp-config.php sets it.
-		define( Workers_Ai::TOKEN, $token ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- The plugin's own constant, as wp-config.php sets it.
+		define( Workers_Ai::ACCOUNT, $account ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.VariableConstantNameFound -- The plugin's own constant, as wp-config.php sets it.
+		define( Workers_Ai::TOKEN, $token ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.VariableConstantNameFound -- The plugin's own constant, as wp-config.php sets it.
 	}
 
 	/**

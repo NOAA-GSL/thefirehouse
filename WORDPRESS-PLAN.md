@@ -533,7 +533,10 @@ builds on it rather than on a generic `wp-env` site.
 - **GSL's tooling.** PHPCS with the WordPress Coding Standards (plus a check against
   the PHP 8.1 minimum), PHPUnit 10 with Brain Monkey so tests run without WordPress,
   and CI on that minimum. Plugin Check runs inside the local site, and in CI against a
-  throwaway WordPress.
+  throwaway WordPress. The local site's copy holds `tests/`, which Plugin Check reads
+  and `phpcs.xml.dist` doesn't reach, so the tests' `phpcs:ignore` comments name the
+  codes Plugin Check gives; a run there reports only the `Update URI` header (18
+  November).
 - **GSL's media library is not copied,** so images on GSL's own pages don't load
   locally. The theme's header, footer and logos do.
 

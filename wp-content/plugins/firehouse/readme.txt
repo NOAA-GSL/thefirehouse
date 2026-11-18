@@ -327,6 +327,11 @@ terms and privacy policies are above.
 
 == Changelog ==
 
+= Unreleased =
+* The tests name the warning Plugin Check gives for their Workers AI key constants
+  (VariableConstantNameFound), so Plugin Check on a copy with tests/, as the local site
+  has, reports only the Update URI header.
+
 = 0.3.0 =
 The first version offered for GSL's security review: everything built since 0.2.0. Its
 GitHub release stays a draft until it has passed that review.
