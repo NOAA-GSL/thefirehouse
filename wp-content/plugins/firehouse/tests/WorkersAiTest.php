@@ -15,7 +15,8 @@ use PHPUnit\Framework\Attributes\PreserveGlobalState;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 
 /**
- * The client asks only api.cloudflare.com, with the key from wp-config.php's constants,
+ * The client asks only api.cloudflare.com, with the key from wp-config.php's constants
+ * here (WorkersAiKeyTest has the one saved on FireHouse → Settings, which comes first),
  * one of a fixed list of models; it reads a reply in any of the shapes Workers AI's
  * models give, and never says the key back. A test that sets the constants runs in its
  * own process, since a constant can't be taken away again.
@@ -40,10 +41,12 @@ final class WorkersAiTest extends WordPressTestCase {
 	private array $requests = array();
 
 	/**
-	 * A WordPress whose requests are kept, and answered by the test.
+	 * A WordPress whose requests are kept, and answered by the test, with no key saved on
+	 * FireHouse → Settings (WorkersAiKeyTest has those).
 	 */
 	protected function setUp(): void {
 		parent::setUp();
+		Functions\when( 'get_option' )->alias( static fn( string $name, mixed $fallback = false ): mixed => $fallback );
 		Functions\when( 'wp_json_encode' )->alias( static fn( mixed $data ): string => (string) json_encode( $data ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- Standing in for wp_json_encode().
 		Functions\when( 'wp_remote_retrieve_response_code' )->alias( static fn( array $response ): int => $response['response']['code'] );
 		Functions\when( 'wp_remote_retrieve_body' )->alias( static fn( array $response ): string => $response['body'] );
@@ -85,6 +88,7 @@ final class WorkersAiTest extends WordPressTestCase {
 		Functions\expect( 'wp_safe_remote_post' )->never();
 
 		$this->assertFalse( Workers_Ai::configured() );
+		$this->assertNull( Workers_Ai::source() );
 		$this->assertSame( array( 'problem' => 'The site has no Workers AI key.' ), Workers_Ai::ask( Workers_Ai::DEFAULT_MODEL, array() ) );
 	}
 
@@ -142,6 +146,7 @@ final class WorkersAiTest extends WordPressTestCase {
 
 		$reply = Workers_Ai::ask( '@cf/openai/gpt-oss-120b', $messages );
 
+		$this->assertSame( Workers_Ai::FROM_CONFIG, Workers_Ai::source() );
 		$this->assertSame(
 			array(
 				'text' => '[ { "topic": "observe" } ]',

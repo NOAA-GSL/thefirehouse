@@ -12,7 +12,7 @@ Make a new one when projects have been published or taken off the site since the
 
 There are two ways to make one. Either way, it goes through the same check and Mark reviewed step.
 
-- **Analyze results**, on FireHouse → Synthesis, has a model on Cloudflare Workers AI draft it. You see it only on a site whose server has been given a Workers AI key; see the next section.
+- **Analyze results**, on FireHouse → Synthesis, has a model on Cloudflare Workers AI draft it. You see it only on a site with a Workers AI key, which an administrator gives it; see the next section.
 - **NotebookLM:** download the source, run the team's prompt in the notebook, and paste the result. Start at step 1.
 
 ## Analyze results

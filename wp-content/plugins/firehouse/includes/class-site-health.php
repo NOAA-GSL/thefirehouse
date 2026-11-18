@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Three checks on Tools → Site Health, for whoever may see it
+ * Four checks on Tools → Site Health, for whoever may see it
  * (`view_site_health_checks`, an administrator's), on each site the plugin runs on:
  *
  * - **Outside services:** whether the server reaches doi.org, api.crossref.org and
@@ -27,6 +27,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - **Page caching:** whether a cache in front of the site, Cloudflare's above all,
  *   keeps FireHouse's pages. The plugin counts on none doing so (WORDPRESS-PLAN.md,
  *   Caching): a hidden project would stay on the pages that show it.
+ * - **Workers AI key:** where the key comes from, FireHouse → Settings or wp-config.php,
+ *   and whether one saved in Settings still opens: changed salts leave it unreadable.
  *
  * The two that make requests run only when someone opens Site Health, never in
  * WordPress's weekly check, so the plugin makes no request of its own accord.
@@ -66,6 +68,10 @@ final class Site_Health {
 		$tests['direct']['firehouse_search']  = array(
 			'label' => __( 'FireHouse: search engines', 'firehouse' ),
 			'test'  => array( self::class, 'search' ),
+		);
+		$tests['direct']['firehouse_ai_key']  = array(
+			'label' => __( 'FireHouse: Workers AI key', 'firehouse' ),
+			'test'  => array( self::class, 'ai_key' ),
 		);
 		$tests['async']['firehouse_outbound'] = array(
 			'label'     => __( 'FireHouse: outside services', 'firehouse' ),
@@ -139,6 +145,24 @@ final class Site_Health {
 		$list .= '</ul>';
 		$fails = '<p>' . esc_html__( 'Without doi.org and the services it sends lookups on to, a submission’s papers keep only their DOI. Without api.cloudflare.com, Analyze results can’t run. Ask whoever runs the server to let it reach them over HTTPS.', 'firehouse' ) . '</p>';
 		return self::result( 'firehouse_outbound', 'recommended', __( 'FireHouse can’t reach some of the outside services it uses', 'firehouse' ), $uses . '<p>' . esc_html__( 'The server couldn’t reach:', 'firehouse' ) . '</p>' . $list . $fails );
+	}
+
+	/**
+	 * Where the Workers AI key comes from, and whether one saved on FireHouse → Settings
+	 * can still be read.
+	 *
+	 * @return array<string, mixed> The result, as Site Health takes it.
+	 */
+	public static function ai_key(): array {
+		$about = '<p>' . esc_html( Workers_Ai_Key::status() ) . '</p><p>' . esc_html__( 'An administrator saves the key under FireHouse → Settings, in its Workers AI key section. A key in wp-config.php, as FIREHOUSE_WORKERS_AI_ACCOUNT and FIREHOUSE_WORKERS_AI_TOKEN, is used only while none is saved there.', 'firehouse' ) . '</p>';
+		if ( Workers_Ai_Key::unreadable() ) {
+			return self::result( 'firehouse_ai_key', 'recommended', __( 'FireHouse’s saved Workers AI key can’t be read', 'firehouse' ), $about );
+		}
+		$labels = array(
+			Workers_Ai::FROM_SETTINGS => __( 'FireHouse’s Workers AI key is saved in its settings', 'firehouse' ),
+			Workers_Ai::FROM_CONFIG   => __( 'FireHouse’s Workers AI key is in wp-config.php', 'firehouse' ),
+		);
+		return self::result( 'firehouse_ai_key', 'good', $labels[ (string) Workers_Ai::source() ] ?? __( 'FireHouse has no Workers AI key', 'firehouse' ), $about );
 	}
 
 	/**

@@ -71,6 +71,7 @@ require_once __DIR__ . '/includes/class-seed-bundle.php';
 require_once __DIR__ . '/includes/class-importer.php';
 require_once __DIR__ . '/includes/class-import-screen.php';
 require_once __DIR__ . '/includes/class-workers-ai.php';
+require_once __DIR__ . '/includes/class-workers-ai-key.php';
 require_once __DIR__ . '/includes/class-analysis.php';
 require_once __DIR__ . '/includes/class-synthesis-screen.php';
 require_once __DIR__ . '/includes/class-site-health.php';
@@ -286,8 +287,8 @@ require_once __DIR__ . '/includes/class-head.php';
  *   page capabilities are lent is narrowed.
  *
  * Beyond that, these change only Firehouse content and what Firehouse editors may do.
- * Settings, Import_Screen, Synthesis_Screen, Project_Screen, Topic_Screen and
- * Project_Rules's screens hook only the admin: Project_Rules's admin notices run on
+ * Settings, Workers_Ai_Key, Import_Screen, Synthesis_Screen, Project_Screen,
+ * Topic_Screen and Project_Rules's screens hook only the admin: Project_Rules's admin notices run on
  * every admin screen and print only on the projects list, and its Quick Edit check
  * runs on every Quick Edit and acts only on a project. Their Publish box notes, list
  * states, bulk messages, and the topics list's row and bulk actions and columns run on
@@ -305,6 +306,7 @@ Query::hook();
 Capabilities::hook();
 Installer::hook( __FILE__ );
 Settings::hook();
+Workers_Ai_Key::hook();
 Import_Screen::hook();
 Synthesis_Screen::hook();
 Analysis::hook();

@@ -86,6 +86,7 @@ final class SiteHealthTest extends WordPressTestCase {
 		);
 
 		$this->assertSame( array( Site_Health::class, 'search' ), $tests['direct']['firehouse_search']['test'] );
+		$this->assertSame( array( Site_Health::class, 'ai_key' ), $tests['direct']['firehouse_ai_key']['test'] );
 		foreach ( array( 'firehouse_outbound', 'firehouse_caching' ) as $name ) {
 			$this->assertSame( $name, $tests['async'][ $name ]['test'] );
 			$this->assertFalse( $tests['async'][ $name ]['has_rest'] );
@@ -149,6 +150,24 @@ final class SiteHealthTest extends WordPressTestCase {
 		$this->assertSame( 'good', $result['status'], 'Any answer counts.' );
 		$this->assertStringContainsString( 'Analyze results', $result['description'] );
 		$this->assertStringNotContainsString( 'test-token', (string) json_encode( $args ), 'The key isn’t sent.' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- A test's look at what was sent.
+
+		$key = Site_Health::ai_key();
+		$this->assertSame( 'good', $key['status'] );
+		$this->assertSame( 'FireHouse’s Workers AI key is in wp-config.php', $key['label'] );
+		$this->assertStringNotContainsString( 'test-token', $key['description'] );
+	}
+
+	/**
+	 * Without a key, the key check says so; it isn't a problem. (WorkersAiKeyTest has a
+	 * key saved on FireHouse → Settings, and one that no longer opens.)
+	 */
+	public function test_without_a_key_the_key_check_says_so(): void {
+		$result = Site_Health::ai_key();
+
+		$this->assertSame( 'good', $result['status'] );
+		$this->assertSame( 'FireHouse has no Workers AI key', $result['label'] );
+		$this->assertStringContainsString( 'Analyze results is turned off', $result['description'] );
+		$this->assertStringContainsString( 'FireHouse → Settings', $result['description'] );
 	}
 
 	/**

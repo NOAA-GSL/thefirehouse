@@ -17,13 +17,15 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Asks a Workers AI model for a reply (Eric, 16 November: try Workers AI first; NOAA's
  * AI policy still decides whether it's used on the sites, open question 7).
  *
- * - **The key stays out of the database.** The Cloudflare account ID and API token are
- *   constants in wp-config.php, FIREHOUSE_WORKERS_AI_ACCOUNT and
- *   FIREHOUSE_WORKERS_AI_TOKEN, so no database copy, export or screen holds them. They
- *   are read only here, sent only to Cloudflare's API, and never stored, shown or
- *   written into a message.
- * - **Off without them.** With either missing or not shaped like Cloudflare's,
- *   configured() is false and nothing offers Analyze results; the paste stays.
+ * - **The key comes from FireHouse → Settings first.** An administrator saves the
+ *   Cloudflare account ID and API token there, the token sealed (Workers_Ai_Key); a site
+ *   without one there uses the constants FIREHOUSE_WORKERS_AI_ACCOUNT and
+ *   FIREHOUSE_WORKERS_AI_TOKEN in wp-config.php. Settings wins (Eric, 18 November): on
+ *   a site whose administrators can't edit wp-config.php, the screen is what they can
+ *   reach. Either way the key is opened only here, sent only to Cloudflare's API, and
+ *   never written into a message; the token is never shown.
+ * - **Off without it.** With neither, or neither shaped like Cloudflare's, configured()
+ *   is false and nothing offers Analyze results; the paste stays.
  * - **One host,** api.cloudflare.com, over HTTPS, with no redirects followed.
  * - **A fixed list of models,** all from companies in the United States (Eric, 16
  *   November), so the address is never built from typed text.
@@ -39,6 +41,16 @@ final class Workers_Ai {
 	 * The constant holding the API token, one limited to Workers AI.
 	 */
 	public const TOKEN = 'FIREHOUSE_WORKERS_AI_TOKEN';
+
+	/**
+	 * Where the key in use came from: FireHouse → Settings.
+	 */
+	public const FROM_SETTINGS = 'settings';
+
+	/**
+	 * Where the key in use came from: wp-config.php's constants.
+	 */
+	public const FROM_CONFIG = 'wp-config';
 
 	/**
 	 * The one host asked.
@@ -115,6 +127,34 @@ final class Workers_Ai {
 	 */
 	public static function configured(): bool {
 		return null !== self::credentials();
+	}
+
+	/**
+	 * Where the key in use comes from, FROM_SETTINGS or FROM_CONFIG; null when there's
+	 * none.
+	 */
+	public static function source(): ?string {
+		return self::credentials()['from'] ?? null;
+	}
+
+	/**
+	 * Whether a value is shaped like a Cloudflare account ID: 32 hexadecimal digits, so
+	 * it can't add to the address.
+	 *
+	 * @param mixed $account The value.
+	 */
+	public static function account_shaped( mixed $account ): bool {
+		return is_string( $account ) && 1 === preg_match( '/\A[0-9a-f]{32}\z/', $account );
+	}
+
+	/**
+	 * Whether a value is shaped like a Cloudflare API token: letters, digits, hyphens
+	 * and underscores, so it can't add to the header.
+	 *
+	 * @param mixed $token The value.
+	 */
+	public static function token_shaped( mixed $token ): bool {
+		return is_string( $token ) && 1 === preg_match( '/\A[A-Za-z0-9_-]{20,200}\z/', $token );
 	}
 
 	/**
@@ -261,24 +301,26 @@ final class Workers_Ai {
 	}
 
 	/**
-	 * The account ID and token, when both are set and shaped like Cloudflare's: the ID
-	 * 32 hexadecimal digits, the token letters, digits, hyphens and underscores, so
-	 * neither can add to the address or the header.
+	 * The account ID and token, and where they came from: the ones saved on FireHouse →
+	 * Settings if their token opens, otherwise wp-config.php's constants; either only when
+	 * shaped like Cloudflare's.
 	 *
-	 * @return array{account: string, token: string}|null
+	 * @return array{account: string, token: string, from: string}|null
 	 */
 	private static function credentials(): ?array {
+		$saved = Workers_Ai_Key::credentials();
+		if ( null !== $saved && self::account_shaped( $saved['account'] ) && self::token_shaped( $saved['token'] ) ) {
+			return $saved + array( 'from' => self::FROM_SETTINGS );
+		}
 		$account = defined( self::ACCOUNT ) ? constant( self::ACCOUNT ) : null;
 		$token   = defined( self::TOKEN ) ? constant( self::TOKEN ) : null;
-		if ( ! is_string( $account ) || 1 !== preg_match( '/\A[0-9a-f]{32}\z/', $account ) ) {
-			return null;
-		}
-		if ( ! is_string( $token ) || 1 !== preg_match( '/\A[A-Za-z0-9_-]{20,200}\z/', $token ) ) {
+		if ( ! self::account_shaped( $account ) || ! self::token_shaped( $token ) ) {
 			return null;
 		}
 		return array(
 			'account' => $account,
 			'token'   => $token,
+			'from'    => self::FROM_CONFIG,
 		);
 	}
 
@@ -286,8 +328,8 @@ final class Workers_Ai {
 	 * A message from WordPress or Cloudflare as the screen may show it: one line, short,
 	 * and without the account ID or the token, should either be in it.
 	 *
-	 * @param string                                $message     The message.
-	 * @param array{account: string, token: string} $credentials The key.
+	 * @param string                                              $message     The message.
+	 * @param array{account: string, token: string, from: string} $credentials The key.
 	 */
 	private static function said( string $message, array $credentials ): string {
 		$message = str_replace( array( $credentials['token'], $credentials['account'] ), '…', $message );
