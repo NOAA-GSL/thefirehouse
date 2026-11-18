@@ -62,7 +62,7 @@ With JavaScript, a choice on the map or in the list changes the page in place;
 without it, the list works on its own and the map isn't shown. On a site given a
 Workers AI key, Analyze results on FireHouse → Synthesis has a model draft the
 synthesis, which goes through the same check and review as a pasted one (see External
-services). Tools → Site Health gets three FireHouse checks.
+services). Tools → Site Health gets four FireHouse checks.
 
 = Third-party code and fonts =
 
@@ -86,7 +86,10 @@ keeps refused input for five minutes, and the settings screen for one; a refused
 publish's notice waits an hour; each only for the person it's for. Analyze results keeps
 each model's latest draft, with its whole reply, the prompt it was given and the name
 of whoever started it, until a newer draft from the same model replaces it; it never
-stores the Workers AI key. Deleting the plugin removes those drafts. The synthesis
+stores the Workers AI key. Deleting the plugin removes those drafts. An administrator
+may save the key on FireHouse → Settings: the account ID as typed and the token sealed
+with the site's salts, in an option of its own that no screen or REST route shows,
+until it's removed there or the plugin is deleted. The synthesis
 prompt on FireHouse → Settings is stored only where it differs from the plugin's own,
 and isn't published. Apart
 from those and the survey form's answers, below, the plugin stores only what the site
@@ -290,9 +293,10 @@ https://datacite.org/privacy-policy/.
 
 = Cloudflare Workers AI =
 
-Only on a site whose wp-config.php defines FIREHOUSE_WORKERS_AI_ACCOUNT and
-FIREHOUSE_WORKERS_AI_TOKEN, a Cloudflare account ID and an API token limited to
-Workers AI. Without them the plugin never contacts it, and FireHouse → Synthesis
+Only on a site with a Workers AI key: a Cloudflare account ID and an API token limited
+to Workers AI, which an administrator saves on FireHouse → Settings, the token sealed
+with the site's salts, or which wp-config.php defines as FIREHOUSE_WORKERS_AI_ACCOUNT
+and FIREHOUSE_WORKERS_AI_TOKEN. Without one the plugin never contacts it, and FireHouse → Synthesis
 offers only the paste. When a FireHouse Editor or an administrator chooses Analyze
 results there, the server sends one request to api.cloudflare.com, for that account
 and the model they picked, with the token in its Authorization header. It carries
@@ -326,6 +330,13 @@ weekly Site Health check, so they happen only while someone is looking. These ho
 terms and privacy policies are above.
 
 == Changelog ==
+
+= Unreleased =
+* The Workers AI key can be saved on FireHouse → Settings, by an administrator, for a
+  site whose wp-config.php is out of reach. The token is sealed with the site's
+  AUTH_KEY and AUTH_SALT and never shown again; a key saved there comes before one in
+  wp-config.php. Site Health says where the key comes from, and when a saved one can't
+  be read.
 
 = 0.3.0 =
 The first version offered for GSL's security review: everything built since 0.2.0. Its

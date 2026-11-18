@@ -62,7 +62,7 @@ that produced it).
 | Survey tool | **A form built into the plugin** (29 October), in its own `survey/` folder (31 October), which uses the plugin's storage, settings and markup classes. See [The survey form](#the-survey-form). Until the plugin launches, researchers submit through the **Google Form** that replaced Colorado State's Qualtrics; it belongs to Emily's account in NOAA's Google Workspace. Its responses go into the site's files through the existing import script, as today, and reach WordPress in the seed bundle at launch (see [Importing the Google Form until launch](#importing-the-google-form-until-launch)). |
 | Responses so far | Qualtrics is closed, and every real submission was re-entered through the Google Form (28 October), so the form's Sheet is the complete record. |
 | Survey API sync | **Dropped** (29 October). With the form in the plugin there is no Sheet to sync. |
-| AI synthesis | **Runs from the plugin** (agreed with Stephanie and Emily, 28 October). An **Analyze results** button sends the published projects and the team's prompt to an approved AI service, and the result waits as a draft for review. The service will likely be Cloudflare Workers AI or Amazon Bedrock, and either needs approval under NOAA's AI policy (open question 7). The model is still open (1 November) and is chosen by checking its output. Until then, and as the fallback, the synthesis screen takes NotebookLM's output by paste. See [The AI service](#the-ai-service). *Cloudflare Workers AI is tried first (Eric, 16 November), with its key in `wp-config.php` and a choice of models from US companies only (Eric, 16 November). It stays a trial until NOAA's AI policy approves it.* |
+| AI synthesis | **Runs from the plugin** (agreed with Stephanie and Emily, 28 October). An **Analyze results** button sends the published projects and the team's prompt to an approved AI service, and the result waits as a draft for review. The service will likely be Cloudflare Workers AI or Amazon Bedrock, and either needs approval under NOAA's AI policy (open question 7). The model is still open (1 November) and is chosen by checking its output. Until then, and as the fallback, the synthesis screen takes NotebookLM's output by paste. See [The AI service](#the-ai-service). *Cloudflare Workers AI is tried first (Eric, 16 November), with its key in `wp-config.php` (saved on FireHouse → Settings first since Eric, 18 November) and a choice of models from US companies only (Eric, 16 November). It stays a trial until NOAA's AI policy approves it.* |
 | Need counts | **Once per project** (28 October): a need mentioned several times in one project counts once. |
 | Link previews through Cloudflare | Found out during testing (see [Link previews](#page-titles-descriptions-and-link-previews)). |
 | AMS bridge | Probably possible, and recommended, starting on the test site for the mid-November WPO meeting (see [The AMS bridge](#the-ams-bridge)). |
@@ -515,7 +515,8 @@ in a rewrite.
   visible test-site banner, because a link copied from a test page points at the test
   site.
 - **The survey form on test is marked as a test,** and its submissions stay on test.
-  Each site has its own AI service key, set in its own `wp-config.php`.
+  Each site has its own AI service key, saved on its own FireHouse → Settings screen
+  or set in its own `wp-config.php`.
 
 ### Local development
 
@@ -551,8 +552,13 @@ short:
   host off that list is refused.
 - **Only public text goes to the AI service:** the published projects and the team's
   prompt. Drafts and private answers never leave GSL.
-- **Secrets in `wp-config.php`, not the database.** The AI service key is a constant
-  set by developers. It stays out of database backups, and editors never handle it.
+- **Secrets never in the clear in the database.** The AI service key was planned as a
+  constant in `wp-config.php`, set by developers. *Changed (Eric, 18 November): the
+  test and production sites' `wp-config.php` may be out of reach, so an administrator
+  saves the key on FireHouse → Settings, its token sealed with the site's `AUTH_KEY`
+  and `AUTH_SALT`, which must come from `wp-config.php`: a database backup alone
+  doesn't give it away. A key in `wp-config.php` still works; the one in Settings comes
+  first.* Editors never handle it.
 - **Private personal data comes only from the form,** and stays private (rule 2):
   submitters' emails, job titles and Q10 answers, readable by the Firehouse roles
   alone. No IP addresses. The seed bundle carries only what the site publishes.
@@ -724,17 +730,24 @@ the NOAA enterprise, so the plugin calls an approved AI service. It will likely 
 Cloudflare Workers AI or Amazon Bedrock, and either needs approval under NOAA's AI
 policy (open question 7). The model isn't chosen yet (1 November): Llama 4, another
 open model, or a commercial one. Either service fits the client as planned: one
-host, and one key in `wp-config.php`.
+host, and one key.
 
 *Cloudflare Workers AI is tried first (Eric, 16 November). It is a trial: NOAA's AI
 policy still decides whether a site uses it (open question 7), and a site without the
 key offers only the paste.*
 
-- **The key** is two constants in the site's `wp-config.php`,
-  `FIREHOUSE_WORKERS_AI_ACCOUNT` and `FIREHOUSE_WORKERS_AI_TOKEN`: a Cloudflare account
-  ID and a token made from Cloudflare's "Workers AI" template. They're never in the
-  database, so no backup, export or screen holds them, and the plugin sends them only
-  to api.cloudflare.com. The local copy reads them from its ignored `.env`.
+- **The key** is a Cloudflare account ID and a token made from Cloudflare's "Workers
+  AI" template, and the plugin sends them only to api.cloudflare.com. It was two
+  constants in the site's `wp-config.php`, `FIREHOUSE_WORKERS_AI_ACCOUNT` and
+  `FIREHOUSE_WORKERS_AI_TOKEN`, so no backup, export or screen held it. *Changed (Eric,
+  18 November): the test and production sites' `wp-config.php` may be out of reach, so
+  an administrator saves the key on FireHouse → Settings, in a form and option of its
+  own, and that one comes first; the constants still work where there's none. The
+  token is sealed (libsodium's secretbox, under a key hashed from the site's
+  `AUTH_KEY` and `AUTH_SALT`), saved only while `wp-config.php` sets those, and never
+  shown again. Changed salts leave it unreadable until it's typed again; Site Health
+  says so. Modeled on the TerraViz plugin's service-token setting.* The local copy
+  reads the constants from its ignored `.env`.
 - **The models** are a fixed list, from US companies only (Eric, 16 November), each
   reading at least 128,000 tokens: Meta's Llama 4 Scout, OpenAI's gpt-oss-120b,
   Google's Gemma 4 26B and Thinking Machines' Inkling 2 Small, added by Eric the same
@@ -2325,7 +2338,9 @@ hand.
 ### Phase 7b — Analyze results (1–1.5 weeks)
 
 - The AI service client: one host, a key in `wp-config.php`, only published text sent
-  (see [The AI service](#the-ai-service)). *Done: `Workers_Ai` and `Analysis`. Each
+  (see [The AI service](#the-ai-service)). *Done: `Workers_Ai` and `Analysis`. The key
+  is saved on FireHouse → Settings first, `wp-config.php` second (Eric, 18 November):
+  `Workers_Ai_Key`, for 0.3.1. Each
   project is wrapped in markers with a key made for the run, under fixed instructions
   the prompt setting can't change, and no earlier synthesis is sent.* *From the synthesis screen's security
   review (16 November): the NotebookLM source puts researchers' text straight into

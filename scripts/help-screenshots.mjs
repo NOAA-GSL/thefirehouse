@@ -70,6 +70,8 @@ const SHOTS = {
   'settings-questions': { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-settings', element: '#firehouse-questions', height: 560 },
   // Only on a site with a Workers AI key.
   'settings-prompt': { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-settings', element: 'tr:has(#firehouse-synthesisPrompt)', height: 640, needsKey: true },
+  // An administrator's alone. Taken with a made-up key saved, since the account ID shows.
+  'settings-key': { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-settings', element: '#firehouse-workers-ai-key', height: 640 },
   import: { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-import', element: '#wpbody-content', height: 320 },
   'landing-hero-fields': { landing: true, block: 'firehouse/hero', height: 600 },
 };

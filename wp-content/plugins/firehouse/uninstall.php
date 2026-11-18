@@ -5,7 +5,7 @@
  * Removes the Firehouse Editor role, so users who had it are left with no role on the
  * site; every Firehouse capability administrators hold; the record of the installed
  * revision; the stored rewrite rules, so WordPress rebuilds them without the Firehouse
- * addresses; Analyze results' drafts and any run waiting to start, with its scheduled
+ * addresses; the Workers AI key saved on FireHouse → Settings; Analyze results' drafts and any run waiting to start, with its scheduled
  * event; and anything still waiting in a transient (a dry run, a synthesis check, a
  * refused save, a publishing rule's notice). The content stays: the projects,
  * topics and settings belong to the site, and reinstalling the plugin shows them
@@ -39,6 +39,10 @@ if ( $firehouse_administrator ) {
 
 delete_option( 'firehouse_installed_revision' );
 delete_option( 'rewrite_rules' );
+
+// The Workers AI key saved on FireHouse → Settings (Workers_Ai_Key::OPTION): a secret,
+// not the site's content, so it goes with the plugin.
+delete_option( 'firehouse_workers_ai_key' );
 
 // Analyze results' drafts, and a run waiting to start (Analysis::OPTION, ::EVENT).
 delete_option( 'firehouse_analysis' );

@@ -21,15 +21,30 @@ A zip of any other commit is on that commit's "WordPress plugin" run in the repo
 
 ## Check it
 
-**Tools → Site Health** lists three FireHouse checks, marked FireHouse. Open it after installing the plugin on a site, and again after anything about the server changes.
+**Tools → Site Health** lists four FireHouse checks, marked FireHouse. Open it after installing the plugin on a site, and again after anything about the server changes.
 
 - **Outside services:** whether the server can reach doi.org and the services it sends DOI lookups on to, and Cloudflare when the site has a Workers AI key. If one can't be reached, ask whoever runs the server to let it through.
 - **Search engines:** a test or local site should keep search engines out, under **Settings → Reading → Search engine visibility**, so its pages aren't taken for the public site's; the public site should let them in. Which kind of site it is comes from WP_ENVIRONMENT_TYPE in the site's wp-config.php.
 - **Page caching:** whether a cache in front of the site keeps FireHouse's pages. If it does, a project you hide stays on the pages that showed it until the cache expires: turn the cache off for /firehouse/, or tell the developer. It's marked critical when Cloudflare says it keeps them, and recommended when another cache's headers suggest one does. The server checks its own page, which may not pass through Cloudflare as a visitor's does; the check says how to look from outside.
+- **Workers AI key:** where Analyze results' key comes from, FireHouse → Settings or wp-config.php, or that the site has none. If it says the key saved in Settings can't be read, type the token again there (see below).
 
 ## Analyze results
 
-Analyze results, on FireHouse → Synthesis, shows only on a site with a Workers AI key. Nothing in the dashboard sets it: it's two lines in the site's wp-config.php, which whoever runs the server adds, and only once NOAA has approved the service. The [FireHouse repository's README](https://github.com/NOAA-GSL/thefirehouse#before-this-goes-public) says what they need. The Cloudflare account needs the Workers Paid plan for Inkling 2 Small, the model Analyze results picks to start with: without it, that model's runs fail with Cloudflare's refusal.
+Analyze results, on FireHouse → Synthesis, shows only on a site with a Workers AI key: a Cloudflare account ID and an API token. Give the site one only once NOAA has approved the service; the [FireHouse repository's README](https://github.com/NOAA-GSL/thefirehouse#before-this-goes-public) says what to check first. The Cloudflare account needs the Workers Paid plan for Inkling 2 Small, the model Analyze results picks to start with: without it, that model's runs fail with Cloudflare's refusal.
+
+To save the key:
+
+1. In Cloudflare's dashboard, make an API token from the **Workers AI** template, with an expiry date, and copy the account ID from the Workers AI page.
+2. On **FireHouse → Settings**, under **Workers AI key** at the bottom of the screen, type the **Account ID** and the **API token**.
+3. Choose **Save key**. **Save Changes**, higher up, doesn't save it.
+
+Only administrators see that section. The token is sealed before it's saved and never shown again: its box stays empty, and left empty keeps the saved token. To replace it, type a new one. To take the key away, tick **Remove the key saved here** and choose **Save key**.
+
+![The Workers AI key section: the account ID, an empty API token box saying a token is saved, the Remove box and the Save key button](images/settings-key.webp "Workers AI key, on FireHouse → Settings.")
+
+- **If saving says wp-config.php doesn't set its own AUTH_KEY and AUTH_SALT,** WordPress keeps those in the database, where a copy of it would unlock the token, so it isn't saved. Ask whoever runs the server to set them, or to add the key to wp-config.php instead.
+- **If the section says the saved token can't be read,** the site's salts have changed since it was saved, as they do when someone resets them. Type the token again.
+- **A key in wp-config.php** works too, as two lines whoever runs the server adds; the README says which. A key saved in Settings comes first: remove it there to use the one in wp-config.php.
 
 Analyze results runs in WordPress's scheduled events (WP-Cron), as a survey submission's DOI lookups do. If an editor says a draft never started, open **Tools → Site Health**: WordPress's own checks there say whether scheduled events are running late. Once the site has the key, FireHouse's Outside services check names api.cloudflare.com too.
 

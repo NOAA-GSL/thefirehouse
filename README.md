@@ -400,17 +400,23 @@ overrides are isolated so a re-sync doesn't lose them.
         "Cloudflare-hosted" label says: if it went to Thinking Machines' service, the
         projects would go to that company too, and it comes off the list, with another
         model picked to start with in its place (plan, The AI service, "The models").
-      - **The key:** the site's `wp-config.php` constants
-        `FIREHOUSE_WORKERS_AI_ACCOUNT` and `FIREHOUSE_WORKERS_AI_TOKEN`: a Cloudflare
-        account ID, and a token made from Cloudflare's "Workers AI" template (Workers
-        AI Read and Edit, on that account only), with an expiry date. Never put either
-        in the database, the repository or a chat; if one is exposed, roll the token in
-        Cloudflare's dashboard. Any other plugin on the site can see the token in
-        WordPress's HTTP hooks (`http_request_args`, `http_api_debug`), as it can any
-        request's headers, so its narrow scope is what limits the harm: GSL's security
-        review should know. Once the key is taken, Site Health's Outside services check
-        names api.cloudflare.com; a key in the wrong shape counts as none, with no
-        message.
+      - **The key:** a Cloudflare account ID, and a token made from Cloudflare's
+        "Workers AI" template (Workers AI Read and Edit, on that account only), with an
+        expiry date. An administrator saves them on FireHouse → Settings, under Workers
+        AI key; or, where someone can edit it, the site's `wp-config.php` sets the
+        constants `FIREHOUSE_WORKERS_AI_ACCOUNT` and `FIREHOUSE_WORKERS_AI_TOKEN`. The
+        one saved in Settings comes first (Eric, 18 November). There the token is
+        sealed with the site's `AUTH_KEY` and `AUTH_SALT`, which the screen requires
+        `wp-config.php` to set, so a copy of the database alone doesn't give it away;
+        changing those salts leaves it unreadable until it's typed again, which Site
+        Health's Workers AI key check says. Never put the token in the repository or a
+        chat; if it's exposed, roll it in Cloudflare's dashboard. Any other plugin on
+        the site can see the token in WordPress's HTTP hooks (`http_request_args`,
+        `http_api_debug`), as it can any request's headers, and any code running on the
+        site can open the sealed copy, as it can read a constant, so its narrow scope is
+        what limits the harm: GSL's security review should know. Once the key is taken,
+        Site Health's Outside services check names api.cloudflare.com; a key in the
+        wrong shape counts as none, with no message.
       - **The server:** api.cloudflare.com reachable from it, and WP-Cron running
         often enough that a run starts within half an hour (a run that hasn't is
         recorded as failed; a system cron every quarter of an hour does). The run waits
@@ -1051,9 +1057,21 @@ nothing from the database. Each class's docblock has the detail; this is the map
     summary that takes the focus, on every check of it while the site keeps it, since
     the topic pages give the number shown when it's marked reviewed.
 - `Workers_Ai` asks a model on Cloudflare Workers AI (Eric, 16 November: try it first;
-  NOAA's AI policy still decides, plan open question 7). The account ID and token are
-  the constants `FIREHOUSE_WORKERS_AI_ACCOUNT` and `FIREHOUSE_WORKERS_AI_TOKEN` in
-  `wp-config.php`: never in the database, a screen, a message or a log, and refused
+  NOAA's AI policy still decides, plan open question 7). The account ID and token come
+  from FireHouse → Settings, where an administrator saves them (`Workers_Ai_Key`), or
+  else from the constants `FIREHOUSE_WORKERS_AI_ACCOUNT` and
+  `FIREHOUSE_WORKERS_AI_TOKEN` in `wp-config.php`; Settings comes first (Eric, 18
+  November: the test and production sites' `wp-config.php` may be out of reach).
+  `Workers_Ai_Key` keeps them in an option of their own, saved through a form of their
+  own on the Settings screen that only `manage_options` may post to, never in the REST
+  API, and deleted with the plugin. The token is sealed with libsodium's secretbox
+  (which WordPress supplies where PHP's extension is missing) under a key hashed from
+  `wp_salt( 'auth' )`, and saved only when that comes from `wp-config.php`'s
+  `AUTH_KEY` and `AUTH_SALT`, not from salts WordPress keeps in the database beside it.
+  It's never shown again: its box is always empty, and left empty keeps it. A token
+  that no longer opens (the salts changed) falls back to the constants, and the screen
+  and Site Health's Workers AI key check say so. Either way the key is never in a
+  screen, a message or a log, and refused
   unless shaped like Cloudflare's (32 lower-case hex digits; 20 to 200 letters, digits,
   `-` and `_`), so neither can add to the address or the header. A key shaped
   otherwise counts as none: the screens show no Analyze results, with no message, and
@@ -1102,7 +1120,7 @@ nothing from the database. Each class's docblock has the detail; this is the map
   one is kept as failed, with the reply to read, saying so when it stopped at its
   length limit; one cut off after its JSON is complete is kept as a draft. A reply holding a
   character that doesn't show is marked, and the screen says so above it.
-- `Site_Health` adds three checks to Tools → Site Health, badged FireHouse:
+- `Site_Health` adds four checks to Tools → Site Health, badged FireHouse:
   - **Outside services** (async): a HEAD request to the front page of doi.org,
     api.crossref.org and data.crosscite.org (`Doi_Lookup::HOSTS`), and
     api.cloudflare.com while the site has a Workers AI key, with no key sent; any
@@ -1116,6 +1134,9 @@ nothing from the database. Each class's docblock has the detail; this is the map
     plugin doesn't purge; `Age` above 0 or an `X-Cache` HIT is a recommendation; none
     says how to check from outside, since the server's own request may not pass
     through Cloudflare.
+  - **Workers AI key** (direct): where the key comes from, FireHouse → Settings or
+    `wp-config.php`, or that there's none, all good; a key saved in Settings whose
+    token no longer opens is a recommendation. It makes no request.
   - The async checks answer Site Health's script (`wp_ajax_health-check-firehouse-…`)
     with its nonce, for `view_site_health_checks`, and skip WordPress's weekly check
     (`skip_cron`), so no request is made unless someone is looking.
@@ -1372,7 +1393,11 @@ and a token made from Cloudflare's "Workers AI" template in `.env` as
 `FIREHOUSE_WORKERS_AI_ACCOUNT` and `FIREHOUSE_WORKERS_AI_TOKEN` (`.env.example` has the
 lines), typed there yourself and never into a chat, an issue or a commit, then run
 `docker compose up -d`. `docker-compose.yml` passes them to `wp-config.php`'s
-constants. Without them, the synthesis screen offers only the paste.
+constants. Without them, the synthesis screen offers only the paste. A key saved on
+FireHouse → Settings is used in their place, as on GSL's sites. `composer test` seals
+and opens a key in `WorkersAiKeyTest`, which needs PHP's sodium extension and is
+skipped without it (CI has it); since each of its tests runs in a PHP of its own, load
+it through an ini file (`PHP_INI_SCAN_DIR`) rather than `php -d`.
 
 WP-Cron starts scheduled events (DOI lookups, Analyze results) by calling the site's
 own address, `localhost:8090`, which reaches nothing inside the container, where

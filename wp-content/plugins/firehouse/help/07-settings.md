@@ -2,7 +2,7 @@
 
 <!-- help audience: editors; screens: settings -->
 
-The site name, the Submit a Finding button, the navigation labels, the survey form's questions, and the synthesis prompt, on FireHouse → Settings.
+The site name, the Submit a Finding button, the navigation labels, the survey form's questions, the synthesis prompt and, for administrators, the Workers AI key, on FireHouse → Settings.
 
 ## What each setting does
 
@@ -51,3 +51,7 @@ Projects that came in before you reworded a question keep their answers, as the 
 - It can't hold a character that doesn't show, such as a direction override, or more than 20,000 characters. If it does, saving says which character and on which line, or how many characters it has.
 
 ![The Synthesis prompt's box, holding the plugin's own prompt, with the notes under it](images/settings-prompt.webp "Synthesis prompt, on FireHouse → Settings.")
+
+## The Workers AI key
+
+Administrators also see **Workers AI key** at the very bottom of the screen: the Cloudflare account and token Analyze results uses. It has its own **Save key** button; **Save Changes** doesn't save it. How to set it is in [Installing and updating the plugin](08-installing-and-updating.md). Editors don't see it.

@@ -77,16 +77,18 @@ jobs:
           php-version: '8.1'
           # intl, so the tests reach what a server with it does: the title order, and
           # the explorer search's accent folding where the PHP search is. Without it,
-          # the plugin falls back, and the fallbacks have tests of their own.
-          extensions: intl, mbstring
+          # the plugin falls back, and the fallbacks have tests of their own. sodium, for
+          # sealing the Workers AI key: WordPress brings its own copy where PHP lacks
+          # it, but the tests run without WordPress, and skip without it.
+          extensions: intl, mbstring, sodium
           tools: composer:v2
           coverage: none
 
       # setup-php only warns when an extension fails to install, which would leave the
-      # tests passing on the fallbacks alone.
-      - name: intl and mbstring are loaded
+      # tests passing on the fallbacks alone, or skipped.
+      - name: intl, mbstring and sodium are loaded
         run: |
-          php -r 'exit(extension_loaded("intl") && extension_loaded("mbstring") ? 0 : 1);'
+          php -r 'exit(extension_loaded("intl") && extension_loaded("mbstring") && extension_loaded("sodium") ? 0 : 1);'
 
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist

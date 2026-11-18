@@ -27,7 +27,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Firehouse Editors can change them, through their own capability rather than
  * manage_options, which would open every setting on the site; all but the switch that
- * opens the survey form, which takes manage_options, an administrator's.
+ * opens the survey form, which takes manage_options, an administrator's. The Workers AI
+ * key has a form of its own on the same screen, for administrators alone
+ * (Workers_Ai_Key).
  */
 final class Settings {
 
@@ -270,19 +272,20 @@ final class Settings {
 	 * @param string $title The admin page's title.
 	 */
 	public static function title( string $title ): string {
-		return array() === self::errors() ? $title : __( 'Not saved:', 'firehouse' ) . ' ' . $title;
+		return array() === self::errors() + Workers_Ai_Key::errors() ? $title : __( 'Not saved:', 'firehouse' ) . ' ' . $title;
 	}
 
 	/**
 	 * Draws the screen. After a refused save, a summary at the top lists each problem
 	 * and links to its field, and each field shows what was typed into it, its error,
-	 * and the focus on the first.
+	 * and the focus on the first. The Workers AI key's form follows, for an administrator,
+	 * and its refused save is summed up the same way.
 	 */
 	public static function render(): void {
 		if ( ! current_user_can( Capabilities::SETTINGS ) ) {
 			return;
 		}
-		$errors         = self::errors();
+		$errors         = self::errors() + Workers_Ai_Key::errors();
 		$rejected       = get_transient( self::rejected_key() );
 		self::$rejected = is_array( $rejected ) ? $rejected : array();
 		self::$focused  = false;
@@ -316,6 +319,7 @@ final class Settings {
 				submit_button();
 				?>
 			</form>
+			<?php Workers_Ai_Key::render(); ?>
 		</div>
 		<?php
 	}
