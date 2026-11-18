@@ -1061,7 +1061,7 @@ nothing from the database. Each class's docblock has the detail; this is the map
   from FireHouse → Settings, where an administrator saves them (`Workers_Ai_Key`), or
   else from the constants `FIREHOUSE_WORKERS_AI_ACCOUNT` and
   `FIREHOUSE_WORKERS_AI_TOKEN` in `wp-config.php`; Settings comes first (Eric, 18
-  November: the test and production sites' `wp-config.php` may be out of reach).
+  November: for a site whose administrators can't edit `wp-config.php`).
   `Workers_Ai_Key` keeps them in an option of their own, saved through a form of their
   own on the Settings screen that only `manage_options` may post to, never in the REST
   API, and deleted with the plugin. The token is sealed with libsodium's secretbox
@@ -1070,8 +1070,8 @@ nothing from the database. Each class's docblock has the detail; this is the map
   `AUTH_KEY` and `AUTH_SALT`, not from salts WordPress keeps in the database beside it.
   It's never shown again: its box is always empty, and left empty keeps it. A token
   that no longer opens (the salts changed) falls back to the constants, and the screen
-  and Site Health's Workers AI key check say so. Either way the key is never in a
-  screen, a message or a log, and refused
+  and Site Health's Workers AI key check say so. Either way the token is never in a
+  screen, a message or a log (the screen shows only the account ID), and refused
   unless shaped like Cloudflare's (32 lower-case hex digits; 20 to 200 letters, digits,
   `-` and `_`), so neither can add to the address or the header. A key shaped
   otherwise counts as none: the screens show no Analyze results, with no message, and

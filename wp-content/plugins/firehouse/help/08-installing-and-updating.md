@@ -38,12 +38,12 @@ To save the key:
 2. On **FireHouse → Settings**, under **Workers AI key** at the bottom of the screen, type the **Account ID** and the **API token**.
 3. Choose **Save key**. **Save Changes**, higher up, doesn't save it.
 
-Only administrators see that section. The token is sealed before it's saved and never shown again: its box stays empty, and left empty keeps the saved token. To replace it, type a new one. To take the key away, tick **Remove the key saved here** and choose **Save key**.
+Only administrators see that section. The token is sealed before it's saved and never shown again: its box stays empty, and left empty keeps the saved token. To replace it, type a new one. To take the key away, tick **Remove the key saved here** and choose **Save key**; that removes it whatever the boxes above hold.
 
 ![The Workers AI key section: the account ID, an empty API token box saying a token is saved, the Remove box and the Save key button](images/settings-key.webp "Workers AI key, on FireHouse → Settings.")
 
 - **If saving says wp-config.php doesn't set its own AUTH_KEY and AUTH_SALT,** WordPress keeps those in the database, where a copy of it would unlock the token, so it isn't saved. Ask whoever runs the server to set them, or to add the key to wp-config.php instead.
-- **If the section says the saved token can't be read,** the site's salts have changed since it was saved, as they do when someone resets them. Type the token again.
+- **If the section says the saved token can't be read,** the site's salts have changed since it was saved, as they do when someone resets them. Type the token again. If they were reset because the site may have been broken into, make a new token in Cloudflare, delete the old one there, and type the new one.
 - **A key in wp-config.php** works too, as two lines whoever runs the server adds; the README says which. A key saved in Settings comes first: remove it there to use the one in wp-config.php.
 
 Analyze results runs in WordPress's scheduled events (WP-Cron), as a survey submission's DOI lookups do. If an editor says a draft never started, open **Tools → Site Health**: WordPress's own checks there say whether scheduled events are running late. Once the site has the key, FireHouse's Outside services check names api.cloudflare.com too.

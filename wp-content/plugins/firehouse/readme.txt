@@ -88,8 +88,8 @@ each model's latest draft, with its whole reply, the prompt it was given and the
 of whoever started it, until a newer draft from the same model replaces it; it never
 stores the Workers AI key. Deleting the plugin removes those drafts. An administrator
 may save the key on FireHouse → Settings: the account ID as typed and the token sealed
-with the site's salts, in an option of its own that no screen or REST route shows,
-until it's removed there or the plugin is deleted. The synthesis
+with the site's salts, in an option of its own that no REST route shows and whose
+token no screen shows, until it's removed there or the plugin is deleted. The synthesis
 prompt on FireHouse → Settings is stored only where it differs from the plugin's own,
 and isn't published. Apart
 from those and the survey form's answers, below, the plugin stores only what the site
@@ -333,7 +333,7 @@ terms and privacy policies are above.
 
 = Unreleased =
 * The Workers AI key can be saved on FireHouse → Settings, by an administrator, for a
-  site whose wp-config.php is out of reach. The token is sealed with the site's
+  site whose administrators can't edit wp-config.php. The token is sealed with the site's
   AUTH_KEY and AUTH_SALT and never shown again; a key saved there comes before one in
   wp-config.php. Site Health says where the key comes from, and when a saved one can't
   be read.

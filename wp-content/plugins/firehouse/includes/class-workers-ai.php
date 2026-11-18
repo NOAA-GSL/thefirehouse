@@ -21,9 +21,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   Cloudflare account ID and API token there, the token sealed (Workers_Ai_Key); a site
  *   without one there uses the constants FIREHOUSE_WORKERS_AI_ACCOUNT and
  *   FIREHOUSE_WORKERS_AI_TOKEN in wp-config.php. Settings wins (Eric, 18 November): on
- *   GSL's sites the screen is what an administrator can reach. Either way the key is
- *   opened only here, sent only to Cloudflare's API, and never shown or written into a
- *   message.
+ *   a site whose administrators can't edit wp-config.php, the screen is what they can
+ *   reach. Either way the key is opened only here, sent only to Cloudflare's API, and
+ *   never written into a message; the token is never shown.
  * - **Off without it.** With neither, or neither shaped like Cloudflare's, configured()
  *   is false and nothing offers Analyze results; the paste stays.
  * - **One host,** api.cloudflare.com, over HTTPS, with no redirects followed.

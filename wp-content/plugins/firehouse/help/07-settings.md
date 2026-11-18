@@ -54,4 +54,4 @@ Projects that came in before you reworded a question keep their answers, as the 
 
 ## The Workers AI key
 
-Administrators also see **Workers AI key** at the very bottom of the screen: the Cloudflare account and token Analyze results uses. It has its own **Save key** button; **Save Changes** doesn't save it. How to set it is in [Installing and updating the plugin](08-installing-and-updating.md). Editors don't see it.
+Administrators also see **Workers AI key** at the very bottom of the screen: the Cloudflare account and token Analyze results uses. It has its own **Save key** button: **Save Changes** doesn't save the key, and **Save key** doesn't save the rest of the screen. How to set it is in [Installing and updating the plugin](08-installing-and-updating.md). Editors don't see it.

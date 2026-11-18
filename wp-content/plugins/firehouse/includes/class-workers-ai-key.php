@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Keeps the Cloudflare account ID and API token an administrator types on FireHouse →
- * Settings, for a site whose wp-config.php nobody at hand can edit (Eric, 18 November).
+ * Settings, for a site whose administrators can't edit wp-config.php (Eric, 18 November).
  * Workers_Ai uses it before wp-config.php's constants. Modeled on the TerraViz
  * plugin's service-token setting.
  *
@@ -26,9 +26,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   route shows it.
  * - **The token is sealed** with libsodium's secretbox, under a key made from the site's
  *   AUTH_KEY and AUTH_SALT, so a copy of the database alone can't use it, and it doesn't
- *   open on another site. WordPress supplies secretbox where PHP's sodium extension is
- *   missing (wp-includes/sodium_compat). The account ID isn't a secret: it's kept as
- *   typed, so the screen shows which account the key is for.
+ *   open on a site with other salts (one sharing them would open it; nothing binds it to
+ *   the site's address or the account ID). WordPress supplies secretbox where PHP's
+ *   sodium extension is missing (wp-includes/sodium_compat). The account ID isn't a
+ *   secret: it's kept as typed, so the screen shows which account the key is for.
  * - **Saved only while wp-config.php sets the salts.** Without them WordPress keeps its
  *   own in the database, beside the sealed token, and sealing would hide nothing.
  * - **Never shown again.** The token's box is always empty, and left empty keeps the

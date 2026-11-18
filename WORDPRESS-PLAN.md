@@ -554,7 +554,7 @@ short:
   prompt. Drafts and private answers never leave GSL.
 - **Secrets never in the clear in the database.** The AI service key was planned as a
   constant in `wp-config.php`, set by developers. *Changed (Eric, 18 November): the
-  test and production sites' `wp-config.php` may be out of reach, so an administrator
+  administrators of a site may not be able to edit its `wp-config.php`, so an administrator
   saves the key on FireHouse → Settings, its token sealed with the site's `AUTH_KEY`
   and `AUTH_SALT`, which must come from `wp-config.php`: a database backup alone
   doesn't give it away. A key in `wp-config.php` still works; the one in Settings comes
@@ -740,14 +740,18 @@ key offers only the paste.*
   AI" template, and the plugin sends them only to api.cloudflare.com. It was two
   constants in the site's `wp-config.php`, `FIREHOUSE_WORKERS_AI_ACCOUNT` and
   `FIREHOUSE_WORKERS_AI_TOKEN`, so no backup, export or screen held it. *Changed (Eric,
-  18 November): the test and production sites' `wp-config.php` may be out of reach, so
-  an administrator saves the key on FireHouse → Settings, in a form and option of its
+  18 November): the administrators of a site may not be able to edit its `wp-config.php`,
+  so an administrator saves the key on FireHouse → Settings, in a form and option of its
   own, and that one comes first; the constants still work where there's none. The
   token is sealed (libsodium's secretbox, under a key hashed from the site's
   `AUTH_KEY` and `AUTH_SALT`), saved only while `wp-config.php` sets those, and never
   shown again. Changed salts leave it unreadable until it's typed again; Site Health
   says so. Modeled on the TerraViz plugin's service-token setting.* The local copy
-  reads the constants from its ignored `.env`.
+  reads the constants from its ignored `.env`. *Left as they are (#83's review, edge
+  cases only an administrator meets): a refused key save doesn't keep the account ID
+  typed; Remove wins over a token typed in the same save (the guide says so); a site
+  sharing another's salts opens its token, which isn't bound to the account ID or the
+  site's address; and salts that are set but short pass the check.*
 - **The models** are a fixed list, from US companies only (Eric, 16 November), each
   reading at least 128,000 tokens: Meta's Llama 4 Scout, OpenAI's gpt-oss-120b,
   Google's Gemma 4 26B and Thinking Machines' Inkling 2 Small, added by Eric the same
