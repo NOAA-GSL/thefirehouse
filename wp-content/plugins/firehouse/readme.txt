@@ -3,7 +3,7 @@ Tags: research, social science, fire weather, wildfire, science communication
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.3.0
+Stable tag: 0.3.1
 License: Apache-2.0
 License URI: https://www.apache.org/licenses/LICENSE-2.0
 
@@ -331,19 +331,21 @@ terms and privacy policies are above.
 
 == Changelog ==
 
-= Unreleased =
+= 0.3.1 =
+The version offered for GSL's security review, in place of 0.3.0: 0.3.0 and the changes
+below. Its GitHub release stays a draft until it has passed that review.
 * The Workers AI key can be saved on FireHouse → Settings, by an administrator, for a
   site whose administrators can't edit wp-config.php. The token is sealed with the
   site's AUTH_KEY and AUTH_SALT and never shown again; a key saved there comes before
-  one in wp-config.php. Site Health says where the key comes from, and when a saved one can't
-  be read.
+  one in wp-config.php. Site Health says where the key comes from, and when a saved one
+  can't be read.
 * The tests name the warning Plugin Check gives for their Workers AI key constants
   (VariableConstantNameFound), so Plugin Check on a copy with tests/, as the local site
   has, reports only the Update URI header.
 
 = 0.3.0 =
-The first version offered for GSL's security review: everything built since 0.2.0. Its
-GitHub release stays a draft until it has passed that review.
+Everything built since 0.2.0, prepared for GSL's security review and replaced by 0.3.1
+before it was sent; its GitHub release stays an unpublished draft.
 * The frame: every FireHouse page in the theme's header and footer, with the plugin's
   stylesheets and self-hosted fonts, and the theme's hero and footer mission section
   hidden.

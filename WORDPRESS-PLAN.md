@@ -2421,7 +2421,9 @@ Phase 8's screen-reader audit covers them too.*
   plugin is submitted to WordPress.org, both come out. 0.3.0, the first version
   offered for GSL's security review, was set on 17 November (Eric), ahead of the
   reviews for installing it on GSL's sites; its release stays a draft until the
-  security review passes it.*
+  security review passes it. 0.3.1 took its place on 18 November (Eric), before
+  anything was sent, to carry the Workers AI key saved on FireHouse → Settings;
+  0.3.0's draft release stays unpublished.*
 - A runbook for editors and for administrators, including how to remove a project
   for good (trash, then Delete Permanently, which takes its fields and revisions
   with it). *Started 16 November, ahead of the phase at Eric's request, as the
