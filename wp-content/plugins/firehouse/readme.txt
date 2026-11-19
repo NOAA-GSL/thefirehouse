@@ -3,7 +3,7 @@ Tags: research, social science, fire weather, wildfire, science communication
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.3.1
+Stable tag: 0.3.2
 License: Apache-2.0
 License URI: https://www.apache.org/licenses/LICENSE-2.0
 
@@ -337,7 +337,9 @@ terms and privacy policies are above.
 
 == Changelog ==
 
-= Unreleased =
+= 0.3.2 =
+The version offered for GSL's security review, in place of 0.3.1: 0.3.1 and the change
+below. Its GitHub release stays a draft until it has passed that review.
 * Analyze results asks Google's Gemini Enterprise Agent Platform, formerly Vertex AI,
   in place of Cloudflare Workers AI; GSL's IT services issue the key from a GSL Google
   Cloud project. The models are Gemini 3.8 Flash, picked to start with, Gemini 4 Argon
@@ -353,8 +355,9 @@ terms and privacy policies are above.
   FIREHOUSE_WORKERS_AI_ constants: the plugin can't.
 
 = 0.3.1 =
-The version offered for GSL's security review, in place of 0.3.0: 0.3.0 and the changes
-below. Its GitHub release stays a draft until it has passed that review.
+0.3.0 and the changes below, prepared for GSL's security review in place of 0.3.0 and
+replaced by 0.3.2, for the move to Google's Agent Platform, before it was sent; its
+GitHub release stays an unpublished draft.
 * The Workers AI key can be saved on FireHouse → Settings, by an administrator, for a
   site whose administrators can't edit wp-config.php. The token is sealed with the
   site's AUTH_KEY and AUTH_SALT and never shown again; a key saved there comes before
