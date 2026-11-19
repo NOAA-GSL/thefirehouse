@@ -355,7 +355,7 @@ below. Its GitHub release stays a draft until it has passed that review.
   FIREHOUSE_WORKERS_AI_ constants: the plugin can't.
 
 = 0.3.1 =
-0.3.0 and the changes below, prepared for GSL's security review in its place and
+0.3.0 and the changes below, prepared for GSL's security review in place of 0.3.0 and
 replaced by 0.3.2 for the move to Google's Agent Platform; its GitHub release stays an
 unpublished draft.
 * The Workers AI key can be saved on FireHouse → Settings, by an administrator, for a

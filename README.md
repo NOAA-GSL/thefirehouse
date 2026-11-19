@@ -1451,15 +1451,17 @@ CI builds it on every change to the plugin and keeps it for 30 days: on the run'
 Summary page, under Artifacts, `firehouse-<version>-<commit>.zip` downloads as the
 zip itself. That zip hasn't been through GSL's security review; it's for a local or
 test site, and only from a run on one of this repository's branches: a pull request's
-run, a fork's included, builds the pull request's code and names the zip the same way. For a release, set the version in the three places, merge, and push a tag
+run, a fork's included, builds the pull request's code and names the zip the same way. For a release, set the version in the three places, rename readme.txt's
+`= Unreleased =` to it, merge, and push a tag
 named for it (`git tag v0.3.0 && git push origin v0.3.0`): CI checks the tag matches,
 runs the checks, and drafts a GitHub release with `firehouse-0.3.0.zip`. The release
 job downloads the zip by the package job's artifact ID and checks its SHA-256 before
 attaching it, and the draft's notes name the commit and the hash, so the security
-review can record exactly what it passed. Publish the draft once it has. Then start a
-new `= Unreleased =` section at the top of readme.txt's changelog, so the next pull
-request's line doesn't land under the tagged version; fixes the review asks for ship as
-the next patch version, since a tag and its draft aren't reused.
+review can record exactly what it passed. Publish the draft once it has. Once the tag
+is pushed, start a new `= Unreleased =` section at the top of readme.txt's changelog,
+so the next pull request's line doesn't land under the tagged version; fixes the
+review asks for ship as the next patch version, since a tag and its draft aren't
+reused.
 
 `wordpress-org/` holds what a WordPress.org listing would need beyond the zip, and
 what submitting it waits on (`wordpress-org/README.md`). The plugin isn't submitted.

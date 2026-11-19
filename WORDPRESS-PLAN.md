@@ -2449,7 +2449,7 @@ Phase 8's screen-reader audit covers them too.*
   (Eric) as the first version to offer GSL's security review, ahead of the reviews
   for installing it on GSL's sites. 0.3.1 took its place on 18 November (Eric), before
   anything was sent, to carry the Workers AI key saved on FireHouse → Settings, and
-  0.3.2 took 0.3.1's on 19 November, to carry the move to Google's Agent Platform
+  0.3.2 took 0.3.1's place on 19 November, to carry the move to Google's Agent Platform
   (#85). 0.3.2's release stays a draft until the security review passes it, and
   0.3.0's and 0.3.1's stay unpublished.*
 - A runbook for editors and for administrators, including how to remove a project
