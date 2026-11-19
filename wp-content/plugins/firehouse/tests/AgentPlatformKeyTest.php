@@ -40,9 +40,10 @@ final class AgentPlatformKeyTest extends WordPressTestCase {
 	private const OTHER_PROJECT = 'other-project-456';
 
 	/**
-	 * An API key shaped like Google's.
+	 * A made-up API key in the shape the plugin takes. It doesn't start like Google's
+	 * own keys, so secret scanners don't take it for one.
 	 */
-	private const API_KEY = 'AIzaSy-saved_key_0123456789ABCDEFGHIJKLM';
+	private const API_KEY = 'fake-saved-key_0123456789abcdefghijklm';
 
 	/**
 	 * Options by name.
@@ -171,7 +172,7 @@ final class AgentPlatformKeyTest extends WordPressTestCase {
 	 */
 	public function test_the_saved_key_comes_before_wp_configs(): void {
 		define( Agent_Platform::PROJECT, self::OTHER_PROJECT ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.VariableConstantNameFound -- The plugin's own constant, as wp-config.php sets it.
-		define( Agent_Platform::API_KEY, 'AIzaSy-wp-config_key_0123456789ABCDEFGH' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.VariableConstantNameFound -- The plugin's own constant, as wp-config.php sets it.
+		define( Agent_Platform::API_KEY, 'fake-wp-config-key_0123456789abcdefgh' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.VariableConstantNameFound -- The plugin's own constant, as wp-config.php sets it.
 		$this->assertSame( Agent_Platform::FROM_CONFIG, Agent_Platform::source() );
 		$this->assertSame( 'Analyze results uses the key in wp-config.php. A key saved here would be used in its place.', Agent_Platform_Key::status() );
 

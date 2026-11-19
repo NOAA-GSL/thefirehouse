@@ -32,9 +32,10 @@ final class AgentPlatformTest extends WordPressTestCase {
 	private const PROJECT_ID = 'firehouse-test-123';
 
 	/**
-	 * An API key shaped like Google's.
+	 * A made-up API key in the shape the plugin takes. It doesn't start like Google's
+	 * own keys, so secret scanners don't take it for one.
 	 */
-	private const API_KEY = 'AIzaSy-test_key_0123456789ABCDEFGHIJKLMN';
+	private const API_KEY = 'fake-test-key_0123456789abcdefghijklmn';
 
 	/**
 	 * What wp_safe_remote_post() was given.
@@ -124,7 +125,7 @@ final class AgentPlatformTest extends WordPressTestCase {
 	#[RunInSeparateProcess]
 	#[PreserveGlobalState( false )]
 	public function test_a_key_of_the_wrong_shape_counts_as_none(): void {
-		self::key( self::PROJECT_ID, "AIzaSy-a-key\r\nX-Other: 1 and more and more" );
+		self::key( self::PROJECT_ID, "fake-a-key\r\nX-Other: 1 and more and more" );
 
 		$this->assertFalse( Agent_Platform::configured() );
 	}
@@ -140,7 +141,7 @@ final class AgentPlatformTest extends WordPressTestCase {
 			$this->assertFalse( Agent_Platform::project_shaped( $project ), var_export( $project, true ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export -- The failing value, in the message.
 		}
 		$this->assertTrue( Agent_Platform::key_shaped( self::API_KEY ) );
-		foreach ( array( 'AIzaSy-short', self::API_KEY . ' ', self::API_KEY . "\n", '{"type": "service_account"}', str_repeat( 'a', 101 ), null ) as $key ) {
+		foreach ( array( 'fake-short', self::API_KEY . ' ', self::API_KEY . "\n", '{"type": "service_account"}', str_repeat( 'a', 101 ), null ) as $key ) {
 			$this->assertFalse( Agent_Platform::key_shaped( $key ), var_export( $key, true ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export -- The failing value, in the message.
 		}
 	}

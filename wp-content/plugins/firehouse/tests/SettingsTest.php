@@ -568,7 +568,7 @@ final class SettingsTest extends WordPressTestCase {
 	#[PreserveGlobalState( false )]
 	public function test_with_a_key_the_prompt_is_offered(): void {
 		define( Agent_Platform::PROJECT, 'firehouse-test-123' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.VariableConstantNameFound -- The plugin's own constant, as wp-config.php sets it.
-		define( Agent_Platform::API_KEY, 'AIzaSy-test_key_0123456789ABCDEFGHIJKLMN' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.VariableConstantNameFound -- The plugin's own constant, as wp-config.php sets it.
+		define( Agent_Platform::API_KEY, 'fake-test-key_0123456789abcdefghijklmn' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.VariableConstantNameFound -- The plugin's own constant, as wp-config.php sets it.
 
 		$this->assertContains( 'firehouse_synthesis', self::sections() );
 	}

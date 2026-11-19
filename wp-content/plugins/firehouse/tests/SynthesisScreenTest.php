@@ -640,7 +640,7 @@ final class SynthesisScreenTest extends WordPressTestCase {
 	 */
 	private static function key(): void {
 		define( Agent_Platform::PROJECT, 'firehouse-test-123' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.VariableConstantNameFound -- The plugin's own constant, as wp-config.php sets it.
-		define( Agent_Platform::API_KEY, 'AIzaSy-test_key_0123456789ABCDEFGHIJKLMN' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.VariableConstantNameFound -- The plugin's own constant, as wp-config.php sets it.
+		define( Agent_Platform::API_KEY, 'fake-test-key_0123456789abcdefghijklmn' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.VariableConstantNameFound -- The plugin's own constant, as wp-config.php sets it.
 	}
 
 	/**

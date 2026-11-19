@@ -134,7 +134,7 @@ final class SiteHealthTest extends WordPressTestCase {
 	#[PreserveGlobalState( false )]
 	public function test_with_a_key_agent_platform_is_reached_too(): void {
 		define( 'FIREHOUSE_GOOGLE_PROJECT', 'firehouse-test-123' );
-		define( 'FIREHOUSE_GOOGLE_API_KEY', 'AIzaSy-test_key_0123456789ABCDEFGHIJKLMN' );
+		define( 'FIREHOUSE_GOOGLE_API_KEY', 'fake-test-key_0123456789abcdefghijklmn' );
 		$args = array();
 		Functions\when( 'wp_safe_remote_head' )->alias(
 			function ( string $url, array $request ) use ( &$args ): array {
@@ -149,12 +149,12 @@ final class SiteHealthTest extends WordPressTestCase {
 		$this->assertSame( 'https://aiplatform.us.rep.googleapis.com/', end( $this->asked ) );
 		$this->assertSame( 'good', $result['status'], 'Any answer counts.' );
 		$this->assertStringContainsString( 'Analyze results', $result['description'] );
-		$this->assertStringNotContainsString( 'AIzaSy-test_key', (string) json_encode( $args ), 'The key isn’t sent.' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- A test's look at what was sent.
+		$this->assertStringNotContainsString( 'fake-test-key', (string) json_encode( $args ), 'The key isn’t sent.' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- A test's look at what was sent.
 
 		$key = Site_Health::ai_key();
 		$this->assertSame( 'good', $key['status'] );
 		$this->assertSame( 'FireHouse’s Google API key is in wp-config.php', $key['label'] );
-		$this->assertStringNotContainsString( 'AIzaSy-test_key', $key['description'] );
+		$this->assertStringNotContainsString( 'fake-test-key', $key['description'] );
 	}
 
 	/**
