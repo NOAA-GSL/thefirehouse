@@ -241,7 +241,7 @@ final class Agent_Platform_Key {
 			return $state;
 		};
 
-		echo '<div id="firehouse-google-ai-key"><h2>' . esc_html__( 'Google API key', 'firehouse' ) . '</h2>';
+		echo '<div id="firehouse-google-ai"><h2>' . esc_html__( 'Google API key', 'firehouse' ) . '</h2>';
 		echo '<p>' . esc_html__( 'The Google Cloud project and API key Analyze results uses, on FireHouse → Synthesis, to have a Gemini model on Google’s Agent Platform (formerly Vertex AI) draft the synthesis. Only administrators see this. Save a key only once NOAA has approved Google’s Agent Platform for this site.', 'firehouse' ) . '</p>';
 		echo '<p><strong>' . esc_html( self::status() ) . '</strong></p>';
 		if ( ! self::salts_in_config() ) {
@@ -272,7 +272,7 @@ final class Agent_Platform_Key {
 				'<input type="password" name="' . esc_attr( self::OPTION . '[typedKey]' ) . '" value="" class="regular-text code" autocomplete="new-password" spellcheck="false"' . $state( self::field_id( 'key' ) ),
 				$saved
 					? __( 'An API key is saved. It’s never shown again; leave this empty to keep it, or type a new one to replace it.', 'firehouse' )
-					: __( 'An API key from that project, bound to a service account that may use Agent Platform, and restricted to the Agent Platform API, so it can do nothing else. It’s sealed before it’s saved, and never shown again.', 'firehouse' ),
+					: __( 'An API key from that project, restricted to the Agent Platform API and bound to a service account that may only ask its models (aiplatform.endpoints.predict). It’s sealed before it’s saved, and never shown again.', 'firehouse' ),
 				$errors
 			);
 			if ( $saved ) {
@@ -339,7 +339,8 @@ final class Agent_Platform_Key {
 	}
 
 	/**
-	 * A field's ID, as "firehouse-google-ai-project".
+	 * A field's ID, as "firehouse-google-ai-project". The section around the fields is
+	 * "firehouse-google-ai", so no field's ID is the section's.
 	 *
 	 * @param string $field The field.
 	 */

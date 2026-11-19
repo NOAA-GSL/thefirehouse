@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * - **Outside services:** whether the server reaches doi.org, api.crossref.org and
  *   data.crosscite.org, which the survey form's DOI lookups use, and Agent Platform's
- *   regional host while the site has a Google API key. One HEAD request to each host's
+ *   US multi-region host while the site has a Google API key. One HEAD request to each host's
  *   front page, with nothing about the site or anyone in it; any answer counts.
  * - **Search engines:** a site that isn't production (`wp_get_environment_type()`)
  *   discourages search engines, so WordPress marks its pages noindex, and production

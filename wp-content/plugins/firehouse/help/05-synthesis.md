@@ -17,7 +17,7 @@ There are two ways to make one. Either way, it goes through the same check and M
 
 ## Analyze results
 
-The model is sent the published projects, word for word, the four topic areas, and the prompt on FireHouse → Settings. Nothing private goes, and no earlier synthesis. Google processes it in the United States and doesn't train its models on it.
+The model is sent the published projects, word for word, the four topic areas, and the prompt on FireHouse → Settings. Nothing private goes, and no earlier synthesis. Google processes it in the United States and doesn't train its models on it. It may keep it for up to a day as a cache, and for up to 90 days if its filters flag a request as possible abuse.
 
 1. On **FireHouse → Synthesis**, under **Analyze results**, pick a **Model** and choose **Analyze results**. Gemini 3.8 Flash, Google's newest fast model, is picked to start with. Gemini 4 Argon is Google's strongest, slower and dearer per run; Gemini 3.5 Flash-Lite is its cheapest. If a draft fails with "Google refused the key", tell an administrator.
 2. The page says at the top that the model is drafting. It drafts in the background, which takes a few minutes, or up to a quarter of an hour longer on some sites. Reload the page to see when it's done. One model drafts at a time.

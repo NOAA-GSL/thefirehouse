@@ -27,7 +27,8 @@ list below says what that waits on.
   Esri's terms and privacy statement, and the survey form's DOI lookups through
   doi.org, Crossref and DataCite, with each one's terms and privacy policy, and
   Analyze results' requests to Google's Agent Platform, on a site given a key, with
-  Google's data governance page, terms and privacy notice) and Changelog.
+  Google's data residency, training and caching, and abuse monitoring pages, terms and
+  privacy notice) and Changelog.
 - The zip comes from CI (`scripts/plugin-zip.mjs`), and Plugin Check, which runs the
   directory's own checks, reads what it holds on every change to the plugin.
 

@@ -382,6 +382,14 @@ final class AgentPlatformKeyTest extends WordPressTestCase {
 		$this->assertStringNotContainsString( $this->options[ Agent_Platform_Key::OPTION ]['key'], $html );
 		$this->assertStringNotContainsString( 'id="_wpnonce"', $html );
 
+		// Each ID once, so each label names its own box and a refused save's link lands on it.
+		preg_match_all( '/\sid="([^"]+)"/', $html, $ids );
+		$this->assertSame( array_unique( $ids[1] ), $ids[1], 'No ID twice.' );
+		foreach ( array( 'firehouse-google-ai-project', 'firehouse-google-ai-key' ) as $id ) {
+			$this->assertMatchesRegularExpression( '/<label for="' . $id . '">[^<]+<\/label><\/th><td><input [^>]*id="' . $id . '"/', $html, $id );
+		}
+		$this->assertStringContainsString( '<div id="firehouse-google-ai">', $html );
+
 		Functions\when( 'current_user_can' )->justReturn( false );
 		ob_start();
 		Agent_Platform_Key::render();

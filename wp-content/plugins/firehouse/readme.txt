@@ -134,9 +134,10 @@ the role are left with no role on the site, and Analyze results' drafts are remo
 The content stays, the survey form's draft projects and their private answers
 included.
 
-An update that changes the role or its capabilities applies the role, and the
-administrators' FireHouse capabilities, as the plugin defines them, so a change made
-to either with a role editor doesn't last past it.
+An update that changes the role or its capabilities, or something else the plugin
+stores, applies the role, and the administrators' FireHouse capabilities, as the
+plugin defines them, so a change made to either with a role editor doesn't last past
+it.
 
 == Installation ==
 
@@ -346,8 +347,10 @@ terms and privacy policies are above.
   The key on FireHouse → Settings is a Google Cloud project ID and an API key, sealed
   as the Cloudflare token was, and sent in a header; in wp-config.php it's
   FIREHOUSE_GOOGLE_PROJECT and FIREHOUSE_GOOGLE_API_KEY. Site Health's checks name the
-  new host and key. Updating removes the Workers AI key 0.3.1 kept, and drafts from
-  Workers AI's models aren't shown any more.
+  new host and key. Updating removes the Workers AI key 0.3.1 kept, and applies the
+  FireHouse Editor role again; drafts from Workers AI's models aren't shown any more.
+  Delete the Workers AI token itself in Cloudflare's dashboard, and any
+  FIREHOUSE_WORKERS_AI_ constants: the plugin can't.
 
 = 0.3.1 =
 The version offered for GSL's security review, in place of 0.3.0: 0.3.0 and the changes

@@ -173,7 +173,7 @@ final class Agent_Platform {
 	}
 
 	/**
-	 * What the screens call a model, as "Gemini 2.5 Pro".
+	 * What the screens call a model, as "Gemini 3.8 Flash".
 	 *
 	 * @param string $model Its ID.
 	 */
@@ -225,7 +225,14 @@ final class Agent_Platform {
 		$finish    = is_string( $candidate['finishReason'] ?? null ) ? $candidate['finishReason'] : '';
 		$text      = self::text( $body );
 		// Gemini 4 says CONTINUATION where, streaming, it would have gone on.
-		$cut = in_array( $finish, array( 'MAX_TOKENS', 'CONTINUATION' ), true );
+		$cut     = in_array( $finish, array( 'MAX_TOKENS', 'CONTINUATION' ), true );
+		$stopped = '' !== $finish && 'STOP' !== $finish && ! $cut;
+		if ( null !== $text && '' !== trim( $text ) && $stopped ) {
+			// Stopped by Google's filters, or for another reason, partway: what it wrote
+			// isn't a whole reply, even where its JSON looks complete.
+			/* translators: %s: Google's reason, as SAFETY. */
+			return array( 'problem' => sprintf( __( 'The model stopped partway (%s), so its reply isn’t kept. Try again, or try another model.', 'firehouse' ), self::said( $finish, $credentials ) ) );
+		}
 		if ( null === $text || '' === trim( $text ) ) {
 			$blocked = $body['promptFeedback']['blockReason'] ?? null;
 			if ( is_string( $blocked ) ) {
@@ -235,7 +242,7 @@ final class Agent_Platform {
 			if ( $cut ) {
 				return array( 'problem' => __( 'The model used its whole length limit before it gave a reply, as a thinking model can. Try again, or try another model.', 'firehouse' ) );
 			}
-			if ( '' !== $finish && 'STOP' !== $finish ) {
+			if ( $stopped ) {
 				/* translators: %s: Google's reason, as SAFETY. */
 				return array( 'problem' => sprintf( __( 'The model stopped without a reply (%s). Try again, or try another model.', 'firehouse' ), self::said( $finish, $credentials ) ) );
 			}
@@ -249,7 +256,10 @@ final class Agent_Platform {
 
 	/**
 	 * The request's body: the system messages as its instruction, the others as the
-	 * conversation, and the model's length limit and thinking.
+	 * conversation, and the model's length limit and thinking. Every system message goes
+	 * into the instruction, wherever it stands in the conversation, so one placed after
+	 * the source would be read before it. Nothing else is sent: no tools, search or URL
+	 * fetching, so nothing in the source can have the model act or fetch.
 	 *
 	 * @param string                                     $model    One of MODELS.
 	 * @param list<array{role: string, content: string}> $messages The conversation.
@@ -307,7 +317,7 @@ final class Agent_Platform {
 	 * @param array{project: string, key: string, from: string} $credentials The key.
 	 */
 	private static function refusal( int $code, array $body, array $credentials ): string {
-		$error  = $body['error']['message'] ?? $body[0]['error']['message'] ?? '';
+		$error  = $body['error']['message'] ?? '';
 		$error  = is_string( $error ) ? self::said( $error, $credentials ) : '';
 		$reason = '' !== $error ? $error : __( 'no reason given', 'firehouse' );
 		if ( 429 === $code ) {

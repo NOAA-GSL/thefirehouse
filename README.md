@@ -396,9 +396,12 @@ overrides are isolated so a re-sync doesn't lose them.
         NotebookLM as the tools the team uses on submissions, is reworded to name the
         approved service too, through Stephanie and Emily and then clearance.
       - **The key:** GSL's IT services issue it from a GSL Google Cloud project: the
-        project ID, and an API key from that project, bound to a service account with
-        the Agent Platform User role (`roles/aiplatform.user`) and restricted to the
-        Agent Platform API (`aiplatform.googleapis.com`). Google's default organization
+        project ID, and an API key from that project, restricted to the Agent Platform
+        API (`aiplatform.googleapis.com`) and bound to a service account whose role
+        holds only `aiplatform.endpoints.predict`, in a project that holds nothing else.
+        The Agent Platform User role (`roles/aiplatform.user`) works too, but would let
+        a leaked key also run training jobs, export datasets and deploy endpoints,
+        billed to the project. Google's default organization
         policy blocks binding an API key to a service account
         (`iam.managed.disableServiceAccountApiKeyCreation`), so the project has to allow
         it. Google advises Application Default Credentials rather than API keys in
@@ -415,10 +418,14 @@ overrides are isolated so a re-sync doesn't lose them.
         it deleted in the project and a new one made. Any other plugin on the site can
         see the API key in WordPress's HTTP hooks (`http_request_args`,
         `http_api_debug`), as it can any request's headers, and any code running on the
-        site can open the sealed copy, as it can read a constant, so its narrow scope is
-        what limits the harm: GSL's security review should know. Once the key is taken,
+        site can open the sealed copy, as it can read a constant, so the service
+        account's narrow role and a project that holds nothing else are what limit the
+        harm: GSL's security review should know. Once the key is taken,
         Site Health's Outside services check names aiplatform.us.rep.googleapis.com;
-        a key in the wrong shape counts as none, with no message.
+        a key in the wrong shape counts as none, with no message. Check the first real
+        key against the plugin's shape for one (30 to 100 letters, digits, `-` and
+        `_`), and that it works on the US multi-region endpoint, before the version
+        goes to the security review: no Google page says either.
       - **The server:** aiplatform.us.rep.googleapis.com reachable from it, and
         WP-Cron running often enough that a run starts within half an hour (a run that
         hasn't is recorded as failed; a system cron every quarter of an hour does). The
@@ -429,8 +436,13 @@ overrides are isolated so a re-sync doesn't lose them.
         a system cron that runs WP-CLI (`wp cron event run --due-now`) has no such
         limit.
       - **The Google Cloud project:** the Agent Platform API enabled, the models the
-        screen offers available to it on the US multi-region, and a budget alert, since an
-        editor can start run after run, each sending every published project.
+        screen offers available to it on the US multi-region, and a budget alert, with a
+        cap if it can have one, since an editor can start run after run, each sending
+        every published project.
+      - **The old key:** 0.3.1's Cloudflare Workers AI token isn't used any more, and
+        updating deletes the copy saved on FireHouse → Settings, but not the token:
+        delete it in Cloudflare's dashboard, and take `FIREHOUSE_WORKERS_AI_ACCOUNT` and
+        `FIREHOUSE_WORKERS_AI_TOKEN` out of any `wp-config.php` or `.env` that set them.
 - [ ] **Check that deleting a transient reports whether it deleted one** on each
       WordPress site the plugin runs on, with whatever object cache it has. The
       synthesis screen's Mark reviewed relies on it to publish a check once

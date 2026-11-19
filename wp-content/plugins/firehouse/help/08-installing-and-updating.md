@@ -34,7 +34,7 @@ Analyze results, on FireHouse → Synthesis, shows only on a site with a Google 
 
 To save the key:
 
-1. Ask GSL's IT services for the key: the **project ID** of the Google Cloud project that pays for it, and an **API key** from that project. The API key has to be bound to a service account that may use Agent Platform (the Agent Platform User role, roles/aiplatform.user), and restricted to the Agent Platform API (aiplatform.googleapis.com), so it can do nothing else. A service account's JSON key file won't do.
+1. Ask GSL's IT services for the key: the **project ID** of the Google Cloud project that pays for it, and an **API key** from that project. The API key has to be restricted to the Agent Platform API (aiplatform.googleapis.com) and bound to a service account. Ask for that account's role to hold only the permission to ask the models (aiplatform.endpoints.predict), in a project that holds nothing else: the broader Agent Platform User role would let a leaked key do much more, billed to the project. A service account's JSON key file won't do.
 2. On **FireHouse → Settings**, under **Google API key** at the bottom of the screen, type the **Project ID** and the **API key**.
 3. Choose **Save key**. **Save Changes**, higher up, doesn't save it.
 
