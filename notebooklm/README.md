@@ -17,7 +17,7 @@ assigned to a topic area. This folder holds what the notebook reads.
 Everything happens on **FireHouse → Synthesis**. FireHouse Editors and administrators
 can use it.
 
-On a site with a Workers AI key, **Analyze results** on the same screen has a model
+On a site with a Google API key, **Analyze results** on the same screen has a model
 draft the synthesis in place of steps 1 and 2, and its Check button fills step 4's box
 in place of the copying. The draft still gets step 3's review. The FireHouse guide's
 synthesis page says how. Its prompt starts as the one below: the plugin's copy,

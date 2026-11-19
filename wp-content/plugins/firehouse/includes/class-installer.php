@@ -26,10 +26,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class Installer {
 
 	/**
-	 * Raised whenever the role, the capabilities or the addresses change, so each
-	 * site applies the change once.
+	 * Raised whenever the role, the capabilities or the addresses change, or something
+	 * stored has to go, so each site applies the change once. 4 removes the Workers AI
+	 * key 0.3.1 kept, once the plugin moved to Google's Agent Platform.
 	 */
-	public const REVISION = 3;
+	public const REVISION = 4;
 
 	/**
 	 * The option that records the revision a site has.
@@ -74,11 +75,12 @@ final class Installer {
 	}
 
 	/**
-	 * Stores the role and the capabilities, has the rewrite rules rebuilt, and
-	 * records the revision.
+	 * Stores the role and the capabilities, removes the Workers AI key nothing reads any
+	 * more, has the rewrite rules rebuilt, and records the revision.
 	 */
 	private static function install(): void {
 		Capabilities::install();
+		delete_option( Agent_Platform_Key::OLD_OPTION );
 		delete_option( 'rewrite_rules' );
 		update_option( self::OPTION, self::REVISION );
 	}

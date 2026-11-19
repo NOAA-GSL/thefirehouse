@@ -14,7 +14,7 @@
  * version) are hidden, so nothing about the site beyond the FireHouse shows; only the
  * FireHouse menu's own screenshot shows the menu, cropped to the FireHouse part.
  * The project and topic shown are the first published project and the topic in TOPIC.
- * Two need a site with a Workers AI key (needsKey): taking every screenshot skips them
+ * Two need a site with a Google API key (needsKey): taking every screenshot skips them
  * on a site without one, and naming them fails there.
  *
  * The images go into a public repository and the plugin's zip, so nothing that isn't
@@ -63,15 +63,15 @@ const SHOTS = {
   'project-screen': { project: true, element: '#wpbody-content', height: 1150 },
   'topic-fields': { topic: TOPIC, element: '#wpbody-content', height: 760 },
   'synthesis-screen': { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-synthesis', element: '#wpbody-content', height: 440 },
-  // Only on a site with a Workers AI key (needsKey), and with drafts kept to show.
+  // Only on a site with a Google API key (needsKey), and with drafts kept to show.
   'analyze-results': { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-synthesis', element: '#firehouse-analyze', height: 700, needsKey: true },
   // The survey form's switch as a new site has it, whatever this copy's is.
   settings: { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-settings', element: '#wpbody-content', height: 900, untick: '#firehouse-surveyOpen' },
   'settings-questions': { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-settings', element: '#firehouse-questions', height: 560 },
-  // Only on a site with a Workers AI key.
+  // Only on a site with a Google API key.
   'settings-prompt': { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-settings', element: 'tr:has(#firehouse-synthesisPrompt)', height: 640, needsKey: true },
-  // An administrator's alone. Taken with a made-up key saved, since the account ID shows.
-  'settings-key': { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-settings', element: '#firehouse-workers-ai-key', height: 640 },
+  // An administrator's alone. Taken with a made-up key saved, since the project ID shows.
+  'settings-key': { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-settings', element: '#firehouse-google-ai-key', height: 640 },
   import: { path: '/wp-admin/edit.php?post_type=fh_project&page=firehouse-import', element: '#wpbody-content', height: 320 },
   'landing-hero-fields': { landing: true, block: 'firehouse/hero', height: 600 },
 };
@@ -149,10 +149,10 @@ async function shoot(page, name, shot, named) {
     box = await block.boundingBox();
   } else {
     await page.waitForTimeout(300);
-    // A section only a site with a Workers AI key has is skipped when every screenshot
+    // A section only a site with a Google API key has is skipped when every screenshot
     // is taken, and fails when it's asked for by name.
     if (shot.needsKey && !named && !(await page.locator(shot.element).count())) {
-      console.log(`skipped ${name}: the site has no Workers AI key`);
+      console.log(`skipped ${name}: the site has no Google API key`);
       return;
     }
     box = await page.locator(shot.element).first().boundingBox();

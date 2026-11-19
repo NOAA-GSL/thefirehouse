@@ -1,6 +1,6 @@
 <?php
 /**
- * Analyze results: a synthesis drafted by a Workers AI model.
+ * Analyze results: a synthesis drafted by a Gemini model on Google’s Agent Platform.
  *
  * @package Firehouse
  */
@@ -57,7 +57,7 @@ final class Analysis {
 	private const WAITS = 30 * MINUTE_IN_SECONDS;
 
 	/**
-	 * How long past Workers_Ai::TIMEOUT, counted from its request, a run may go before
+	 * How long past Agent_Platform::TIMEOUT, counted from its request, a run may go before
 	 * it's taken to have failed: the request gives up by then.
 	 */
 	private const MARGIN = 5 * MINUTE_IN_SECONDS;
@@ -119,14 +119,14 @@ final class Analysis {
 	/**
 	 * Starts a run with a model, unless one is going.
 	 *
-	 * @param string $model One of Workers_Ai::MODELS.
+	 * @param string $model One of Agent_Platform::MODELS.
 	 * @return string|null What stopped it, or null once it's started.
 	 */
 	public static function start( string $model ): ?string {
-		if ( ! Workers_Ai::configured() ) {
-			return __( 'The site has no Workers AI key.', 'firehouse' );
+		if ( ! Agent_Platform::configured() ) {
+			return __( 'The site has no Google API key.', 'firehouse' );
 		}
-		if ( ! Workers_Ai::offered( $model ) ) {
+		if ( ! Agent_Platform::offered( $model ) ) {
 			return __( 'Pick a model from the list.', 'firehouse' );
 		}
 		$id   = wp_generate_password( 16, false );
@@ -134,8 +134,8 @@ final class Analysis {
 			static function ( array $state ) use ( $model, $id ): array {
 				$state = self::without_stale( $state );
 				if ( null !== $state['running'] ) {
-					/* translators: %s: a model, as "Llama 4 Scout (Meta)". */
-					return array( $state, sprintf( __( '%s is still drafting one. Wait for it to finish, then try again.', 'firehouse' ), Workers_Ai::label( $state['running']['model'] ) ) );
+					/* translators: %s: a model, as "Gemini 3.8 Flash". */
+					return array( $state, sprintf( __( '%s is still drafting one. Wait for it to finish, then try again.', 'firehouse' ), Agent_Platform::label( $state['running']['model'] ) ) );
 				}
 				$state['running'] = array(
 					'id'      => $id,
@@ -214,7 +214,7 @@ final class Analysis {
 				'problem' => $unseen,
 			);
 		} else {
-			$reply   = Workers_Ai::ask( $run['model'], self::messages( $parts, $prompt, self::key( $parts ) ) );
+			$reply   = Agent_Platform::ask( $run['model'], self::messages( $parts, $prompt, self::key( $parts ) ) );
 			$result += self::outcome( $reply );
 		}
 		$result['finished'] = time();
@@ -251,11 +251,11 @@ final class Analysis {
 		$stored  = is_array( $stored ) ? $stored : array();
 		$running = $stored['running'] ?? null;
 		$state   = array(
-			'running' => is_array( $running ) && is_string( $running['id'] ?? null ) && Workers_Ai::offered( $running['model'] ?? null ) && is_int( $running['started'] ?? null ) ? $running : null,
+			'running' => is_array( $running ) && is_string( $running['id'] ?? null ) && Agent_Platform::offered( $running['model'] ?? null ) && is_int( $running['started'] ?? null ) ? $running : null,
 			'results' => array(),
 		);
 		foreach ( is_array( $stored['results'] ?? null ) ? $stored['results'] : array() as $model => $result ) {
-			if ( Workers_Ai::offered( $model ) && is_array( $result ) ) {
+			if ( Agent_Platform::offered( $model ) && is_array( $result ) ) {
 				$state['results'][ $model ] = $result;
 			}
 		}
@@ -303,7 +303,7 @@ final class Analysis {
 			return false;
 		}
 		$asked = is_int( $running['asked'] ?? null ) ? $running['asked'] : null;
-		return null === $asked ? $running['started'] < time() - self::WAITS : $asked < time() - Workers_Ai::TIMEOUT - self::MARGIN;
+		return null === $asked ? $running['started'] < time() - self::WAITS : $asked < time() - Agent_Platform::TIMEOUT - self::MARGIN;
 	}
 
 	/**

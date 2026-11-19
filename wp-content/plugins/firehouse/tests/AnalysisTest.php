@@ -158,9 +158,9 @@ final class AnalysisTest extends WordPressTestCase {
 		$this->assertSame(
 			array(
 				'state'   => 'failed',
-				'problem' => 'Workers AI refused the request (401).',
+				'problem' => 'Google’s Agent Platform refused the request (401).',
 			),
-			Analysis::outcome( array( 'problem' => 'Workers AI refused the request (401).' ) )
+			Analysis::outcome( array( 'problem' => 'Google’s Agent Platform refused the request (401).' ) )
 		);
 	}
 }

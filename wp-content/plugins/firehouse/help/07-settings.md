@@ -2,7 +2,7 @@
 
 <!-- help audience: editors; screens: settings -->
 
-The site name, the Submit a Finding button, the navigation labels, the survey form's questions, the synthesis prompt and, for administrators, the Workers AI key, on FireHouse → Settings.
+The site name, the Submit a Finding button, the navigation labels, the survey form's questions, the synthesis prompt and, for administrators, the Google API key, on FireHouse → Settings.
 
 ## What each setting does
 
@@ -40,7 +40,7 @@ Projects that came in before you reworded a question keep their answers, as the 
 
 ## Change the synthesis prompt
 
-**Synthesis prompt**, below the survey questions, is there only when the site has a Workers AI key. Its box holds what **Analyze results** on FireHouse → Synthesis asks the model to do with the published projects (see [Publishing a synthesis](05-synthesis.md)).
+**Synthesis prompt**, below the survey questions, is there only when the site has a Google API key. Its box holds what **Analyze results** on FireHouse → Synthesis asks the model to do with the published projects (see [Publishing a synthesis](05-synthesis.md)).
 
 1. Change the words in the box.
 2. Choose **Save Changes**. The next draft uses it.
@@ -52,6 +52,6 @@ Projects that came in before you reworded a question keep their answers, as the 
 
 ![The Synthesis prompt's box, holding the plugin's own prompt, with the notes under it](images/settings-prompt.webp "Synthesis prompt, on FireHouse → Settings.")
 
-## The Workers AI key
+## The Google API key
 
-Administrators also see **Workers AI key** at the very bottom of the screen: the Cloudflare account and token Analyze results uses. It has its own **Save key** button: **Save Changes** doesn't save the key, and **Save key** doesn't save the rest of the screen. How to set it is in [Installing and updating the plugin](08-installing-and-updating.md). Editors don't see it.
+Administrators also see **Google API key** at the very bottom of the screen: the Google Cloud project and API key Analyze results uses. It has its own **Save key** button: **Save Changes** doesn't save the key, and **Save key** doesn't save the rest of the screen. How to set it is in [Installing and updating the plugin](08-installing-and-updating.md). Editors don't see it.

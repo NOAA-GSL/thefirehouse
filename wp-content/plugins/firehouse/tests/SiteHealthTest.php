@@ -101,7 +101,7 @@ final class SiteHealthTest extends WordPressTestCase {
 	}
 
 	/**
-	 * Without a Workers AI key, the server is asked to reach the three DOI hosts, each
+	 * Without a Google API key, the server is asked to reach the three DOI hosts, each
 	 * with a HEAD request to its front page; all answering is good.
 	 */
 	public function test_the_doi_hosts_are_reached(): void {
@@ -111,7 +111,7 @@ final class SiteHealthTest extends WordPressTestCase {
 		$this->assertSame( 'good', $result['status'] );
 		$this->assertSame( 'FireHouse reaches the outside services it uses', $result['label'] );
 		$this->assertSame( 'FireHouse', $result['badge']['label'] );
-		$this->assertStringNotContainsString( 'cloudflare', $result['description'] );
+		$this->assertStringNotContainsString( 'aiplatform', $result['description'] );
 	}
 
 	/**
@@ -128,13 +128,13 @@ final class SiteHealthTest extends WordPressTestCase {
 	}
 
 	/**
-	 * With a Workers AI key, Cloudflare's API is asked too, without the key.
+	 * With a Google API key, Agent Platform's host is asked too, without the key.
 	 */
 	#[RunInSeparateProcess]
 	#[PreserveGlobalState( false )]
-	public function test_with_a_key_cloudflare_is_reached_too(): void {
-		define( 'FIREHOUSE_WORKERS_AI_ACCOUNT', '0123456789abcdef0123456789abcdef' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- The plugin's own constant, as wp-config.php sets it.
-		define( 'FIREHOUSE_WORKERS_AI_TOKEN', 'test-token_0123456789ABCDEFGHIJ' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- The plugin's own constant, as wp-config.php sets it.
+	public function test_with_a_key_agent_platform_is_reached_too(): void {
+		define( 'FIREHOUSE_GOOGLE_PROJECT', 'firehouse-test-123' );
+		define( 'FIREHOUSE_GOOGLE_API_KEY', 'AIzaSy-test_key_0123456789ABCDEFGHIJKLMN' );
 		$args = array();
 		Functions\when( 'wp_safe_remote_head' )->alias(
 			function ( string $url, array $request ) use ( &$args ): array {
@@ -146,26 +146,26 @@ final class SiteHealthTest extends WordPressTestCase {
 
 		$result = Site_Health::outbound();
 
-		$this->assertSame( 'https://api.cloudflare.com/', end( $this->asked ) );
+		$this->assertSame( 'https://aiplatform.us.rep.googleapis.com/', end( $this->asked ) );
 		$this->assertSame( 'good', $result['status'], 'Any answer counts.' );
 		$this->assertStringContainsString( 'Analyze results', $result['description'] );
-		$this->assertStringNotContainsString( 'test-token', (string) json_encode( $args ), 'The key isn’t sent.' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- A test's look at what was sent.
+		$this->assertStringNotContainsString( 'AIzaSy-test_key', (string) json_encode( $args ), 'The key isn’t sent.' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- A test's look at what was sent.
 
 		$key = Site_Health::ai_key();
 		$this->assertSame( 'good', $key['status'] );
-		$this->assertSame( 'FireHouse’s Workers AI key is in wp-config.php', $key['label'] );
-		$this->assertStringNotContainsString( 'test-token', $key['description'] );
+		$this->assertSame( 'FireHouse’s Google API key is in wp-config.php', $key['label'] );
+		$this->assertStringNotContainsString( 'AIzaSy-test_key', $key['description'] );
 	}
 
 	/**
-	 * Without a key, the key check says so; it isn't a problem. (WorkersAiKeyTest has a
+	 * Without a key, the key check says so; it isn't a problem. (AgentPlatformKeyTest has a
 	 * key saved on FireHouse → Settings, and one that no longer opens.)
 	 */
 	public function test_without_a_key_the_key_check_says_so(): void {
 		$result = Site_Health::ai_key();
 
 		$this->assertSame( 'good', $result['status'] );
-		$this->assertSame( 'FireHouse has no Workers AI key', $result['label'] );
+		$this->assertSame( 'FireHouse has no Google API key', $result['label'] );
 		$this->assertStringContainsString( 'Analyze results is turned off', $result['description'] );
 		$this->assertStringContainsString( 'FireHouse → Settings', $result['description'] );
 	}

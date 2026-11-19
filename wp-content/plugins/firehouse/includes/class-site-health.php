@@ -18,16 +18,16 @@ if ( ! defined( 'ABSPATH' ) ) {
  * (`view_site_health_checks`, an administrator's), on each site the plugin runs on:
  *
  * - **Outside services:** whether the server reaches doi.org, api.crossref.org and
- *   data.crosscite.org, which the survey form's DOI lookups use, and api.cloudflare.com
- *   while the site has a Workers AI key. One HEAD request to each host's front page,
- *   with nothing about the site or anyone in it; any answer counts.
+ *   data.crosscite.org, which the survey form's DOI lookups use, and Agent Platform's
+ *   regional host while the site has a Google API key. One HEAD request to each host's
+ *   front page, with nothing about the site or anyone in it; any answer counts.
  * - **Search engines:** a site that isn't production (`wp_get_environment_type()`)
  *   discourages search engines, so WordPress marks its pages noindex, and production
  *   doesn't.
  * - **Page caching:** whether a cache in front of the site, Cloudflare's above all,
  *   keeps FireHouse's pages. The plugin counts on none doing so (WORDPRESS-PLAN.md,
  *   Caching): a hidden project would stay on the pages that show it.
- * - **Workers AI key:** where the key comes from, FireHouse → Settings or wp-config.php,
+ * - **Google API key:** where the key comes from, FireHouse → Settings or wp-config.php,
  *   and whether one saved in Settings still opens: changed salts leave it unreadable.
  *
  * The two that make requests run only when someone opens Site Health, never in
@@ -70,7 +70,7 @@ final class Site_Health {
 			'test'  => array( self::class, 'search' ),
 		);
 		$tests['direct']['firehouse_ai_key']  = array(
-			'label' => __( 'FireHouse: Workers AI key', 'firehouse' ),
+			'label' => __( 'FireHouse: Google API key', 'firehouse' ),
 			'test'  => array( self::class, 'ai_key' ),
 		);
 		$tests['async']['firehouse_outbound'] = array(
@@ -109,8 +109,8 @@ final class Site_Health {
 	 */
 	public static function outbound(): array {
 		$hosts = Survey\Doi_Lookup::HOSTS;
-		if ( Workers_Ai::configured() ) {
-			$hosts[] = Workers_Ai::HOST;
+		if ( Agent_Platform::configured() ) {
+			$hosts[] = Agent_Platform::HOST;
 		}
 		$failed = array();
 		foreach ( $hosts as $host ) {
@@ -128,8 +128,9 @@ final class Site_Health {
 		}
 
 		$uses = '<p>' . esc_html__( 'The survey form looks up the title of each paper a submission gives by its DOI, through doi.org, api.crossref.org and data.crosscite.org.', 'firehouse' );
-		if ( Workers_Ai::configured() ) {
-			$uses .= ' ' . esc_html__( 'Analyze results, on FireHouse → Synthesis, asks a model on api.cloudflare.com.', 'firehouse' );
+		if ( Agent_Platform::configured() ) {
+			/* translators: %s: a host, as aiplatform.us.rep.googleapis.com. */
+			$uses .= ' ' . esc_html( sprintf( __( 'Analyze results, on FireHouse → Synthesis, asks a Gemini model on %s, Google’s Agent Platform.', 'firehouse' ), Agent_Platform::HOST ) );
 		}
 		$uses .= ' ' . esc_html__( 'This check asked each for its front page, sending nothing else.', 'firehouse' ) . '</p>';
 
@@ -143,26 +144,26 @@ final class Site_Health {
 			$list .= '<li>' . esc_html( $item ) . '</li>';
 		}
 		$list .= '</ul>';
-		$fails = '<p>' . esc_html__( 'Without doi.org and the services it sends lookups on to, a submission’s papers keep only their DOI. Without api.cloudflare.com, Analyze results can’t run. Ask whoever runs the server to let it reach them over HTTPS.', 'firehouse' ) . '</p>';
+		$fails = '<p>' . esc_html__( 'Without doi.org and the services it sends lookups on to, a submission’s papers keep only their DOI. Without Google’s Agent Platform, Analyze results can’t run. Ask whoever runs the server to let it reach them over HTTPS.', 'firehouse' ) . '</p>';
 		return self::result( 'firehouse_outbound', 'recommended', __( 'FireHouse can’t reach some of the outside services it uses', 'firehouse' ), $uses . '<p>' . esc_html__( 'The server couldn’t reach:', 'firehouse' ) . '</p>' . $list . $fails );
 	}
 
 	/**
-	 * Where the Workers AI key comes from, and whether one saved on FireHouse → Settings
+	 * Where the Google API key comes from, and whether one saved on FireHouse → Settings
 	 * can still be read.
 	 *
 	 * @return array<string, mixed> The result, as Site Health takes it.
 	 */
 	public static function ai_key(): array {
-		$about = '<p>' . esc_html( Workers_Ai_Key::status() ) . '</p><p>' . esc_html__( 'An administrator saves the key under FireHouse → Settings, in its Workers AI key section. A key in wp-config.php, as FIREHOUSE_WORKERS_AI_ACCOUNT and FIREHOUSE_WORKERS_AI_TOKEN, is used only while none is saved there.', 'firehouse' ) . '</p>';
-		if ( Workers_Ai_Key::unreadable() ) {
-			return self::result( 'firehouse_ai_key', 'recommended', __( 'FireHouse’s saved Workers AI key can’t be read', 'firehouse' ), $about );
+		$about = '<p>' . esc_html( Agent_Platform_Key::status() ) . '</p><p>' . esc_html__( 'An administrator saves the key under FireHouse → Settings, in its Google API key section. A key in wp-config.php, as FIREHOUSE_GOOGLE_PROJECT and FIREHOUSE_GOOGLE_API_KEY, is used only while none is saved there.', 'firehouse' ) . '</p>';
+		if ( Agent_Platform_Key::unreadable() ) {
+			return self::result( 'firehouse_ai_key', 'recommended', __( 'FireHouse’s saved Google API key can’t be read', 'firehouse' ), $about );
 		}
 		$labels = array(
-			Workers_Ai::FROM_SETTINGS => __( 'FireHouse’s Workers AI key is saved in its settings', 'firehouse' ),
-			Workers_Ai::FROM_CONFIG   => __( 'FireHouse’s Workers AI key is in wp-config.php', 'firehouse' ),
+			Agent_Platform::FROM_SETTINGS => __( 'FireHouse’s Google API key is saved in its settings', 'firehouse' ),
+			Agent_Platform::FROM_CONFIG   => __( 'FireHouse’s Google API key is in wp-config.php', 'firehouse' ),
 		);
-		return self::result( 'firehouse_ai_key', 'good', $labels[ (string) Workers_Ai::source() ] ?? __( 'FireHouse has no Workers AI key', 'firehouse' ), $about );
+		return self::result( 'firehouse_ai_key', 'good', $labels[ (string) Agent_Platform::source() ] ?? __( 'FireHouse has no Google API key', 'firehouse' ), $about );
 	}
 
 	/**

@@ -58,7 +58,7 @@ that produced it).
 | Caching | **Cloudflare doesn't cache HTML** on either site (`cf-cache-status: DYNAMIC` on both, checked 1 November), so publishing shows up immediately and the plugin needs no purge step (see [Caching](#caching)). |
 | Install path | Security reviews each plugin release; developers install it. |
 | WP-CLI | **Not relied on.** Everything, including the first data load, is done in wp-admin. |
-| Outbound network | Believed allowed (doi.org). DOI lookups also reach api.crossref.org and data.crosscite.org, where doi.org forwards them. The AI service adds api.cloudflare.com, on a site given its key. A Site Health check confirms them on the test site. |
+| Outbound network | Believed allowed (doi.org). DOI lookups also reach api.crossref.org and data.crosscite.org, where doi.org forwards them. The AI service adds aiplatform.us.rep.googleapis.com (Google's Agent Platform, US multi-region), on a site given its key. A Site Health check confirms them on the test site. |
 | Survey tool | **A form built into the plugin** (29 October), in its own `survey/` folder (31 October), which uses the plugin's storage, settings and markup classes. See [The survey form](#the-survey-form). Until the plugin launches, researchers submit through the **Google Form** that replaced Colorado State's Qualtrics; it belongs to Emily's account in NOAA's Google Workspace. Its responses go into the site's files through the existing import script, as today, and reach WordPress in the seed bundle at launch (see [Importing the Google Form until launch](#importing-the-google-form-until-launch)). |
 | Responses so far | Qualtrics is closed, and every real submission was re-entered through the Google Form (28 October), so the form's Sheet is the complete record. |
 | Survey API sync | **Dropped** (29 October). With the form in the plugin there is no Sheet to sync. |
@@ -739,6 +739,23 @@ host, and one key.
 *Cloudflare Workers AI is tried first (Eric, 16 November). It is a trial: NOAA's AI
 policy still decides whether a site uses it (open question 7), and a site without the
 key offers only the paste.*
+
+*Changed (19 November): the service is Google's Gemini Enterprise Agent Platform,
+formerly Vertex AI, in place of Workers AI. GSL's IT services chose it and issue the
+key from a GSL Google Cloud project: a project ID, and an API key bound to a service
+account with the Agent Platform User role and restricted to the Agent Platform API.
+It's saved and sealed as the Cloudflare token was, or set in `wp-config.php` as
+`FIREHOUSE_GOOGLE_PROJECT` and `FIREHOUSE_GOOGLE_API_KEY`; updating deletes the
+Workers AI key. The models are Gemini 3.8 Flash, picked to start with, Gemini 4 Argon
+and Gemini 3.5 Flash-Lite, all GA and none due to retire before July 2027, through
+the US multi-region endpoint (aiplatform.us.rep.googleapis.com), where Google keeps
+the processing in the United States: no single US region offers a Gemini model that
+hasn't been retired. Google advises Application Default Credentials rather than API
+keys in production, and its default organization policy blocks binding a key to a
+service account; both are for GSL's IT services and the security review. Which model
+starts is to be settled by the team's comparison once a site has the key. The Workers
+AI notes below record the
+trial.*
 
 - **The key** is a Cloudflare account ID and a token made from Cloudflare's "Workers
   AI" template, and the plugin sends them only to api.cloudflare.com. It was two
