@@ -12,7 +12,7 @@ Help, and each FireHouse screen shows its part under the Help tab at the top rig
 - [Editing a topic area](04-topics.md): How to change a topic area's short label, description and what it covers.
 - [Publishing a synthesis](05-synthesis.md): How to make a new synthesis of the top needs, with Analyze results or in NotebookLM, check it, and publish it to the topic pages and the landing page.
 - [Changing the landing and About pages](06-landing-and-about-pages.md): How to change the words on the landing page and the About page, and the About page's team.
-- [FireHouse settings](07-settings.md): The site name, the Submit a Finding button, the navigation labels, the survey form's questions, the synthesis prompt and, for administrators, the Workers AI key, on FireHouse → Settings.
+- [FireHouse settings](07-settings.md): The site name, the Submit a Finding button, the navigation labels, the survey form's questions, the synthesis prompt and, for administrators, the Google API key, on FireHouse → Settings.
 
 ## For administrators
 

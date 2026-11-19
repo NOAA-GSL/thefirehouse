@@ -38,7 +38,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * publishing because something would differ. The comparison against the published
  * synthesis comes after launch. Anyone who may publish a topic may use the screen.
  *
- * When the site has a Workers AI key (Workers_Ai), **Analyze results** has a model the
+ * When the site has a Google API key (Agent_Platform), **Analyze results** has a model the
  * editor picks draft the synthesis in the background (Analysis), and the screen keeps
  * each model's latest draft to compare. Checking one puts its JSON through step 2, as a
  * paste is, with the model offered for Made with (nothing, for a model no longer
@@ -115,8 +115,8 @@ final class Synthesis_Screen {
 	}
 
 	/**
-	 * Lets a button that names a model wrap, as "Check Inkling 2 Small (Thinking
-	 * Machines)’s draft", rather than run past a narrow window: WordPress's buttons don't
+	 * Lets a button that names a model wrap, as "Check Gemini 3.5 Flash-Lite’s draft",
+	 * rather than run past a narrow window: WordPress's buttons don't
 	 * wrap, and at 320 CSS pixels that one needs the page to scroll sideways (WCAG
 	 * 1.4.10; Section 508 review, Phase 7b's close).
 	 */
@@ -181,7 +181,7 @@ final class Synthesis_Screen {
 			self::$state = null;
 			// Back from starting a run: the person who started it hears so first, once.
 			$started = get_transient( self::started() );
-			if ( is_string( $started ) && Workers_Ai::offered( $started ) ) {
+			if ( is_string( $started ) && Agent_Platform::offered( $started ) ) {
 				delete_transient( self::started() );
 				$running     = Analysis::state()['running'];
 				self::$state = array(
@@ -224,7 +224,7 @@ final class Synthesis_Screen {
 		} elseif ( 'take' === $step ) {
 			check_admin_referer( 'firehouse_synthesis_take' );
 			$model  = $field( 'firehouse_analysis_model' );
-			$result = Workers_Ai::offered( $model ) ? ( Analysis::state()['results'][ $model ] ?? null ) : null;
+			$result = Agent_Platform::offered( $model ) ? ( Analysis::state()['results'][ $model ] ?? null ) : null;
 			if ( ! is_array( $result ) || 'done' !== ( $result['state'] ?? null ) || ! is_string( $result['json'] ?? null ) ) {
 				self::$state = array(
 					'step'    => 'start',
@@ -248,7 +248,7 @@ final class Synthesis_Screen {
 	 * A check of a draft from Analyze results, which keeps saying which draft it is
 	 * through the checks after its JSON is edited: its model, offered for Made with
 	 * unless one was typed, and when it was started, so its whole reply stays in view. A
-	 * draft from a model no longer offered, as one Cloudflare retired while the page was
+	 * draft from a model no longer offered, as one Google retired while the page was
 	 * open, leaves Made with empty for the editor to fill in, rather than saying
 	 * NotebookLM, through every check after: the form keeps naming the draft, though its
 	 * whole reply isn't shown, since the site no longer keeps it. While the site keeps
@@ -268,7 +268,7 @@ final class Synthesis_Screen {
 			'model'   => $model,
 			'started' => $started,
 		);
-		if ( ! Workers_Ai::offered( $model ) ) {
+		if ( ! Agent_Platform::offered( $model ) ) {
 			return $state + array( 'model' => '' );
 		}
 		// The topic pages will say how many projects the site shows when it's marked
@@ -277,8 +277,8 @@ final class Synthesis_Screen {
 		if ( is_array( $result ) && ( $result['started'] ?? null ) === $started && isset( $result['projects'] ) && Store::public_project_count() !== (int) $result['projects'] ) {
 			$state['read'] = (int) $result['projects'];
 		}
-		/* translators: %s: a model, as "Llama 4 Scout (Meta)". */
-		return $state + array( 'model' => sprintf( __( '%s, on Cloudflare Workers AI', 'firehouse' ), Workers_Ai::label( $model ) ) );
+		/* translators: %s: a model, as "Gemini 3.8 Flash". */
+		return $state + array( 'model' => sprintf( __( '%s, on Google’s Agent Platform', 'firehouse' ), Agent_Platform::label( $model ) ) );
 	}
 
 	/**
@@ -289,7 +289,7 @@ final class Synthesis_Screen {
 	public static function title( string $title ): string {
 		$state = self::$state ?? array();
 		// While a run goes, a reload's title says so, and its absence says it's done.
-		$drafting = static fn(): string => Workers_Ai::configured() && null !== Analysis::state()['running'] ? __( 'Drafting:', 'firehouse' ) : '';
+		$drafting = static fn(): string => Agent_Platform::configured() && null !== Analysis::state()['running'] ? __( 'Drafting:', 'firehouse' ) : '';
 		$prefix   = match ( true ) {
 			! isset( $state['step'] )                                       => $drafting(),
 			'start' === $state['step']                                      => isset( $state['refused'] ) ? ( 'checked' === ( $state['not'] ?? null ) ? __( 'Not checked:', 'firehouse' ) : __( 'Not started:', 'firehouse' ) ) : $drafting(),
@@ -585,17 +585,17 @@ final class Synthesis_Screen {
 				if ( isset( $state['refused'] ) ) {
 					self::summary( 'error', 'checked' === ( $state['not'] ?? null ) ? __( 'Not checked', 'firehouse' ) : __( 'Not started', 'firehouse' ), array( (string) $state['refused'] ) );
 				} elseif ( isset( $state['started'] ) ) {
-					$label = Workers_Ai::label( (string) $state['started'] );
+					$label = Agent_Platform::label( (string) $state['started'] );
 					if ( ! empty( $state['going'] ) ) {
-						/* translators: %s: a model, as "Llama 4 Scout (Meta)". */
+						/* translators: %s: a model, as "Gemini 3.8 Flash". */
 						self::summary( 'info', sprintf( __( '%s is drafting a synthesis', 'firehouse' ), $label ), array( __( 'It takes a few minutes. Reload this page to see when it’s done: its draft appears under Analyze results, under its name.', 'firehouse' ) ) );
 					} else {
-						/* translators: %s: a model, as "Llama 4 Scout (Meta)". */
+						/* translators: %s: a model, as "Gemini 3.8 Flash". */
 						self::summary( 'info', sprintf( __( '%s has finished', 'firehouse' ), $label ), array( __( 'Its draft, or why it failed, is under Analyze results, under its name.', 'firehouse' ) ) );
 					}
 				}
 				echo '<p>' . esc_html(
-					Workers_Ai::configured()
+					Agent_Platform::configured()
 						? __( 'Publishes a synthesis to the topic pages: up to five needs in each topic area, each with its project count and the projects it draws on. Have a model draft it with Analyze results, or make it in NotebookLM from the source below and paste the JSON it gives; either way it’s checked. Nothing reaches the site until you mark it reviewed.', 'firehouse' )
 						: __( 'Publishes a synthesis to the topic pages: up to five needs in each topic area, each with its project count and the projects it draws on. Make it in NotebookLM from the source below, with the team’s prompt, then paste the JSON it gives and check it. Nothing reaches the site until you mark it reviewed.', 'firehouse' )
 				) . '</p>';
@@ -629,11 +629,11 @@ final class Synthesis_Screen {
 	}
 
 	/**
-	 * Analyze results, when the site has a Workers AI key: the run going, or the form
+	 * Analyze results, when the site has a Google API key: the run going, or the form
 	 * that starts one; then each model's latest draft, to compare and to check.
 	 */
 	private static function analyze_section(): void {
-		if ( ! Workers_Ai::configured() ) {
+		if ( ! Agent_Platform::configured() ) {
 			return;
 		}
 		$state = Analysis::state();
@@ -642,7 +642,7 @@ final class Synthesis_Screen {
 		echo '<p id="firehouse-analyze-description">' . esc_html(
 			sprintf(
 				/* translators: %d: how many projects the site shows. */
-				_n( 'Sends the %d published project, word for word, and the four topic areas to the model you pick on Cloudflare Workers AI, with the prompt on FireHouse → Settings. The model drafts a synthesis in the background, which takes a few minutes. Each model’s latest draft is kept below, so you can compare them; check one to review it.', 'Sends the %d published projects, word for word, and the four topic areas to the model you pick on Cloudflare Workers AI, with the prompt on FireHouse → Settings. The model drafts a synthesis in the background, which takes a few minutes. Each model’s latest draft is kept below, so you can compare them; check one to review it.', $count, 'firehouse' ),
+				_n( 'Sends the %d published project, word for word, and the four topic areas to the model you pick on Google’s Agent Platform, with the prompt on FireHouse → Settings. The model drafts a synthesis in the background, which takes a few minutes. Each model’s latest draft is kept below, so you can compare them; check one to review it.', 'Sends the %d published projects, word for word, and the four topic areas to the model you pick on Google’s Agent Platform, with the prompt on FireHouse → Settings. The model drafts a synthesis in the background, which takes a few minutes. Each model’s latest draft is kept below, so you can compare them; check one to review it.', $count, 'firehouse' ),
 				$count
 			)
 		) . '</p>';
@@ -650,9 +650,9 @@ final class Synthesis_Screen {
 		if ( null !== $state['running'] ) {
 			echo '<div class="notice notice-info inline"><p>' . esc_html(
 				sprintf(
-					/* translators: 1: a model, as "Llama 4 Scout (Meta)"; 2: a time; 3: who started it. */
+					/* translators: 1: a model, as "Gemini 3.8 Flash"; 2: a time; 3: who started it. */
 					__( '%1$s is drafting a synthesis, started at %2$s by %3$s. Reload this page to see when it’s done.', 'firehouse' ),
-					Workers_Ai::label( $state['running']['model'] ),
+					Agent_Platform::label( $state['running']['model'] ),
 					wp_date( (string) get_option( 'time_format' ), $state['running']['started'] ),
 					$state['running']['by']
 				)
@@ -665,8 +665,8 @@ final class Synthesis_Screen {
 				<p>
 					<label for="firehouse-analysis-model"><?php esc_html_e( 'Model', 'firehouse' ); ?></label><br />
 					<select id="firehouse-analysis-model" name="firehouse_analysis_model" aria-describedby="firehouse-analyze-description">
-						<?php foreach ( Workers_Ai::MODELS as $model => $about ) : ?>
-							<option value="<?php echo esc_attr( $model ); ?>"<?php selected( $model, Workers_Ai::DEFAULT_MODEL ); ?>><?php echo esc_html( $about['label'] ); ?></option>
+						<?php foreach ( Agent_Platform::MODELS as $model => $about ) : ?>
+							<option value="<?php echo esc_attr( $model ); ?>"<?php selected( $model, Agent_Platform::DEFAULT_MODEL ); ?>><?php echo esc_html( $about['label'] ); ?></option>
 						<?php endforeach; ?>
 					</select>
 				</p>
@@ -675,7 +675,7 @@ final class Synthesis_Screen {
 			<?php
 		}
 
-		foreach ( array_keys( Workers_Ai::MODELS ) as $model ) {
+		foreach ( array_keys( Agent_Platform::MODELS ) as $model ) {
 			if ( isset( $state['results'][ $model ] ) ) {
 				self::draft( $model, $state['results'][ $model ] );
 			}
@@ -693,11 +693,11 @@ final class Synthesis_Screen {
 	 */
 	private static function draft( string $model, array $result ): void {
 		$id      = 'firehouse-draft-' . sanitize_key( str_replace( array( '@', '/', '.' ), '-', $model ) );
-		$label   = Workers_Ai::label( $model );
+		$label   = Agent_Platform::label( $model );
 		$format  = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
 		$started = is_int( $result['started'] ?? null ) ? wp_date( $format, $result['started'] ) : '';
 		$done    = 'done' === ( $result['state'] ?? null );
-		/* translators: %s: a model, as "Llama 4 Scout (Meta)". */
+		/* translators: %s: a model, as "Gemini 3.8 Flash". */
 		echo '<h3>' . esc_html( $done ? $label : sprintf( __( '%s: failed', 'firehouse' ), $label ) ) . '</h3>';
 		if ( $done ) {
 			echo '<p>' . esc_html(
@@ -715,7 +715,7 @@ final class Synthesis_Screen {
 				<input type="hidden" name="firehouse_step" value="take" />
 				<input type="hidden" name="firehouse_analysis_model" value="<?php echo esc_attr( $model ); ?>" />
 				<?php
-				/* translators: %s: a model, as "Llama 4 Scout (Meta)". */
+				/* translators: %s: a model, as "Gemini 3.8 Flash". */
 				submit_button( sprintf( __( 'Check %s’s draft', 'firehouse' ), $label ), 'secondary', 'submit', false, array( 'id' => $id . '-check' ) );
 				?>
 			</form>
@@ -824,7 +824,7 @@ final class Synthesis_Screen {
 			<?php if ( $noted ) : ?>
 				<p class="description" id="firehouse-synthesis-made">
 					<?php
-					/* translators: %s: what made the synthesis, as "Llama 4 Scout (Meta), on Cloudflare Workers AI". */
+					/* translators: %s: what made the synthesis, as "Gemini 3.8 Flash, on Google’s Agent Platform". */
 					echo esc_html( sprintf( __( 'Made with will start as “%s” when you mark it reviewed. If you paste in a synthesis made some other way, change it there.', 'firehouse' ), $made ) );
 					?>
 				</p>
@@ -918,17 +918,17 @@ final class Synthesis_Screen {
 	 */
 	private static function draft_reply( array $state ): void {
 		$draft = $state['draft'] ?? null;
-		if ( ! is_array( $draft ) || ! Workers_Ai::offered( $draft['model'] ) ) {
+		if ( ! is_array( $draft ) || ! Agent_Platform::offered( $draft['model'] ) ) {
 			return;
 		}
 		$result = Analysis::state()['results'][ $draft['model'] ] ?? null;
-		$label  = Workers_Ai::label( $draft['model'] );
-		/* translators: %s: a model, as "Llama 4 Scout (Meta)". */
+		$label  = Agent_Platform::label( $draft['model'] );
+		/* translators: %s: a model, as "Gemini 3.8 Flash". */
 		$heading = sprintf( __( '%s’s whole reply', 'firehouse' ), $label );
 		// Under its heading either way, so moving by heading finds it, or why it's gone.
 		echo '<h2>' . esc_html( $heading ) . '</h2>';
 		if ( ! is_array( $result ) || ( $result['started'] ?? null ) !== $draft['started'] || ! is_string( $result['reply'] ?? null ) ) {
-			/* translators: %s: a model, as "Llama 4 Scout (Meta)". */
+			/* translators: %s: a model, as "Gemini 3.8 Flash". */
 			echo '<p>' . esc_html( sprintf( __( '%s’s whole reply for this draft isn’t kept any more: a newer draft from it replaced it.', 'firehouse' ), $label ) ) . '</p>';
 			return;
 		}

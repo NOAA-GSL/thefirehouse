@@ -60,7 +60,7 @@ of the Geographic Area Coordination Centers, coloured by how many projects are f
 under each, a count for every region, and the projects filed under the one chosen.
 With JavaScript, a choice on the map or in the list changes the page in place;
 without it, the list works on its own and the map isn't shown. On a site given a
-Workers AI key, Analyze results on FireHouse → Synthesis has a model draft the
+Google API key, Analyze results on FireHouse → Synthesis has a Gemini model draft the
 synthesis, which goes through the same check and review as a pasted one (see External
 services). Tools → Site Health gets four FireHouse checks.
 
@@ -86,10 +86,10 @@ keeps refused input for five minutes, and the settings screen for one; a refused
 publish's notice waits an hour; each only for the person it's for. Analyze results keeps
 each model's latest draft, with its whole reply, the prompt it was given and the name
 of whoever started it, until a newer draft from the same model replaces it; it never
-stores the Workers AI key. Deleting the plugin removes those drafts. An administrator
-may save the key on FireHouse → Settings: the account ID as typed and the token sealed
-with the site's salts, in an option of its own that no REST route shows and whose
-token no screen shows, until it's removed there or the plugin is deleted. The synthesis
+stores the Google API key. Deleting the plugin removes those drafts. An administrator
+may save the key on FireHouse → Settings: the project ID as typed and the API key
+sealed with the site's salts, in an option of its own that no REST route shows and
+whose API key no screen shows, until it's removed there or the plugin is deleted. The synthesis
 prompt on FireHouse → Settings is stored only where it differs from the plugin's own,
 and isn't published. Apart
 from those and the survey form's answers, below, the plugin stores only what the site
@@ -134,9 +134,10 @@ the role are left with no role on the site, and Analyze results' drafts are remo
 The content stays, the survey form's draft projects and their private answers
 included.
 
-An update that changes the role or its capabilities applies the role, and the
-administrators' FireHouse capabilities, as the plugin defines them, so a change made
-to either with a role editor doesn't last past it.
+An update that changes the role or its capabilities, or something else the plugin
+stores, applies the role, and the administrators' FireHouse capabilities, as the
+plugin defines them, so a change made to either with a role editor doesn't last past
+it.
 
 == Installation ==
 
@@ -176,11 +177,11 @@ look in any theme.
 
 Three times: the visitor's browser loads the coverage map's basemap tiles from Esri;
 the server looks up a paper's title by its DOI when a survey form submission gives
-one; and, only on a site given a Workers AI key, the server sends the published
-projects to Cloudflare Workers AI when an editor chooses Analyze results. See
-External services. When an administrator opens Tools → Site Health, the plugin's
-checks also ask the DOI lookups' and Workers AI's hosts (not Esri's) for their front
-pages, and load the site's own FireHouse landing page. The plugin's code on the server
+one; and, only on a site given a Google API key, the server sends the published
+projects to Google's Gemini Enterprise Agent Platform when an editor chooses Analyze
+results. See External services. When an administrator opens Tools → Site Health, the
+plugin's checks also ask the DOI lookups' and Agent Platform's hosts (not Esri's) for
+their front pages, and load the site's own FireHouse landing page. The plugin's code on the server
 makes no other request to another site, and its fonts, icons and scripts are served from the plugin.
 
 = Who can change what? =
@@ -230,8 +231,8 @@ each survey form submission arrives as a draft project for them to review.
 
 The plugin uses three outside services: the coverage map's basemap tiles, which the
 visitor's browser loads; DOI lookups, which the server makes for the survey form; and
-Cloudflare Workers AI, which the server asks for a synthesis, only on a site given a
-key.
+Google's Gemini Enterprise Agent Platform, which the server asks for a synthesis, only
+on a site given a key.
 
 = The coverage map's tiles =
 
@@ -291,38 +292,43 @@ Its content negotiation documentation:
 https://support.datacite.org/docs/doi-content-negotiation. Its privacy policy:
 https://datacite.org/privacy-policy/.
 
-= Cloudflare Workers AI =
+= Google's Gemini Enterprise Agent Platform =
 
-Only on a site with a Workers AI key: a Cloudflare account ID and an API token limited
-to Workers AI, which an administrator saves on FireHouse → Settings, the token sealed
-with the site's salts, or which wp-config.php defines as FIREHOUSE_WORKERS_AI_ACCOUNT
-and FIREHOUSE_WORKERS_AI_TOKEN. Without one the plugin never contacts it, and FireHouse → Synthesis
-offers only the paste. When a FireHouse Editor or an administrator chooses Analyze
-results there, the server sends one request to api.cloudflare.com, for that account
-and the model they picked, with the token in its Authorization header. It carries
-every published project as its page shows it, word for word (its title, ID and page
-address, the researchers' names, organization, year, project type, methods, fire
-phases, regions, abstract, takeaways, needs and recommendations, and publications),
-the four topic areas, and the prompt on FireHouse → Settings. No unpublished
-submission, no private answer, no earlier synthesis and nothing about visitors is
-sent. It runs in WordPress's scheduled events, one at a time, and waits up to five
-minutes for the reply, which the site keeps as that model's latest draft. The key is
-never stored in the database or shown. The models are Meta's, OpenAI's, Google's and
-Thinking Machines'. Cloudflare's model pages say Cloudflare hosts each of them; for
-Thinking Machines' Inkling 2 Small that is still to be confirmed with Cloudflare, since
-Cloudflare sends the first Inkling model to Thinking Machines' own service.
+Formerly Vertex AI. Only on a site with a Google API key: a Google Cloud project ID and
+an API key from that project, bound to a service account and restricted to Agent
+Platform's API. An administrator saves them on FireHouse → Settings, the API
+key sealed with the site's salts, or wp-config.php defines them as
+FIREHOUSE_GOOGLE_PROJECT and FIREHOUSE_GOOGLE_API_KEY. Without one the plugin never
+contacts it, and FireHouse → Synthesis offers only the paste. When a FireHouse Editor
+or an administrator chooses Analyze results there, the server sends one request to
+aiplatform.us.rep.googleapis.com, Agent Platform's endpoint for the United States
+multi-region, for that project and the Gemini model they picked, with the API key in
+its x-goog-api-key header. It carries every published project as
+its page shows it, word for word (its title, ID and page address, the researchers'
+names, organization, year, project type, methods, fire phases, regions, abstract,
+takeaways, needs and recommendations, and publications), the four topic areas, and
+the prompt on FireHouse → Settings. No unpublished submission, no private answer, no
+earlier synthesis and nothing about visitors is sent. It runs in WordPress's scheduled
+events, one at a time, and waits up to five minutes for the reply, which the site
+keeps as that model's latest draft. The models are Google's own: Gemini
+3.8 Flash, Gemini 4 Argon and Gemini 3.5 Flash-Lite.
 
-Cloudflare's Workers AI data usage, which says it does not use the content it
-processes to train models or keep inputs and outputs after a request:
-https://developers.cloudflare.com/workers-ai/platform/data-usage/. Its terms:
-https://www.cloudflare.com/terms/. Its privacy policy:
-https://www.cloudflare.com/privacypolicy/.
+Google processes each request in the United States: https://docs.cloud.google.com/gemini-enterprise-agent-platform/resources/data-residency.
+Google won't use it to train or fine-tune any model without the customer's permission,
+and may cache it for up to 24 hours in the same multi-region unless the project turns
+caching off: https://docs.cloud.google.com/gemini-enterprise-agent-platform/resources/zero-data-retention.
+If its classifiers flag a request as possible abuse, Google may log the prompt for up to
+90 days, in the same multi-region, unless the customer's agreement exempts it:
+https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/abuse-monitoring.
+Google Cloud's terms: https://cloud.google.com/terms, and its Service Specific Terms:
+https://cloud.google.com/terms/service-terms. Its privacy notice:
+https://cloud.google.com/terms/cloud-privacy-notice.
 
 = Site Health checks =
 
 When someone who may see Tools → Site Health opens it, the plugin checks that the
 server can reach doi.org, api.crossref.org and data.crosscite.org, and
-api.cloudflare.com on a site given a Workers AI key: one HEAD request to each host's
+aiplatform.us.rep.googleapis.com on a site given a Google API key: one HEAD request to each host's
 front page, carrying only the plugin's name as its user agent, no key and nothing
 about the site's content or people. It also loads the site's own FireHouse landing
 page, as a visitor would, to see whether a cache keeps it. Neither runs in WordPress's
@@ -330,6 +336,21 @@ weekly Site Health check, so they happen only while someone is looking. These ho
 terms and privacy policies are above.
 
 == Changelog ==
+
+= Unreleased =
+* Analyze results asks Google's Gemini Enterprise Agent Platform, formerly Vertex AI,
+  in place of Cloudflare Workers AI; GSL's IT services issue the key from a GSL Google
+  Cloud project. The models are Gemini 3.8 Flash, picked to start with, Gemini 4 Argon
+  and Gemini 3.5 Flash-Lite, through Agent Platform's United States multi-region
+  endpoint (aiplatform.us.rep.googleapis.com), where Google keeps the processing in the
+  United States: no single US region offers a Gemini model that hasn't been retired.
+  The key on FireHouse → Settings is a Google Cloud project ID and an API key, sealed
+  as the Cloudflare token was, and sent in a header; in wp-config.php it's
+  FIREHOUSE_GOOGLE_PROJECT and FIREHOUSE_GOOGLE_API_KEY. Site Health's checks name the
+  new host and key. Updating removes the Workers AI key 0.3.1 kept, and applies the
+  FireHouse Editor role again; drafts from Workers AI's models aren't shown any more.
+  Delete the Workers AI token itself in Cloudflare's dashboard, and any
+  FIREHOUSE_WORKERS_AI_ constants: the plugin can't.
 
 = 0.3.1 =
 The version offered for GSL's security review, in place of 0.3.0: 0.3.0 and the changes

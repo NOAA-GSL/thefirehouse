@@ -13,7 +13,7 @@ use Brain\Monkey\Functions;
 use Firehouse\Analysis;
 use Firehouse\Settings;
 use Firehouse\Survey\Questions;
-use Firehouse\Workers_Ai;
+use Firehouse\Agent_Platform;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\PreserveGlobalState;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
@@ -555,7 +555,7 @@ final class SettingsTest extends WordPressTestCase {
 	}
 
 	/**
-	 * The prompt's section is on the screen only while the site has a Workers AI key.
+	 * The prompt's section is on the screen only while the site has a Google API key.
 	 */
 	public function test_the_prompt_is_offered_only_with_a_key(): void {
 		$this->assertNotContains( 'firehouse_synthesis', self::sections() );
@@ -567,8 +567,8 @@ final class SettingsTest extends WordPressTestCase {
 	#[RunInSeparateProcess]
 	#[PreserveGlobalState( false )]
 	public function test_with_a_key_the_prompt_is_offered(): void {
-		define( Workers_Ai::ACCOUNT, '0123456789abcdef0123456789abcdef' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.VariableConstantNameFound -- The plugin's own constant, as wp-config.php sets it.
-		define( Workers_Ai::TOKEN, 'test-token_0123456789ABCDEFGHIJ' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.VariableConstantNameFound -- The plugin's own constant, as wp-config.php sets it.
+		define( Agent_Platform::PROJECT, 'firehouse-test-123' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.VariableConstantNameFound -- The plugin's own constant, as wp-config.php sets it.
+		define( Agent_Platform::API_KEY, 'fake-test-key_0123456789abcdefghijklmn' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.VariableConstantNameFound -- The plugin's own constant, as wp-config.php sets it.
 
 		$this->assertContains( 'firehouse_synthesis', self::sections() );
 	}

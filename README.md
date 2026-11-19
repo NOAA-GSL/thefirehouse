@@ -394,41 +394,55 @@ overrides are isolated so a re-sync doesn't lose them.
       only the paste.
       - **Before the key:** the survey form's notice, which names only Gemini and
         NotebookLM as the tools the team uses on submissions, is reworded to name the
-        approved service too, through Stephanie and Emily and then clearance. Before
-        the key goes on any GSL site, test or production, confirm with Cloudflare
-        that Inkling 2 Small runs on Cloudflare's own hardware, as its model page's
-        "Cloudflare-hosted" label says: if it went to Thinking Machines' service, the
-        projects would go to that company too, and it comes off the list, with another
-        model picked to start with in its place (plan, The AI service, "The models").
-      - **The key:** a Cloudflare account ID, and a token made from Cloudflare's
-        "Workers AI" template (Workers AI Read and Edit, on that account only), with an
-        expiry date. An administrator saves them on FireHouse → Settings, under Workers
-        AI key; or, where someone can edit it, the site's `wp-config.php` sets the
-        constants `FIREHOUSE_WORKERS_AI_ACCOUNT` and `FIREHOUSE_WORKERS_AI_TOKEN`. The
-        one saved in Settings comes first (Eric, 18 November). There the token is
-        sealed with the site's `AUTH_KEY` and `AUTH_SALT`, which the screen requires
-        `wp-config.php` to set, so a copy of the database alone doesn't give it away;
-        changing those salts leaves it unreadable until it's typed again, which Site
-        Health's Workers AI key check says. Never put the token in the repository or a
-        chat; if it's exposed, roll it in Cloudflare's dashboard. Any other plugin on
-        the site can see the token in WordPress's HTTP hooks (`http_request_args`,
+        approved service too, through Stephanie and Emily and then clearance.
+      - **The key:** GSL's IT services issue it from a GSL Google Cloud project: the
+        project ID, and an API key from that project, restricted to the Agent Platform
+        API (`aiplatform.googleapis.com`) and bound to a service account whose role
+        holds only `aiplatform.endpoints.predict`, in a project that holds nothing else.
+        The Agent Platform User role (`roles/aiplatform.user`) works too, but would let
+        a leaked key also run training jobs, export datasets and deploy endpoints,
+        billed to the project. Google's default organization
+        policy blocks binding an API key to a service account
+        (`iam.managed.disableServiceAccountApiKeyCreation`), so the project has to allow
+        it. Google advises Application Default Credentials rather than API keys in
+        production; the plugin can only send a key, so GSL's security review should
+        weigh that. An administrator saves them on
+        FireHouse → Settings, under Google API key; or, where someone can edit it, the
+        site's `wp-config.php` sets the constants `FIREHOUSE_GOOGLE_PROJECT` and
+        `FIREHOUSE_GOOGLE_API_KEY`. The one saved in Settings comes first (Eric, 18
+        November). There the API key is sealed with the site's `AUTH_KEY` and
+        `AUTH_SALT`, which the screen requires `wp-config.php` to set, so a copy of
+        the database alone doesn't give it away; changing those salts leaves it
+        unreadable until it's typed again, which Site Health's Google API key check
+        says. Never put the API key in the repository or a chat; if it's exposed, have
+        it deleted in the project and a new one made. Any other plugin on the site can
+        see the API key in WordPress's HTTP hooks (`http_request_args`,
         `http_api_debug`), as it can any request's headers, and any code running on the
-        site can open the sealed copy, as it can read a constant, so its narrow scope is
-        what limits the harm: GSL's security review should know. Once the key is taken,
-        Site Health's Outside services check names api.cloudflare.com; a key in the
-        wrong shape counts as none, with no message.
-      - **The server:** api.cloudflare.com reachable from it, and WP-Cron running
-        often enough that a run starts within half an hour (a run that hasn't is
-        recorded as failed; a system cron every quarter of an hour does). The run waits
-        up to five minutes for the model inside that scheduled request, so whatever
-        limits the request's time where WP-Cron runs it through `wp-cron.php` (such as
-        PHP-FPM's `request_terminate_timeout`, or the web server's own timeout) must
-        allow that. PHP's `max_execution_time` doesn't count the wait on Linux, and a
-        system cron that runs WP-CLI (`wp cron event run --due-now`) has no such limit.
-      - **The Cloudflare account:** a spending alert, since an editor can start run
-        after run, each sending every published project; and the Workers Paid plan,
-        for Inkling 2 Small, the model the screen picks to start with: without it,
-        its runs fail.
+        site can open the sealed copy, as it can read a constant, so the service
+        account's narrow role and a project that holds nothing else are what limit the
+        harm: GSL's security review should know. Once the key is taken,
+        Site Health's Outside services check names aiplatform.us.rep.googleapis.com;
+        a key in the wrong shape counts as none, with no message. Check the first real
+        key against the plugin's shape for one (30 to 100 letters, digits, `-` and
+        `_`), and that it works on the US multi-region endpoint, before the version
+        goes to the security review: no Google page says either.
+      - **The server:** aiplatform.us.rep.googleapis.com reachable from it, and
+        WP-Cron running often enough that a run starts within half an hour (a run that
+        hasn't is recorded as failed; a system cron every quarter of an hour does). The
+        run waits up to five minutes for the model inside that scheduled request, so
+        whatever limits the request's time where WP-Cron runs it through `wp-cron.php`
+        (such as PHP-FPM's `request_terminate_timeout`, or the web server's own timeout)
+        must allow that. PHP's `max_execution_time` doesn't count the wait on Linux, and
+        a system cron that runs WP-CLI (`wp cron event run --due-now`) has no such
+        limit.
+      - **The Google Cloud project:** the Agent Platform API enabled, the models the
+        screen offers available to it on the US multi-region, and a budget alert, with a
+        cap if it can have one, since an editor can start run after run, each sending
+        every published project.
+      - **The old key:** 0.3.1's Cloudflare Workers AI token isn't used any more, and
+        updating deletes the copy saved on FireHouse → Settings, but not the token:
+        delete it in Cloudflare's dashboard, and take `FIREHOUSE_WORKERS_AI_ACCOUNT` and
+        `FIREHOUSE_WORKERS_AI_TOKEN` out of any `wp-config.php` or `.env` that set them.
 - [ ] **Check that deleting a transient reports whether it deleted one** on each
       WordPress site the plugin runs on, with whatever object cache it has. The
       synthesis screen's Mark reviewed relies on it to publish a check once
@@ -779,7 +793,7 @@ nothing from the database. Each class's docblock has the detail; this is the map
   address, the survey form's Accept submissions switch (administrators only,
   `Settings::OPEN_SURVEY`), the three navigation labels, each survey question's
   wording and help (stored only where they differ from `Questions::all()`), and,
-  while the site has a Workers AI key, the synthesis prompt (stored only where it
+  while the site has a Google API key, the synthesis prompt (stored only where it
   differs from `Analysis::own_prompt()`; cleared, it's the plugin's own). The pages
   read `Settings::get()`, which while the form is open gives the Submit page's address
   as the survey address; `Settings::stored()` is what's saved.
@@ -1041,7 +1055,7 @@ nothing from the database. Each class's docblock has the detail; this is the map
     revision is the undo, one topic at a time, and puts back all of that topic's
     fields. The comparison against the published synthesis and the
     re-sort when counts change come after launch (Eric, 16 November).
-  - **Analyze results** shows only while `Workers_Ai::configured()`. It starts a run
+  - **Analyze results** shows only while `Agent_Platform::configured()`. It starts a run
     with the model picked (`Analysis::start()`), then returns to the screen, so a
     reload doesn't start another, and shows the run going, or the form that starts one,
     then each model's latest draft: when, by whom, from how many projects, its whole
@@ -1049,53 +1063,57 @@ nothing from the database. Each class's docblock has the detail; this is the map
     run hears first that it's drafting (a transient for them, read once), and while a
     run goes the page's title starts "Drafting:". A button that names a model may
     wrap, so the screen doesn't scroll sideways at 320 pixels (Section 508 review). **Check** puts a draft's JSON through the same check as a paste, with
-    "<model>, on Cloudflare Workers AI" offered for Made with (nothing, for a model no
+    "<model>, on Google’s Agent Platform" offered for Made with (nothing, for a model no
     longer offered), and the model's whole reply shown under the needs, read from what the site keeps. The paste and review
     forms carry which draft it is (its model and when it was started) through the
     checks after the JSON is edited; a draft replaced since says so. A draft that read
     a different number of projects from the number the site shows says so too, in the
     summary that takes the focus, on every check of it while the site keeps it, since
     the topic pages give the number shown when it's marked reviewed.
-- `Workers_Ai` asks a model on Cloudflare Workers AI (Eric, 16 November: try it first;
-  NOAA's AI policy still decides, plan open question 7). The account ID and token come
-  from FireHouse → Settings, where an administrator saves them (`Workers_Ai_Key`), or
-  else from the constants `FIREHOUSE_WORKERS_AI_ACCOUNT` and
-  `FIREHOUSE_WORKERS_AI_TOKEN` in `wp-config.php`; Settings comes first (Eric, 18
+- `Agent_Platform` asks a Gemini model on Google's Gemini Enterprise Agent Platform,
+  formerly Vertex AI, which GSL's IT services chose in place of Cloudflare Workers AI
+  (0.3.1); NOAA's AI policy still decides, plan open question 7. The project ID and API
+  key come from FireHouse → Settings, where an administrator saves them
+  (`Agent_Platform_Key`), or else from the constants `FIREHOUSE_GOOGLE_PROJECT` and
+  `FIREHOUSE_GOOGLE_API_KEY` in `wp-config.php`; Settings comes first (Eric, 18
   November: for a site whose administrators can't edit `wp-config.php`).
-  `Workers_Ai_Key` keeps them in an option of their own, saved through a form of their
-  own on the Settings screen that only `manage_options` may post to, never in the REST
-  API, and deleted with the plugin. The token is sealed with libsodium's secretbox
-  (which WordPress supplies where PHP's extension is missing) under a key hashed from
+  `Agent_Platform_Key` keeps them in an option of their own
+  (`firehouse_google_ai_key`), saved through a form of their own on the Settings
+  screen that only `manage_options` may post to, never in the REST API, and deleted
+  with the plugin. The API key is sealed with libsodium's secretbox (which WordPress
+  supplies where PHP's extension is missing) under a key hashed from
   `wp_salt( 'auth' )`, and saved only when that comes from `wp-config.php`'s
-  `AUTH_KEY` and `AUTH_SALT`, not from salts WordPress keeps in the database beside it.
-  It's never shown again: its box is always empty, and left empty keeps it. A token
+  `AUTH_KEY` and `AUTH_SALT`, not from salts WordPress keeps in the database beside
+  it. It's never shown again: its box is always empty, and left empty keeps it. One
   that no longer opens (the salts changed) falls back to the constants, and the screen
-  and Site Health's Workers AI key check say so. Either way the token is never in a
-  screen, a message or a log (the screen shows only the account ID), and refused
-  unless shaped like Cloudflare's (32 lower-case hex digits; 20 to 200 letters, digits,
+  and Site Health's Google API key check say so. Either way the API key is never in a
+  screen, a message, a log or an address (the screen shows only the project ID), and
+  refused unless shaped like Google's (a project ID of 6 to 30 lower-case letters,
+  digits and `-`, starting with a letter; an API key of 30 to 100 letters, digits,
   `-` and `_`), so neither can add to the address or the header. A key shaped
   otherwise counts as none: the screens show no Analyze results, with no message, and
-  Site Health's Outside services check doesn't name api.cloudflare.com. The models are
-  a fixed list, all from US companies (Eric, 16 November): Meta's Llama 4 Scout, OpenAI's gpt-oss-120b,
-  Google's Gemma 4 26B and Thinking Machines' Inkling 2 Small, each reading 128,000
-  tokens or more. The synthesis screen picks Inkling 2 Small to start with
-  (`Workers_Ai::DEFAULT_MODEL`, Eric, 17 November). In runs that day, Llama 4 Scout,
-  picked before, took 120 seconds, Cloudflare's limit, with the plugin's prompt, and
-  ran out of time on both runs of the team's longer prompt proposed in #79; Inkling 2
-  Small finished every run of it with nothing for the check to catch. Inkling reasons at `reasoning_effort` "low" with
-  `max_completion_tokens` beside `max_tokens` (Cloudflare calls `max_tokens`
-  deprecated for it), and needs Cloudflare's Workers Paid plan; on an account without
-  it, Cloudflare's refusal shows as any other. Cloudflare's page labels it
-  "Cloudflare-hosted", not "Third-party" as it does the first Inkling, which goes to
-  Thinking Machines' own service. NVIDIA's Nemotron 3 120B is left out: Cloudflare
-  retires it on 20 November 2026. Gemma is asked not to think
-  (`chat_template_kwargs`), since its thinking used up its length limit. One POST to
-  `api.cloudflare.com/client/v4/accounts/{id}/ai/run/{model}` with `messages`, the
-  model's `max_tokens` and any fields its entry adds, no redirects, five minutes at
-  most; the reply's text is read from a `response`, a chat completion's first choice,
-  or a Responses API output, since the models answer in different shapes. An error
-  says Cloudflare's reason with the key taken out; a timeout (HTTP 408) first says in
-  plain words that the model may be busy.
+  Site Health's Outside services check doesn't name Agent Platform's host. Updating
+  to Installer revision 4 deletes the Workers AI key 0.3.1 kept
+  (`Agent_Platform_Key::OLD_OPTION`), as uninstalling does; drafts from Workers AI's
+  models aren't offered, so the screen no longer shows them. One POST, no redirects,
+  five minutes at most, to
+  `aiplatform.us.rep.googleapis.com/v1/projects/{project}/locations/us/publishers/google/models/{model}:generateContent`,
+  the US multi-region, where Google keeps the model's processing in the United States:
+  since 20 October 2026 no single US region, us-central1 included, offers a Gemini
+  model that hasn't been retired. The API key goes in `x-goog-api-key`, never `?key=`.
+  The system messages go as `systemInstruction`, the rest as `contents`, with the
+  model's `maxOutputTokens` and `thinkingConfig`. The models are a fixed list of
+  Google's own, GA on that endpoint, reading a million tokens, and not due to retire
+  before July 2027: Gemini 3.8 Flash, picked to start with
+  (`Agent_Platform::DEFAULT_MODEL`), Gemini 4 Argon and Gemini 3.5 Flash-Lite, each
+  with 32,768 output tokens, thinking included (Gemini 4's most without streaming), and
+  its default `thinkingLevel` written down, but Flash-Lite's raised from MINIMAL to
+  LOW. None gets `thinkingBudget`, which Gemini 4 refuses. The reply's text is the
+  first candidate's parts that aren't `thought`; `MAX_TOKENS` or Gemini 4's
+  `CONTINUATION` marks it cut; no text says why, from `promptFeedback.blockReason` or
+  the finish reason. A refusal says Google's reason with the key taken out, after plain
+  words for a refused key (401, 403), a used-up quota (429) and Google's own trouble
+  (5xx). Not yet run against Google: the site has no key.
 - `Analysis` is Analyze results. A run is a WP-Cron event (`firehouse_analyze`) that
   carries the run's ID, so it runs that run and no other, one at a time; the option
   `firehouse_analysis` holds the run going and each model's latest result. Every
@@ -1123,8 +1141,9 @@ nothing from the database. Each class's docblock has the detail; this is the map
 - `Site_Health` adds four checks to Tools → Site Health, badged FireHouse:
   - **Outside services** (async): a HEAD request to the front page of doi.org,
     api.crossref.org and data.crosscite.org (`Doi_Lookup::HOSTS`), and
-    api.cloudflare.com while the site has a Workers AI key, with no key sent; any
-    answer counts, and a host that can't be reached is named.
+    aiplatform.us.rep.googleapis.com (`Agent_Platform::HOST`) while the site has a
+    Google API key, with no key sent; any answer counts, and a host that can't be
+    reached is named.
   - **Search engines** (direct): production should let them in, and any other
     `wp_get_environment_type()` keep them out (`blog_public`), so WordPress marks its
     pages noindex.
@@ -1134,9 +1153,9 @@ nothing from the database. Each class's docblock has the detail; this is the map
     plugin doesn't purge; `Age` above 0 or an `X-Cache` HIT is a recommendation; none
     says how to check from outside, since the server's own request may not pass
     through Cloudflare.
-  - **Workers AI key** (direct): where the key comes from, FireHouse → Settings or
+  - **Google API key** (direct): where the key comes from, FireHouse → Settings or
     `wp-config.php`, or that there's none, all good; a key saved in Settings whose
-    token no longer opens is a recommendation. It makes no request.
+    API key no longer opens is a recommendation. It makes no request.
   - The async checks answer Site Health's script (`wp_ajax_health-check-firehouse-…`)
     with its nonce, for `view_site_health_checks`, and skip WordPress's weekly check
     (`skip_cron`), so no request is made unless someone is looking.
@@ -1151,7 +1170,7 @@ nothing from the database. Each class's docblock has the detail; this is the map
 The traps, for whoever changes this code next:
 
 - **Raise `Installer::REVISION`** whenever you change the role, the capabilities or
-  the addresses, or sites won't apply the change.
+  the addresses, or something stored has to go, or sites won't apply the change.
 - **Write fields through `Store`.** WordPress strips backslashes from what it saves,
   so `Store` slashes every value, and runs with the kses filters off so text is kept
   as written. A post's own title is stored escaped (`Store::label()`), for themes
@@ -1388,14 +1407,15 @@ composer lint       # PHPCS: WordPress coding standards, PHP 8.1 compatibility
 composer test       # PHPUnit
 ```
 
-Analyze results needs a Workers AI key. For the local copy, put a Cloudflare account ID
-and a token made from Cloudflare's "Workers AI" template in `.env` as
-`FIREHOUSE_WORKERS_AI_ACCOUNT` and `FIREHOUSE_WORKERS_AI_TOKEN` (`.env.example` has the
+Analyze results needs a Google API key. For the local copy, put a Google Cloud project
+ID and an API key from that project (bound to a service account that may use Agent
+Platform, formerly Vertex AI, and restricted to its API) in `.env` as
+`FIREHOUSE_GOOGLE_PROJECT` and `FIREHOUSE_GOOGLE_API_KEY` (`.env.example` has the
 lines), typed there yourself and never into a chat, an issue or a commit, then run
 `docker compose up -d`. `docker-compose.yml` passes them to `wp-config.php`'s
 constants. Without them, the synthesis screen offers only the paste. A key saved on
 FireHouse → Settings is used in their place, as on GSL's sites. `composer test` seals
-and opens a key in `WorkersAiKeyTest`, which needs PHP's sodium extension and is
+and opens a key in `AgentPlatformKeyTest`, which needs PHP's sodium extension and is
 skipped without it (CI has it); since each of its tests runs in a PHP of its own, load
 it through an ini file (`PHP_INI_SCAN_DIR`) rather than `php -d`.
 

@@ -78,7 +78,7 @@ jobs:
           # intl, so the tests reach what a server with it does: the title order, and
           # the explorer search's accent folding where the PHP search is. Without it,
           # the plugin falls back, and the fallbacks have tests of their own. sodium, for
-          # sealing the Workers AI key: WordPress brings its own copy where PHP lacks
+          # sealing the Google API key: WordPress brings its own copy where PHP lacks
           # it, but the tests run without WordPress, and skip without it.
           extensions: intl, mbstring, sodium
           tools: composer:v2

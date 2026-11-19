@@ -26,13 +26,14 @@ final class InstallerTest extends WordPressTestCase {
 	}
 
 	/**
-	 * A site with an older revision, or none, installs the role, has the rewrite
-	 * rules rebuilt, and records this revision.
+	 * A site with an older revision, or none, installs the role, removes the Workers AI
+	 * key 0.3.1 kept, has the rewrite rules rebuilt, and records this revision.
 	 */
 	public function test_an_older_site_installs(): void {
 		Functions\when( 'get_option' )->justReturn( 1 );
 		Functions\expect( 'remove_role' )->once()->with( 'firehouse_editor' );
 		Functions\expect( 'add_role' )->once();
+		Functions\expect( 'delete_option' )->once()->with( 'firehouse_workers_ai_key' );
 		Functions\expect( 'delete_option' )->once()->with( 'rewrite_rules' );
 		Functions\expect( 'update_option' )->once()->with( Installer::OPTION, Installer::REVISION );
 
@@ -57,6 +58,7 @@ final class InstallerTest extends WordPressTestCase {
 	public function test_activation_installs(): void {
 		Functions\when( 'remove_role' )->justReturn();
 		Functions\expect( 'add_role' )->once();
+		Functions\expect( 'delete_option' )->once()->with( 'firehouse_workers_ai_key' );
 		Functions\expect( 'delete_option' )->once()->with( 'rewrite_rules' );
 		Functions\expect( 'update_option' )->once()->with( Installer::OPTION, Installer::REVISION );
 

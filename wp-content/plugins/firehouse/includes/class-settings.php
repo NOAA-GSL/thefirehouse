@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * The site-wide Firehouse text: the site name, the label and address of every
  * "Submit a Finding" control, the navigation labels, the survey form's question
- * wording, and, while the site has a Workers AI key, the prompt Analyze results sends.
+ * wording, and, while the site has a Google API key, the prompt Analyze results sends.
  *
  * A survey question's wording and help are stored only where they differ from the
  * plugin's own (Survey\Questions::all()), and so is the prompt (Analysis::own_prompt()),
@@ -27,9 +27,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Firehouse Editors can change them, through their own capability rather than
  * manage_options, which would open every setting on the site; all but the switch that
- * opens the survey form, which takes manage_options, an administrator's. The Workers AI
+ * opens the survey form, which takes manage_options, an administrator's. The Google API
  * key has a form of its own on the same screen, for administrators alone
- * (Workers_Ai_Key).
+ * (Agent_Platform_Key).
  */
 final class Settings {
 
@@ -219,7 +219,7 @@ final class Settings {
 		add_settings_section( 'firehouse_questions', __( 'Survey questions', 'firehouse' ), array( self::class, 'questions_section' ), self::PAGE );
 
 		// Only while Analyze results can run: without the key, the prompt does nothing.
-		if ( Workers_Ai::configured() ) {
+		if ( Agent_Platform::configured() ) {
 			add_settings_section( 'firehouse_synthesis', __( 'Synthesis prompt', 'firehouse' ), '__return_null', self::PAGE );
 			$id = self::field_id( array( 'synthesisPrompt' ) );
 			add_settings_field(
@@ -272,20 +272,20 @@ final class Settings {
 	 * @param string $title The admin page's title.
 	 */
 	public static function title( string $title ): string {
-		return array() === self::errors() + Workers_Ai_Key::errors() ? $title : __( 'Not saved:', 'firehouse' ) . ' ' . $title;
+		return array() === self::errors() + Agent_Platform_Key::errors() ? $title : __( 'Not saved:', 'firehouse' ) . ' ' . $title;
 	}
 
 	/**
 	 * Draws the screen. After a refused save, a summary at the top lists each problem
 	 * and links to its field, and each field shows what was typed into it, its error,
-	 * and the focus on the first. The Workers AI key's form follows, for an administrator,
+	 * and the focus on the first. The Google API key's form follows, for an administrator,
 	 * and its refused save is summed up the same way.
 	 */
 	public static function render(): void {
 		if ( ! current_user_can( Capabilities::SETTINGS ) ) {
 			return;
 		}
-		$errors         = self::errors() + Workers_Ai_Key::errors();
+		$errors         = self::errors() + Agent_Platform_Key::errors();
 		$rejected       = get_transient( self::rejected_key() );
 		self::$rejected = is_array( $rejected ) ? $rejected : array();
 		self::$focused  = false;
@@ -311,7 +311,7 @@ final class Settings {
 			<?php else : ?>
 				<?php settings_errors( 'general' ); ?>
 			<?php endif; ?>
-			<p><?php Workers_Ai::configured() ? esc_html_e( 'Every field is required, except a survey question’s help and the synthesis prompt.', 'firehouse' ) : esc_html_e( 'Every field is required, except a survey question’s help.', 'firehouse' ); ?></p>
+			<p><?php Agent_Platform::configured() ? esc_html_e( 'Every field is required, except a survey question’s help and the synthesis prompt.', 'firehouse' ) : esc_html_e( 'Every field is required, except a survey question’s help.', 'firehouse' ); ?></p>
 			<form action="options.php" method="post" novalidate>
 				<?php
 				settings_fields( self::OPTION );
@@ -319,7 +319,7 @@ final class Settings {
 				submit_button();
 				?>
 			</form>
-			<?php Workers_Ai_Key::render(); ?>
+			<?php Agent_Platform_Key::render(); ?>
 		</div>
 		<?php
 	}

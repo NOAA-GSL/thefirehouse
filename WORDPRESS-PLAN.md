@@ -58,11 +58,11 @@ that produced it).
 | Caching | **Cloudflare doesn't cache HTML** on either site (`cf-cache-status: DYNAMIC` on both, checked 1 November), so publishing shows up immediately and the plugin needs no purge step (see [Caching](#caching)). |
 | Install path | Security reviews each plugin release; developers install it. |
 | WP-CLI | **Not relied on.** Everything, including the first data load, is done in wp-admin. |
-| Outbound network | Believed allowed (doi.org). DOI lookups also reach api.crossref.org and data.crosscite.org, where doi.org forwards them. The AI service adds api.cloudflare.com, on a site given its key. A Site Health check confirms them on the test site. |
+| Outbound network | Believed allowed (doi.org). DOI lookups also reach api.crossref.org and data.crosscite.org, where doi.org forwards them. The AI service adds aiplatform.us.rep.googleapis.com (Google's Agent Platform, US multi-region), on a site given its key. A Site Health check confirms them on the test site. |
 | Survey tool | **A form built into the plugin** (29 October), in its own `survey/` folder (31 October), which uses the plugin's storage, settings and markup classes. See [The survey form](#the-survey-form). Until the plugin launches, researchers submit through the **Google Form** that replaced Colorado State's Qualtrics; it belongs to Emily's account in NOAA's Google Workspace. Its responses go into the site's files through the existing import script, as today, and reach WordPress in the seed bundle at launch (see [Importing the Google Form until launch](#importing-the-google-form-until-launch)). |
 | Responses so far | Qualtrics is closed, and every real submission was re-entered through the Google Form (28 October), so the form's Sheet is the complete record. |
 | Survey API sync | **Dropped** (29 October). With the form in the plugin there is no Sheet to sync. |
-| AI synthesis | **Runs from the plugin** (agreed with Stephanie and Emily, 28 October). An **Analyze results** button sends the published projects and the team's prompt to an approved AI service, and the result waits as a draft for review. The service will likely be Cloudflare Workers AI or Amazon Bedrock, and either needs approval under NOAA's AI policy (open question 7). The model is still open (1 November) and is chosen by checking its output. Until then, and as the fallback, the synthesis screen takes NotebookLM's output by paste. See [The AI service](#the-ai-service). *Cloudflare Workers AI is tried first (Eric, 16 November), with its key in `wp-config.php` (saved on FireHouse → Settings first since Eric, 18 November) and a choice of models from US companies only (Eric, 16 November). It stays a trial until NOAA's AI policy approves it.* |
+| AI synthesis | **Runs from the plugin** (agreed with Stephanie and Emily, 28 October). An **Analyze results** button sends the published projects and the team's prompt to an approved AI service, and the result waits as a draft for review. The service will likely be Cloudflare Workers AI or Amazon Bedrock, and either needs approval under NOAA's AI policy (open question 7). The model is still open (1 November) and is chosen by checking its output. Until then, and as the fallback, the synthesis screen takes NotebookLM's output by paste. See [The AI service](#the-ai-service). *Cloudflare Workers AI is tried first (Eric, 16 November), with its key in `wp-config.php` (saved on FireHouse → Settings first since Eric, 18 November) and a choice of models from US companies only (Eric, 16 November). It stays a trial until NOAA's AI policy approves it.* *Changed (19 November): Google's Gemini Enterprise Agent Platform, formerly Vertex AI, in its place, with GSL's IT services issuing the key; see The AI service.* |
 | Need counts | **Once per project** (28 October): a need mentioned several times in one project counts once. |
 | Link previews through Cloudflare | Found out during testing (see [Link previews](#page-titles-descriptions-and-link-previews)). |
 | AMS bridge | Probably possible, and recommended, starting on the test site for the mid-November WPO meeting (see [The AMS bridge](#the-ams-bridge)). |
@@ -226,7 +226,7 @@ wp-content/plugins/firehouse/
                    Topic_Screen), the publishing rules (Project_Rules), the page
                    words and allowed blocks (Page_Words, Allowed_Blocks) and the
                    synthesis screen (Synthesis_Screen), the AI service client
-                   (Workers_Ai), Analyze results (Analysis) and the Site Health
+                   (Agent_Platform), Analyze results (Analysis) and the Site Health
                    checks (Site_Health)
   survey/          the survey form, on the plugin's Meta, Store, Settings and
                    Markup (see The survey form)
@@ -740,6 +740,27 @@ host, and one key.
 policy still decides whether a site uses it (open question 7), and a site without the
 key offers only the paste.*
 
+*Changed (19 November): the service is Google's Gemini Enterprise Agent Platform,
+formerly Vertex AI, in place of Workers AI. GSL's IT services chose it and issue the
+key from a GSL Google Cloud project: a project ID, and an API key restricted to the
+Agent Platform API and bound to a service account. That account's role should hold
+only `aiplatform.endpoints.predict`, in a project that holds nothing else and has a
+budget alert: the Agent Platform User role would let a leaked key also run training
+jobs, export datasets and deploy endpoints, billed to the project (#85's security
+review).
+It's saved and sealed as the Cloudflare token was, or set in `wp-config.php` as
+`FIREHOUSE_GOOGLE_PROJECT` and `FIREHOUSE_GOOGLE_API_KEY`; updating deletes the
+Workers AI key. The models are Gemini 3.8 Flash, picked to start with, Gemini 4 Argon
+and Gemini 3.5 Flash-Lite, all GA and none due to retire before July 2027, through
+the US multi-region endpoint (aiplatform.us.rep.googleapis.com), where Google keeps
+the processing in the United States: no single US region offers a Gemini model that
+hasn't been retired. Google advises Application Default Credentials rather than API
+keys in production, and its default organization policy blocks binding a key to a
+service account; both are for GSL's IT services and the security review. Which model
+starts is to be settled by the team's comparison once a site has the key. The Workers
+AI notes below record the
+trial.*
+
 - **The key** is a Cloudflare account ID and a token made from Cloudflare's "Workers
   AI" template, and the plugin sends them only to api.cloudflare.com. It was two
   constants in the site's `wp-config.php`, `FIREHOUSE_WORKERS_AI_ACCOUNT` and
@@ -787,7 +808,8 @@ key offers only the paste.*
   check to catch.*
 - **It runs in the background,** in a scheduled event, since a reply takes minutes.
   Each model's sampling settings are its own; only the reply's length is set,
-  Gemma 4 26B is asked not to think, and Inkling 2 Small to reason at "low".
+  Gemma 4 26B is asked not to think, and Inkling 2 Small to reason at "low". *Since
+  19 November, on Agent Platform: the reply's length and each model's thinking level.*
 
 - **Analyze results** sends the published projects' text and the team's prompt, and
   the reply lands on the synthesis screen with the same checks and **Mark
@@ -2348,7 +2370,11 @@ hand.
 - The AI service client: one host, a key in `wp-config.php`, only published text sent
   (see [The AI service](#the-ai-service)). *Done: `Workers_Ai` and `Analysis`. The key
   is saved on FireHouse → Settings first, `wp-config.php` second (Eric, 18 November):
-  `Workers_Ai_Key`, for 0.3.1. Each
+  `Workers_Ai_Key`, for 0.3.1. Since 19 November `Agent_Platform` and
+  `Agent_Platform_Key` in their place, for Google's Agent Platform (#85); updating
+  deletes the Workers AI key, through Installer revision 4, which also applies the
+  FireHouse Editor role again, undoing any change made to it with a role editor (an
+  administrator's alone, so left as it is). Each
   project is wrapped in markers with a key made for the run, under fixed instructions
   the prompt setting can't change, and no earlier synthesis is sent.* *From the synthesis screen's security
   review (16 November): the NotebookLM source puts researchers' text straight into
@@ -2389,8 +2415,9 @@ Stephanie and Emily clear it). Its
 Stephanie and Emily's comparison with NotebookLM, which waits for them to clear the
 prompt change in #75, so that both run the same prompt (NotebookLM wasn't run in the
 16 November model runs); and a key, which a site gets only once NOAA approves the
-service (open question 7). Before production, Cloudflare confirms where Inkling 2
-Small runs (README, Before this goes public). Most models' replies don't give the
+service (open question 7). Before production, the first real Google key is checked
+against the plugin's shape for one, and on the US multi-region endpoint (README,
+Before this goes public). Most models' replies don't give the
 entries behind each need, so the reviewer reads the projects a need names instead; the
 guide says so. Analyze results' part of the synthesis screen and the prompt on
 Settings, whose pull requests went to the AI service's reviewers, had the Section 508
@@ -2583,7 +2610,9 @@ Phases 6–7.
    worked with. Until a service is approved, the synthesis is pasted in from
    NotebookLM (see [The AI service](#the-ai-service)). *Cloudflare Workers AI is
    tried first, with models from US companies only (Eric, 16 November); approval
-   still decides whether a site uses it.*
+   still decides whether a site uses it.* *Since 19 November, Google's Gemini
+   Enterprise Agent Platform, formerly Vertex AI, with Google's Gemini models; approval
+   still decides.*
 
 **For the team**
 

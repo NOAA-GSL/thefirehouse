@@ -10,7 +10,7 @@ The FireHouse is a section of the site at /firehouse/. In WordPress you look aft
 
 - **Projects:** one for each research project a researcher submitted through the survey. You review each one, add a few words of your own, and decide when it's published.
 - **Topic areas:** the four areas the needs are grouped into, such as Warnings and Immediate Response. You keep their short names and descriptions up to date.
-- **The synthesis:** the top needs in each topic area, across all the published projects. You make it in NotebookLM, or, on a site with a Workers AI key, have a model draft it with Analyze results; then you check it and publish it.
+- **The synthesis:** the top needs in each topic area, across all the published projects. You make it in NotebookLM, or, on a site with a Google API key, have a model draft it with Analyze results; then you check it and publish it.
 - **The landing and About pages:** their headings, text and buttons, and the About page's team.
 
 ## The FireHouse menu
@@ -21,9 +21,9 @@ Everything is under **FireHouse** in the menu on the left of the dashboard.
 
 - **Projects** lists every project. Choose a title to open it.
 - **Topics** lists the four topic areas.
-- **Settings** holds the site name, the Submit a Finding button, the navigation labels, the switch that opens the survey form, the survey form's questions and, on a site with a Workers AI key, the prompt Analyze results sends.
+- **Settings** holds the site name, the Submit a Finding button, the navigation labels, the switch that opens the survey form, the survey form's questions and, on a site with a Google API key, the prompt Analyze results sends.
 - **Import** loads content from the survey's records. Only administrators see it.
-- **Synthesis** is where you publish a reviewed synthesis, and, on a site with a Workers AI key, have a model draft one.
+- **Synthesis** is where you publish a reviewed synthesis, and, on a site with a Google API key, have a model draft one.
 - **Help**, at the end, is this guide.
 
 The landing and About pages are under **Pages**, as "The FireHouse" and the About page under it. While the survey form is open, its Submit page is under "The FireHouse" too.
