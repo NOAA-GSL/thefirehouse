@@ -21,8 +21,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Firehouse tree, or a missing address under /firehouse/. The template calls the
  * theme's own get_header() and get_footer(), and puts the Firehouse wrapper,
  * `div.fh-app`, between them, outside the theme's content wrappers, whose rules
- * would beat the inward reset (rule 9). The wrapper holds the skip link, the
- * Firehouse bar and the page's main landmark.
+ * would beat the inward reset (rule 9). The wrapper holds the Firehouse bar and the
+ * page's main landmark. The skip link goes before the theme's header when the theme
+ * fires `wp_body_open`, and at the top of the wrapper when it doesn't.
  *
  * The stylesheets load after the theme's, so ties go to Firehouse: the fonts, the
  * site's CSS scoped under `.fh-app` (assets/css/firehouse.min.css, generated from the
@@ -65,12 +66,23 @@ final class Frame {
 	public const PRELOADED_FONTS = array( 'public-sans-normal-latin.woff2' );
 
 	/**
-	 * Hooks the template, the stylesheets, the font preloads, the body class and the
-	 * not-found redirect. The stylesheets enqueue at priority 20, after a theme's at
-	 * the default 10, so they print after it.
+	 * Whether this request's skip link is printed: a request prints one, first on the
+	 * page or at the top of the wrapper.
+	 *
+	 * @var bool
+	 */
+	private static bool $skip_link_printed = false;
+
+	/**
+	 * Hooks the template, the skip link before the theme's header, the stylesheets,
+	 * the font preloads, the body class and the not-found redirect. The skip link takes
+	 * `wp_body_open` at priority 1, ahead of anything else there but WordPress's toolbar
+	 * at 0. The stylesheets enqueue at priority 20, after a theme's at the default 10,
+	 * so they print after it.
 	 */
 	public static function hook(): void {
 		add_filter( 'template_include', array( self::class, 'template' ), 99 );
+		add_action( 'wp_body_open', array( self::class, 'skip_link_first' ), 1 );
 		add_action( 'wp_enqueue_scripts', array( self::class, 'enqueue' ), 20 );
 		add_filter( 'wp_preload_resources', array( self::class, 'preload' ) );
 		add_filter( 'body_class', array( self::class, 'body_class' ) );
@@ -178,7 +190,65 @@ final class Frame {
 	 * @return mixed
 	 */
 	public static function template( mixed $template ): mixed {
-		return self::is_firehouse_request() ? dirname( __DIR__ ) . '/templates/frame.php' : $template;
+		return self::is_firehouse_request() ? self::file() : $template;
+	}
+
+	/**
+	 * The frame template's file.
+	 */
+	private static function file(): string {
+		return dirname( __DIR__ ) . '/templates/frame.php';
+	}
+
+	/**
+	 * Prints the skip link at the theme's `wp_body_open`, so a keyboard or
+	 * screen-reader user reaches it before the theme's header and its menu: first on
+	 * the page, or, for someone signed in, right after WordPress's toolbar, which core
+	 * prints there first. WordPress has asked themes to fire the hook since 5.2; a theme
+	 * that doesn't leaves the link at the top of the wrapper (skip_link()).
+	 *
+	 * It prints only when the template WordPress is loading is the frame, which holds
+	 * the main landmark the link leads to, since a later `template_include` filter may
+	 * have put another in its place. WordPress keeps that choice in the global
+	 * `$template`, as its real path, so the frame's file is compared by its real path
+	 * too: a plugin folder reached through a link still matches. The link has a wrapper
+	 * of its own, `div.fh-app.fh-app--skip`, for the Firehouse tokens and focus ring,
+	 * which frame.css keeps from painting the atmosphere, taking room or clipping the
+	 * link.
+	 */
+	public static function skip_link_first(): void {
+		$template = $GLOBALS['template'] ?? null;
+		$frame    = realpath( self::file() );
+		if ( self::$skip_link_printed || ! is_string( $template ) || '' === $template || false === $frame || realpath( $template ) !== $frame ) {
+			return;
+		}
+		echo '<div class="fh-app fh-app--skip">';
+		self::print_skip_link();
+		echo '</div>';
+	}
+
+	/**
+	 * Prints the skip link at the top of the wrapper, unless it went first on the page.
+	 */
+	public static function skip_link(): void {
+		if ( ! self::$skip_link_printed ) {
+			self::print_skip_link();
+		}
+	}
+
+	/**
+	 * Prints the skip link, which leads past the Firehouse bar to the main landmark.
+	 */
+	private static function print_skip_link(): void {
+		self::$skip_link_printed = true;
+		printf( '<a class="fh-skip-link" href="#fh-content">%s</a>', esc_html__( 'Skip to main content', 'firehouse' ) );
+	}
+
+	/**
+	 * Forgets the skip link printed, so a test can print it again.
+	 */
+	public static function reset(): void {
+		self::$skip_link_printed = false;
 	}
 
 	/**

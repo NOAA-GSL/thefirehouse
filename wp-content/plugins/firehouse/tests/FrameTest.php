@@ -27,11 +27,23 @@ final class FrameTest extends WordPressTestCase {
 	private const ROOT = 7;
 
 	/**
-	 * Clears the main request after each test.
+	 * Clears the main request, the template WordPress chose and the skip link printed
+	 * after each test.
 	 */
 	protected function tearDown(): void {
-		unset( $GLOBALS['wp'] );
+		unset( $GLOBALS['wp'], $GLOBALS['template'] );
+		Frame::reset();
 		parent::tearDown();
+	}
+
+	/**
+	 * Stands in for the template WordPress chose, which it keeps in the global
+	 * `$template`.
+	 *
+	 * @param string $file The template's file.
+	 */
+	private static function chosen( string $file ): void {
+		$GLOBALS['template'] = $file; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- the template WordPress chose, stood in for.
 	}
 
 	/**
@@ -707,12 +719,119 @@ final class FrameTest extends WordPressTestCase {
 	}
 
 	/**
+	 * A theme that fires `wp_body_open` gets the skip link first on the page, in a
+	 * wrapper of its own, once: neither the frame's wrapper nor a second firing prints
+	 * it again.
+	 */
+	public function test_the_skip_link_goes_first_when_the_theme_fires_the_hook(): void {
+		self::chosen( dirname( __DIR__ ) . '/templates/frame.php' );
+
+		ob_start();
+		Frame::skip_link_first();
+		Frame::skip_link();
+		Frame::skip_link_first();
+		$this->assertSame( '<div class="fh-app fh-app--skip"><a class="fh-skip-link" href="#fh-content">Skip to main content</a></div>', ob_get_clean() );
+	}
+
+	/**
+	 * WordPress keeps the template it chose as its real path, so the frame's file
+	 * matches however its path was spelled on the way.
+	 */
+	public function test_the_frame_is_known_by_its_real_path(): void {
+		self::chosen( dirname( __DIR__ ) . '/templates/../templates/./frame.php' );
+
+		ob_start();
+		Frame::skip_link_first();
+		$this->assertSame( '<div class="fh-app fh-app--skip"><a class="fh-skip-link" href="#fh-content">Skip to main content</a></div>', ob_get_clean() );
+	}
+
+	/**
+	 * A page the frame doesn't render gets no skip link at `wp_body_open`, Firehouse
+	 * request or not, since the main landmark it leads to isn't there: the theme's
+	 * template, or another a later filter chose. The frame, if it renders after all,
+	 * still prints its own.
+	 */
+	public function test_the_skip_link_stays_off_a_page_the_frame_doesnt_render(): void {
+		foreach ( array( '/theme/page.php', dirname( __DIR__ ) . '/templates/frame-not.php', '', null ) as $file ) {
+			unset( $GLOBALS['template'] );
+			if ( null !== $file ) {
+				self::chosen( $file );
+			}
+
+			ob_start();
+			Frame::skip_link_first();
+			$this->assertSame( '', ob_get_clean() );
+		}
+
+		ob_start();
+		Frame::skip_link();
+		$this->assertSame( '<a class="fh-skip-link" href="#fh-content">Skip to main content</a>', ob_get_clean() );
+	}
+
+	/**
+	 * Without the hook, the skip link sits at the top of the frame's wrapper, once.
+	 */
+	public function test_without_the_hook_the_skip_link_tops_the_wrapper(): void {
+		ob_start();
+		Frame::skip_link();
+		Frame::skip_link();
+		$this->assertSame( '<a class="fh-skip-link" href="#fh-content">Skip to main content</a>', ob_get_clean() );
+	}
+
+	/**
 	 * The template is the theme's header, then the wrapper: the skip link, the Firehouse
 	 * bar and the page's one main landmark, which the skip link leads to; then the
 	 * theme's footer.
 	 */
 	public function test_the_template_orders_the_page(): void {
-		Functions\when( 'get_header' )->alias( static fn() => print '[theme header]' );
+		$html = $this->frame( static fn() => print '[theme header]' );
+
+		$this->assert_in_order( array( '[theme header]', '<div class="fh-app">', '<a class="fh-skip-link" href="#fh-content">', '[bar]', '<main id="fh-content" tabindex="-1">', '<h1>The FireHouse</h1>', '<p class="fh-disclaimer__text">', '</main>', '</div>', '[theme footer]' ), $html );
+		$this->assertSame( 1, substr_count( $html, '<main' ) );
+	}
+
+	/**
+	 * A theme that opens the body with `wp_body_open` gets the skip link before its
+	 * header, and the wrapper holds the bar and the main landmark without it.
+	 */
+	public function test_the_template_puts_the_skip_link_before_a_hooked_header(): void {
+		self::chosen( dirname( __DIR__ ) . '/templates/frame.php' );
+		$html = $this->frame(
+			static function (): void {
+				Frame::skip_link_first();
+				print '[theme header]';
+			}
+		);
+
+		$this->assert_in_order( array( '<div class="fh-app fh-app--skip"><a class="fh-skip-link" href="#fh-content">', '</a></div>', '[theme header]', '<div class="fh-app">', '[bar]', '<main id="fh-content" tabindex="-1">', '</main>', '</div>', '[theme footer]' ), $html );
+		$this->assertSame( 1, substr_count( $html, 'fh-skip-link' ) );
+		$this->assertSame( 1, substr_count( $html, '<main' ) );
+	}
+
+	/**
+	 * Each part comes after the one before it in the HTML.
+	 *
+	 * @param array<int, string> $parts The parts, in order.
+	 * @param string             $html  The page.
+	 */
+	private function assert_in_order( array $parts, string $html ): void {
+		$at = 0;
+		foreach ( $parts as $part ) {
+			$found = strpos( $html, $part, $at );
+			$this->assertNotFalse( $found, $part . ' should come next in ' . $html );
+			$at = $found + strlen( $part );
+		}
+	}
+
+	/**
+	 * The frame template rendered with the placeholder for content, with the theme's
+	 * header and footer stood in for.
+	 *
+	 * @param callable $header The theme's header.
+	 * @return string
+	 */
+	private function frame( callable $header ): string {
+		Functions\when( 'get_header' )->alias( $header );
 		Functions\when( 'get_footer' )->alias( static fn() => print '[theme footer]' );
 		Functions\expect( 'do_blocks' )->once()->with( '<!-- wp:firehouse/subnav /-->' )->andReturn( '[bar]' );
 		Functions\when( 'esc_html' )->alias( static fn( string $text ): string => htmlspecialchars( $text, ENT_QUOTES ) );
@@ -725,14 +844,6 @@ final class FrameTest extends WordPressTestCase {
 
 		ob_start();
 		require dirname( __DIR__ ) . '/templates/frame.php';
-		$html = (string) ob_get_clean();
-
-		$at = 0;
-		foreach ( array( '[theme header]', '<div class="fh-app">', '<a class="fh-skip-link" href="#fh-content">', '[bar]', '<main id="fh-content" tabindex="-1">', '<h1>The FireHouse</h1>', '<p class="fh-disclaimer__text">', '</main>', '</div>', '[theme footer]' ) as $part ) {
-			$found = strpos( $html, $part, $at );
-			$this->assertNotFalse( $found, $part . ' should come next in ' . $html );
-			$at = $found + strlen( $part );
-		}
-		$this->assertSame( 1, substr_count( $html, '<main' ) );
+		return (string) ob_get_clean();
 	}
 }
