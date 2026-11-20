@@ -50,11 +50,30 @@ describe('scopeSelector', () => {
 });
 
 describe('isAnchored', () => {
-  it.each(['.fh-app', '.fh-app *', '.fh-app:hover', ':root:not([x]) .fh-app', '.leaflet-dragging .fh-app .x'])(
+  it.each([
+    '.fh-app',
+    '.fh-app *',
+    '.fh-app:hover',
+    ':root:not([x]) .fh-app',
+    '.leaflet-dragging .fh-app .x',
+    '.fh-app.fh-app--skip',
+    '.fh-app.fh-app--skip::before',
+    '.fh-app.fh-app--skip .fh-skip-link:focus',
+  ])(
     '%s stays inside',
     (selector) => expect(isAnchored(selector)).toBe(true),
   );
-  it.each(['.fh-x', '.fh-app ~ footer', '.fh-app + *', "[data-theme='dark'] > .fh-app", '.x .fh-app', ':not(.fh-app)'])(
+  it.each([
+    '.fh-x',
+    '.fh-app ~ footer',
+    '.fh-app + *',
+    "[data-theme='dark'] > .fh-app",
+    '.x .fh-app',
+    ':not(.fh-app)',
+    '.fh-app-x',
+    '.fh-app.fh-app--skip ~ header',
+    '.fh-app.x + *',
+  ])(
     '%s can reach outside',
     (selector) => expect(isAnchored(selector)).toBe(false),
   );

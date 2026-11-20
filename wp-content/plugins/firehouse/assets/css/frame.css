@@ -25,6 +25,29 @@
   color-scheme: dark;
 }
 
+/* When the theme fires wp_body_open, the skip link goes first on the page, in a second
+   wrapper that only lends it the Firehouse tokens and focus ring (Frame::skip_link_first()).
+   That wrapper paints no atmosphere, takes no room, and neither clips nor positions the
+   link, which sits at the top of the page when focused: above the theme's header, whose
+   stacking order is high, and below WordPress's toolbar. */
+.fh-app.fh-app--skip {
+  position: static;
+  min-height: 0;
+  clip-path: none;
+}
+
+.fh-app.fh-app--skip::before {
+  content: none;
+}
+
+.fh-app.fh-app--skip .fh-skip-link {
+  z-index: 100000;
+}
+
+.fh-app.fh-app--skip .fh-skip-link:focus {
+  top: calc(var(--wp-admin--admin-bar--height, 0px) + var(--space-md));
+}
+
 /* The skip link's target runs to the wrapper's sides and bottom, so the clip would cut
    away most of its focus ring, which sits outside it; drawn inside, the ring shows
    where focus landed. */

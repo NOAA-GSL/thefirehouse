@@ -69,10 +69,12 @@ function isPageCondition(compound: string): boolean {
 /**
  * True when a selector can only match inside the wrapper: it starts at the wrapper,
  * or at a page condition and then the wrapper, and nothing after the wrapper is one of
- * its siblings.
+ * its siblings. The wrapper may carry more classes, as the skip link's own wrapper does
+ * (`.fh-app.fh-app--skip`, frame.css): a compound with the wrapper's class matches
+ * nothing without it.
  */
 export function isAnchored(selector: string, scope = SCOPE): boolean {
-  const wrapper = new RegExp(`^${escapeRegExp(scope)}(?![\\w-])(?:::?[\\w-]+)?$`);
+  const wrapper = new RegExp(`^${escapeRegExp(scope)}(?![\\w-])(?:\\.[\\w-]+)*(?:::?[\\w-]+)?$`);
   let [leading, rest] = splitLeading(selector.trim());
   if (!wrapper.test(leading)) {
     if (!isPageCondition(leading) || !/^\s+[^\s>+~]/.test(rest)) return false;

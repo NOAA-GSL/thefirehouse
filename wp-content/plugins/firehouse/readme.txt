@@ -337,6 +337,11 @@ terms and privacy policies are above.
 
 == Changelog ==
 
+= Unreleased =
+* The skip link goes first on the page, before the theme's header, when the theme
+  fires `wp_body_open`, so a keyboard or screen-reader user reaches it before the
+  header's menu. A theme without the hook keeps it at the top of the FireHouse area.
+
 = 0.3.2 =
 The version offered for GSL's security review, in place of 0.3.1: 0.3.1 and the change
 below. Its GitHub release stays a draft until it has passed that review.

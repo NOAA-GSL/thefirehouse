@@ -1176,8 +1176,12 @@ ones.
     no `wp_body_open` hook, so nothing can go before its header. The skip link sits at
     the top of the wrapper instead, clipped with it until focused, and leads to the
     content, past the Firehouse bar. Its target spans the clipped wrapper's sides and
-    bottom, so its focus ring is drawn inside it. Moving the link before the header
-    needs that hook in GSL's theme (the README's checklist).*
+    bottom, so its focus ring is drawn inside it.* *Since 20 November (Eric, as GSL's
+    web team), a theme that fires `wp_body_open` gets the link first on the page,
+    before its header, in a wrapper of its own that lends it the Firehouse tokens and
+    focus ring and paints nothing. GSL's theme gets the hook in its own repository
+    (the README's checklist). Without the hook the link stays at the top of the
+    wrapper.*
   - The wrapper sits outside the theme's content wrappers, whose rules beat the reset,
     and `firehouse.css` loads after the theme's stylesheet, so ties go to Firehouse.
     *Done.*
