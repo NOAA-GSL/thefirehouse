@@ -2605,8 +2605,13 @@ Phases 6–7.
 3. Does any other cache sit in front of either site, such as a page cache on the
    server? (Cloudflare caches neither site's HTML: see [Caching](#caching).) If one
    does, hiding a project has to purge the topic pages that cite it, not only its own.
-   *Not known yet (Eric, 20 November). On the test site, Site Health's caching check
-   and the README's transient check answer it.*
+   *Not known yet (Eric, 20 November); it stays open until the test site shows it.
+   Site Health's caching check reads the headers a cache usually adds, but a cache
+   that adds none, or one the server's request to itself goes around, wouldn't show
+   there. The test that answers it: signed out, open a topic page that cites a
+   project, hide that project, and reload the topic page; the project must be gone.
+   (The README's transient check is a separate thing: it covers the object cache that
+   Mark reviewed relies on, not pages.)*
 4. ~~Can the bridge go on the test site, restricted to GSL staff, by mid-November?~~
    *Not needed: the bridge is dropped (Eric, 20 November).*
 
