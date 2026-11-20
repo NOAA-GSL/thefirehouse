@@ -96,7 +96,7 @@ Plugin paths below are under `wp-content/plugins/firehouse/`, laid out as in the
 |---|---|
 | Public wording changes: `src/content/data/{landing,about,topics,settings}.json`, the survey form's notices, the plugin's default copy | `Science Communicator`, for plain language. Stephanie and Emily own the wording |
 | A new or rerun synthesis is about to replace `topicSummaries.json`, or, under the plugin, before Mark reviewed | `Research Synthesist`: each need traced to entries in the projects it names, its count equal to the number of those projects, and its wording no stronger than the entries. Then Stephanie or Emily marks it reviewed |
-| Something goes public on gsl.noaa.gov for the first time: the AMS bridge, a reviewed synthesis, the About page, the AI notice on the survey form | `Communications Clearance Officer`. On a NOAA site, each of these speaks for the agency |
+| Something goes public on gsl.noaa.gov for the first time: the FireHouse pages, a reviewed synthesis, the About page, the AI notice on the survey form | `Communications Clearance Officer`. On a NOAA site, each of these speaks for the agency |
 
 **When a person decides.** The agents report findings; people own these decisions.
 
