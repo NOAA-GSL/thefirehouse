@@ -4,9 +4,8 @@
  *
  * The wrapper sits outside the theme's content wrappers and holds the Firehouse bar (the
  * `firehouse/subnav` block) and the page's main landmark. The skip link leads past the
- * bar to the main landmark. A theme that fires `wp_body_open` gets it first on the page,
- * before its header (Frame::skip_link_first()); otherwise it sits at the top of the
- * wrapper. The main landmark holds the page's content, then the disclaimer every
+ * bar to the main landmark. A theme that fires `wp_body_open` gets it before its header
+ * (Frame::skip_link_first()); otherwise it sits at the top of the wrapper. The main landmark holds the page's content, then the disclaimer every
  * Firehouse page ends with.
  *
  * @package Firehouse

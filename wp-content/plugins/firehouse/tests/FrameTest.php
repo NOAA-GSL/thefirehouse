@@ -734,13 +734,25 @@ final class FrameTest extends WordPressTestCase {
 	}
 
 	/**
+	 * WordPress keeps the template it chose as its real path, so the frame's file
+	 * matches however its path was spelled on the way.
+	 */
+	public function test_the_frame_is_known_by_its_real_path(): void {
+		self::chosen( dirname( __DIR__ ) . '/templates/../templates/./frame.php' );
+
+		ob_start();
+		Frame::skip_link_first();
+		$this->assertSame( '<div class="fh-app fh-app--skip"><a class="fh-skip-link" href="#fh-content">Skip to main content</a></div>', ob_get_clean() );
+	}
+
+	/**
 	 * A page the frame doesn't render gets no skip link at `wp_body_open`, Firehouse
 	 * request or not, since the main landmark it leads to isn't there: the theme's
 	 * template, or another a later filter chose. The frame, if it renders after all,
 	 * still prints its own.
 	 */
 	public function test_the_skip_link_stays_off_a_page_the_frame_doesnt_render(): void {
-		foreach ( array( '/theme/page.php', null ) as $file ) {
+		foreach ( array( '/theme/page.php', dirname( __DIR__ ) . '/templates/frame-not.php', '', null ) as $file ) {
 			unset( $GLOBALS['template'] );
 			if ( null !== $file ) {
 				self::chosen( $file );

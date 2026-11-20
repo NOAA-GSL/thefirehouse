@@ -25,11 +25,15 @@
   color-scheme: dark;
 }
 
-/* When the theme fires wp_body_open, the skip link goes first on the page, in a second
-   wrapper that only lends it the Firehouse tokens and focus ring (Frame::skip_link_first()).
-   That wrapper paints no atmosphere, takes no room, and neither clips nor positions the
-   link, which sits at the top of the page when focused: above the theme's header, whose
-   stacking order is high, and below WordPress's toolbar. */
+/* When the theme fires wp_body_open, the skip link goes before the theme's header (after
+   WordPress's toolbar, for someone signed in), in a second wrapper that only lends it
+   the Firehouse tokens and focus ring (Frame::skip_link_first()). That wrapper paints no
+   atmosphere, takes no room, and neither clips nor positions the link. Out of focus the
+   link is clipped away as well as parked above the page, so an overscroll at the top
+   can't show it. Focused, it sits at the top of the page, placed under the height of
+   WordPress's toolbar and stacked above it and above the theme's header, whose stacking
+   order is high. Its ring takes the text colour: it lies on the theme's header, where
+   the sky-blue ring falls under 3:1. */
 .fh-app.fh-app--skip {
   position: static;
   min-height: 0;
@@ -44,8 +48,16 @@
   z-index: 100000;
 }
 
+.fh-app.fh-app--skip .fh-skip-link:not(:focus) {
+  clip-path: inset(50%);
+}
+
 .fh-app.fh-app--skip .fh-skip-link:focus {
   top: calc(var(--wp-admin--admin-bar--height, 0px) + var(--space-md));
+}
+
+.fh-app.fh-app--skip .fh-skip-link:focus-visible {
+  outline-color: var(--color-text-primary);
 }
 
 /* The skip link's target runs to the wrapper's sides and bottom, so the clip would cut

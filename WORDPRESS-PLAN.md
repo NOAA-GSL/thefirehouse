@@ -1177,11 +1177,14 @@ ones.
     the top of the wrapper instead, clipped with it until focused, and leads to the
     content, past the Firehouse bar. Its target spans the clipped wrapper's sides and
     bottom, so its focus ring is drawn inside it.* *Since 20 November (Eric, as GSL's
-    web team), a theme that fires `wp_body_open` gets the link first on the page,
-    before its header, in a wrapper of its own that lends it the Firehouse tokens and
-    focus ring and paints nothing. GSL's theme gets the hook in its own repository
-    (the README's checklist). Without the hook the link stays at the top of the
-    wrapper.*
+    web team), a theme that fires `wp_body_open` gets the link before its header
+    (first on the page, or right after WordPress's toolbar for someone signed in), in
+    a wrapper of its own that lends it the Firehouse tokens and focus ring and paints
+    nothing. GSL's theme gets the hook in its own repository (the README's checklist).
+    Without the hook the link stays at the top of the wrapper. GSL's theme has no
+    skip link of its own; if it gets one, it should stand aside on FireHouse pages
+    (body class `fh-page`), or a page has two, and the theme's may lead to a target
+    the frame doesn't print.*
   - The wrapper sits outside the theme's content wrappers, whose rules beat the reset,
     and `firehouse.css` loads after the theme's stylesheet, so ties go to Firehouse.
     *Done.*

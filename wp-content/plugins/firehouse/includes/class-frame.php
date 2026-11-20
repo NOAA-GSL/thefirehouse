@@ -22,9 +22,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * theme's own get_header() and get_footer(), and puts the Firehouse wrapper,
  * `div.fh-app`, between them, outside the theme's content wrappers, whose rules
  * would beat the inward reset (rule 9). The wrapper holds the Firehouse bar and the
- * page's main landmark. The skip link goes first on the page, before the theme's
- * header, when the theme fires `wp_body_open`, and at the top of the wrapper when it
- * doesn't.
+ * page's main landmark. The skip link goes before the theme's header when the theme
+ * fires `wp_body_open`, and at the top of the wrapper when it doesn't.
  *
  * The stylesheets load after the theme's, so ties go to Firehouse: the fonts, the
  * site's CSS scoped under `.fh-app` (assets/css/firehouse.min.css, generated from the
@@ -76,12 +75,14 @@ final class Frame {
 
 	/**
 	 * Hooks the template, the skip link before the theme's header, the stylesheets,
-	 * the font preloads, the body class and the not-found redirect. The stylesheets
-	 * enqueue at priority 20, after a theme's at the default 10, so they print after it.
+	 * the font preloads, the body class and the not-found redirect. The skip link takes
+	 * `wp_body_open` at priority 1, ahead of anything else there but WordPress's toolbar
+	 * at 0. The stylesheets enqueue at priority 20, after a theme's at the default 10,
+	 * so they print after it.
 	 */
 	public static function hook(): void {
 		add_filter( 'template_include', array( self::class, 'template' ), 99 );
-		add_action( 'wp_body_open', array( self::class, 'skip_link_first' ) );
+		add_action( 'wp_body_open', array( self::class, 'skip_link_first' ), 1 );
 		add_action( 'wp_enqueue_scripts', array( self::class, 'enqueue' ), 20 );
 		add_filter( 'wp_preload_resources', array( self::class, 'preload' ) );
 		add_filter( 'body_class', array( self::class, 'body_class' ) );
@@ -200,20 +201,25 @@ final class Frame {
 	}
 
 	/**
-	 * Prints the skip link first on the page, at the theme's `wp_body_open`, so a
-	 * keyboard or screen-reader user reaches it before the theme's header and its
-	 * menu. WordPress has asked themes to fire the hook since 5.2; a theme that doesn't
-	 * leaves the link at the top of the wrapper (skip_link()).
+	 * Prints the skip link at the theme's `wp_body_open`, so a keyboard or
+	 * screen-reader user reaches it before the theme's header and its menu: first on
+	 * the page, or, for someone signed in, right after WordPress's toolbar, which core
+	 * prints there first. WordPress has asked themes to fire the hook since 5.2; a theme
+	 * that doesn't leaves the link at the top of the wrapper (skip_link()).
 	 *
 	 * It prints only when the template WordPress is loading is the frame, which holds
 	 * the main landmark the link leads to, since a later `template_include` filter may
 	 * have put another in its place. WordPress keeps that choice in the global
-	 * `$template`. The link has a wrapper of its own, `div.fh-app.fh-app--skip`, for
-	 * the Firehouse tokens and focus ring, which frame.css keeps from painting the
-	 * atmosphere, taking room or clipping the link.
+	 * `$template`, as its real path, so the frame's file is compared by its real path
+	 * too: a plugin folder reached through a link still matches. The link has a wrapper
+	 * of its own, `div.fh-app.fh-app--skip`, for the Firehouse tokens and focus ring,
+	 * which frame.css keeps from painting the atmosphere, taking room or clipping the
+	 * link.
 	 */
 	public static function skip_link_first(): void {
-		if ( self::$skip_link_printed || self::file() !== ( $GLOBALS['template'] ?? null ) ) {
+		$template = $GLOBALS['template'] ?? null;
+		$frame    = realpath( self::file() );
+		if ( self::$skip_link_printed || ! is_string( $template ) || '' === $template || false === $frame || realpath( $template ) !== $frame ) {
 			return;
 		}
 		echo '<div class="fh-app fh-app--skip">';

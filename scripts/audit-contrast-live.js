@@ -51,8 +51,9 @@
 
   // The page's base colour comes from the atmosphere layer, `.fh-app::before`, whose
   // background ends in --atmos-base. The wrapper and <body> carry none of their own.
+  // The skip link's own wrapper, before a theme's header, paints no atmosphere.
   function pageBase() {
-    const app = document.querySelector('.fh-app');
+    const app = document.querySelector('.fh-app:not(.fh-app--skip)');
     const color = parse(getComputedStyle(app ?? document.body, app ? '::before' : null).backgroundColor);
     if (color[3] > 0) return color.slice(0, 3).concat(1);
     console.warn('fhAudit: no page base colour found; compositing over white.');

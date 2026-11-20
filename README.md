@@ -529,8 +529,9 @@ nothing from the database. Each class's docblock has the detail; this is the map
   - **The template** is the theme's own `get_header()` and `get_footer()` around
     `div.fh-app`, outside the theme's content wrappers. The wrapper holds the
     Firehouse bar (the `firehouse/subnav` block) and the page's one `main`, which the
-    skip link leads to. A theme that fires `wp_body_open` gets the skip link first on
-    the page, before its header, in a `div.fh-app.fh-app--skip` of its own
+    skip link leads to. A theme that fires `wp_body_open` gets the skip link before
+    its header (first on the page, or right after WordPress's toolbar for someone
+    signed in), in a `div.fh-app.fh-app--skip` of its own
     (`Frame::skip_link_first()`); without the hook it sits at the top of the wrapper.
     The main landmark holds the page's content, then the
     disclaimer that ends every Firehouse page: the site's wording, approved by
@@ -570,8 +571,10 @@ nothing from the database. Each class's docblock has the detail; this is the map
   - it draws the skip link target's focus ring inside the clip, and stops anything
     focus scrolls into view below the pinned bar;
   - it keeps the skip link's own wrapper, before the theme's header, from painting
-    the atmosphere, taking room or clipping the link, which shows above the theme's
-    header and below WordPress's toolbar when focused;
+    the atmosphere, taking room or clipping the link. Focused, the link shows over the
+    theme's header, placed under the height of WordPress's toolbar, with a ring in the
+    text colour, which clears 3:1 against the header where the sky-blue ring doesn't;
+    out of focus it's clipped away;
   - it puts the pinned Firehouse bar below WordPress's toolbar when there is one (at
     the top on phones), and without JavaScript, below 1024px, it keeps the links in
     the bar on a row of their own, with the Submit button after them, and lets the
