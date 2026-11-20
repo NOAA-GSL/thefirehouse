@@ -34,11 +34,10 @@ that produced it).
 - **How long.** About **18–23 weeks of one developer's time**, plus the wait for each
   security review. Two developers working in parallel after Phase 2 bring it to
   roughly 11–14 calendar weeks.
-- **Mid-November and AMS.** The plugin will not be ready for the WPO meeting in
-  mid-November or the January 2027 AMS launch. The current React site covers both as a
-  static bridge: first on GSL's test site, restricted to GSL staff, for the WPO
-  meeting; then at `gsl.noaa.gov/firehouse/`, on the same URLs the plugin will use, so
-  no link shared at AMS breaks at cutover.
+- **Mid-November and AMS.** No static copy of the React site goes up first: the
+  bridge planned for the WPO meeting and AMS is dropped (Eric, 20 November), and the
+  plugin is the first FireHouse on GSL's sites. Its addresses are the React site's, so
+  the URL map doesn't change.
 
 ---
 
@@ -65,7 +64,7 @@ that produced it).
 | AI synthesis | **Runs from the plugin** (agreed with Stephanie and Emily, 28 October). An **Analyze results** button sends the published projects and the team's prompt to an approved AI service, and the result waits as a draft for review. The service will likely be Cloudflare Workers AI or Amazon Bedrock, and either needs approval under NOAA's AI policy (open question 7). The model is still open (1 November) and is chosen by checking its output. Until then, and as the fallback, the synthesis screen takes NotebookLM's output by paste. See [The AI service](#the-ai-service). *Cloudflare Workers AI is tried first (Eric, 16 November), with its key in `wp-config.php` (saved on FireHouse → Settings first since Eric, 18 November) and a choice of models from US companies only (Eric, 16 November). It stays a trial until NOAA's AI policy approves it.* *Changed (19 November): Google's Gemini Enterprise Agent Platform, formerly Vertex AI, in its place, with GSL's IT services issuing the key; see The AI service.* |
 | Need counts | **Once per project** (28 October): a need mentioned several times in one project counts once. |
 | Link previews through Cloudflare | Found out during testing (see [Link previews](#page-titles-descriptions-and-link-previews)). |
-| AMS bridge | Probably possible, and recommended, starting on the test site for the mid-November WPO meeting (see [The AMS bridge](#the-ams-bridge)). |
+| AMS bridge | **Dropped** (Eric, 20 November). The plugin is the first FireHouse on GSL's sites; no static copy goes up for the WPO meeting or AMS (see [The AMS bridge](#the-ams-bridge)). |
 | Hosting outside GSL | **Not allowed** (October 2026 review of the intake documents). The earlier prototype on the former developer's personal domain was taken down in October 2026, and `netlify.toml` is removed from the repository so it is not redeployed. |
 | Citations | **None.** The citation generator comes off the site, and project pages are not presented as citable: the site is not a permanent archive, and pages may be withdrawn (October 2026). |
 | Plugin code | In this repository at `wp-content/plugins/firehouse/`, the path it has in a WordPress install, the way GSL's own repository keeps its theme. |
@@ -270,8 +269,8 @@ wp-content/plugins/firehouse/
 | Submit | `/firehouse/submit/` | Child page of `firehouse` holding the survey form |
 | 404 | anything else under `/firehouse/` | Firehouse "not found" page; GSL's own 404 elsewhere. A shortened project or topic address still redirects to the post whose slug starts with it. |
 
-These are the React app's routes under a `/firehouse/` base, so a URL shared from the
-bridge resolves unchanged under the plugin. The Submit page is new.
+These are the React app's routes under a `/firehouse/` base, so the React app's
+addresses work unchanged under the plugin. The Submit page is new.
 
 - **`fh_project`.** Post status replaces the `published` flag: a draft is unpublished.
   The slug is the current slug. Survey fields, the title included, are post meta stored
@@ -901,6 +900,12 @@ adds a rule that bypasses the cache for that path.
 
 ## The AMS bridge
 
+*Dropped (Eric, 20 November): the plugin goes on GSL's sites first, and no static copy
+of the React site goes up, for the WPO meeting or for AMS. The steps below are the
+record of what was planned. Those marked done changed the React site, which stays the
+reference until cutover. The next section, on importing the Google Form, still
+applies.*
+
 The React app already builds for a sub-path, and its routes match the plugin's URL
 map. Launching it at `gsl.noaa.gov/firehouse/` for AMS means links shared there keep
 working after the cutover.
@@ -945,7 +950,9 @@ plugin estimate.
 
 **Cutover with no downtime.** Build the WordPress `firehouse` page tree on prod while
 the static directory still shadows it; editors preview it through its page-ID URL.
-Removing the directory then hands the URLs to WordPress immediately.
+Removing the directory then hands the URLs to WordPress immediately. *With the bridge
+dropped, there is no static directory: the import builds the page tree on prod, and
+its addresses work at once.*
 
 ### Importing the Google Form until launch
 
@@ -2471,9 +2478,9 @@ Phase 8's screen-reader audit covers them too.*
   editors' pages draw on Phase 6's review checklist; Stephanie and Emily check them in
   their review, and the survey form adds its own page in Phase 7a.*
 - Launch: close the Google Form and run the import script one last time, build the
-  seed bundle, install on prod and run the seed import (which builds the page tree
-  behind the bridge), remove the static directory, and point Submit a Finding at the
-  Submit page.
+  seed bundle, install on prod and run the seed import (which builds the page tree),
+  and point Submit a Finding at the Submit page. With the bridge dropped (Eric, 20
+  November), there is no static directory to remove.
 - Confirm link previews on prod.
 - Decide where the sources of the plugin's generated files live after cutover, then
   retire the React app and the static-hosting files that aren't among them. The
@@ -2483,8 +2490,8 @@ Phase 8's screen-reader audit covers them too.*
   module (`search.ts`, `derive.ts`); and the map module (`mapCanvas.ts`, `heat.ts`,
   the GACC boundaries).
 
-**Done when:** gsl.noaa.gov/firehouse is served by the plugin, and every URL from the
-bridge resolves to the same content.
+**Done when:** gsl.noaa.gov/firehouse is served by the plugin, and every address the
+React site has resolves there to the same content.
 
 ### Later phases
 
@@ -2591,23 +2598,35 @@ Phases 6–7.
 
 **For GSL's web team**
 
-1. Is the origin server Apache or nginx? This decides how the bridge is served.
+1. ~~Is the origin server Apache or nginx? This decides how the bridge is served.~~
+   *Not needed: the bridge is dropped (Eric, 20 November).*
 2. How long does a security review take, and what does a submission need to include?
    The design summary also asks how repeat submissions should be limited (see
    [Security review](#security-review)), whether a honeypot and a minimum fill time are
    enough spam protection, and whether the AI service needs a security review as well
    as approval under NOAA's AI policy. *Repeat limits: a Cloudflare rule; spam: a
    honeypot and a minimum fill time in the plugin (Eric, 16 November). The security
-   review still sees both with the release.*
+   review still sees both with the release.* *The review is the approval of the
+   plugin's IT Justification (Eric, 20 November), which has been submitted: its code is
+   scanned before and after it reaches production. How long it takes is still open.*
 3. Does any other cache sit in front of either site, such as a page cache on the
    server? (Cloudflare caches neither site's HTML: see [Caching](#caching).) If one
    does, hiding a project has to purge the topic pages that cite it, not only its own.
-4. Can the bridge go on the test site, restricted to GSL staff, by mid-November?
+   *Not known yet (Eric, 20 November); it stays open until the test site shows it.
+   Site Health's caching check reads the headers a cache usually adds, but a cache
+   that adds none, or one the server's request to itself goes around, wouldn't show
+   there. The test that answers it: signed out, open a topic page that cites a
+   project, hide that project, and reload the topic page; the project must be gone.
+   (The README's transient check is a separate thing: it covers the object cache that
+   Mark reviewed relies on, not pages.)*
+4. ~~Can the bridge go on the test site, restricted to GSL staff, by mid-November?~~
+   *Not needed: the bridge is dropped (Eric, 20 November).*
 
 **For ITS**
 
-5. What else do the Project Intake Request and the Technical Assessment Worksheet
-   need before the project is accepted?
+5. ~~What else do the Project Intake Request and the Technical Assessment Worksheet
+   need before the project is accepted?~~ *Nothing: ITS has accepted the intake (Eric,
+   20 November).*
 6. Is The Firehouse's own design approved for the pages between GSL's header and
    footer, in place of GSL's standard page styles (see
    [Look and feel](#look-and-feel))? Stephanie and Emily chose it.
@@ -2624,8 +2643,9 @@ Phases 6–7.
 
 **For the team**
 
-8. Launch the bridge, on the test site for mid-November and on prod for AMS?
-   *Recommended.*
+8. ~~Launch the bridge, on the test site for mid-November and on prod for AMS?~~
+   *No (Eric, 20 November): the plugin goes on GSL's sites first, and no static copy
+   goes up.*
 9. ~~Keep dark mode for the WordPress version?~~ *Yes (Eric, 3 November): keep it,
    and follow GSL's toggle.* GSL's theme has its own light/dark switch, which sets
    `data-theme="dark"` on the page, the same attribute Firehouse's dark colors use, so

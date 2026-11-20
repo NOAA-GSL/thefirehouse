@@ -243,7 +243,8 @@ overrides are isolated so a re-sync doesn't lose them.
       it's a binary asset in the design project and couldn't come across the
       design-sync API, which returns text. Drop the file in that directory and it's
       picked up automatically; until then the hero renders a gradient stand-in. See
-      `src/assets/imagery/README.md`.
+      `src/assets/imagery/README.md`. The plugin's hero shows the same gradient and has
+      no photo either. Stephanie and Emily choose between the two (Eric, 20 November).
 - [ ] **Rerun and review the "top needs" synthesis** in `topicSummaries.json`. The
       draft on the site was made from four of the eight published projects, with every
       need traced to the survey entries it counts in
@@ -352,8 +353,9 @@ overrides are isolated so a re-sync doesn't lose them.
       projects". The description, preview text and image alt text in
       `index.html` are repeated by the plugin (`includes/class-head.php`), and the alt
       text describes the hub, not the image. Record who confirmed what text, and when.
-- [ ] **Build with the right variables** for each copy (see [Hosting](#hosting)), so
-      `og:image` is emitted and the test-site copy isn't indexed.
+- [x] ~~**Build with the right variables** for each copy (see [Hosting](#hosting)), so
+      `og:image` is emitted and the test-site copy isn't indexed.~~ Not needed: the
+      bridge is dropped (Eric, 20 November), so no static copy goes up.
 - [ ] **Confirm the survey form's wording** with Stephanie and Emily, then send it
       through clearance before gsl.noaa.gov (CLAUDE.md). The notice, the no-IRB thanks
       and the questions are the Google Form's (`survey/class-questions.php`), with "AI"
@@ -450,19 +452,27 @@ overrides are isolated so a re-sync doesn't lose them.
       `wp eval 'set_transient( "fh_check", 1, 60 ); var_dump( delete_transient( "fh_check" ), delete_transient( "fh_check" ) );'`
       must print `bool(true) bool(false)`. If the second is true too, two clicks at once
       could both publish: hold the release.
-- [ ] **Confirm the SPA fallback with Matt** — which of `.htaccess` / `_redirects` /
-      `404.html` actually applies on GSL's host, and drop the two that don't.
-- [ ] **Decide on a sitemap.** Under `/firehouse/`, `public/robots.txt` isn't at the
+- [x] ~~**Confirm the SPA fallback with Matt** — which of `.htaccess` / `_redirects` /
+      `404.html` actually applies on GSL's host, and drop the two that don't.~~ Not
+      needed: the bridge is dropped (Eric, 20 November). The three files retire with
+      the React app's static-hosting files at cutover (plan, Phase 8).
+- [x] ~~**Decide on a sitemap.** Under `/firehouse/`, `public/robots.txt` isn't at the
       site's root, so crawlers never read it, and a `Sitemap:` line there does
       nothing. A `sitemap.xml` of the project pages would have to be listed in GSL's
-      own `robots.txt` or submitted to search engines directly.
+      own `robots.txt` or submitted to search engines directly.~~ Not needed: with the
+      bridge dropped (Eric, 20 November), the plugin's pages are the first on GSL's
+      sites, and WordPress's own sitemap (`/wp-sitemap.xml`) already lists the project
+      and topic pages and the FireHouse page tree.
 - [x] **Self-host the fonts.** Some agencies prohibit third-party CDN calls.
       Archivo and Public Sans now come from the site itself: Google's own files,
       saved in the plugin's `assets/fonts/` and loaded from `assets/css/fonts.css`
       (see The WordPress plugin, below).
 - [ ] **Ask GSL for a `wp_body_open()` hook** in its theme. Firehouse's skip link then
       moves before the theme's header; until then it sits at the top of the Firehouse
-      area, after the header's links (plan, Phase 3).
+      area, after the header's links (plan, Phase 3). Eric, as GSL's web team, agreed on
+      20 November. The theme gets the hook, and FireHouse prints its skip link there
+      when the theme fires it, or where it is now when it doesn't. This box is ticked
+      once both changes are in.
 - [ ] **Record that Stephanie and Emily agree** to their photos and biographies
       appearing publicly on gsl.noaa.gov: who confirmed, what they agreed to, and when.
       `src/assets/people/README.md` asks for this before the page goes live; that they
@@ -1646,9 +1656,12 @@ the audit includes them too.
 
 ## Hosting
 
-Until the WordPress plugin replaces it, the static build serves `/firehouse/`: first as
-a copy on GSL's test site for the WPO meeting, then on gsl.noaa.gov for AMS (see "The
-AMS bridge" in `WORDPRESS-PLAN.md`). It needs no server. `VITE_BASE_PATH` sets the
+The static build isn't hosted anywhere. The bridge that would have put it on GSL's
+test site for the WPO meeting, and on gsl.noaa.gov for AMS, is dropped (Eric, 20
+November): the WordPress plugin is the first FireHouse on GSL's sites, and the static
+build is kept as the reference it's compared against (see "The AMS bridge" in
+`WORDPRESS-PLAN.md`). What follows is how it builds for a sub-path, should a copy be
+needed. It needs no server. `VITE_BASE_PATH` sets the
 sub-path: Vite's `base` and the router's `basename` are wired to it, and the icon
 links in `index.html` use `%BASE_URL%` so they resolve there too.
 
